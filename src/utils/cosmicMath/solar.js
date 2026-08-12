@@ -153,27 +153,102 @@ export const getTerminatorShadowPaths = (longitude, sunLong, declination, altThr
 };
 
 /**
+ * Structured polar state enums for extreme high-latitude solar conditions.
+ * @readonly
+ * @enum {string}
+ */
+export const POLAR_STATES = {
+  NORMAL: 'NORMAL',
+  PERPETUAL_DAY: 'PERPETUAL_DAY',
+  PERPETUAL_NIGHT: 'PERPETUAL_NIGHT',
+  PERPETUAL_TWILIGHT: 'PERPETUAL_TWILIGHT'
+};
+
+/**
+ * Determines the global polar state enum for an observer location and solar declination.
+ * @param {number} lat - Observer latitude in degrees (-90 to +90)
+ * @param {number} declination - Solar declination in degrees (-23.44 to +23.44)
+ * @returns {string} Polar state enum (NORMAL, PERPETUAL_DAY, PERPETUAL_NIGHT, PERPETUAL_TWILIGHT)
+ */
+export const calculatePolarState = (lat, declination) => {
+  const { OFFICIAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
+  const dayDuration = calculateDaylightDurationPrecise(lat, declination, OFFICIAL);
+  const astroDuration = calculateDaylightDurationPrecise(lat, declination, ASTRONOMICAL);
+
+  if (dayDuration >= 24) {
+    return POLAR_STATES.PERPETUAL_DAY;
+  }
+  if (astroDuration <= 0) {
+    return POLAR_STATES.PERPETUAL_NIGHT;
+  }
+  if (dayDuration <= 0 && astroDuration > 0) {
+    return POLAR_STATES.PERPETUAL_TWILIGHT;
+  }
+  if (dayDuration > 0 && dayDuration < 24 && astroDuration >= 24) {
+    return POLAR_STATES.PERPETUAL_TWILIGHT;
+  }
+  return POLAR_STATES.NORMAL;
+};
+
+/**
  * Calculates daylight or twilight duration in decimal hours for a specific latitude and declination.
+ * Uses explicit piecewise functions for polar bounds where solar elevation threshold criteria are met.
  * @param {number} lat - Observer latitude in degrees (-90 to +90)
  * @param {number} declination - Solar declination in degrees (-23.44 to +23.44)
  * @param {number} angleThreshold - Solar altitude threshold in degrees (-0.833, -6, -12, -18)
  * @returns {number} Duration in decimal hours (0 to 24)
  */
 export const calculateDaylightDurationPrecise = (lat, declination, angleThreshold) => {
-  const safeLat = Math.max(-89.9, Math.min(89.9, lat));
-  const latRad = toRadians(safeLat);
+  const clampLat = Math.max(-90, Math.min(90, lat));
+  
+  const latRad = toRadians(clampLat);
   const decRad = toRadians(declination);
   const altRad = toRadians(angleThreshold);
 
-  const numerator = Math.sin(altRad) - Math.sin(latRad) * Math.sin(decRad);
-  const denominator = Math.cos(latRad) * Math.cos(decRad);
-  const cosOmega = numerator / denominator;
+  const cosLat = Math.cos(latRad);
+  const cosDec = Math.cos(decRad);
+  const cosLatCosDec = cosLat * cosDec;
 
-  if (cosOmega >= 1) return 0.0;
-  if (cosOmega <= -1) return 24.0;
+  // Handle polar singularities at exact poles (|lat| == 90) or where cos(lat)*cos(dec) approx 0
+  if (Math.abs(cosLatCosDec) < 1e-9) {
+    const poleSolarAlt = clampLat >= 0 ? declination : -declination;
+    return poleSolarAlt >= angleThreshold ? 24.0 : 0.0;
+  }
 
-  const hourAngleDeg = toDegrees(Math.acos(cosOmega));
-  return (2 * hourAngleDeg) / 15;
+  // Piecewise evaluation using solar noon (max) and solar midnight (min) elevation
+  // sin(h_max) = sin(lat)*sin(dec) + cos(lat)*cos(dec)
+  // sin(h_min) = sin(lat)*sin(dec) - cos(lat)*cos(dec)
+  const sinAlt = Math.sin(altRad);
+  const sinLatSinDec = Math.sin(latRad) * Math.sin(decRad);
+  const sinHMax = sinLatSinDec + cosLatCosDec;
+  const sinHMin = sinLatSinDec - cosLatCosDec;
+
+  // Piecewise polar bound 1: Sun stays below threshold all day -> 0h
+  if (sinHMax <= sinAlt) {
+    return 0.0;
+  }
+
+  // Piecewise polar bound 2: Sun stays above threshold all day -> 24h
+  if (sinHMin >= sinAlt) {
+    return 24.0;
+  }
+
+  // Standard diurnal case (-1 < cosOmega < 1)
+  const numerator = sinAlt - sinLatSinDec;
+  const cosOmega = numerator / cosLatCosDec;
+
+  if (cosOmega >= 1.0) return 0.0;
+  if (cosOmega <= -1.0) return 24.0;
+
+  const hourAngleRad = Math.acos(cosOmega);
+  if (isNaN(hourAngleRad)) {
+    return cosOmega > 0 ? 0.0 : 24.0;
+  }
+
+  const hourAngleDeg = toDegrees(hourAngleRad);
+  const duration = (2 * hourAngleDeg) / 15;
+
+  return Math.max(0.0, Math.min(24.0, duration));
 };
 
 /**
@@ -182,24 +257,60 @@ export const calculateDaylightDurationPrecise = (lat, declination, angleThreshol
  * @param {number} declination - Solar declination in degrees
  * @param {number} solarNoon - Solar noon in local decimal hours
  * @returns {{
- *   official: { morning: number, evening: number, isFullSun: boolean, isPolarNight: boolean },
- *   civil: { morning: number, evening: number, isFullSun: boolean, isPolarNight: boolean },
- *   nautical: { morning: number, evening: number, isFullSun: boolean, isPolarNight: boolean },
- *   astronomical: { morning: number, evening: number, isFullSun: boolean, isPolarNight: boolean },
+ *   official: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
+ *   civil: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
+ *   nautical: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
+ *   astronomical: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
  *   solarNoon: number,
  *   solarMidnightStart: number,
- *   solarMidnightEnd: number
- * }} Daily solar event timestamps
+ *   solarMidnightEnd: number,
+ *   polarState: string
+ * }} Daily solar event timestamps and polar states
  */
 export const calculateDailySolarEvents = (lat, declination, solarNoon) => {
   const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
+  const overallPolarState = calculatePolarState(lat, declination);
   
   const getTimesForAngle = (angle) => {
     const duration = calculateDaylightDurationPrecise(lat, declination, angle);
-    if (duration <= 0) return { morning: solarNoon, evening: solarNoon, isFullSun: false, isPolarNight: true };
-    if (duration >= 24) return { morning: solarNoon - 12, evening: solarNoon + 12, isFullSun: true, isPolarNight: false };
+    let bandPolarState = POLAR_STATES.NORMAL;
+    if (duration <= 0) {
+      bandPolarState = POLAR_STATES.PERPETUAL_NIGHT;
+    } else if (duration >= 24) {
+      bandPolarState = POLAR_STATES.PERPETUAL_DAY;
+    } else if (overallPolarState === POLAR_STATES.PERPETUAL_TWILIGHT) {
+      bandPolarState = POLAR_STATES.PERPETUAL_TWILIGHT;
+    }
+
+    if (duration <= 0) {
+      return { 
+        morning: solarNoon, 
+        evening: solarNoon, 
+        duration: 0,
+        isFullSun: false, 
+        isPolarNight: true,
+        polarState: bandPolarState
+      };
+    }
+    if (duration >= 24) {
+      return { 
+        morning: solarNoon - 12, 
+        evening: solarNoon + 12, 
+        duration: 24,
+        isFullSun: true, 
+        isPolarNight: false,
+        polarState: bandPolarState
+      };
+    }
     const half = duration / 2;
-    return { morning: solarNoon - half, evening: solarNoon + half, isFullSun: false, isPolarNight: false };
+    return { 
+      morning: solarNoon - half, 
+      evening: solarNoon + half, 
+      duration,
+      isFullSun: false, 
+      isPolarNight: false,
+      polarState: bandPolarState
+    };
   };
 
   return {
@@ -209,6 +320,7 @@ export const calculateDailySolarEvents = (lat, declination, solarNoon) => {
     astronomical: getTimesForAngle(ASTRONOMICAL),
     solarNoon,
     solarMidnightStart: solarNoon - 12,
-    solarMidnightEnd: solarNoon + 12
+    solarMidnightEnd: solarNoon + 12,
+    polarState: overallPolarState
   };
 };

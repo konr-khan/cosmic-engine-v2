@@ -11,7 +11,11 @@ import {
   getPhaseName,
   calculateEclipseData,
   calculateDailySolarEvents,
-  ECLIPSE_PRESETS
+  calculateDaylightDurationPrecise,
+  calculatePolarState,
+  POLAR_STATES,
+  ECLIPSE_PRESETS,
+  CONFIG
 } from './cosmicMath';
 
 describe('cosmicMath utilities', () => {
@@ -118,6 +122,94 @@ describe('cosmicMath utilities', () => {
       expect(events.official.morning).toBeLessThan(6.1);
       expect(events.official.evening).toBeGreaterThan(17.9);
       expect(events.official.evening).toBeLessThan(18.2);
+    });
+  });
+
+  describe('Polar Boundary & Extreme Latitude Hardening', () => {
+    it('never outputs NaN or null across all latitudes [-90, +90]', () => {
+      const angles = Object.values(CONFIG.SOLAR.TWILIGHT);
+      const declinations = [-23.44, -15, 0, 15, 23.44];
+
+      for (let lat = -90; lat <= 90; lat += 1) {
+        for (const dec of declinations) {
+          for (const alt of angles) {
+            const duration = calculateDaylightDurationPrecise(lat, dec, alt);
+            expect(duration).not.toBeNull();
+            expect(duration).not.toBeUndefined();
+            expect(Number.isNaN(duration)).toBe(false);
+            expect(duration).toBeGreaterThanOrEqual(0.0);
+            expect(duration).toBeLessThanOrEqual(24.0);
+          }
+        }
+      }
+    });
+
+    it('evaluates extreme polar latitudes (+-70, +-80, +-90) across equinoxes and solstices', () => {
+      const summerDec = 23.44;
+      const winterDec = -23.44;
+      const equinoxDec = 0.0;
+      const official = CONFIG.SOLAR.TWILIGHT.OFFICIAL;
+
+      // North Pole (+90°)
+      expect(calculateDaylightDurationPrecise(90, summerDec, official)).toBe(24.0);
+      expect(calculatePolarState(90, summerDec)).toBe(POLAR_STATES.PERPETUAL_DAY);
+      
+      expect(calculateDaylightDurationPrecise(90, winterDec, official)).toBe(0.0);
+      expect(calculatePolarState(90, winterDec)).toBe(POLAR_STATES.PERPETUAL_NIGHT);
+
+      expect(calculateDaylightDurationPrecise(90, equinoxDec, official)).toBe(24.0);
+
+      // South Pole (-90°)
+      expect(calculateDaylightDurationPrecise(-90, summerDec, official)).toBe(0.0);
+      expect(calculatePolarState(-90, summerDec)).toBe(POLAR_STATES.PERPETUAL_NIGHT);
+
+      expect(calculateDaylightDurationPrecise(-90, winterDec, official)).toBe(24.0);
+      expect(calculatePolarState(-90, winterDec)).toBe(POLAR_STATES.PERPETUAL_DAY);
+
+      // High Arctic (+80°)
+      expect(calculateDaylightDurationPrecise(80, summerDec, official)).toBe(24.0);
+      expect(calculatePolarState(80, summerDec)).toBe(POLAR_STATES.PERPETUAL_DAY);
+
+      expect(calculateDaylightDurationPrecise(80, winterDec, official)).toBe(0.0);
+      expect(calculatePolarState(80, winterDec)).toBe(POLAR_STATES.PERPETUAL_TWILIGHT);
+
+      // Antarctic (-80°)
+      expect(calculateDaylightDurationPrecise(-80, winterDec, official)).toBe(24.0);
+      expect(calculatePolarState(-80, winterDec)).toBe(POLAR_STATES.PERPETUAL_DAY);
+
+      expect(calculateDaylightDurationPrecise(-80, summerDec, official)).toBe(0.0);
+      expect(calculatePolarState(-80, summerDec)).toBe(POLAR_STATES.PERPETUAL_TWILIGHT);
+
+      // Arctic (+70°)
+      expect(calculateDaylightDurationPrecise(70, summerDec, official)).toBe(24.0);
+      expect(calculatePolarState(70, summerDec)).toBe(POLAR_STATES.PERPETUAL_DAY);
+
+      expect(calculateDaylightDurationPrecise(70, winterDec, official)).toBe(0.0);
+      expect(calculatePolarState(70, winterDec)).toBe(POLAR_STATES.PERPETUAL_TWILIGHT);
+
+      // Sub-Antarctic (-70°)
+      expect(calculateDaylightDurationPrecise(-70, winterDec, official)).toBe(24.0);
+      expect(calculatePolarState(-70, winterDec)).toBe(POLAR_STATES.PERPETUAL_DAY);
+
+      expect(calculateDaylightDurationPrecise(-70, summerDec, official)).toBe(0.0);
+      expect(calculatePolarState(-70, summerDec)).toBe(POLAR_STATES.PERPETUAL_TWILIGHT);
+    });
+
+    it('returns structured POLAR_STATES enums in calculateDailySolarEvents', () => {
+      const equatorEvents = calculateDailySolarEvents(0, 0, 12);
+      expect(equatorEvents.polarState).toBe(POLAR_STATES.NORMAL);
+      expect(equatorEvents.official.polarState).toBe(POLAR_STATES.NORMAL);
+
+      const northPoleSummerEvents = calculateDailySolarEvents(90, 23.44, 12);
+      expect(northPoleSummerEvents.polarState).toBe(POLAR_STATES.PERPETUAL_DAY);
+      expect(northPoleSummerEvents.official.polarState).toBe(POLAR_STATES.PERPETUAL_DAY);
+
+      const northPoleWinterEvents = calculateDailySolarEvents(90, -23.44, 12);
+      expect(northPoleWinterEvents.polarState).toBe(POLAR_STATES.PERPETUAL_NIGHT);
+      expect(northPoleWinterEvents.official.polarState).toBe(POLAR_STATES.PERPETUAL_NIGHT);
+
+      const svalbardNovEvents = calculateDailySolarEvents(78, -20, 12);
+      expect(svalbardNovEvents.polarState).toBe(POLAR_STATES.PERPETUAL_TWILIGHT);
     });
   });
 
