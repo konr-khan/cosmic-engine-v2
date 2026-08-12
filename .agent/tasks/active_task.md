@@ -1,6 +1,6 @@
 # Active Task Specification: Cosmic Engine V2.0 Architectural Refactor
 
-> **Status**: PHASE 2 ACTIVE
+> **Status**: PHASE 3 ACTIVE
 > **Architectural Ref**: [`AGENTS.md`](../../AGENTS.md)
 > **Goal**: Decouple state propagation, offload ephemeris computation, and harden polar math edge cases across 3 phases.
 
@@ -38,7 +38,7 @@ Decouple simulation time ticks (`date`, `timeOfDay`) from the top-level React st
 
 ---
 
-## 🚀 Phase 2: Asynchronous Ephemeris Worker Integration (CURRENTLY ACTIVE)
+## ✅ Phase 2: Asynchronous Ephemeris Worker Integration (COMPLETED)
 
 ### Objective
 Offload Meeus lunar perturbation series (`calculateLunarEvents`) and syzygy shadow geometry solvers (`calculateEclipseData`) to a dedicated Web Worker to ensure zero UI thread micro-stutters during time scrubbing.
@@ -57,13 +57,13 @@ Offload Meeus lunar perturbation series (`calculateLunarEvents`) and syzygy shad
    - Manage worker lifecycle, message passing, and automatic synchronous fallback if Workers are unsupported or blocked.
 
 ### Acceptance Criteria
-- [ ] Meeus lunar perturbation series and syzygy shadow geometry execute off-main-thread.
-- [ ] Main thread frame rate remains at stable 60 FPS during fast-forward scrubbing.
-- [ ] System falls back gracefully to synchronous execution if Web Worker initialization fails.
+- [x] Meeus lunar perturbation series and syzygy shadow geometry execute off-main-thread.
+- [x] Main thread frame rate remains at stable 60 FPS during fast-forward scrubbing.
+- [x] System falls back gracefully to synchronous execution if Web Worker initialization fails.
 
 ---
 
-## 📋 Phase 3: Mathematical Boundary & Polar Edge Case Hardening (QUEUED)
+## 🚀 Phase 3: Mathematical Boundary & Polar Edge Case Hardening (CURRENTLY ACTIVE)
 
 ### Objective
 Eliminate edge-case math singularities (e.g. `NaN` or unhandled division) for extreme polar latitudes ($|\phi| > 66.5^\circ$) during twilight duration calculations.

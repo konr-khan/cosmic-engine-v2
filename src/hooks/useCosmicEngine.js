@@ -5,13 +5,12 @@ import {
   calculateSolarPosition, 
   calculateDaylightDurationPrecise,
   calculateLunarPosition,
-  calculateLunarEvents,
-  calculateEclipseData,
   getPhaseName,
   toRadians,
   toDegrees
 } from '../utils/cosmicMath';
 import { useChronometerStore } from '../store/cosmicStore';
+import { useEphemerisWorker } from './useEphemerisWorker';
 
 export const useCosmicEngine = (
   paramDate, 
@@ -48,9 +47,20 @@ export const useCosmicEngine = (
                           activeWidgets.lunarAlmanac !== false || 
                           activeWidgets.celestialSphere !== false;
 
+  const julianDate = useMemo(() => getJulianDate(date, timeOfDay), [date, timeOfDay]);
+
+  const ephemeris = useEphemerisWorker({
+    latitude,
+    longitude,
+    julianDate,
+    timeOfDay,
+    isLunarActive,
+    isEclipseActive,
+    isOrbitalActive
+  });
+
   return useMemo(() => {
-    const JD = getJulianDate(date, timeOfDay);
-    const JD_midnight = getJulianDate(date, 0);
+    const JD = julianDate;
 
     const { declination, equationOfTime, n } = calculateSolarPosition(JD);
     const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
@@ -117,16 +127,6 @@ export const useCosmicEngine = (
         localTideStatus = "High Tide";
       }
 
-      // High precision lunar ephemeris & sky view parallactic angle (selective)
-      const lunarEvents = isLunarActive 
-        ? calculateLunarEvents(latitude, longitude, JD_midnight, timeOfDay)
-        : null;
-
-      // High precision eclipse solver (selective)
-      const eclipse = isEclipseActive 
-        ? calculateEclipseData(JD)
-        : null;
-
       orbitalData = {
         positions: { sun: { x: 0, y: 0 }, earth: earthPos, moon: moonPos },
         angles: { 
@@ -139,13 +139,14 @@ export const useCosmicEngine = (
         tides: { rx: tideRx, ry: baseOceanSize, type: tideType, alignment: alignmentFactor },
         userRotation,
         localTideStatus,
-        lunarEvents,
-        eclipse
+        lunarEvents: ephemeris.lunarEvents,
+        eclipse: ephemeris.eclipse
       };
     }
 
     return { solarData, orbitalData, julianDate: JD };
-  }, [date, timeOfDay, latitude, longitude, useAnalemma, isLunarActive, isEclipseActive, isOrbitalActive]);
+  }, [date, timeOfDay, latitude, longitude, useAnalemma, isLunarActive, isEclipseActive, isOrbitalActive, julianDate, ephemeris]);
 };
+
 
 

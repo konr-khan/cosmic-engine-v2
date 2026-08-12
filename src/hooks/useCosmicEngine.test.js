@@ -1,12 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useCosmicEngine } from './useCosmicEngine';
 
-// Mock React's useMemo to execute immediately in pure unit test environment
+// Mock React hooks to execute immediately in pure unit test environment
 vi.mock('react', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
     useMemo: (factory) => factory(),
+    useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
+    useEffect: (effect) => { effect(); },
+    useRef: (initial) => ({ current: initial })
   };
 });
 
