@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, Moon, RotateCw, Sliders, MapPin, Globe, Compass, Lock, Unlock, RefreshCcw, LayoutTemplate, Sparkles, Check, Layers } from 'lucide-react';
-import { getJulianDate, calculateSolarPosition } from './utils/cosmicMath';
 import { useCosmicEngine } from './hooks/useCosmicEngine';
+import { useChronometerStore, cosmicActions } from './store/cosmicStore';
 import { TerminatorMap } from './components/widgets/TerminatorMap';
 import { SunClock } from './components/widgets/SunClock';
 import { SolarAlmanac } from './components/widgets/SolarAlmanac';
@@ -98,20 +98,175 @@ const PRESET_LAYOUTS = {
   }
 };
 
+const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
+  id,
+  widgets,
+  hoverTime,
+  setHoverTime,
+  hoverDate,
+  setHoverDate
+}) {
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore((state) => ({
+    date: state.date,
+    timeOfDay: state.timeOfDay,
+    latitude: state.latitude,
+    longitude: state.longitude,
+    useAnalemma: state.useAnalemma
+  }));
+
+  const { solarData, orbitalData } = useCosmicEngine(
+    date,
+    timeOfDay,
+    latitude,
+    longitude,
+    useAnalemma,
+    widgets
+  );
+
+  const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+
+  const handleDateSlider = (val) => {
+    cosmicActions.setDate(new Date(date.getFullYear(), 0, val));
+  };
+
+  switch (id) {
+    case 'almanac':
+      return (
+        <SolarAlmanac 
+          latitude={latitude} 
+          longitude={longitude} 
+          currentDay={dayOfYear} 
+          onDayChange={handleDateSlider} 
+          year={date.getFullYear()} 
+          hoverTime={hoverTime}
+          onHoverTime={setHoverTime}
+        />
+      );
+    case 'lunarAlmanac':
+      return (
+        <LunarAlmanacCard 
+          orbitalData={orbitalData} 
+          onSetTime={cosmicActions.setTimeOfDay} 
+          latitude={latitude}
+          longitude={longitude}
+          currentDay={dayOfYear}
+          onDayChange={handleDateSlider}
+          currentDate={date}
+          hoverDate={hoverDate}
+          onHoverDate={setHoverDate}
+        />
+      );
+    case 'eclipse':
+      return (
+        <EclipseDemonstrator 
+          currentDate={date} 
+          onDateChange={cosmicActions.setDate} 
+          onTimeChange={cosmicActions.setTimeOfDay} 
+          orbitalData={orbitalData} 
+        />
+      );
+    case 'celestialSphere':
+      return (
+        <CelestialSphereView 
+          latitude={latitude} 
+          longitude={longitude} 
+          solarData={solarData} 
+          orbitalData={orbitalData} 
+          timeOfDay={timeOfDay} 
+        />
+      );
+    case 'sunclock':
+      return (
+        <SunClock 
+          solarData={solarData} 
+          currentTime={timeOfDay} 
+          latitude={latitude} 
+          hoverTime={hoverTime}
+          onHoverTime={setHoverTime}
+        />
+      );
+    case 'map':
+      return (
+        <TerminatorMap 
+          solarData={solarData} 
+          latitude={latitude} 
+          longitude={longitude} 
+          timeOfDay={timeOfDay} 
+          hoverTime={hoverTime}
+        />
+      );
+    case 'macroOrbit':
+      return (
+        <MacroOrbitView 
+          positions={orbitalData?.positions} 
+          eclipse={orbitalData?.eclipse} 
+          solarData={solarData}
+          orbitalData={orbitalData}
+          currentDate={date}
+          hoverDate={hoverDate}
+        />
+      );
+    case 'microTides':
+      return (
+        <MicroTideView 
+          tides={orbitalData?.tides} 
+          angles={orbitalData?.angles} 
+          userRotation={orbitalData?.userRotation}
+          localTideStatus={orbitalData?.localTideStatus}
+          hoverDate={hoverDate}
+        />
+      );
+    default:
+      return null;
+  }
+});
+
+const MemoizedChronometerDock = React.memo(function MemoizedChronometerDock({
+  isDockCollapsed,
+  onToggleCollapse,
+  widgets
+}) {
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore((state) => ({
+    date: state.date,
+    timeOfDay: state.timeOfDay,
+    latitude: state.latitude,
+    longitude: state.longitude,
+    useAnalemma: state.useAnalemma
+  }));
+
+  const { solarData } = useCosmicEngine(
+    date,
+    timeOfDay,
+    latitude,
+    longitude,
+    useAnalemma,
+    widgets
+  );
+
+  return (
+    <OrbitalChronometer 
+      date={date}
+      onDateChange={cosmicActions.setDate}
+      timeOfDay={timeOfDay}
+      onTimeChange={cosmicActions.setTimeOfDay}
+      longitude={longitude}
+      onLonChange={cosmicActions.setLongitude}
+      latitude={latitude}
+      onLatChange={cosmicActions.setLatitude}
+      solarData={solarData}
+      isCollapsed={isDockCollapsed}
+      onToggleCollapse={onToggleCollapse}
+    />
+  );
+});
+
 export default function App() {
-  const [currentDate, setCurrentDate] = useState(() => new Date());
-  const [latitude, setLatitude] = useState(47.06);     // N 47.06°
-  const [longitude, setLongitude] = useState(-122.81);  // W 122.81°
-  const [timeOfDay, setTimeOfDay] = useState(() => {
-    const now = new Date();
-    return parseFloat((now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600).toFixed(3));
-  });
+  const useAnalemma = useChronometerStore((state) => state.useAnalemma);
 
   const [activePresetKey, setActivePresetKey] = useState('master');
   const [showPresetsMenu, setShowPresetsMenu] = useState(false);
   const [widgets, setWidgets] = useState(PRESET_LAYOUTS.master.widgets);
   const [showOptions, setShowOptions] = useState(false);
-  const [useAnalemma, setUseAnalemma] = useState(true);
   const [isDockCollapsed, setIsDockCollapsed] = useState(false);
 
   // Shared Cross-Card Interactive Hover Sync
@@ -153,22 +308,6 @@ export default function App() {
       }))));
     } catch (e) {}
   }, [windows]);
-
-  const { solarData, orbitalData } = useCosmicEngine(
-    currentDate,
-    timeOfDay,
-    latitude,
-    longitude,
-    useAnalemma,
-    widgets
-  );
-
-  const handleDateSlider = (val) => {
-    const newDate = new Date(currentDate.getFullYear(), 0, val);
-    setCurrentDate(newDate);
-  };
-
-  const dayOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / 86400000);
 
   const handleDragStart = (e, id) => {
     e.dataTransfer.setData('text/plain', id);
@@ -221,99 +360,6 @@ export default function App() {
       localStorage.removeItem('cosmic_window_layout_v4'); 
       localStorage.removeItem('cosmic_window_layout_v5'); 
     } catch (e) {}
-  };
-
-  const renderWindowContent = (id) => {
-    switch (id) {
-      case 'almanac':
-        return (
-          <SolarAlmanac 
-            latitude={latitude} 
-            longitude={longitude} 
-            currentDay={dayOfYear} 
-            onDayChange={handleDateSlider} 
-            year={currentDate.getFullYear()} 
-            hoverTime={hoverTime}
-            onHoverTime={setHoverTime}
-          />
-        );
-      case 'lunarAlmanac':
-        return (
-          <LunarAlmanacCard 
-            orbitalData={orbitalData} 
-            onSetTime={setTimeOfDay} 
-            latitude={latitude}
-            longitude={longitude}
-            currentDay={dayOfYear}
-            onDayChange={handleDateSlider}
-            currentDate={currentDate}
-            hoverDate={hoverDate}
-            onHoverDate={setHoverDate}
-          />
-        );
-      case 'eclipse':
-        return (
-          <EclipseDemonstrator 
-            currentDate={currentDate} 
-            onDateChange={setCurrentDate} 
-            onTimeChange={setTimeOfDay} 
-            orbitalData={orbitalData} 
-          />
-        );
-      case 'celestialSphere':
-        return (
-          <CelestialSphereView 
-            latitude={latitude} 
-            longitude={longitude} 
-            solarData={solarData} 
-            orbitalData={orbitalData} 
-            timeOfDay={timeOfDay} 
-          />
-        );
-      case 'sunclock':
-        return (
-          <SunClock 
-            solarData={solarData} 
-            currentTime={timeOfDay} 
-            latitude={latitude} 
-            hoverTime={hoverTime}
-            onHoverTime={setHoverTime}
-          />
-        );
-      case 'map':
-        return (
-          <TerminatorMap 
-            solarData={solarData} 
-            latitude={latitude} 
-            longitude={longitude} 
-            timeOfDay={timeOfDay} 
-            hoverTime={hoverTime}
-          />
-        );
-      case 'macroOrbit':
-        return (
-          <MacroOrbitView 
-            positions={orbitalData.positions} 
-            eclipse={orbitalData.eclipse} 
-            solarData={solarData}
-            orbitalData={orbitalData}
-            currentDate={currentDate}
-            hoverDate={hoverDate}
-          />
-        );
-      case 'microTides':
-        return (
-          <MicroTideView 
-            tides={orbitalData.tides} 
-            angles={orbitalData.angles} 
-            userRotation={orbitalData.userRotation}
-            localTideStatus={orbitalData.localTideStatus}
-            hoverDate={hoverDate}
-          />
-        );
-      default:
-        return null;
-    }
   };
 
   return (
@@ -443,7 +489,7 @@ export default function App() {
                   <div className="h-px bg-slate-800 my-1.5" />
 
                   <button
-                    onClick={() => setUseAnalemma(!useAnalemma)}
+                    onClick={() => cosmicActions.setUseAnalemma(!useAnalemma)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       useAnalemma ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-800' : 'hover:bg-slate-800 text-slate-400'
                     }`}
@@ -509,7 +555,14 @@ export default function App() {
                   onToggleLock={handleToggleLock}
                   onResetSize={() => handleResize(win.id, 0, defaultHeight)}
                 >
-                  {renderWindowContent(win.id)}
+                  <MemoizedWidgetContent 
+                    id={win.id}
+                    widgets={widgets}
+                    hoverTime={hoverTime}
+                    setHoverTime={setHoverTime}
+                    hoverDate={hoverDate}
+                    setHoverDate={setHoverDate}
+                  />
                 </DashboardWindow>
               );
             })}
@@ -518,18 +571,10 @@ export default function App() {
 
         {/* Bottom-Pinned Astrolabe Control Dock */}
         <div className="fixed bottom-0 left-0 right-0 z-50">
-          <OrbitalChronometer 
-            date={currentDate}
-            onDateChange={setCurrentDate}
-            timeOfDay={timeOfDay}
-            onTimeChange={setTimeOfDay}
-            longitude={longitude}
-            onLonChange={setLongitude}
-            latitude={latitude}
-            onLatChange={setLatitude}
-            solarData={solarData}
-            isCollapsed={isDockCollapsed}
+          <MemoizedChronometerDock 
+            isDockCollapsed={isDockCollapsed}
             onToggleCollapse={() => setIsDockCollapsed(!isDockCollapsed)}
+            widgets={widgets}
           />
         </div>
 
@@ -537,3 +582,4 @@ export default function App() {
     </div>
   );
 }
+

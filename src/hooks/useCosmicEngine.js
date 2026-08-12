@@ -11,15 +11,36 @@ import {
   toRadians,
   toDegrees
 } from '../utils/cosmicMath';
+import { useChronometerStore } from '../store/cosmicStore';
 
 export const useCosmicEngine = (
-  date, 
-  timeOfDay, 
-  latitude, 
-  longitude, 
-  useAnalemma = true,
+  paramDate, 
+  paramTimeOfDay, 
+  paramLatitude, 
+  paramLongitude, 
+  paramUseAnalemma,
   activeWidgets = {}
 ) => {
+  const hasExplicitParams = 
+    paramDate !== undefined && paramDate !== null &&
+    paramTimeOfDay !== undefined && paramTimeOfDay !== null &&
+    paramLatitude !== undefined && paramLatitude !== null &&
+    paramLongitude !== undefined && paramLongitude !== null;
+
+  const storeState = hasExplicitParams ? null : useChronometerStore((state) => ({
+    date: state.date,
+    timeOfDay: state.timeOfDay,
+    latitude: state.latitude,
+    longitude: state.longitude,
+    useAnalemma: state.useAnalemma
+  }));
+
+  const date = hasExplicitParams ? paramDate : storeState.date;
+  const timeOfDay = hasExplicitParams ? paramTimeOfDay : storeState.timeOfDay;
+  const latitude = hasExplicitParams ? paramLatitude : storeState.latitude;
+  const longitude = hasExplicitParams ? paramLongitude : storeState.longitude;
+  const useAnalemma = hasExplicitParams ? (paramUseAnalemma ?? true) : storeState.useAnalemma;
+
   const isLunarActive = activeWidgets.lunarAlmanac !== false;
   const isEclipseActive = activeWidgets.eclipse !== false || activeWidgets.macroOrbit !== false;
   const isOrbitalActive = activeWidgets.macroOrbit !== false || 
@@ -126,4 +147,5 @@ export const useCosmicEngine = (
     return { solarData, orbitalData, julianDate: JD };
   }, [date, timeOfDay, latitude, longitude, useAnalemma, isLunarActive, isEclipseActive, isOrbitalActive]);
 };
+
 

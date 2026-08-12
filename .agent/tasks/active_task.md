@@ -1,73 +1,85 @@
-# Active Task State & Project Memory
+# Active Task Specification: Cosmic Engine V2.0 Architectural Refactor
 
-## Overview
-- **Project**: Cosmic Engine V2.0
-- **Repository**: [https://github.com/konr-khan/cosmic-engine-v2.git](https://github.com/konr-khan/cosmic-engine-v2.git)
-- **Current Branch**: `main`
-- **Status**: Phase 1 & Phase 2 Completed | Project State Synchronized
+> **Status**: PHASE 2 ACTIVE
+> **Architectural Ref**: [`AGENTS.md`](../../AGENTS.md)
+> **Goal**: Decouple state propagation, offload ephemeris computation, and harden polar math edge cases across 3 phases.
 
 ---
 
-## 🎯 Acceptance Criteria & Progress
+## ✅ Phase 1: Engine Core Decoupling & State Isolation (COMPLETED)
 
-### Phase 1: Component & Math Modularization
-- [x] Decompose `cosmicMath.js` into domain submodules (`core.js`, `solar.js`, `lunar.js`, `eclipse.js`, `constants.js`).
-- [x] Reorganize `src/components/` into `widgets/`, `controls/`, `layout/`, and `common/`.
-- [x] Verify zero regression in astronomical calculations.
+### Objective
+Decouple simulation time ticks (`date`, `timeOfDay`) from the top-level React state in [`App.jsx`](../../src/App.jsx) to eliminate top-down re-render cascades across all widgets during high-frequency animation ticks.
 
-### Phase 2: Engine Performance & Testing Optimization
-- [x] Implement selective domain calculation in `useCosmicEngine` hook using `activeWidgets` flags.
-- [x] Skip heavy Meeus lunar ephemeris (`calculateLunarEvents`) and syzygy shadow geometry (`calculateEclipseData`) during animation ticks when corresponding widgets are inactive.
-- [x] Configure Vitest with `jsdom` environment in `vite.config.js`.
-- [x] Implement comprehensive unit tests in `useCosmicEngine.test.js` (state transitions, selective skips, polar night/day edge cases).
-- [x] Update project documentation (`AGENTS.md`, `README.md`) reflecting optimization patterns and test workflows.
+### Target Files
+- **[NEW]** [`src/store/cosmicStore.js`](../../src/store/cosmicStore.js)
+- **[MODIFY]** [`src/hooks/useCosmicEngine.js`](../../src/hooks/useCosmicEngine.js)
+- **[MODIFY]** [`src/App.jsx`](../../src/App.jsx)
 
-### Version Control & Cloud Sync
-- [x] Create `.gitignore` to exclude `node_modules/`, `dist/`, build artifacts, and local archives.
-- [x] Initialize Git repository on `main` branch.
-- [x] Verify math engine test suite (`npm test`: 23/23 tests passing).
-- [x] Verify production build (`npm run build`).
-- [x] Create initial git commit (`42fabbf`: `feat: initial commit for Cosmic Engine V2.0`).
-- [x] Add remote origin `https://github.com/konr-khan/cosmic-engine-v2.git` and push `main`.
+### Technical Specifications
+1. **Cosmic Store (`cosmicStore.js`)**:
+   - Implement lightweight subscription state store (or React Context with selector optimization).
+   - Export state slices: `useChronometerStore` (`date`, `timeOfDay`, `speed`, `isPlaying`, `latitude`, `longitude`, `useAnalemma`).
+   - Export batch update actions for high-speed ticker loops (`tickTime`, `setObserverLocation`).
 
-### Technical State Maintenance
-- [x] Establish persistent state tracking under `.agent/tasks/active_task.md`.
-- [x] Prepare completed phase summaries in `.agent/tasks/archive/` for historical auditing.
+2. **Simulation Engine Hook (`useCosmicEngine.js`)**:
+   - Refactor hook to accept store selector parameters or consume `cosmicStore` directly.
+   - Maintain pure calculation outputs and memoized domain evaluation.
 
----
+3. **Master Dashboard (`App.jsx`)**:
+   - Move continuous `requestAnimationFrame` ticker loop out of `App.jsx` root rendering into store action triggers.
+   - Ensure widgets only re-render when their specific subscribed domain data changes.
 
-## 🧠 Key Architectural Decisions
-
-1. **Selective Domain Calculations**:
-   - `useCosmicEngine` accepts `activeWidgets` configuration from `App.jsx`.
-   - Ephemeris & syzygy routines are conditionally evaluated inside `useMemo` based on `isLunarActive`, `isEclipseActive`, and `isOrbitalActive`.
-   - Preserves 100% backward compatibility by defaulting inactive flags to `true` when omitted.
-
-2. **Modular Math Engine Structure**:
-   - Pure mathematical routines placed in `src/utils/cosmicMath/` with JSDoc typing.
-   - Pure and deterministic without React hook or DOM side effects.
-
-3. **Vitest JSDOM Test Harness**:
-   - Configured `vite.config.js` with React plugin and `jsdom` test environment.
-   - Enables fast, headless testing of React hooks and state transitions.
-
-4. **Version Control Baseline**:
-   - Full commit history synchronized to remote repository `https://github.com/konr-khan/cosmic-engine-v2.git`.
+### Acceptance Criteria
+- [x] 60 FPS animation ticks trigger re-renders **only** in active subscribed widgets.
+- [x] Inactive widgets perform 0 render passes during time animation ticks.
+- [x] `npm test` unit test suite passes cleanly with 0 regressions.
+- [x] `npm run build` succeeds without JSX or compilation errors.
 
 ---
 
-## 📜 Execution Log Summary (High-Signal Record)
+## 🚀 Phase 2: Asynchronous Ephemeris Worker Integration (CURRENTLY ACTIVE)
 
-- **Phase 1 Execution**: Decomposed monolithic `cosmicMath.js` into domain submodules and structured UI components into modular subdirectories.
-- **Phase 2 Execution**:
-  - Implemented selective domain skips in `useCosmicEngine.js`.
-  - Installed `jsdom`, `@testing-library/react`, `@testing-library/dom`.
-  - Added `useCosmicEngine.test.js` (10 tests added).
-  - Executed Vitest test suite (23 total tests passed cleanly).
-  - Updated `AGENTS.md` and `README.md`.
-- **Git & GitHub Integration**:
-  - Created `.gitignore`.
-  - Initialized Git repository on `main`.
-  - Created commit `42fabbf` (`feat: initial commit for Cosmic Engine V2.0`).
-  - Added remote `origin` (`https://github.com/konr-khan/cosmic-engine-v2.git`) and pushed `main`.
-- **State Maintenance**: Created `.agent/tasks/active_task.md` and archive structure to maintain persistent, high-signal project memory.
+### Objective
+Offload Meeus lunar perturbation series (`calculateLunarEvents`) and syzygy shadow geometry solvers (`calculateEclipseData`) to a dedicated Web Worker to ensure zero UI thread micro-stutters during time scrubbing.
+
+### Target Files
+- **[NEW]** `src/workers/ephemerisWorker.js`
+- **[NEW]** `src/hooks/useEphemerisWorker.js`
+- **[MODIFY]** `src/hooks/useCosmicEngine.js`
+
+### Technical Specifications
+1. **Worker Script (`ephemerisWorker.js`)**:
+   - Import pure math solvers from `src/utils/cosmicMath/`.
+   - Process `CALCULATE_EPHEMERIS` postMessage requests and return structured `CosmicEphemerisSnapshot`.
+
+2. **Worker Hook (`useEphemerisWorker.js`)**:
+   - Manage worker lifecycle, message passing, and automatic synchronous fallback if Workers are unsupported or blocked.
+
+### Acceptance Criteria
+- [ ] Meeus lunar perturbation series and syzygy shadow geometry execute off-main-thread.
+- [ ] Main thread frame rate remains at stable 60 FPS during fast-forward scrubbing.
+- [ ] System falls back gracefully to synchronous execution if Web Worker initialization fails.
+
+---
+
+## 📋 Phase 3: Mathematical Boundary & Polar Edge Case Hardening (QUEUED)
+
+### Objective
+Eliminate edge-case math singularities (e.g. `NaN` or unhandled division) for extreme polar latitudes ($|\phi| > 66.5^\circ$) during twilight duration calculations.
+
+### Target Files
+- **[MODIFY]** `src/utils/cosmicMath/solar.js`
+- **[MODIFY]** `src/utils/cosmicMath.test.js`
+
+### Technical Specifications
+1. **Polar Bounds (`solar.js`)**:
+   - Implement explicit piecewise functions for solar elevation where $|\phi \pm \delta| > 90^\circ - \text{threshold}$.
+   - Return structured polar state enums (`PERPETUAL_DAY`, `PERPETUAL_NIGHT`, `PERPETUAL_TWILIGHT`) instead of invalid sub-durations.
+
+2. **Test Coverage (`cosmicMath.test.js`)**:
+   - Add unit test suites for latitudes $\pm 70^\circ, \pm 80^\circ, \pm 90^\circ$ across all equinoxes and solstices.
+
+### Acceptance Criteria
+- [ ] Twilight duration calculation never outputs `NaN` or `null` across all latitudes $[-90, +90]$.
+- [ ] Vitest unit test coverage includes extreme polar coordinate edge cases.
