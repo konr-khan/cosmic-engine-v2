@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Move, Maximize2, Minimize2, Lock, Unlock, RefreshCw } from 'lucide-react';
+import { WindowErrorBoundary } from '../common/WindowErrorBoundary';
 
 export const DashboardWindow = ({ 
   id, 
@@ -131,7 +132,9 @@ export const DashboardWindow = ({
       {/* Body Content */}
       {!isMinimized && (
         <div className="p-4 flex-1 overflow-auto relative flex flex-col">
-          {children}
+          <WindowErrorBoundary windowTitle={title} windowId={id}>
+            {children}
+          </WindowErrorBoundary>
 
           {/* Bottom-Right Corner Resize Grip Handle */}
           {!isLocked && !isMaximized && (
