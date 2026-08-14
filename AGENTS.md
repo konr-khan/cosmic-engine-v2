@@ -76,6 +76,7 @@ Cosmic Engine V2.0/
 │   │   └── useEphemerisWorker.test.js # Vitest hook tests (worker integration & fallback)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets (SolarAlmanac, LunarAlmanacCard, etc.)
+│       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
 │       ├── controls/            # Interactive astrolabe inputs (ArmillaryRail, LatitudeSlider, etc.)
 │       ├── layout/              # Container layout modules (DashboardWindow, OrbitalChronometer)
 │       └── common/              # Shared visual components (LivingMarble, PhaseVisual, AnnualChart)

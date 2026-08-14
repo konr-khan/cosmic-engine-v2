@@ -102,7 +102,7 @@ export interface UseEphemerisWorkerResult {
 
 ---
 
-## Phase 2: EclipseDemonstrator Decomposition & Subsystem Modularity
+## Phase 2: EclipseDemonstrator Decomposition & Subsystem Modularity [COMPLETED]
 
 ### 1. Objective & Goals
 Deconstruct the monolithic 790-line `EclipseDemonstrator.jsx` widget into 5 focused sub-components under `src/components/widgets/eclipse/`. Isolate SVG shadow ray tracing (Live Orbit, Solar Focus, Lunar POV, Selenocentric), $5.14^\circ$ nodal plane alignment, sky view simulator, and historic/future eclipse scanner, while keeping `EclipseDemonstrator.jsx` as a lightweight orchestrator container (< 100 lines).
@@ -187,13 +187,13 @@ export interface EclipseDemonstratorProps {
 ```
 
 ### 4. Phase-by-Phase Task Checklist
-- [ ] Create `src/components/widgets/eclipse/EclipseStatusBadge.jsx` for rendering dynamic category status badge and node proximity gap.
-- [ ] Create `src/components/widgets/eclipse/ShadowRayDiagram.jsx` containing SVG gradients, geometry focus controls (Live Orbit, Solar Focus, Lunar POV/Orbit), ray tracing lines, umbra/penumbra cones, and real-time metric badges.
-- [ ] Create `src/components/widgets/eclipse/NodalPlaneVisualizer.jsx` containing $5.14^\circ$ tilted orbit line, ascending node $\ascnode$, $\pm 1.5^\circ$ corridor box, and alignment progress bar.
-- [ ] Create `src/components/widgets/eclipse/SkyViewSimulator.jsx` containing Earth-observer viewport with corona ray burst for Total Solar, ring of fire for Annular Solar, and Blood Moon glow for Total Lunar.
-- [ ] Create `src/components/widgets/eclipse/EclipseScanner.jsx` containing curated `ECLIPSE_PRESETS` grid and $+365$-day upcoming eclipse scanner list with date scrub triggers.
-- [ ] Create `src/components/widgets/eclipse/index.js` re-exporting all sub-components.
-- [ ] Refactor `src/components/widgets/EclipseDemonstrator.jsx` to assemble child components, reducing lines of code from 790 to under 100 lines while preserving 100% prop compatibility.
+- [x] Create `src/components/widgets/eclipse/EclipseStatusBadge.jsx` for rendering dynamic category status badge and node proximity gap.
+- [x] Create `src/components/widgets/eclipse/ShadowRayDiagram.jsx` containing SVG gradients, geometry focus controls (Live Orbit, Solar Focus, Lunar POV/Orbit), ray tracing lines, umbra/penumbra cones, and real-time metric badges.
+- [x] Create `src/components/widgets/eclipse/NodalPlaneVisualizer.jsx` containing $5.14^\circ$ tilted orbit line, ascending node $\ascnode$, $\pm 1.5^\circ$ corridor box, and alignment progress bar.
+- [x] Create `src/components/widgets/eclipse/SkyViewSimulator.jsx` containing Earth-observer viewport with corona ray burst for Total Solar, ring of fire for Annular Solar, and Blood Moon glow for Total Lunar.
+- [x] Create `src/components/widgets/eclipse/EclipseScanner.jsx` containing curated `ECLIPSE_PRESETS` grid and $+365$-day upcoming eclipse scanner list with date scrub triggers.
+- [x] Create `src/components/widgets/eclipse/index.js` re-exporting all sub-components.
+- [x] Refactor `src/components/widgets/EclipseDemonstrator.jsx` to assemble child components, reducing lines of code from 790 to under 100 lines while preserving 100% prop compatibility.
 
 ### 5. Verification & Acceptance Criteria
 - Visual and functional 100% parity across all 4 tabs (`geometry`, `nodes`, `sky`, `scanner`) and sub-modes (`live`, `solar`, `lunar POV`, `selenocentric orbit`).
