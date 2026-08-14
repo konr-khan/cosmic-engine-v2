@@ -26,7 +26,7 @@ Key capabilities include:
 - **State Management**: `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.js`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.js`)
 - **Icons & Visualization**: `lucide-react`, `recharts`
-- **Testing**: `vitest` (`npm test` — 64 unit tests across math, hooks, store, and worker fallback)
+- **Testing**: `vitest` (`npm test` — 67 unit tests across math, hooks, store, and worker fallback)
 
 ### Essential Commands
 
@@ -91,7 +91,7 @@ Cosmic Engine V2.0/
 │       │       ├── ChronometerReadoutCards.jsx # Direct input cards & parseTimeString validator
 │       │       ├── SolsticeJumpControls.jsx    # Twilight phase pill & solstice fast jumps
 │       │       └── ChronometerModalPopovers.jsx # Accessible modal wrappers for Lat/Lon sliders
-│       └── common/              # Shared visual components (LivingMarble, PhaseVisual, AnnualChart)
+│       └── common/              # Shared visual components (LivingMarble, PhaseVisual)
 ```
 
 ---

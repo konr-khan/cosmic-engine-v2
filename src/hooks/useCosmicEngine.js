@@ -40,12 +40,25 @@ export const useCosmicEngine = (
   const longitude = hasExplicitParams ? paramLongitude : storeState.longitude;
   const useAnalemma = hasExplicitParams ? (paramUseAnalemma ?? true) : storeState.useAnalemma;
 
-  const isLunarActive = activeWidgets.lunarAlmanac !== false;
-  const isEclipseActive = activeWidgets.eclipse !== false || activeWidgets.macroOrbit !== false;
-  const isOrbitalActive = activeWidgets.macroOrbit !== false || 
-                          activeWidgets.microTides !== false || 
-                          activeWidgets.lunarAlmanac !== false || 
-                          activeWidgets.celestialSphere !== false;
+  const hasExplicitPositiveOnly = 
+    Object.values(activeWidgets).some(v => v === true) && 
+    !Object.values(activeWidgets).some(v => v === false);
+
+  const isLunarActive = hasExplicitPositiveOnly 
+    ? Boolean(activeWidgets.lunarAlmanac)
+    : activeWidgets.lunarAlmanac !== false;
+
+  const isEclipseActive = hasExplicitPositiveOnly
+    ? Boolean(activeWidgets.eclipse || activeWidgets.macroOrbit)
+    : (activeWidgets.eclipse !== false || activeWidgets.macroOrbit !== false);
+
+  const isOrbitalActive = hasExplicitPositiveOnly
+    ? Boolean(activeWidgets.macroOrbit || activeWidgets.microTides || activeWidgets.lunarAlmanac || activeWidgets.celestialSphere || activeWidgets.eclipse)
+    : (activeWidgets.macroOrbit !== false || 
+       activeWidgets.microTides !== false || 
+       activeWidgets.lunarAlmanac !== false || 
+       activeWidgets.celestialSphere !== false ||
+       activeWidgets.eclipse !== false);
 
   const julianDate = useMemo(() => getJulianDate(date, timeOfDay), [date, timeOfDay]);
 

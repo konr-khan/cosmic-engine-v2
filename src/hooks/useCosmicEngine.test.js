@@ -63,6 +63,32 @@ describe('useCosmicEngine Hook Suite', () => {
       expect(result.orbitalData.lunarEvents.distanceKm).toBeGreaterThan(350000);
       expect(result.orbitalData.eclipse).not.toBeNull();
     });
+
+    it('scopes calculations for solar-only widget { sunclock: true } bypassing orbitalData and worker', () => {
+      const testDate = new Date(2026, 5, 21);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { sunclock: true });
+
+      expect(result.solarData).not.toBeNull();
+      expect(result.orbitalData).toBeNull();
+    });
+
+    it('scopes calculations for { lunarAlmanac: true } calculating lunarEvents and skipping eclipse', () => {
+      const testDate = new Date(2026, 5, 21);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { lunarAlmanac: true });
+
+      expect(result.orbitalData).not.toBeNull();
+      expect(result.orbitalData.lunarEvents).not.toBeNull();
+      expect(result.orbitalData.eclipse).toBeNull();
+    });
+
+    it('scopes calculations for { eclipse: true } calculating eclipse and skipping lunarEvents', () => {
+      const testDate = new Date(2026, 5, 21);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { eclipse: true });
+
+      expect(result.orbitalData).not.toBeNull();
+      expect(result.orbitalData.eclipse).not.toBeNull();
+      expect(result.orbitalData.lunarEvents).toBeNull();
+    });
   });
 
   describe('Time-Lapse & State Transitions', () => {

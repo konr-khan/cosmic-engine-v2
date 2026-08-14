@@ -100,7 +100,6 @@ const PRESET_LAYOUTS = {
 
 const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
   id,
-  widgets,
   hoverTime,
   setHoverTime,
   hoverDate,
@@ -120,7 +119,7 @@ const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
     latitude,
     longitude,
     useAnalemma,
-    widgets
+    { [id]: true }
   );
 
   const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
@@ -223,8 +222,7 @@ const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
 
 const MemoizedChronometerDock = React.memo(function MemoizedChronometerDock({
   isDockCollapsed,
-  onToggleCollapse,
-  widgets
+  onToggleCollapse
 }) {
   const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore((state) => ({
     date: state.date,
@@ -240,7 +238,7 @@ const MemoizedChronometerDock = React.memo(function MemoizedChronometerDock({
     latitude,
     longitude,
     useAnalemma,
-    widgets
+    { sunclock: true }
   );
 
   return (
@@ -557,7 +555,6 @@ export default function App() {
                 >
                   <MemoizedWidgetContent 
                     id={win.id}
-                    widgets={widgets}
                     hoverTime={hoverTime}
                     setHoverTime={setHoverTime}
                     hoverDate={hoverDate}
@@ -574,7 +571,6 @@ export default function App() {
           <MemoizedChronometerDock 
             isDockCollapsed={isDockCollapsed}
             onToggleCollapse={() => setIsDockCollapsed(!isDockCollapsed)}
-            widgets={widgets}
           />
         </div>
 

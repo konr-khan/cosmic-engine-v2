@@ -26,7 +26,7 @@
 - **State Management**: `useSyncExternalStore` external store subscription pattern (`src/store/cosmicStore.js`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.js`)
 - **Icons & Data Viz**: `lucide-react`, `recharts`
-- **Testing**: `vitest` (64 unit tests across math, hooks, state store, and worker manager)
+- **Testing**: `vitest` (67 unit tests across math, hooks, state store, and worker manager)
 
 ---
 
@@ -39,7 +39,7 @@ npm install
 # Start local development server
 npm run dev
 
-# Run unit test suite (64 unit tests across 4 test suites)
+# Run unit test suite (67 unit tests across 4 test suites)
 npm test
 
 # Build production bundle
