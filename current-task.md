@@ -201,7 +201,7 @@ export interface EclipseDemonstratorProps {
 
 ---
 
-## Phase 3: OrbitalChronometer Decomposition & Layout Dock Refactor
+## Phase 3: OrbitalChronometer Decomposition & Layout Dock Refactor [COMPLETED]
 
 ### 1. Objective & Goals
 Deconstruct the monolithic 590-line `OrbitalChronometer.jsx` into 4 focused sub-components under `src/components/layout/chronometer/`. Modularize the 4-concentric interactive SVG astrolabe dial, direct entry input cards, solstice/equinox fast-jump buttons, and modal dialog popovers, reducing `OrbitalChronometer.jsx` to a clean container dock (< 100 lines).
@@ -274,12 +274,12 @@ export interface OrbitalChronometerProps {
 ```
 
 ### 4. Phase-by-Phase Task Checklist
-- [ ] Create `src/components/layout/chronometer/AstrolabeDial.jsx` handling pointer dragging on concentric rings (Date, Time, Longitude, Latitude), coordinate math, year rollover detection, and `LivingMarble` center.
-- [ ] Create `src/components/layout/chronometer/ChronometerReadoutCards.jsx` containing direct input fields for Lat/Lon/Time/Date, `parseTimeString` validator, UTC "NOW" sync button, and modal trigger handlers.
-- [ ] Create `src/components/layout/chronometer/SolsticeJumpControls.jsx` rendering twilight phase status pill and fast-scrub buttons for March Equinox, June Solstice, September Equinox, and December Solstice.
-- [ ] Create `src/components/layout/chronometer/ChronometerModalPopovers.jsx` wrapping `LatitudeSlider` and `PolarLongitudeSelector` in backdrop-dismissible accessible modals.
-- [ ] Create `src/components/layout/chronometer/index.js` re-exporting all sub-components.
-- [ ] Refactor `src/components/layout/OrbitalChronometer.jsx` to assemble child components, reducing lines of code from 590 to under 100 lines while maintaining collapsed/expanded toggle support and 100% prop compatibility.
+- [x] Create `src/components/layout/chronometer/AstrolabeDial.jsx` handling pointer dragging on concentric rings (Date, Time, Longitude, Latitude), coordinate math, year rollover detection, and `LivingMarble` center.
+- [x] Create `src/components/layout/chronometer/ChronometerReadoutCards.jsx` containing direct input fields for Lat/Lon/Time/Date, `parseTimeString` validator, UTC "NOW" sync button, and modal trigger handlers.
+- [x] Create `src/components/layout/chronometer/SolsticeJumpControls.jsx` rendering twilight phase status pill and fast-scrub buttons for March Equinox, June Solstice, September Equinox, and December Solstice.
+- [x] Create `src/components/layout/chronometer/ChronometerModalPopovers.jsx` wrapping `LatitudeSlider` and `PolarLongitudeSelector` in backdrop-dismissible accessible modals.
+- [x] Create `src/components/layout/chronometer/index.js` re-exporting all sub-components.
+- [x] Refactor `src/components/layout/OrbitalChronometer.jsx` to assemble child components, reducing lines of code from 590 to under 100 lines while maintaining collapsed/expanded toggle support and 100% prop compatibility.
 
 ### 5. Verification & Acceptance Criteria
 - Astrolabe 4-ring dial dragging, direct input typing, "NOW" sync button, solstice jumps, and latitude/longitude popup modals function identically.

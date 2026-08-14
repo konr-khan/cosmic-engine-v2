@@ -79,6 +79,7 @@ Cosmic Engine V2.0/
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
 │       ├── controls/            # Interactive astrolabe inputs (ArmillaryRail, LatitudeSlider, etc.)
 │       ├── layout/              # Container layout modules (DashboardWindow, OrbitalChronometer)
+│       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
 │       └── common/              # Shared visual components (LivingMarble, PhaseVisual, AnnualChart)
 ```
 
