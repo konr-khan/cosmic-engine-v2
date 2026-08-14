@@ -1,4 +1,4 @@
-import { toRadians, toDegrees } from './core';
+import { toRadians, toDegrees, clamp } from './core';
 import { calculateSolarPosition } from './solar';
 
 /**
@@ -61,7 +61,7 @@ export const calculateLunarPosition = (julianDate) => {
   const bRad = toRadians(beta);
 
   const sinDec = Math.sin(bRad) * Math.cos(epsRad) + Math.cos(bRad) * Math.sin(epsRad) * Math.sin(lRad);
-  const declination = toDegrees(Math.asin(sinDec));
+  const declination = toDegrees(Math.asin(clamp(sinDec, -1, 1)));
 
   const raRad = Math.atan2(
     Math.sin(lRad) * Math.cos(epsRad) - Math.tan(bRad) * Math.sin(epsRad),
@@ -88,7 +88,7 @@ export const calculateParallacticAngle = (lat, lon, julianDate, decDeg, raDeg) =
   const lst = (gmst + lon + 360) % 360;
   let H = (lst - raDeg + 360) % 360;
 
-  const latRad = toRadians(Math.max(-89.9, Math.min(89.9, lat)));
+  const latRad = toRadians(clamp(lat, -89.9, 89.9));
   const decRad = toRadians(decDeg);
   const hRad = toRadians(H);
 
@@ -129,7 +129,7 @@ export const calculateLunarEvents = (lat, lon, julianDate, timeOfDay = 12) => {
   transitUTC = (transitUTC + phaseDiffHours + 24) % 24;
 
   const decRad = toRadians(lunarNow.declination);
-  const latRad = toRadians(Math.max(-89.9, Math.min(89.9, lat)));
+  const latRad = toRadians(clamp(lat, -89.9, 89.9));
   
   const altRad = toRadians(0.125);
   const numerator = Math.sin(altRad) - Math.sin(latRad) * Math.sin(decRad);
@@ -140,7 +140,7 @@ export const calculateLunarEvents = (lat, lon, julianDate, timeOfDay = 12) => {
   let moonsetUTC = null;
 
   if (cosH >= -1 && cosH <= 1) {
-    const halfDayHours = (toDegrees(Math.acos(cosH)) / 15) * 1.035;
+    const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;
     moonriseUTC = (transitUTC - halfDayHours + 24) % 24;
     moonsetUTC = (transitUTC + halfDayHours + 24) % 24;
   }

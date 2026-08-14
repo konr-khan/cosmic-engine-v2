@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   toRadians,
   toDegrees,
+  clamp,
   formatTime,
   formatYMD,
   getSectorPath,
   getJulianDate,
+  getDayOfYear,
   isLeapYear,
   getDaysInYear,
   calculateSolarPosition,
@@ -44,6 +46,14 @@ describe('cosmicMath utilities', () => {
       expect(toDegrees(2 * Math.PI)).toBeCloseTo(360);
     });
 
+    it('clamps numeric values within boundaries using clamp', () => {
+      expect(clamp(5, 0, 10)).toBe(5);
+      expect(clamp(-5, 0, 10)).toBe(0);
+      expect(clamp(15, 0, 10)).toBe(10);
+      expect(clamp(0, 0, 10)).toBe(0);
+      expect(clamp(10, 0, 10)).toBe(10);
+    });
+
     it('formats decimal hours to HH:MM:SS format', () => {
       expect(formatTime(12.5)).toBe('12:30:00');
       expect(formatTime(0)).toBe('00:00:00');
@@ -52,6 +62,9 @@ describe('cosmicMath utilities', () => {
       expect(formatTime(25)).toBe('01:00:00');
       expect(formatTime(NaN)).toBe('--:--:--');
       expect(formatTime(null)).toBe('--:--:--');
+      expect(formatTime(undefined)).toBe('--:--:--');
+      expect(formatTime(12.99999)).toBe('13:00:00');
+      expect(formatTime(23.99999)).toBe('00:00:00');
     });
 
     it('formats Date objects to YYYY-MM-DD format with formatYMD', () => {
@@ -102,6 +115,17 @@ describe('cosmicMath utilities', () => {
       expect(getDaysInYear(2024)).toBe(366);
       expect(getDaysInYear(2025)).toBe(365);
       expect(getDaysInYear(2028)).toBe(366);
+    });
+
+    it('calculates deterministic UTC-based day of year with getDayOfYear', () => {
+      expect(getDayOfYear(new Date(2025, 0, 1))).toBe(1); // Jan 1 = 1
+      expect(getDayOfYear(new Date(2025, 11, 31))).toBe(365); // Dec 31 standard = 365
+      expect(getDayOfYear(new Date(2024, 11, 31))).toBe(366); // Dec 31 leap = 366
+      expect(getDayOfYear(new Date(2024, 1, 29))).toBe(60); // Feb 29 leap = 60
+      expect(getDayOfYear(new Date(2025, 1, 28))).toBe(59); // Feb 28 standard = 59
+      expect(getDayOfYear(null)).toBe(1);
+      expect(getDayOfYear(undefined)).toBe(1);
+      expect(getDayOfYear(new Date('invalid'))).toBe(1);
     });
   });
 
@@ -165,6 +189,27 @@ describe('cosmicMath utilities', () => {
       expect(polarTerminator.southPath).not.toContain('NaN');
       expect(polarTerminator.northPath).not.toContain('NaN');
     });
+
+    it('ensures calculateSolarPosition never produces NaN across various Julian dates', () => {
+      const dates = [
+        2451545.0, // J2000
+        getJulianDate(new Date(2026, 2, 20), 12),
+        getJulianDate(new Date(2026, 5, 21), 12),
+        getJulianDate(new Date(2026, 8, 22), 12),
+        getJulianDate(new Date(2026, 11, 21), 12),
+        getJulianDate(new Date(2000, 0, 1), 0),
+        getJulianDate(new Date(2050, 6, 1), 23.9)
+      ];
+      dates.forEach(jd => {
+        const res = calculateSolarPosition(jd);
+        expect(Number.isNaN(res.declination)).toBe(false);
+        expect(Number.isNaN(res.equationOfTime)).toBe(false);
+        expect(Number.isNaN(res.rightAscension)).toBe(false);
+        expect(Number.isNaN(res.distanceAU)).toBe(false);
+        expect(Number.isNaN(res.distanceKm)).toBe(false);
+        expect(Number.isNaN(res.orbitalSpeedKms)).toBe(false);
+      });
+    });
   });
 
   describe('Lunar Ephemeris & Phase Solver', () => {
@@ -193,6 +238,25 @@ describe('cosmicMath utilities', () => {
       expect(getPhaseName(0.75)).toBe('Last Quarter');
       expect(getPhaseName(0.88)).toBe('Waning Crescent');
       expect(getPhaseName(0.98)).toBe('New Moon');
+    });
+
+    it('ensures calculateLunarPosition never produces NaN across various Julian dates', () => {
+      const dates = [
+        2451545.0, // J2000
+        getJulianDate(new Date(2024, 3, 8), 18.3),
+        getJulianDate(new Date(2026, 7, 11), 12),
+        getJulianDate(new Date(2026, 11, 21), 0),
+        getJulianDate(new Date(2030, 0, 1), 6)
+      ];
+      dates.forEach(jd => {
+        const res = calculateLunarPosition(jd);
+        expect(Number.isNaN(res.lambda)).toBe(false);
+        expect(Number.isNaN(res.beta)).toBe(false);
+        expect(Number.isNaN(res.declination)).toBe(false);
+        expect(Number.isNaN(res.rightAscension)).toBe(false);
+        expect(Number.isNaN(res.distanceKm)).toBe(false);
+        expect(Number.isNaN(res.distanceEarthRadii)).toBe(false);
+      });
     });
   });
 
@@ -512,6 +576,25 @@ describe('cosmicMath utilities', () => {
       expect(parseTimeString('0:00')).toBe(0);
       expect(parseTimeString('00:15')).toBeCloseTo(0.25);
       expect(parseTimeString('23:59')).toBeCloseTo(23 + 59/60);
+    });
+
+    it('parses timestamps with seconds (HH:MM:SS and H:MM:SS)', () => {
+      expect(parseTimeString('14:30:15')).toBeCloseTo(14.504167, 4);
+      expect(parseTimeString('14:30:30')).toBeCloseTo(14.508333, 4);
+      expect(parseTimeString('0:00:30')).toBeCloseTo(30 / 3600, 4);
+    });
+
+    it('parses 12-hour AM/PM time strings', () => {
+      expect(parseTimeString('2:30 PM')).toBeCloseTo(14.5);
+      expect(parseTimeString('11:45 am')).toBeCloseTo(11.75);
+      expect(parseTimeString('02:30:15 pm')).toBeCloseTo(14.504167, 4);
+      expect(parseTimeString('12:00 AM')).toBe(0);
+      expect(parseTimeString('12:30 AM')).toBeCloseTo(0.5);
+      expect(parseTimeString('12:00 PM')).toBe(12);
+      expect(parseTimeString('12:30 PM')).toBeCloseTo(12.5);
+      expect(parseTimeString('2 PM')).toBe(14);
+      expect(parseTimeString('12 AM')).toBe(0);
+      expect(parseTimeString('2:30pm')).toBeCloseTo(14.5);
     });
 
     it('parses 4-digit military time strings (HHMM)', () => {

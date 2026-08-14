@@ -1,5 +1,5 @@
 import { CONFIG } from './constants';
-import { toRadians, toDegrees } from './core';
+import { toRadians, toDegrees, clamp } from './core';
 
 /**
  * Calculates solar position, declination, right ascension, equation of time, and Earth-Sun orbital physics.
@@ -38,7 +38,7 @@ export const calculateSolarPosition = (julianDate) => {
   let alpha = toDegrees(alphaRad);
   if (alpha < 0) alpha += 360;
   
-  const deltaRad = Math.asin(Math.sin(epsilonRad) * Math.sin(lambdaRad));
+  const deltaRad = Math.asin(clamp(Math.sin(epsilonRad) * Math.sin(lambdaRad), -1, 1));
   const declination = toDegrees(deltaRad);
   
   let diff = L - alpha;
@@ -123,10 +123,10 @@ export const getTerminatorShadowPaths = (longitude, sunLong, declination, altThr
         latSouth = -90;
         latNorth = 90;
       } else {
-        const alpha = Math.acos(ratio);
+        const alpha = Math.acos(clamp(ratio, -1, 1));
         const gamma = Math.atan2(A, B);
-        latSouth = Math.max(-90, Math.min(90, toDegrees(gamma - alpha)));
-        latNorth = Math.max(-90, Math.min(90, toDegrees(gamma + alpha)));
+        latSouth = clamp(toDegrees(gamma - alpha), -90, 90);
+        latNorth = clamp(toDegrees(gamma + alpha), -90, 90);
       }
     }
 
@@ -199,7 +199,7 @@ export const calculatePolarState = (lat, declination) => {
  * @returns {number} Duration in decimal hours (0 to 24)
  */
 export const calculateDaylightDurationPrecise = (lat, declination, angleThreshold) => {
-  const clampLat = Math.max(-90, Math.min(90, lat));
+  const clampLat = clamp(lat, -90, 90);
   
   const latRad = toRadians(clampLat);
   const decRad = toRadians(declination);
@@ -240,7 +240,7 @@ export const calculateDaylightDurationPrecise = (lat, declination, angleThreshol
   if (cosOmega >= 1.0) return 0.0;
   if (cosOmega <= -1.0) return 24.0;
 
-  const hourAngleRad = Math.acos(cosOmega);
+  const hourAngleRad = Math.acos(clamp(cosOmega, -1, 1));
   if (isNaN(hourAngleRad)) {
     return cosOmega > 0 ? 0.0 : 24.0;
   }
@@ -248,7 +248,7 @@ export const calculateDaylightDurationPrecise = (lat, declination, angleThreshol
   const hourAngleDeg = toDegrees(hourAngleRad);
   const duration = (2 * hourAngleDeg) / 15;
 
-  return Math.max(0.0, Math.min(24.0, duration));
+  return clamp(duration, 0.0, 24.0);
 };
 
 /**
