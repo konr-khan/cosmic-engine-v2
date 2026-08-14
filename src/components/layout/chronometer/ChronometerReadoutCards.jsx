@@ -1,57 +1,9 @@
 import React from 'react';
 import { Globe, Compass, Clock } from 'lucide-react';
 import { BufferedInput } from '../../controls/BufferedInput';
-import { formatYMD } from '../../../utils/cosmicMath';
+import { formatYMD, parseTimeString, formatTimeHHMM } from '../../../utils/cosmicMath';
 
-export const parseTimeString = (val) => {
-  if (val === undefined || val === null) return undefined;
-  const str = String(val).trim();
-  if (!str) return undefined;
-
-  // 1. Format "HH:MM" or "H:MM" (e.g. "14:15", "9:30")
-  if (str.includes(':')) {
-    const parts = str.split(':').map(s => parseInt(s, 10));
-    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-      const h = Math.max(0, Math.min(23, parts[0]));
-      const m = Math.max(0, Math.min(59, parts[1]));
-      return h + (m / 60);
-    }
-  }
-
-  // 2. Format "xxxx" 4-digit military time (e.g. "1415", "0930", "0000", "2359")
-  if (/^\d{4}$/.test(str)) {
-    const h = parseInt(str.slice(0, 2), 10);
-    const m = parseInt(str.slice(2, 4), 10);
-    if (!isNaN(h) && !isNaN(m) && h >= 0 && h <= 23 && m >= 0 && m <= 59) {
-      return h + (m / 60);
-    }
-  }
-
-  // 3. Format "xxx" 3-digit military time (e.g. "930" -> 09:30)
-  if (/^\d{3}$/.test(str)) {
-    const h = parseInt(str.slice(0, 1), 10);
-    const m = parseInt(str.slice(1, 3), 10);
-    if (!isNaN(h) && !isNaN(m) && h >= 0 && h <= 23 && m >= 0 && m <= 59) {
-      return h + (m / 60);
-    }
-  }
-
-  // 4. Decimal float (e.g. "14.25", "9.5")
-  const num = parseFloat(str);
-  if (!isNaN(num)) {
-    return Math.max(0, Math.min(23.999, num));
-  }
-
-  return undefined;
-};
-
-export const formatTimeHHMM = (t) => {
-  if (t === undefined || t === null || isNaN(t)) return "00:00";
-  let norm = (t % 24 + 24) % 24;
-  const h = Math.floor(norm);
-  const m = Math.floor((norm - h) * 60);
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-};
+export { parseTimeString, formatTimeHHMM };
 
 export const ChronometerReadoutCards = ({
   latitude,

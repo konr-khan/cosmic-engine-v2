@@ -20,10 +20,10 @@
 - [x] Run test suite to verify no null pointer regressions during async worker delays
 
 ### Phase 3: Pure Formatting Utilities Migration & Test Expansion
-- [ ] Migrate `parseTimeString` and `formatTimeHHMM` into `src/utils/cosmicMath/core.js`
-- [ ] Export parsing utilities from `src/utils/cosmicMath/index.js`
-- [ ] Update `src/components/layout/chronometer/ChronometerReadoutCards.jsx` to consume pure math exports
-- [ ] Add comprehensive unit test suite in `src/utils/cosmicMath.test.js` for time string parser edge cases
+- [x] Migrate `parseTimeString` and `formatTimeHHMM` into `src/utils/cosmicMath/core.js`
+- [x] Export parsing utilities from `src/utils/cosmicMath/index.js`
+- [x] Update `src/components/layout/chronometer/ChronometerReadoutCards.jsx` to consume pure math exports
+- [x] Add comprehensive unit test suite in `src/utils/cosmicMath.test.js` for time string parser edge cases
 
 ### Phase 4: SEO, HTML Head Metadata, Typography & Accessibility Polish
 - [ ] Update `index.html` with meta description, keywords, Open Graph, Twitter Cards, theme-color (`#020617`), and SVG favicon

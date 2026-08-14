@@ -20,9 +20,10 @@ import {
   getTerminatorShadowPaths,
   POLAR_STATES,
   ECLIPSE_PRESETS,
-  CONFIG
+  CONFIG,
+  parseTimeString,
+  formatTimeHHMM
 } from './cosmicMath';
-import { parseTimeString, formatTimeHHMM } from '../components/layout/chronometer';
 
 describe('cosmicMath utilities', () => {
 
@@ -540,7 +541,10 @@ describe('cosmicMath utilities', () => {
       expect(parseTimeString(undefined)).toBeUndefined();
       expect(parseTimeString('invalid')).toBeUndefined();
       expect(parseTimeString('25:00')).toBeCloseTo(23.0); // clamped hours
+      expect(parseTimeString('12:99')).toBeCloseTo(12 + 59/60); // clamped minutes
       expect(parseTimeString('24.5')).toBe(23.999); // clamped float
+      expect(parseTimeString('  14:30  ')).toBeCloseTo(14.5); // whitespace trimming
+      expect(parseTimeString(14.5)).toBeCloseTo(14.5); // direct number
     });
 
     it('formats decimal hours to HH:MM format with formatTimeHHMM', () => {
