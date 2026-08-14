@@ -23,15 +23,17 @@ Key capabilities include:
 - **Framework**: React 19 (JSX)
 - **Bundler & Dev Server**: Vite 6+ (`npm run dev`)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
+- **State Management**: `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
+- **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.js`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.js`)
 - **Icons & Visualization**: `lucide-react`, `recharts`
-- **Testing**: `vitest` (`npm test`)
+- **Testing**: `vitest` (`npm test` — 36 unit tests across math, hooks, store, and worker fallback)
 
 ### Essential Commands
 
 | Command | Purpose |
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
-| `npm test` | Runs Vitest unit test suite for astronomical math engine |
+| `npm test` | Runs Vitest unit test suite (cosmicMath, hooks, state store, ephemeris worker) |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
 
@@ -43,6 +45,7 @@ Key capabilities include:
 Cosmic Engine V2.0/
 ├── index.html                   # HTML entry point with title & viewport config
 ├── package.json                 # Project dependencies & Vite scripts
+├── vite.config.js               # Vite configuration & plugin setup
 ├── tailwind.config.js           # Tailwind CSS configuration
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & getting started
@@ -60,9 +63,17 @@ Cosmic Engine V2.0/
 │   │   │   ├── lunar.js         # Lunar ephemeris solver & parallactic angle
 │   │   │   └── eclipse.js       # Syzygy shadow geometry & eclipse scanner
 │   │   └── cosmicMath.test.js   # Vitest unit tests for math engine
+│   ├── store/                   # External state store & chronometer controls
+│   │   ├── cosmicStore.js       # External state store & animation frame ticker
+│   │   └── cosmicStore.test.js  # Vitest unit tests for state store & selector equality
+│   ├── workers/                 # Web Worker offload scripts
+│   │   ├── ephemerisWorker.js   # Dedicated worker for Meeus ephemeris & eclipse geometry
+│   │   └── ephemerisWorkerManager.js # Application singleton worker manager & multiplexer
 │   ├── hooks/
 │   │   ├── useCosmicEngine.js   # Selective domain engine hook (solar, lunar, eclipse, tides)
-│   │   └── useCosmicEngine.test.js # Vitest hook unit tests (state transitions & polar edge cases)
+│   │   ├── useCosmicEngine.test.js # Vitest hook unit tests (state transitions & polar edge cases)
+│   │   ├── useEphemerisWorker.js   # Custom hook managing Web Worker messaging & sync fallback
+│   │   └── useEphemerisWorker.test.js # Vitest hook tests (worker integration & fallback)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets (SolarAlmanac, LunarAlmanacCard, etc.)
 │       ├── controls/            # Interactive astrolabe inputs (ArmillaryRail, LatitudeSlider, etc.)
@@ -80,13 +91,26 @@ Cosmic Engine V2.0/
 - Tested by `src/utils/cosmicMath.test.js`.
 - **Rule for Agents**: Keep math pure, deterministic, and free of React or UI side-effects.
 
-### B. Simulation Engine Hook (`src/hooks/useCosmicEngine.js`)
-- Manages core astronomical calculations and state derived from date/time, observer latitude/longitude, and active widget flags.
+### B. External Store & Chronometer Ticker (`src/store/cosmicStore.js`)
+- Decouples high-frequency animation ticking (`requestAnimationFrame`) and observer state updates from React's component render tree.
+- Uses React 18/19 `useSyncExternalStore` with shallow equality selectors to eliminate unnecessary re-renders during high-speed animation ticks.
+- Tested by `src/store/cosmicStore.test.js`.
+- **Rule for Agents**: Update time/location via `cosmicActions` rather than managing local interval timers inside components.
+
+### C. Simulation Engine Hook (`src/hooks/useCosmicEngine.js`)
+- Manages core astronomical calculations derived from date/time, observer latitude/longitude, and active widget flags.
 - **Selective Calculation Optimization**: Accepts `activeWidgets` flags to bypass heavy Meeus lunar ephemeris series (`calculateLunarEvents`) and eclipse shadow solvers (`calculateEclipseData`) during high-speed animation ticks when corresponding domain widgets are inactive.
 - Tested by `src/hooks/useCosmicEngine.test.js` under `jsdom`.
 - **Rule for Agents**: Use this hook as the single source of truth for simulation time and observer location.
 
-### C. Master Observatory Layout (`src/App.jsx`)
+### D. Off-Main-Thread Worker Processing (`src/workers/ephemerisWorkerManager.js`, `src/workers/ephemerisWorker.js` & `src/hooks/useEphemerisWorker.js`)
+- Multiplexes calculation requests from mounted components through an application-level singleton Web Worker manager (`ephemerisWorkerManager.js`) to eliminate thread proliferation.
+- Offloads heavy Meeus lunar ephemeris calculations and eclipse shadow geometry solvers to a dedicated Web Worker to maintain 60 FPS UI performance.
+- Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending initial worker response.
+- Tested by `src/hooks/useEphemerisWorker.test.js`.
+- **Rule for Agents**: Pass calculation flags (`isLunarActive`, `isEclipseActive`) to ensure background worker calculation is requested only when needed.
+
+### E. Master Observatory Layout (`src/App.jsx`)
 - Controls module visibility, layout presets (`Master Observatory`, `Solar Suite`, `Lunar & Tide Suite`, `Celestial Observatory`), and grid windowing via `DashboardWindow`.
 - Employs a glassmorphism dark-space aesthetic using slate/zinc backgrounds (`#0f172a`), glowing borders, and crisp typography.
 
