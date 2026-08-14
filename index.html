@@ -1,11 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cosmic Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    
+    <!-- Primary Page Title & Metadata -->
+    <title>Cosmic Engine V2.0 — Astrolabe Ephemeris &amp; Celestial Mechanics Simulator</title>
+    <meta name="description" content="Interactive browser-based astronomical simulation dashboard and 4-dial astrolabe chronometer with high-precision solar/lunar twilight almanacs, syzygy eclipse shadow geometry, and 3D celestial sphere projection." />
+    <meta name="keywords" content="astronomy, ephemeris, astrolabe, celestial mechanics, solar almanac, lunar almanac, eclipse simulator, twilight bands, equation of time, meeus algorithms, tides, orbital simulation" />
+    <meta name="author" content="Cosmic Engine Observatory Team" />
+    <meta name="application-name" content="Cosmic Engine" />
+    
+    <!-- Theme & Color Scheme -->
+    <meta name="theme-color" content="#020617" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Cosmic Engine" />
+
+    <!-- Open Graph / Facebook / Discord Embeds -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Cosmic Engine V2.0" />
+    <meta property="og:title" content="Cosmic Engine V2.0 — Astrolabe Ephemeris &amp; Celestial Mechanics Simulator" />
+    <meta property="og:description" content="Interactive astronomical simulation dashboard with 4-dial astrolabe chronometer, solar/lunar twilight almanac, and eclipse shadow ray tracing." />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Cosmic Engine V2.0 — Astrolabe Ephemeris &amp; Celestial Mechanics Simulator" />
+    <meta name="twitter:description" content="Interactive astronomical simulation dashboard with 4-dial astrolabe chronometer, solar/lunar twilight almanac, and eclipse shadow ray tracing." />
+
+    <!-- SVG Astrolabe Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23020617' stroke='%236366f1' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%2338bdf8' stroke-width='1.5' stroke-dasharray='3 2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%231e293b' stroke='%23f59e0b' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23fbbf24'/%3E%3Ccircle cx='23' cy='11' r='1.5' fill='%2338bdf8'/%3E%3C/svg%3E" />
+
+    <!-- Google Fonts Preconnect & Font Stylesheets -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&display=swap" rel="stylesheet" />
   </head>
-  <body>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-indigo-600 selection:text-white">
     <div id="root"></div>
 
     <script type="module" src="/src/main.jsx"></script>
