@@ -16,6 +16,7 @@
 - 🎯 **Cross-Card Interactive Hover Sync**: Hovering over timestamps or calendar dates in any widget synchronizes time/elevation across all visible cards simultaneously.
 - ⚡ **Web Worker Ephemeris Offloading**: Asynchronous, off-main-thread computation for heavy Meeus lunar and syzygy shadow algorithms via an application-level singleton worker manager with request multiplexing and automatic synchronous fallback.
 - ⏱️ **External Chronometer Store**: High-frequency animation loops powered by `useSyncExternalStore` and `requestAnimationFrame` for 60 FPS performance without React re-render thrashing.
+- 🛡️ **Fault-Tolerant Window Error Boundaries**: Dedicated React Error Boundaries wrap each visualization module, isolating rendering exceptions and providing an in-place module retry mechanism without crashing the dashboard.
 - 🪟 **Modular Window Grid & Workspace Presets**: Drag-and-drop column reordering, resizing, locking, maximize/minimize modes, and curated presets (*Master Observatory*, *Solar Suite*, *Lunar & Tidal Suite*, *Eclipse Mechanics*, *Ultrawide 21:9*).
 
 ---
@@ -28,7 +29,7 @@
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.js`)
 - **Icons & Data Viz**: `lucide-react`, `recharts`
-- **Testing**: `vitest` (67 automated unit tests across pure math, hooks, state store, and worker fallback)
+- **Testing**: `vitest` (73 automated unit tests across 5 test suites: pure math, hooks, state store, error boundaries, and worker fallback)
 
 ---
 
@@ -41,7 +42,7 @@ npm install
 # Start local development server
 npm run dev
 
-# Run Vitest test suite (67 unit tests across 4 suites)
+# Run Vitest test suite (73 unit tests across 5 suites)
 npm test
 
 # Build production bundle to dist/
@@ -102,20 +103,21 @@ Cosmic Engine V2.0/
 │       ├── controls/            # Interactive astrolabe inputs
 │       ├── layout/              # Container layout modules (DashboardWindow, OrbitalChronometer)
 │       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
-│       └── common/              # Shared visual components (LivingMarble, PhaseVisual)
+│       └── common/              # Shared visual components (WindowErrorBoundary, LivingMarble, PhaseVisual)
 ```
 
 ---
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, and asynchronous worker operations:
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, and asynchronous worker operations:
 
 | Test Suite | File | Tests | Focus Areas |
 | :--- | :--- | :--- | :--- |
 | **Cosmic Math** | `src/utils/cosmicMath.test.js` | 41 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight at $\pm 65^\circ, \pm 70^\circ, \pm 78^\circ, \pm 85^\circ$), Julian dates, Meeus lunar series, eclipse presets, string parsers |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.js` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.js` | 9 | Worker multiplexing, asynchronous state updates, automatic synchronous fallback |
+| **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.jsx` | 6 | Fault isolation, derived state error capture, and in-place module reset recovery |
 | **Cosmic State Store** | `src/store/cosmicStore.test.js` | 4 | Shallow equality memoization, subscriber notifications, time roll-over |
 
 Run the full suite with:
