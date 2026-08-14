@@ -50,7 +50,7 @@ export const PolarLongitudeSelector = ({ longitude, onChange, isDarkMode = true 
   };
 
   return (
-    <div className="flex flex-col items-center select-none w-full space-y-3">
+    <div className="flex flex-col items-center select-none w-full space-y-3 touch-none">
       
       {/* 360° Polar Dial Canvas */}
       <div 

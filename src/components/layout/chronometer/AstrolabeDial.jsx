@@ -163,14 +163,14 @@ export const AstrolabeDial = ({
   const normalizedLon = (longitude + 360) % 360;
 
   return (
-    <div className="relative w-[210px] h-[210px] shrink-0 touch-none cursor-crosshair flex items-center justify-center">
+    <div className="relative w-[210px] h-[210px] shrink-0 touch-none select-none cursor-crosshair flex items-center justify-center">
       <svg 
         ref={svgRef}
         width="100%" 
         height="100%" 
         viewBox="-160 -160 320 320"
         onPointerDown={handlePointerDown}
-        className="drop-shadow-2xl overflow-visible"
+        className="drop-shadow-2xl overflow-visible touch-none select-none"
       >
         {/* Outermost Ring (Layer 4): Date */}
         <ControlRing 

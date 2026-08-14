@@ -119,7 +119,9 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
 
     if (onHoverTime && svgY >= paddingTop && svgY <= paddingTop + chartH) {
       const timeHours = (1 - (svgY - paddingTop) / chartH) * 24;
-      onHoverTime(parseFloat(clamp(timeHours, 0, 24).toFixed(2)));
+      const clamped = clamp(timeHours, 0, 24);
+      const quantized = Math.round(clamped * 20) / 20;
+      onHoverTime(quantized);
     }
 
     if (isDragging || e.type === 'pointerdown') {

@@ -24,7 +24,7 @@ export const LatitudeSlider = ({ latitude, onChange, isDarkMode = true }) => {
   }, [onChange, radius, size]);
 
   return (
-    <div className="flex flex-col items-center select-none w-full space-y-2">
+    <div className="flex flex-col items-center select-none w-full space-y-2 touch-none">
       <div 
         className={`w-full max-w-[230px] aspect-square relative touch-none shrink-0 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         ref={globeRef}

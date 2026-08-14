@@ -59,13 +59,14 @@ export const SunClock = ({ solarData, currentTime = 12, latitude = 47.06, hoverT
     const dy = e.clientY - cy;
     let angle = toDegrees(Math.atan2(dy, dx)) + 90;
     let t = ((angle / 15 + 12) % 24 + 24) % 24;
-    onHoverTime(parseFloat(t.toFixed(2)));
+    const quantized = Math.round(t * 20) / 20;
+    onHoverTime(quantized);
   };
 
   return (
     <div className="flex flex-col h-full w-full justify-between items-center select-none">
       <div 
-        className="relative cursor-crosshair group"
+        className="relative cursor-crosshair group touch-none"
         onPointerMove={handlePointerMove}
         onPointerLeave={() => onHoverTime && onHoverTime(null)}
       >

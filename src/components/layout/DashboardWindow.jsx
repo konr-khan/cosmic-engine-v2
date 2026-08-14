@@ -77,7 +77,7 @@ export const DashboardWindow = ({
       <div className="flex justify-between items-center px-4 py-3 bg-slate-900/90 border-b border-slate-800 text-slate-200 rounded-t-2xl select-none group">
         <div className="flex items-center gap-2">
           {!isLocked && !isMaximized && (
-            <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-400 transition-colors p-0.5">
+            <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-400 transition-colors p-0.5 touch-none">
               <Move className="w-4 h-4" />
             </div>
           )}
@@ -100,7 +100,7 @@ export const DashboardWindow = ({
 
           {onResetSize && (
             <button 
-              onClick={() => onResetSize(id)}
+              onClick={() => onResetSize(id)} 
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
               title="Reset Size"
               aria-label="Reset Size"
@@ -140,7 +140,7 @@ export const DashboardWindow = ({
           {!isLocked && !isMaximized && (
             <div 
               onPointerDown={handleResizePointerDown}
-              className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize flex items-center justify-center text-slate-600 hover:text-indigo-400 transition-colors"
+              className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize flex items-center justify-center text-slate-600 hover:text-indigo-400 transition-colors touch-none select-none"
               title="Drag to resize window"
             >
               <svg width="10" height="10" viewBox="0 0 10 10">

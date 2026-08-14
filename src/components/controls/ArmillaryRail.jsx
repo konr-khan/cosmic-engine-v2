@@ -19,7 +19,7 @@ export const ArmillaryRail = ({ radius = 54, width = 16, latitude, color = "#f43
   const formatLatStr = (lat) => `${Math.abs(lat)}°${lat >= 0 ? (lat === 0 ? '' : 'N') : 'S'}`;
 
   return (
-    <g className="select-none group">
+    <g className="select-none group touch-none">
       {/* Structural Right Arc Frame */}
       <path 
         d={`M 0 -${radius} A ${radius} ${radius} 0 0 1 0 ${radius}`} 

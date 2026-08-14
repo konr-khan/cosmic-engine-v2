@@ -20,7 +20,7 @@ export const ControlRing = ({
   const largeArcFlag = clampedAngle > 180 ? 1 : 0;
 
   return (
-    <g className="select-none group">
+    <g className="select-none group touch-none">
       {/* Background Track */}
       <circle cx="0" cy="0" r={radius} fill="none" stroke="#1e293b" strokeWidth={width} />
       

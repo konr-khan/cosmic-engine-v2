@@ -27,7 +27,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.js`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.js`)
-- **Icons & Visualization**: `lucide-react`, `recharts`
+- **Icons & Visualization**: `lucide-react`
 - **Testing**: `vitest` (`npm test` — 85 unit tests across 5 test suites)
 
 ### Essential Commands

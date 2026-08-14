@@ -28,7 +28,7 @@
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.js`)
-- **Icons & Data Viz**: `lucide-react`, `recharts`
+- **Icons & Data Viz**: `lucide-react`
 - **Testing**: `vitest` (85 automated unit tests across 5 test suites: pure math, hooks, state store, error boundaries, and worker fallback)
 
 ---
