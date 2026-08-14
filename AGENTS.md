@@ -28,14 +28,14 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.js`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.js`)
 - **Icons & Visualization**: `lucide-react`, `recharts`
-- **Testing**: `vitest` (`npm test` — 73 unit tests across 5 test suites)
+- **Testing**: `vitest` (`npm test` — 85 unit tests across 5 test suites)
 
 ### Essential Commands
 
 | Command | Purpose |
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
-| `npm test` | Runs Vitest unit test suite (73 unit tests across 5 test suites) |
+| `npm test` | Runs Vitest unit test suite (85 unit tests across 5 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
@@ -65,10 +65,10 @@ Cosmic Engine V2.0/
 │   │   │   ├── solar.js         # Solar declination, EoT & twilight algorithms
 │   │   │   ├── lunar.js         # Lunar ephemeris solver & parallactic angle
 │   │   │   └── eclipse.js       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (41 tests)
+│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (51 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.js       # External state store & animation frame ticker
-│   │   └── cosmicStore.test.js  # Vitest unit tests for state store & selector equality (4 tests)
+│   │   └── cosmicStore.test.js  # Vitest unit tests for state store & selector equality (5 tests)
 │   ├── workers/                 # Web Worker offload scripts
 │   │   ├── ephemerisWorker.js   # Dedicated worker for Meeus ephemeris & eclipse geometry
 │   │   └── ephemerisWorkerManager.js # Application singleton worker manager & multiplexer
@@ -76,7 +76,7 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicEngine.js   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.js # Vitest hook unit tests (13 tests: state transitions & polar edge cases)
 │   │   ├── useEphemerisWorker.js   # Custom hook managing Web Worker messaging & sync fallback
-│   │   └── useEphemerisWorker.test.js # Vitest hook tests (9 tests: worker integration & fallback)
+│   │   └── useEphemerisWorker.test.js # Vitest hook tests (10 tests: worker integration, coalescing & fallback)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── SolarAlmanac.jsx # 365-day solar twilight bands & solstice paths
@@ -118,6 +118,7 @@ Cosmic Engine V2.0/
 - **Orchestrator Role**: The primary agent acts as the **Lead Architect / Orchestrator**. Implementation, noisy terminal runs, diagnostics, and multi-file modifications should be delegated to specialized worker subagents.
 - **Context Hygiene**: Never execute broad file rewrites or heavy terminal commands directly in the parent context. Isolate diagnostic scans, lint runs, and test executions within dedicated subagent sandboxes.
 - **Verification Before Completion**: No task is marked complete without passing automated unit test (`npm test`) and build (`npm run build`) verification.
+- **No Automatic Commits Rule**: Do not commit changes to git automatically after completing a phase. Always present the changes and verification steps first, and only commit when the user explicitly says 'commit'.
 
 ### B. Delegation & Subagent Rules
 - **Automatic Task Delegation**:
@@ -142,10 +143,11 @@ All complex architectural changes and feature additions must follow the structur
 2. **Execution Phase**:
    - Execute one phase at a time using an isolated subagent sandbox.
    - Verify each phase before advancing to dependent phases.
-3. **Verification Phase**:
+3. **Verification & Review Phase**:
    - Run the complete project test suite (`npm test`) and production build (`npm run build`).
    - Produce a **Verification Walkthrough Artifact** demonstrating test passes and diffs.
-   - **HUMAN GATE**: Prompt the user for final review and approval.
+   - **HUMAN GATE**: Prompt the user for review and approval with interactive verification steps.
+   - **Git Commit Protocol**: Never commit changes to git automatically. Only execute `git commit` when the user explicitly gives the command (e.g. `'commit'`).
 
 ---
 
@@ -199,7 +201,7 @@ Standard coordinate conventions used throughout the engine:
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval.
 4. **Preserve Math Accuracy**: Cite standard astronomical references for formula changes and verify polar/solstice edge cases.
-5. **No Regressions**: All 73 unit tests across the 5 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.js`, `useCosmicEngine.test.js`, `useEphemerisWorker.test.js`, `WindowErrorBoundary.test.jsx`, or `cosmicStore.test.js`.
+5. **No Regressions**: All 85 unit tests across the 5 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.js`, `useCosmicEngine.test.js`, `useEphemerisWorker.test.js`, `WindowErrorBoundary.test.jsx`, or `cosmicStore.test.js`.
 
 ### B. Testing & Mocking Standards for Agents
 - **Vitest Mocking Guidelines**:
