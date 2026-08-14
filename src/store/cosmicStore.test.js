@@ -56,4 +56,32 @@ describe('Cosmic Store & State Isolation Suite', () => {
     expect(shallowEqual(42, 42)).toBe(true);
     expect(shallowEqual(42, 43)).toBe(false);
   });
+
+  it('clamps deltaMs to 500ms when resuming or catching up in animation frame ticker', () => {
+    let frameCallback = null;
+    vi.stubGlobal('requestAnimationFrame', (cb) => {
+      frameCallback = cb;
+      return 123;
+    });
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const nowMock = vi.spyOn(performance, 'now');
+    nowMock.mockReturnValue(1000);
+
+    cosmicActions.setSpeed(1);
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setIsPlaying(true);
+
+    // Simulate 5000ms leap in performance.now (e.g. inactive tab resuming)
+    nowMock.mockReturnValue(6000);
+    frameCallback(6000);
+
+    const updatedState = cosmicStore.getState();
+    // Delta should be clamped to 500ms = 0.5s => (12 + 0.5 / 3600) hours
+    expect(updatedState.timeOfDay).toBeCloseTo(12 + 0.5 / 3600, 4);
+
+    cosmicActions.setIsPlaying(false);
+    vi.unstubAllGlobals();
+    nowMock.mockRestore();
+  });
 });
