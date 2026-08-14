@@ -29,7 +29,7 @@
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.js`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (85 automated unit tests across 5 test suites: pure math, hooks, state store, error boundaries, and worker fallback)
+- **Testing**: `vitest` (98 automated unit tests across 5 test suites: pure math, hooks, state store, error boundaries, and worker fallback)
 
 ---
 
@@ -42,7 +42,7 @@ npm install
 # Start local development server
 npm run dev
 
-# Run Vitest test suite (85 unit tests across 5 suites)
+# Run Vitest test suite (98 unit tests across 5 suites)
 npm test
 
 # Build production bundle to dist/
@@ -74,21 +74,21 @@ Cosmic Engine V2.0/
 │   │   │   ├── index.js         # Central re-export entry file
 │   │   │   ├── constants.js     # Orbital radii, twilight thresholds & theme tokens
 │   │   │   ├── core.js          # Julian dates, hour formatting & trig helpers
-│   │   │   ├── solar.js         # Solar declination, EoT & twilight algorithms
-│   │   │   ├── lunar.js         # Lunar ephemeris solver & parallactic angle
+│   │   │   ├── solar.js         # Solar declination, EoT, twilight algorithms & annual solar matrix
+│   │   │   ├── lunar.js         # Lunar ephemeris solver, parallactic angle & annual lunar matrix
 │   │   │   └── eclipse.js       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (51 tests)
+│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (57 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.js       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.js  # Vitest unit tests for state store & selector equality (5 tests)
 │   ├── workers/                 # Web Worker offload scripts
-│   │   ├── ephemerisWorker.js   # Dedicated worker for Meeus ephemeris & eclipse geometry
-│   │   └── ephemerisWorkerManager.js # Application singleton worker manager & multiplexer
+│   │   ├── ephemerisWorker.js   # Dedicated worker for Meeus ephemeris, eclipse geometry & 365-day matrices
+│   │   └── ephemerisWorkerManager.js # Application singleton worker manager, deduplication & matrix cache
 │   ├── hooks/
 │   │   ├── useCosmicEngine.js   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.js # Vitest hook unit tests (13 tests)
-│   │   ├── useEphemerisWorker.js   # Custom hook managing Web Worker messaging & sync fallback
-│   │   └── useEphemerisWorker.test.js # Vitest hook tests (10 tests)
+│   │   ├── useEphemerisWorker.js   # Custom hooks (instantaneous & annual solar/lunar matrix workers)
+│   │   └── useEphemerisWorker.test.js # Vitest hook tests (17 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── SolarAlmanac.jsx # 365-day solar twilight bands & solstice paths
@@ -114,9 +114,9 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 
 | Test Suite | File | Tests | Focus Areas |
 | :--- | :--- | :--- | :--- |
-| **Cosmic Math** | `src/utils/cosmicMath.test.js` | 51 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight at $\pm 65^\circ, \pm 70^\circ, \pm 78^\circ, \pm 85^\circ$), Julian dates, Meeus lunar series, eclipse presets, string parsers |
+| **Cosmic Math** | `src/utils/cosmicMath.test.js` | 57 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, 365/366-day solar & lunar matrices, eclipse presets |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.js` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
-| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.js` | 10 | Worker multiplexing, request coalescing, asynchronous state updates, automatic synchronous fallback |
+| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.js` | 17 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.jsx` | 6 | Fault isolation, derived state error capture, and in-place module reset recovery |
 | **Cosmic State Store** | `src/store/cosmicStore.test.js` | 5 | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping |
 

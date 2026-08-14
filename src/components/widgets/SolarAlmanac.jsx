@@ -2,14 +2,11 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Calendar, Clock, Target } from 'lucide-react';
 import { 
   CONFIG, 
-  getJulianDate, 
-  calculateSolarPosition, 
-  calculateDailySolarEvents, 
   formatTime,
   getDaysInYear,
-  getDayOfYear,
   clamp
 } from '../../utils/cosmicMath';
+import { useAnnualSolarWorker } from '../../hooks/useEphemerisWorker';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -21,34 +18,8 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
   const totalDays = getDaysInYear(year);
   const activeDay = Math.min(totalDays, hoverDay !== null ? hoverDay : currentDay);
 
-  // Compute totalDays of solar twilight thresholds for the current latitude
-  const almanacData = useMemo(() => {
-    const days = [];
-    for (let day = 1; day <= totalDays; day++) {
-      const d = new Date(year, 0, day);
-      const jd = getJulianDate(d, 12);
-      const { declination, equationOfTime } = calculateSolarPosition(jd);
-      const localSolarNoon = 12 - (equationOfTime / 60);
-      const events = calculateDailySolarEvents(latitude, declination, localSolarNoon);
-
-      days.push({
-        day,
-        declination,
-        equationOfTime,
-        solarNoon: events.solarNoon,
-        sunrise: events.official.morning,
-        sunset: events.official.evening,
-        civilDawn: events.civil.morning,
-        civilDusk: events.civil.evening,
-        nauticalDawn: events.nautical.morning,
-        nauticalDusk: events.nautical.evening,
-        astroDawn: events.astronomical.morning,
-        astroDusk: events.astronomical.evening,
-        dayLength: events.official.evening - events.official.morning
-      });
-    }
-    return days;
-  }, [latitude, year, totalDays]);
+  // Compute totalDays of solar twilight thresholds for the current latitude (offloaded to Web Worker)
+  const almanacData = useAnnualSolarWorker({ year, latitude });
 
   const keyStats = useMemo(() => {
     let earliestSunrise = almanacData[0] || {};

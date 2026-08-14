@@ -24,7 +24,9 @@ import {
   ECLIPSE_PRESETS,
   CONFIG,
   parseTimeString,
-  formatTimeHHMM
+  formatTimeHHMM,
+  calculateAnnualSolarMatrix,
+  calculateAnnualLunarMatrix
 } from './cosmicMath';
 
 describe('cosmicMath utilities', () => {
@@ -640,6 +642,103 @@ describe('cosmicMath utilities', () => {
       expect(formatTimeHHMM(NaN)).toBe('00:00');
       expect(formatTimeHHMM(null)).toBe('00:00');
       expect(formatTimeHHMM(undefined)).toBe('00:00');
+    });
+  });
+
+  describe('Annual Ephemeris Matrix Solvers (Solar & Lunar)', () => {
+    describe('calculateAnnualSolarMatrix', () => {
+      it('calculates exactly 365 daily entries for a standard year (2026)', () => {
+        const matrix = calculateAnnualSolarMatrix(2026, 47.06);
+        expect(matrix).toHaveLength(365);
+        expect(matrix[0].day).toBe(1);
+        expect(matrix[364].day).toBe(365);
+      });
+
+      it('calculates exactly 366 daily entries for a leap year (2024)', () => {
+        const matrix = calculateAnnualSolarMatrix(2024, 47.06);
+        expect(matrix).toHaveLength(366);
+        expect(matrix[0].day).toBe(1);
+        expect(matrix[365].day).toBe(366);
+      });
+
+      it('contains all required solar property fields without NaN values', () => {
+        const matrix = calculateAnnualSolarMatrix(2026, 47.06);
+        matrix.forEach((entry, idx) => {
+          expect(entry.day).toBe(idx + 1);
+          expect(Number.isNaN(entry.declination)).toBe(false);
+          expect(Number.isNaN(entry.equationOfTime)).toBe(false);
+          expect(Number.isNaN(entry.solarNoon)).toBe(false);
+          expect(Number.isNaN(entry.sunrise)).toBe(false);
+          expect(Number.isNaN(entry.sunset)).toBe(false);
+          expect(Number.isNaN(entry.civilDawn)).toBe(false);
+          expect(Number.isNaN(entry.civilDusk)).toBe(false);
+          expect(Number.isNaN(entry.nauticalDawn)).toBe(false);
+          expect(Number.isNaN(entry.nauticalDusk)).toBe(false);
+          expect(Number.isNaN(entry.astroDawn)).toBe(false);
+          expect(Number.isNaN(entry.astroDusk)).toBe(false);
+          expect(Number.isNaN(entry.dayLength)).toBe(false);
+          expect(entry.dayLength).toBeGreaterThanOrEqual(0);
+          expect(entry.dayLength).toBeLessThanOrEqual(24);
+        });
+      });
+
+      it('exhibits longer daylight at Summer Solstice than Winter Solstice in Northern Hemisphere', () => {
+        const matrix = calculateAnnualSolarMatrix(2026, 47.06);
+        const summerSolstice = matrix[171]; // ~June 21 (day 172)
+        const winterSolstice = matrix[354]; // ~Dec 21 (day 355)
+
+        expect(summerSolstice.dayLength).toBeGreaterThan(15.0);
+        expect(winterSolstice.dayLength).toBeLessThan(9.5);
+        expect(summerSolstice.dayLength).toBeGreaterThan(winterSolstice.dayLength);
+        expect(summerSolstice.declination).toBeGreaterThan(23.0);
+        expect(winterSolstice.declination).toBeLessThan(-23.0);
+      });
+    });
+
+    describe('calculateAnnualLunarMatrix', () => {
+      it('calculates exactly 365 daily entries for a standard year (2026)', () => {
+        const matrix = calculateAnnualLunarMatrix(2026, 47.06, -122.81);
+        expect(matrix).toHaveLength(365);
+        expect(matrix[0].day).toBe(1);
+        expect(matrix[364].day).toBe(365);
+      });
+
+      it('calculates exactly 366 daily entries for a leap year (2024)', () => {
+        const matrix = calculateAnnualLunarMatrix(2024, 47.06, -122.81);
+        expect(matrix).toHaveLength(366);
+        expect(matrix[0].day).toBe(1);
+        expect(matrix[365].day).toBe(366);
+      });
+
+      it('contains valid lunar metrics, phase fractions, distances, and perigee/apogee flags', () => {
+        const matrix = calculateAnnualLunarMatrix(2026, 47.06, -122.81);
+        let perigeeCount = 0;
+        let apogeeCount = 0;
+
+        matrix.forEach((entry, idx) => {
+          expect(entry.day).toBe(idx + 1);
+          expect(Number.isNaN(entry.transit)).toBe(false);
+          expect(entry.transit).toBeGreaterThanOrEqual(0);
+          expect(entry.transit).toBeLessThanOrEqual(24);
+
+          expect(Number.isNaN(entry.phaseValue)).toBe(false);
+          expect(entry.phaseValue).toBeGreaterThanOrEqual(0);
+          expect(entry.phaseValue).toBeLessThanOrEqual(1);
+
+          expect(Number.isNaN(entry.distanceKm)).toBe(false);
+          expect(entry.distanceKm).toBeGreaterThan(350000);
+          expect(entry.distanceKm).toBeLessThan(410000);
+
+          expect(typeof entry.isPerigee).toBe('boolean');
+          expect(typeof entry.isApogee).toBe('boolean');
+
+          if (entry.isPerigee) perigeeCount++;
+          if (entry.isApogee) apogeeCount++;
+        });
+
+        expect(perigeeCount).toBeGreaterThan(0);
+        expect(apogeeCount).toBeGreaterThan(0);
+      });
     });
   });
 

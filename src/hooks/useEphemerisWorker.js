@@ -1,5 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { calculateLunarEvents, calculateEclipseData } from '../utils/cosmicMath';
+import { 
+  calculateLunarEvents, 
+  calculateEclipseData,
+  calculateAnnualSolarMatrix,
+  calculateAnnualLunarMatrix
+} from '../utils/cosmicMath';
 import { ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
 
 /**
@@ -95,4 +100,120 @@ export const useEphemerisWorker = ({
     eclipse: workerResult ? workerResult.eclipse : syncResult.eclipse,
     isWorkerActive: true
   };
+};
+
+/**
+ * Custom hook to offload annual 365-day solar ephemeris matrix calculation to a Web Worker.
+ * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
+ *
+ * @param {Object} params
+ * @param {number} params.year Calendar year
+ * @param {number} params.latitude Observer latitude in degrees
+ * @returns {Array<{
+ *   day: number,
+ *   declination: number,
+ *   equationOfTime: number,
+ *   solarNoon: number,
+ *   sunrise: number,
+ *   sunset: number,
+ *   civilDawn: number,
+ *   civilDusk: number,
+ *   nauticalDawn: number,
+ *   nauticalDusk: number,
+ *   astroDawn: number,
+ *   astroDusk: number,
+ *   dayLength: number
+ * }>}
+ */
+export const useAnnualSolarWorker = ({ year, latitude }) => {
+  const [workerSolar, setWorkerSolar] = useState(null);
+  const [isWorkerActive, setIsWorkerActive] = useState(() => ephemerisWorkerManager.isAvailable());
+
+  useEffect(() => {
+    if (!ephemerisWorkerManager.isAvailable()) {
+      setIsWorkerActive(false);
+      return;
+    }
+
+    setIsWorkerActive(true);
+
+    const unsubscribe = ephemerisWorkerManager.requestAnnualSolarCalculation(
+      { year, latitude },
+      (payload) => {
+        if (payload?.annualSolar) {
+          setWorkerSolar(payload.annualSolar);
+        }
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [year, latitude]);
+
+  const syncSolar = useMemo(() => {
+    return calculateAnnualSolarMatrix(year, latitude);
+  }, [year, latitude]);
+
+  if (!isWorkerActive) {
+    return syncSolar;
+  }
+
+  return workerSolar || syncSolar;
+};
+
+/**
+ * Custom hook to offload annual 365-day lunar ephemeris matrix calculation to a Web Worker.
+ * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
+ *
+ * @param {Object} params
+ * @param {number} params.year Calendar year
+ * @param {number} params.latitude Observer latitude in degrees
+ * @param {number} params.longitude Observer longitude in degrees
+ * @returns {Array<{
+ *   day: number,
+ *   moonrise: number|null,
+ *   transit: number,
+ *   moonset: number|null,
+ *   phaseValue: number,
+ *   isPerigee: boolean,
+ *   isApogee: boolean,
+ *   distanceKm: number
+ * }>}
+ */
+export const useAnnualLunarWorker = ({ year, latitude, longitude }) => {
+  const [workerLunar, setWorkerLunar] = useState(null);
+  const [isWorkerActive, setIsWorkerActive] = useState(() => ephemerisWorkerManager.isAvailable());
+
+  useEffect(() => {
+    if (!ephemerisWorkerManager.isAvailable()) {
+      setIsWorkerActive(false);
+      return;
+    }
+
+    setIsWorkerActive(true);
+
+    const unsubscribe = ephemerisWorkerManager.requestAnnualLunarCalculation(
+      { year, latitude, longitude },
+      (payload) => {
+        if (payload?.annualLunar) {
+          setWorkerLunar(payload.annualLunar);
+        }
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [year, latitude, longitude]);
+
+  const syncLunar = useMemo(() => {
+    return calculateAnnualLunarMatrix(year, latitude, longitude);
+  }, [year, latitude, longitude]);
+
+  if (!isWorkerActive) {
+    return syncLunar;
+  }
+
+  return workerLunar || syncLunar;
 };

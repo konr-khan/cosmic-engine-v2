@@ -2,15 +2,11 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Compass, Eye, Waves, Calendar, Target } from 'lucide-react';
 import { PhaseVisual } from '../common/PhaseVisual';
 import { 
-  CONFIG, 
   formatTime, 
-  getJulianDate, 
-  calculateSolarPosition, 
-  calculateLunarPosition, 
-  calculateLunarEvents, 
   getDaysInYear,
   getDayOfYear
 } from '../../utils/cosmicMath';
+import { useAnnualLunarWorker } from '../../hooks/useEphemerisWorker';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -52,32 +48,8 @@ export const LunarAlmanacCard = ({
       : (hoverDate ? getDayOfYear(hoverDate) : currentDay)
   );
 
-  // 1. CONCEPT 1: 365-Day Annual Lunar Ribbon Ephemeris Computation
-  const annualLunarData = useMemo(() => {
-    const list = [];
-    for (let day = 1; day <= totalDays; day++) {
-      const d = new Date(year, 0, day);
-      const jd = getJulianDate(d, 12);
-      const events = calculateLunarEvents(latitude, longitude, jd, 12);
-      const solarPos = calculateSolarPosition(jd);
-      const lunarPos = calculateLunarPosition(jd);
-      
-      const raDiff = ((lunarPos.rightAscension - solarPos.rightAscension) % 360 + 360) % 360;
-      const phaseVal = raDiff / 360;
-
-      list.push({
-        day,
-        moonrise: events.moonrise,
-        transit: events.transit,
-        moonset: events.moonset,
-        phaseValue: phaseVal,
-        isPerigee: events.isPerigee,
-        isApogee: events.isApogee,
-        distanceKm: events.distanceKm
-      });
-    }
-    return list;
-  }, [latitude, longitude, year, totalDays]);
+  // 1. CONCEPT 1: 365-Day Annual Lunar Ribbon Ephemeris Computation (offloaded to Web Worker)
+  const annualLunarData = useAnnualLunarWorker({ year, latitude, longitude });
 
   // Key Lunar Solstice / Phase Fast-Jump Shortcuts
   const shortcuts = useMemo(() => {

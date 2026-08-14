@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useEphemerisWorker } from './useEphemerisWorker';
+import { useEphemerisWorker, useAnnualSolarWorker, useAnnualLunarWorker } from './useEphemerisWorker';
 import { EphemerisWorkerManager, ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
 
 // Mock React's hooks to execute synchronously in pure unit test environment
@@ -58,6 +58,31 @@ describe('useEphemerisWorker Hook Suite', () => {
 
     expect(noOrbital.lunarEvents).toBeNull();
     expect(noOrbital.eclipse).toBeNull();
+  });
+
+  it('returns valid annual solar matrix via synchronous fallback when Worker is unavailable', () => {
+    const solarData = useAnnualSolarWorker({
+      year: 2026,
+      latitude: 47.06
+    });
+
+    expect(solarData).toHaveLength(365);
+    expect(solarData[0].day).toBe(1);
+    expect(solarData[0].sunrise).toBeDefined();
+    expect(solarData[0].sunset).toBeDefined();
+  });
+
+  it('returns valid annual lunar matrix via synchronous fallback when Worker is unavailable', () => {
+    const lunarData = useAnnualLunarWorker({
+      year: 2026,
+      latitude: 47.06,
+      longitude: -122.81
+    });
+
+    expect(lunarData).toHaveLength(365);
+    expect(lunarData[0].day).toBe(1);
+    expect(lunarData[0].distanceKm).toBeGreaterThan(350000);
+    expect(lunarData[0].phaseValue).toBeDefined();
   });
 });
 
@@ -351,6 +376,158 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     expect(payload.eclipse).not.toBeNull();
   });
 
+  it('handles annual solar calculation dispatch, result delivery, and deduplication', () => {
+    class MockWorker {
+      constructor() {
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
+        this.onmessage = null;
+        this.onerror = null;
+      }
+    }
+
+    globalThis.Worker = MockWorker;
+    const manager = new EphemerisWorkerManager();
+
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+
+    // Coalesced in-flight requests
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb1);
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb2);
+
+    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
+    expect(manager.worker.postMessage).toHaveBeenCalledWith({
+      type: 'CALCULATE_ANNUAL_SOLAR',
+      id: 1,
+      payload: { year: 2026, latitude: 47.06 }
+    });
+
+    // Simulate worker success response
+    const mockSolar = [{ day: 1, sunrise: 7.5, sunset: 16.5 }];
+    manager.worker.onmessage({
+      data: {
+        type: 'ANNUAL_SOLAR_SUCCESS',
+        id: 1,
+        payload: { annualSolar: mockSolar }
+      }
+    });
+
+    expect(cb1).toHaveBeenCalledWith({ annualSolar: mockSolar });
+    expect(cb2).toHaveBeenCalledWith({ annualSolar: mockSolar });
+
+    // Subsequent request should hit cache directly without posting to worker
+    const cb3 = vi.fn();
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb3);
+    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1); // Still 1
+    expect(cb3).toHaveBeenCalledWith({ annualSolar: mockSolar });
+  });
+
+  it('handles annual solar fallback on ANNUAL_SOLAR_ERROR', () => {
+    class MockWorker {
+      constructor() {
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
+        this.onmessage = null;
+        this.onerror = null;
+      }
+    }
+
+    globalThis.Worker = MockWorker;
+    const manager = new EphemerisWorkerManager();
+
+    const cb = vi.fn();
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb);
+
+    manager.worker.onmessage({
+      data: {
+        type: 'ANNUAL_SOLAR_ERROR',
+        id: 1,
+        error: 'Failed'
+      }
+    });
+
+    expect(cb).toHaveBeenCalledTimes(1);
+    const payload = cb.mock.calls[0][0];
+    expect(payload.annualSolar).toHaveLength(365);
+  });
+
+  it('handles annual lunar calculation dispatch, result delivery, and deduplication', () => {
+    class MockWorker {
+      constructor() {
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
+        this.onmessage = null;
+        this.onerror = null;
+      }
+    }
+
+    globalThis.Worker = MockWorker;
+    const manager = new EphemerisWorkerManager();
+
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+
+    // Coalesced in-flight requests
+    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb1);
+    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb2);
+
+    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
+    expect(manager.worker.postMessage).toHaveBeenCalledWith({
+      type: 'CALCULATE_ANNUAL_LUNAR',
+      id: 1,
+      payload: { year: 2026, latitude: 47.06, longitude: -122.81 }
+    });
+
+    // Simulate worker success response
+    const mockLunar = [{ day: 1, moonrise: 10, moonset: 22, distanceKm: 384400 }];
+    manager.worker.onmessage({
+      data: {
+        type: 'ANNUAL_LUNAR_SUCCESS',
+        id: 1,
+        payload: { annualLunar: mockLunar }
+      }
+    });
+
+    expect(cb1).toHaveBeenCalledWith({ annualLunar: mockLunar });
+    expect(cb2).toHaveBeenCalledWith({ annualLunar: mockLunar });
+
+    // Subsequent request should hit cache directly without posting to worker
+    const cb3 = vi.fn();
+    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb3);
+    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1); // Still 1
+    expect(cb3).toHaveBeenCalledWith({ annualLunar: mockLunar });
+  });
+
+  it('handles annual lunar fallback on ANNUAL_LUNAR_ERROR', () => {
+    class MockWorker {
+      constructor() {
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
+        this.onmessage = null;
+        this.onerror = null;
+      }
+    }
+
+    globalThis.Worker = MockWorker;
+    const manager = new EphemerisWorkerManager();
+
+    const cb = vi.fn();
+    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb);
+
+    manager.worker.onmessage({
+      data: {
+        type: 'ANNUAL_LUNAR_ERROR',
+        id: 1,
+        error: 'Failed'
+      }
+    });
+
+    expect(cb).toHaveBeenCalledTimes(1);
+    const payload = cb.mock.calls[0][0];
+    expect(payload.annualLunar).toHaveLength(365);
+  });
+
   it('terminates active worker and clears pending requests on terminate()', () => {
     class MockWorker {
       constructor() {
@@ -381,5 +558,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     expect(workerInstance.terminate).toHaveBeenCalled();
     expect(manager.worker).toBeNull();
     expect(manager.pendingRequests.size).toBe(0);
+    expect(manager.annualSolarCache.size).toBe(0);
+    expect(manager.annualLunarCache.size).toBe(0);
   });
 });

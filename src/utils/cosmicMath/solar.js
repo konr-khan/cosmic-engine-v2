@@ -1,5 +1,5 @@
 import { CONFIG } from './constants';
-import { toRadians, toDegrees, clamp } from './core';
+import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 
 /**
  * Calculates solar position, declination, right ascension, equation of time, and Earth-Sun orbital physics.
@@ -323,4 +323,53 @@ export const calculateDailySolarEvents = (lat, declination, solarNoon) => {
     solarMidnightEnd: solarNoon + 12,
     polarState: overallPolarState
   };
+};
+
+/**
+ * Calculates the full annual matrix (365 or 366 days for leap years) of daily solar events.
+ * @param {number} year - Calendar year (e.g., 2026)
+ * @param {number} latitude - Observer latitude in degrees (-90 to +90)
+ * @returns {Array<{
+ *   day: number,
+ *   declination: number,
+ *   equationOfTime: number,
+ *   solarNoon: number,
+ *   sunrise: number,
+ *   sunset: number,
+ *   civilDawn: number,
+ *   civilDusk: number,
+ *   nauticalDawn: number,
+ *   nauticalDusk: number,
+ *   astroDawn: number,
+ *   astroDusk: number,
+ *   dayLength: number
+ * }>} Annual solar matrix array
+ */
+export const calculateAnnualSolarMatrix = (year, latitude) => {
+  const totalDays = getDaysInYear(year);
+  const days = [];
+  for (let day = 1; day <= totalDays; day++) {
+    const d = new Date(year, 0, day);
+    const jd = getJulianDate(d, 12);
+    const { declination, equationOfTime } = calculateSolarPosition(jd);
+    const localSolarNoon = 12 - (equationOfTime / 60);
+    const events = calculateDailySolarEvents(latitude, declination, localSolarNoon);
+
+    days.push({
+      day,
+      declination,
+      equationOfTime,
+      solarNoon: events.solarNoon,
+      sunrise: events.official.morning,
+      sunset: events.official.evening,
+      civilDawn: events.civil.morning,
+      civilDusk: events.civil.evening,
+      nauticalDawn: events.nautical.morning,
+      nauticalDusk: events.nautical.evening,
+      astroDawn: events.astronomical.morning,
+      astroDusk: events.astronomical.evening,
+      dayLength: events.official.evening - events.official.morning
+    });
+  }
+  return days;
 };

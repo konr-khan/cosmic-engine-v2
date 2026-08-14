@@ -1,4 +1,4 @@
-import { toRadians, toDegrees, clamp } from './core';
+import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { calculateSolarPosition } from './solar';
 
 /**
@@ -178,4 +178,47 @@ export const getPhaseName = (phase) => {
   if (phase < 0.72) return "Waning Gibbous";
   if (phase < 0.78) return "Last Quarter";
   return "Waning Crescent";
+};
+
+/**
+ * Calculates the full annual matrix (365 or 366 days for leap years) of daily lunar events.
+ * @param {number} year - Calendar year (e.g., 2026)
+ * @param {number} latitude - Observer latitude in degrees (-90 to +90)
+ * @param {number} longitude - Observer longitude in degrees (-180 to +180)
+ * @returns {Array<{
+ *   day: number,
+ *   moonrise: number|null,
+ *   transit: number,
+ *   moonset: number|null,
+ *   phaseValue: number,
+ *   isPerigee: boolean,
+ *   isApogee: boolean,
+ *   distanceKm: number
+ * }>} Annual lunar matrix array
+ */
+export const calculateAnnualLunarMatrix = (year, latitude, longitude) => {
+  const totalDays = getDaysInYear(year);
+  const list = [];
+  for (let day = 1; day <= totalDays; day++) {
+    const d = new Date(year, 0, day);
+    const jd = getJulianDate(d, 12);
+    const events = calculateLunarEvents(latitude, longitude, jd, 12);
+    const solarPos = calculateSolarPosition(jd);
+    const lunarPos = calculateLunarPosition(jd);
+    
+    const raDiff = ((lunarPos.rightAscension - solarPos.rightAscension) % 360 + 360) % 360;
+    const phaseVal = raDiff / 360;
+
+    list.push({
+      day,
+      moonrise: events.moonrise,
+      transit: events.transit,
+      moonset: events.moonset,
+      phaseValue: phaseVal,
+      isPerigee: events.isPerigee,
+      isApogee: events.isApogee,
+      distanceKm: events.distanceKm
+    });
+  }
+  return list;
 };
