@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { Sun, Calendar, Clock, Target } from 'lucide-react';
+import { Calendar, Clock, Target } from 'lucide-react';
 import { 
   CONFIG, 
   getJulianDate, 
@@ -158,30 +158,25 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 h-full flex flex-col justify-between select-none">
-      {/* Header & Date Badge */}
+    <div className="flex flex-col h-full w-full justify-between select-none">
+      {/* Top Inline Date Badge & Summary */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-        <div>
-          <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Sun className="w-5 h-5 text-amber-500" /> Solar Almanac & Annual Twilight Bands
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            24-hour annual sun path showing daylight, civil, nautical & astronomical twilights
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-mono bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-          <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-          <span className="font-bold text-slate-700">{getDayLabel(activeDay)}</span>
-          <span className="text-slate-400">|</span>
-          <Clock className="w-3.5 h-3.5 text-amber-500" />
-          <span className="font-bold text-amber-600">{(activeData.dayLength).toFixed(1)}h Daylight</span>
+        <p className="text-xs text-slate-400">
+          24-hour annual sun path showing daylight, civil, nautical &amp; astronomical twilights
+        </p>
+        <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="font-bold text-slate-200">{getDayLabel(activeDay)}</span>
+          <span className="text-slate-500">|</span>
+          <Clock className="w-3.5 h-3.5 text-amber-400" />
+          <span className="font-bold text-amber-400">{(activeData.dayLength).toFixed(1)}h Daylight</span>
         </div>
       </div>
 
       {/* Solstice & Equinox Fast-Jump Shortcut Bar */}
-      <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1 border-b border-slate-100 text-xs">
+      <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1 border-b border-slate-800 text-xs">
         <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mr-1 flex items-center gap-1">
-          <Target className="w-3 h-3 text-indigo-500" /> Fast-Jump:
+          <Target className="w-3 h-3 text-indigo-400" /> Fast-Jump:
         </span>
         {shortcuts.map(s => {
           const isActive = Math.abs(activeDay - s.day) <= 1;
@@ -192,8 +187,8 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
               title={s.title}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
                 isActive 
-                  ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300' 
-                  : 'bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 border border-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' 
+                  : 'bg-slate-950/60 hover:bg-slate-800 hover:text-white text-slate-300 border border-slate-800/80'
               }`}
             >
               {s.label}
@@ -247,7 +242,7 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
             return (
               <g key={m}>
                 <line x1={x} y1={paddingTop} x2={x} y2={paddingTop + chartH} stroke="#ffffff" strokeWidth="0.5" strokeOpacity="0.15" strokeDasharray="3 3" />
-                <text x={x + 10} y={height - 10} className="text-xs font-bold fill-slate-500 font-mono">{m}</text>
+                <text x={x + 10} y={height - 10} className="text-xs font-bold fill-slate-400 font-mono">{m}</text>
               </g>
             );
           })}
@@ -265,10 +260,10 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
                   strokeWidth={isMidnightOrNoon ? "1" : "0.5"} 
                   strokeOpacity={isMidnightOrNoon ? "0.35" : "0.1"} 
                 />
-                <text x={paddingLeft - 8} y={y + 4} textAnchor="end" className={`text-xs font-mono ${isMidnightOrNoon ? 'fill-slate-800 font-bold' : 'fill-slate-500'}`}>
+                <text x={paddingLeft - 8} y={y + 4} textAnchor="end" className={`text-xs font-mono ${isMidnightOrNoon ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
                   {label}
                 </text>
-                <text x={paddingLeft + chartW + 8} y={y + 4} textAnchor="start" className="text-xs font-mono fill-slate-500 font-bold">
+                <text x={paddingLeft + chartW + 8} y={y + 4} textAnchor="start" className="text-xs font-mono fill-slate-400 font-bold">
                   {h === 0 || h === 24 ? "Midnight" : (h === 12 ? "Noon" : "")}
                 </text>
               </g>
@@ -285,14 +280,14 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
           {/* Key Stats Annotations */}
           <g transform={`translate(${dayToX(keyStats.earliestSunrise.day)}, ${timeToY(keyStats.earliestSunrise.sunrise)})`}>
             <circle r="3" fill="#000000" />
-            <text y="14" textAnchor="middle" className="text-[10px] font-bold fill-indigo-900 font-mono">
+            <text y="14" textAnchor="middle" className="text-[10px] font-bold fill-indigo-300 font-mono">
               {getDayLabel(keyStats.earliestSunrise.day)}
             </text>
           </g>
 
           <g transform={`translate(${dayToX(keyStats.latestSunset.day)}, ${timeToY(keyStats.latestSunset.sunset)})`}>
             <circle r="3" fill="#000000" />
-            <text y="-8" textAnchor="middle" className="text-[10px] font-bold fill-indigo-900 font-mono">
+            <text y="-8" textAnchor="middle" className="text-[10px] font-bold fill-indigo-300 font-mono">
               {getDayLabel(keyStats.latestSunset.day)}
             </text>
           </g>
@@ -327,12 +322,12 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
 
           {/* Dynamically Generated Sunrise & Sunset Labels (Bumped Font Size) */}
           <g transform={`translate(${paddingLeft + chartW + 6}, ${sunriseY + 4})`}>
-            <text className="text-xs font-mono font-black fill-amber-600">
+            <text className="text-xs font-mono font-black fill-amber-400">
               {formatTime(activeData.sunrise).substring(0, 5)}
             </text>
           </g>
           <g transform={`translate(${paddingLeft + chartW + 6}, ${sunsetY + 4})`}>
-            <text className="text-xs font-mono font-black fill-amber-600">
+            <text className="text-xs font-mono font-black fill-amber-400">
               {formatTime(activeData.sunset).substring(0, 5)}
             </text>
           </g>
@@ -350,7 +345,7 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
               <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunset)} r="4" fill="#6366f1" stroke="white" strokeWidth="1.5" />
               {/* Top Mirrored Day Badge */}
               <g transform={`translate(${dayToX(mirrorDayData.day)}, ${paddingTop - 8})`}>
-                <text textAnchor="middle" className="text-xs font-mono font-bold fill-indigo-600">
+                <text textAnchor="middle" className="text-xs font-mono font-bold fill-indigo-400">
                   Equiv: {getDayLabel(mirrorDayData.day)} ({mirrorDayData.dayLength.toFixed(1)}h)
                 </text>
               </g>
@@ -371,26 +366,26 @@ export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, yea
         </svg>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 pt-3 border-t border-slate-100 text-[10px] font-medium">
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 pt-3 border-t border-slate-800 text-[10px] font-medium font-mono">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-yellow-300 border border-amber-400" />
-          <span className="text-slate-600 font-bold">Daylight</span>
+          <span className="text-slate-300 font-bold">Daylight</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-amber-400" />
-          <span className="text-slate-600">Civil (-6°)</span>
+          <span className="text-slate-400">Civil (-6°)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-slate-400" />
-          <span className="text-slate-600">Nautical (-12°)</span>
+          <span className="text-slate-400">Nautical (-12°)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-slate-700" />
-          <span className="text-slate-600">Astronomical (-18°)</span>
+          <span className="text-slate-400">Astronomical (-18°)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-slate-900" />
-          <span className="text-slate-600">Night</span>
+          <div className="w-3 h-3 rounded bg-slate-950 border border-slate-800" />
+          <span className="text-slate-400">Night</span>
         </div>
       </div>
     </div>

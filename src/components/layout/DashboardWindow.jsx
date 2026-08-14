@@ -73,15 +73,15 @@ export const DashboardWindow = ({
       onDrop={(e) => onDrop && onDrop(e, id)}
     >
       {/* Header Bar */}
-      <div className="flex justify-between items-center px-4 py-3 bg-slate-50 border-b border-slate-100 rounded-t-2xl select-none group">
+      <div className="flex justify-between items-center px-4 py-3 bg-slate-900/90 border-b border-slate-800 text-slate-200 rounded-t-2xl select-none group">
         <div className="flex items-center gap-2">
           {!isLocked && !isMaximized && (
-            <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-600 transition-colors p-0.5">
+            <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-400 transition-colors p-0.5">
               <Move className="w-4 h-4" />
             </div>
           )}
-          {(typeof Icon === 'function' || (typeof Icon === 'object' && Icon && Icon.$$typeof)) && <Icon className="w-4 h-4 text-indigo-500" />}
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{title}</h3>
+          {(typeof Icon === 'function' || (typeof Icon === 'object' && Icon && Icon.$$typeof)) && <Icon className="w-4 h-4 text-indigo-400" />}
+          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">{title}</h3>
         </div>
 
         {/* Window Action Buttons */}
@@ -89,7 +89,7 @@ export const DashboardWindow = ({
           {onToggleLock && (
             <button 
               onClick={() => onToggleLock(id)} 
-              className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-colors ${isLocked ? 'text-amber-500 bg-amber-50' : 'hover:bg-slate-200/50'}`}
+              className={`p-1.5 rounded-lg transition-colors ${isLocked ? 'text-amber-400 bg-amber-500/10 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
               title={isLocked ? "Unlock Window Position" : "Lock Window Position"}
               aria-label={isLocked ? "Unlock Window Position" : "Lock Window Position"}
             >
@@ -100,7 +100,7 @@ export const DashboardWindow = ({
           {onResetSize && (
             <button 
               onClick={() => onResetSize(id)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
               title="Reset Size"
               aria-label="Reset Size"
             >
@@ -110,7 +110,7 @@ export const DashboardWindow = ({
 
           <button 
             onClick={() => setIsMinimized(!isMinimized)} 
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             title={isMinimized ? "Expand Content" : "Minimize Content"}
             aria-label={isMinimized ? "Expand Content" : "Minimize Content"}
           >
@@ -119,7 +119,7 @@ export const DashboardWindow = ({
 
           <button 
             onClick={() => setIsMaximized(!isMaximized)} 
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             title={isMaximized ? "Restore Window" : "Maximize Window"}
             aria-label={isMaximized ? "Restore Window" : "Maximize Window"}
           >
@@ -137,7 +137,7 @@ export const DashboardWindow = ({
           {!isLocked && !isMaximized && (
             <div 
               onPointerDown={handleResizePointerDown}
-              className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize flex items-center justify-center text-slate-300 hover:text-indigo-500 transition-colors"
+              className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize flex items-center justify-center text-slate-600 hover:text-indigo-400 transition-colors"
               title="Drag to resize window"
             >
               <svg width="10" height="10" viewBox="0 0 10 10">

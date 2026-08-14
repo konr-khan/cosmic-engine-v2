@@ -136,9 +136,9 @@ Cosmic Engine V2.0/
 ## 5. Agent Guidelines & Coding Standards
 
 1. **Preserve Math Accuracy**: When altering or adding formulas in `cosmicMath.js`, cite standard astronomical references (e.g. Jean Meeus *Astronomical Algorithms* or IAU standards) and verify equinox/solstice edge cases (polar day/night).
-2. **Component Modularity**: Each widget in `src/components/` should accept relevant parameters from `useCosmicEngine` or `cosmicMath` and remain self-contained.
+2. **Component Modularity & Container Layout**: Each widget in `src/components/widgets/` must be unbordered and flush with `DashboardWindow`'s body container, utilizing top inline control rails for interactive toggles rather than duplicating window titles (`<h3>`).
 3. **Styling & Aesthetics**:
    - Maintain the sleek, dark cosmic aesthetic (slate/zinc dark mode with indigo, cyan, and amber highlights).
-   - Use Tailwind CSS classes for layouts and positioning.
+   - Use Tailwind CSS classes for layouts and positioning (`bg-slate-900`, `bg-slate-950`, `border-slate-800`).
    - Ensure responsive behavior and proper container scaling for SVG/Canvas rendering.
 4. **Verification Step**: Always run `npm test` and `npm run build` after making modifications to confirm math precision, absence of JSX syntax errors, or broken dependencies.

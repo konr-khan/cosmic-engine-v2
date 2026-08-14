@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Sparkles, Zap, Flame, Compass, Info } from 'lucide-react';
+import { Sparkles, Zap, Flame, Compass, Info } from 'lucide-react';
 import { CONFIG, calculateEarthOrbitalPhysics, getJulianDate } from '../../utils/cosmicMath';
 
 export const MacroOrbitView = ({ positions, eclipse, solarData, currentDate = new Date() }) => {
@@ -50,23 +50,22 @@ export const MacroOrbitView = ({ positions, eclipse, solarData, currentDate = ne
   const renderMoonY = renderEarthY + moonDy;
 
   return (
-    <div className="bg-slate-900 rounded-2xl shadow-xl overflow-hidden flex flex-col h-full w-full justify-between select-none border border-slate-800">
+    <div className="flex flex-col h-full w-full justify-between select-none">
       
-      {/* Header */}
-      <div className="bg-slate-800/90 p-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2 text-slate-200 text-sm font-medium">
-        <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-indigo-400" />
-          <span className="font-extrabold text-blue-100">Solar System Macro Orbit</span>
-        </div>
+      {/* Top Inline Controls & Eclipse Indicator */}
+      <div className="flex justify-between items-center gap-2 mb-2">
+        <p className="text-xs text-slate-400">
+          Keplerian 1 AU orbital radius &amp; seasonal distance physics
+        </p>
 
         <div className="flex items-center gap-2">
           {/* Mode Toggle: True Scale vs Exaggerated e=0.25 */}
           <button
             onClick={() => setExaggerateEccentricity(!exaggerateEccentricity)}
-            className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-all border ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all border ${
               exaggerateEccentricity 
                 ? 'bg-indigo-600 text-white border-indigo-400 shadow-sm' 
-                : 'bg-slate-950/80 text-slate-400 border-slate-700 hover:text-white'
+                : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
             }`}
             title="Toggle exaggerated orbital eccentricity (e = 0.25) to visualize Kepler's 1st & 2nd Laws"
           >
@@ -74,15 +73,15 @@ export const MacroOrbitView = ({ positions, eclipse, solarData, currentDate = ne
           </button>
 
           {isEclipse && (
-            <span className="text-[10px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-600 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
-              <Sparkles className="w-3 h-3 text-amber-400" /> {eclipse.label}
+            <span className="text-xs font-mono font-bold bg-amber-950/80 text-amber-300 border border-amber-600/80 px-2 py-1 rounded-lg flex items-center gap-1 animate-pulse">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" /> {eclipse.label}
             </span>
           )}
         </div>
       </div>
 
       {/* Main SVG Viewport */}
-      <div className="relative w-full flex-1 min-h-[210px] flex items-center justify-center p-2 bg-slate-950">
+      <div className="relative w-full flex-1 min-h-[210px] flex items-center justify-center p-2 bg-slate-950 rounded-xl border border-slate-800/80">
         <svg viewBox="-260 -260 520 520" className="w-full h-full max-h-[290px]" preserveAspectRatio="xMidYMid meet">
           <defs>
             <radialGradient id="sunMacroGlow" cx="50%" cy="50%" r="50%">
@@ -172,8 +171,8 @@ export const MacroOrbitView = ({ positions, eclipse, solarData, currentDate = ne
       </div>
 
       {/* Dynamic Physics HUD Footer */}
-      <div className="p-2.5 bg-slate-950 border-t border-slate-800 text-[10px] font-mono text-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
+      <div className="mt-2 p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80 text-[10px] font-mono text-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
           <span className="text-slate-500 font-bold uppercase flex items-center gap-1">
             <Compass className="w-3 h-3 text-indigo-400" /> Earth-Sun Distance
           </span>
@@ -182,7 +181,7 @@ export const MacroOrbitView = ({ positions, eclipse, solarData, currentDate = ne
           </span>
         </div>
 
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
+        <div className="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
           <span className="text-slate-500 font-bold uppercase flex items-center gap-1">
             <Zap className="w-3 h-3 text-amber-400" /> Orbital Speed
           </span>
@@ -191,7 +190,7 @@ export const MacroOrbitView = ({ positions, eclipse, solarData, currentDate = ne
           </span>
         </div>
 
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
+        <div className="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
           <span className="text-slate-500 font-bold uppercase flex items-center gap-1">
             <Flame className="w-3 h-3 text-rose-400" /> Solar Irradiance
           </span>
@@ -200,7 +199,7 @@ export const MacroOrbitView = ({ positions, eclipse, solarData, currentDate = ne
           </span>
         </div>
 
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
+        <div className="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
           <span className="text-slate-500 font-bold uppercase flex items-center gap-1">
             <Info className="w-3 h-3 text-cyan-400" /> Solar Diameter
           </span>

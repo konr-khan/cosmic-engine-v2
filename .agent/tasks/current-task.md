@@ -1,7 +1,7 @@
 # Current Task: Cosmic Engine V2.0 Architecture & Theme Normalization Protocol
 
 **Role Focus**: Systems Implementation & UI/Engine Normalization  
-**Status**: Phase 1 Completed (Ready for Phase 2)  
+**Status**: Phase 2 Completed (Ready for Phase 3)  
 **Target Platform**: React 19 / Vite / Tailwind CSS v4 / Vitest  
 
 ---
@@ -13,7 +13,7 @@ Transform Cosmic Engine V2.0 into a unified, high-performance celestial mechanic
 2. **Eliminating Dead Code Bloat**: Safely remove orphaned legacy files (`GlobalCommandBar.jsx` and `AnnualChart.jsx`).
 3. **Establishing Canonical Window Boundaries**: Refactor `DashboardWindow.jsx` to dark glassmorphism (`bg-slate-900/90 border-b border-slate-800 text-slate-200`) and strip duplicate outer card containers/double `<h3>` title bars from all 8 widget components.
 4. **Normalizing Observatory Visual Palette**: Convert all remaining light-mode widgets (`TerminatorMap`, `LunarAlmanacCard`, `MicroTideView`, `SunClock`) to the unified slate/indigo/cyan/amber cosmic theme.
-5. **Guaranteeing 100% Test Stability**: Maintain zero regression across all 64 Vitest math and engine tests.
+5. **Guaranteeing 100% Test Stability**: Maintain zero regression across all 67 Vitest math and engine tests.
 
 ---
 
@@ -95,24 +95,24 @@ Every widget root element mounted inside `DashboardWindow` must implement:
 - [x] Delete `src/components/common/AnnualChart.jsx`
 - [x] Update `src/App.jsx`: Scope `useCosmicEngine` in `MemoizedWidgetContent` to pass `{ [id]: true }` instead of full `widgets` object
 - [x] Verify zero broken imports across the repository
-- [x] Run `npm test` to confirm 64/64 tests pass
+- [x] Run `npm test` to confirm 67/67 tests pass
 
 ### Phase 2: Window Container Normalization & Header De-Duplication
-- [ ] Update `src/components/layout/DashboardWindow.jsx`:
-  - [ ] Replace `bg-slate-50 border-b border-slate-100` header with `bg-slate-900/90 border-b border-slate-800 text-slate-200`
-  - [ ] Update header action buttons to `text-slate-400 hover:text-slate-200 hover:bg-slate-800`
-- [ ] Refactor `src/components/widgets/CelestialSphereView.jsx`:
-  - [ ] Strip outer `bg-slate-900 rounded-2xl border` wrapper
-  - [ ] Remove duplicate `<h3>` title; elevate Geocentric/Heliocentric tabs to top inline control rail
-- [ ] Refactor `src/components/widgets/EclipseDemonstrator.jsx`:
-  - [ ] Strip outer card wrapper and duplicate `<h3>` title
-  - [ ] Retain status badge and navigation sub-tabs in top inline bar
-- [ ] Refactor `src/components/widgets/MacroOrbitView.jsx`:
-  - [ ] Strip outer container and duplicate header
-  - [ ] Place eccentricity mode toggle and eclipse badge in clean inline control bar
-- [ ] Refactor `src/components/widgets/SolarAlmanac.jsx`:
-  - [ ] Ensure root container is unbordered and flush with window body
-- [ ] Run `npm test` and `npm run build` to verify layout structural integrity
+- [x] Update `src/components/layout/DashboardWindow.jsx`:
+  - [x] Replace `bg-slate-50 border-b border-slate-100` header with `bg-slate-900/90 border-b border-slate-800 text-slate-200`
+  - [x] Update header action buttons to `text-slate-400 hover:text-slate-200 hover:bg-slate-800`
+- [x] Refactor `src/components/widgets/CelestialSphereView.jsx`:
+  - [x] Strip outer `bg-slate-900 rounded-2xl border` wrapper
+  - [x] Remove duplicate `<h3>` title; elevate Geocentric/Heliocentric tabs to top inline control rail
+- [x] Refactor `src/components/widgets/EclipseDemonstrator.jsx`:
+  - [x] Strip outer card wrapper and duplicate `<h3>` title
+  - [x] Retain status badge and navigation sub-tabs in top inline bar
+- [x] Refactor `src/components/widgets/MacroOrbitView.jsx`:
+  - [x] Strip outer container and duplicate header
+  - [x] Place eccentricity mode toggle and eclipse badge in clean inline control bar
+- [x] Refactor `src/components/widgets/SolarAlmanac.jsx`:
+  - [x] Ensure root container is unbordered and flush with window body
+- [x] Run `npm test` and `npm run build` to verify layout structural integrity
 
 ### Phase 3: Theme Normalization for Legacy Light-Mode Widgets
 - [ ] Refactor `src/components/widgets/TerminatorMap.jsx`:

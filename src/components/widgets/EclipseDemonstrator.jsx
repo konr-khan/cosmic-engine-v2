@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Sparkles, Layers, Eye, Compass, Calendar } from 'lucide-react';
+import { Layers, Eye, Compass, Calendar } from 'lucide-react';
 import { calculateEclipseData, findUpcomingEclipses } from '../../utils/cosmicMath';
 import {
   EclipseStatusBadge,
@@ -37,24 +37,19 @@ export const EclipseDemonstrator = ({
   };
 
   return (
-    <div className="bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 p-4 md:p-6 h-full flex flex-col justify-between select-none">
-      {/* Header & Status Indicator */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-3 pb-3 border-b border-slate-800">
-        <div>
-          <h3 className="text-base font-extrabold text-blue-100 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" /> Eclipse Mechanics & Shadow Geometry
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Umbra, Penumbra & 5.14° Lunar Orbital Plane Node Alignment Solver
-          </p>
-        </div>
+    <div className="flex flex-col h-full w-full justify-between select-none">
+      {/* Top Inline Controls & Navigation Rail */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+        <p className="text-xs text-slate-400">
+          Umbra, Penumbra &amp; 5.14° Lunar Orbital Plane Node Alignment Solver
+        </p>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Active Status Badge */}
           <EclipseStatusBadge eclipse={eclipse} />
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs font-bold">
+          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs font-bold">
             <button
               onClick={() => setActiveTab('geometry')}
               className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
@@ -114,7 +109,7 @@ export const EclipseDemonstrator = ({
       </div>
 
       {/* Footer Spatial Context Readout */}
-      <div className="mt-3 bg-slate-950/90 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs font-mono text-slate-400">
+      <div className="mt-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs font-mono text-slate-400">
         <span>Syzygy Phase: <strong className="text-amber-400">{(eclipse.phaseValue * 100).toFixed(1)}%</strong></span>
         <span>Ecliptic Lat β: <strong className="text-rose-400">{eclipse.beta}°</strong></span>
         <span>Alignment: <strong className="text-emerald-400">{eclipse.alignmentPercent}%</strong></span>

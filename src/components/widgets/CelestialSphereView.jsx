@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Compass, Globe, Sun, Moon, Sparkles, Eye, Layers, ArrowUpRight } from 'lucide-react';
+import { Globe, Sun, Sparkles } from 'lucide-react';
 import { toRadians, toDegrees, CONFIG } from '../../utils/cosmicMath';
 
 // Orthographic 3D Projection Helper
@@ -194,21 +194,16 @@ export const CelestialSphereView = ({
   }, [solarData, timeOfDay, moonDeg]);
 
   return (
-    <div className="bg-slate-900 text-white rounded-2xl shadow-sm border border-slate-800 p-4 md:p-6 h-full flex flex-col justify-between select-none">
+    <div className="flex flex-col h-full w-full justify-between select-none">
       
-      {/* Top Controls & Mode Switcher */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 pb-2 border-b border-slate-800">
-        <div>
-          <h3 className="text-base font-bold text-blue-100 flex items-center gap-2">
-            <Compass className="w-5 h-5 text-indigo-400" /> Celestial Sphere & Ecliptic Orbital View
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Spatial geometry of Earth's axial tilt ($23.44^\circ$) & Lunar inclination ($5.14^\circ$)
-          </p>
-        </div>
+      {/* Top Inline Controls & Mode Switcher */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+        <p className="text-xs text-slate-400">
+          Spatial geometry of Earth's axial tilt ($23.44^\circ$) &amp; Lunar inclination ($5.14^\circ$)
+        </p>
 
         {/* View Mode Selector Tabs */}
-        <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs">
           <button
             onClick={() => setViewMode('geocentric')}
             className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
@@ -409,7 +404,7 @@ export const CelestialSphereView = ({
       </div>
 
       {/* Footer Spatial Context Readout */}
-      <div className="mt-3 bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs font-mono text-slate-400">
+      <div className="mt-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs font-mono text-slate-400">
         <span>Observer Zenith: <strong className="text-cyan-400">{latitude.toFixed(1)}°N, {longitude.toFixed(1)}°W</strong></span>
         <span>Axial Tilt: <strong className="text-amber-400">23.44°</strong></span>
         <span>Lunar Tilt: <strong className="text-emerald-400">5.14°</strong></span>
