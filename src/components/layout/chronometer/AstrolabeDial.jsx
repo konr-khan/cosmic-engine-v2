@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { toDegrees, getDaysInYear } from '../../../utils/cosmicMath';
+import { toDegrees, getDaysInYear, getDayOfYear } from '../../../utils/cosmicMath';
 import { ControlRing } from '../../controls/ControlRing';
 import { ArmillaryRail } from '../../controls/ArmillaryRail';
 import { LivingMarble } from '../../common/LivingMarble';
@@ -40,7 +40,7 @@ export const AstrolabeDial = ({
   const prevDayRef = useRef(1);
 
   const totalDays = getDaysInYear(date.getFullYear());
-  const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+  const dayOfYear = getDayOfYear(date);
 
   useEffect(() => {
     prevTimeRef.current = timeOfDay;

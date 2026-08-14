@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Layers, Eye, Compass, Calendar } from 'lucide-react';
-import { calculateEclipseData, findUpcomingEclipses } from '../../utils/cosmicMath';
+import { calculateEclipseData, findUpcomingEclipses, getJulianDate } from '../../utils/cosmicMath';
 import {
   EclipseStatusBadge,
   ShadowRayDiagram,
@@ -21,7 +21,7 @@ export const EclipseDemonstrator = ({
 
   const eclipse = (orbitalData && orbitalData.eclipse) 
     ? orbitalData.eclipse 
-    : calculateEclipseData(currentDate ? currentDate.getTime() / 86400000 + 2440587.5 : 2451545.0);
+    : calculateEclipseData(currentDate ? getJulianDate(currentDate, 12) : 2451545.0);
 
   // Discover upcoming eclipses from current date
   const upcomingEclipses = useMemo(() => {

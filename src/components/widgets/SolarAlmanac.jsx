@@ -6,7 +6,9 @@ import {
   calculateSolarPosition, 
   calculateDailySolarEvents, 
   formatTime,
-  getDaysInYear 
+  getDaysInYear,
+  getDayOfYear,
+  clamp
 } from '../../utils/cosmicMath';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -109,9 +111,17 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
     const svgX = (clientX / rect.width) * width;
+    const svgY = (clientY / rect.height) * height;
     const day = xToDay(svgX);
     setHoverDay(day);
+
+    if (onHoverTime && svgY >= paddingTop && svgY <= paddingTop + chartH) {
+      const timeHours = (1 - (svgY - paddingTop) / chartH) * 24;
+      onHoverTime(parseFloat(clamp(timeHours, 0, 24).toFixed(2)));
+    }
+
     if (isDragging || e.type === 'pointerdown') {
       onDayChange(day);
     }
@@ -206,7 +216,7 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
           onPointerDown={(e) => { setIsDragging(true); e.currentTarget.setPointerCapture(e.pointerId); handlePointer(e); }}
           onPointerMove={(e) => handlePointer(e)}
           onPointerUp={(e) => { setIsDragging(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
-          onPointerLeave={() => { setIsDragging(false); setHoverDay(null); }}
+          onPointerLeave={() => { setIsDragging(false); setHoverDay(null); if (onHoverTime) onHoverTime(null); }}
           style={{ cursor: isDragging ? 'grabbing' : 'crosshair' }}
         >
           <defs>

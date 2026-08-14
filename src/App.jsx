@@ -12,6 +12,7 @@ import { LunarAlmanacCard } from './components/widgets/LunarAlmanacCard';
 import { CelestialSphereView } from './components/widgets/CelestialSphereView';
 import { EclipseDemonstrator } from './components/widgets/EclipseDemonstrator';
 import { DashboardWindow } from './components/layout/DashboardWindow';
+import { getDayOfYear } from './utils/cosmicMath';
 
 const ICON_MAP = {
   almanac: Sun,
@@ -122,7 +123,7 @@ const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
     { [id]: true }
   );
 
-  const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+  const dayOfYear = getDayOfYear(date);
 
   const handleDateSlider = (val) => {
     cosmicActions.setDate(new Date(date.getFullYear(), 0, val));

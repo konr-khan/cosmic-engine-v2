@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sun } from 'lucide-react';
-import { CONFIG, toRadians, toDegrees, formatTime, getSectorPath } from '../../utils/cosmicMath';
+import { CONFIG, toRadians, toDegrees, formatTime, getSectorPath, clamp } from '../../utils/cosmicMath';
 
 export const SunClock = ({ solarData, currentTime = 12, latitude = 47.06, hoverTime, onHoverTime }) => {
   const { 
@@ -15,12 +15,12 @@ export const SunClock = ({ solarData, currentTime = 12, latitude = 47.06, hoverT
 
   const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : currentTime;
 
-  // Instantaneous Elevation Math
+  // Instantaneous Elevation Math (Clamped to [-1, 1] to prevent NaN at subsolar zenith)
   const hourAngle = (displayTime - solarNoon) * 15; 
-  const currentElevation = toDegrees(Math.asin(
+  const sinAlt = 
     Math.sin(toRadians(latitude)) * Math.sin(toRadians(declination)) + 
-    Math.cos(toRadians(latitude)) * Math.cos(toRadians(declination)) * Math.cos(toRadians(hourAngle))
-  ));
+    Math.cos(toRadians(latitude)) * Math.cos(toRadians(declination)) * Math.cos(toRadians(hourAngle));
+  const currentElevation = toDegrees(Math.asin(clamp(sinAlt, -1, 1)));
 
   const elR = 60;
   const elCx = 80;

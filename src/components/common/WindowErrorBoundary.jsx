@@ -28,7 +28,8 @@ export class WindowErrorBoundary extends Component {
       errorInfo
     });
     // Log error locally in development
-    if (process.env.NODE_ENV !== 'production') {
+    const isDev = typeof process !== 'undefined' ? process.env?.NODE_ENV !== 'production' : Boolean(import.meta.env?.DEV);
+    if (isDev) {
       console.error(`[WindowErrorBoundary: ${this.props.windowTitle || this.props.windowId || 'Widget'}]`, error, errorInfo);
     }
   }

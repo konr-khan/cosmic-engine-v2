@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
-import { calculateDailySolarEvents } from '../../utils/cosmicMath';
+import { calculateDailySolarEvents, getDayOfYear } from '../../utils/cosmicMath';
 import {
   AstrolabeDial,
   ChronometerReadoutCards,
@@ -30,7 +30,7 @@ export const OrbitalChronometer = ({
 }) => {
   const [activePopup, setActivePopup] = useState(null); // 'lat' | 'lon' | null
 
-  const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+  const dayOfYear = getDayOfYear(date);
   const declination = solarData ? solarData.declination : 0;
   const solarEvents = calculateDailySolarEvents(latitude, declination, solarData ? solarData.solarNoon : 12);
 

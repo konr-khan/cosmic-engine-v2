@@ -8,7 +8,8 @@ import {
   calculateSolarPosition, 
   calculateLunarPosition, 
   calculateLunarEvents, 
-  getDaysInYear 
+  getDaysInYear,
+  getDayOfYear
 } from '../../utils/cosmicMath';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -44,7 +45,12 @@ export const LunarAlmanacCard = ({
 
   const year = currentDate ? currentDate.getFullYear() : 2026;
   const totalDays = getDaysInYear(year);
-  const activeDay = Math.min(totalDays, hoverDay !== null ? hoverDay : currentDay);
+  const activeDay = Math.min(
+    totalDays, 
+    hoverDay !== null 
+      ? hoverDay 
+      : (hoverDate ? getDayOfYear(hoverDate) : currentDay)
+  );
 
   // 1. CONCEPT 1: 365-Day Annual Lunar Ribbon Ephemeris Computation
   const annualLunarData = useMemo(() => {
@@ -132,6 +138,9 @@ export const LunarAlmanacCard = ({
     const svgX = (clientX / rect.width) * width;
     const day = xToDay(svgX);
     setHoverDay(day);
+    if (onHoverDate) {
+      onHoverDate(new Date(year, 0, day));
+    }
     if ((isDragging || e.type === 'pointerdown') && onDayChange) {
       onDayChange(day);
     }
@@ -233,7 +242,7 @@ export const LunarAlmanacCard = ({
               onPointerDown={(e) => { setIsDragging(true); e.currentTarget.setPointerCapture(e.pointerId); handlePointer(e); }}
               onPointerMove={(e) => handlePointer(e)}
               onPointerUp={(e) => { setIsDragging(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
-              onPointerLeave={() => { setIsDragging(false); setHoverDay(null); }}
+              onPointerLeave={() => { setIsDragging(false); setHoverDay(null); if (onHoverDate) onHoverDate(null); }}
               style={{ cursor: isDragging ? 'grabbing' : 'crosshair' }}
             >
               {/* Background Night Sky Canvas */}
