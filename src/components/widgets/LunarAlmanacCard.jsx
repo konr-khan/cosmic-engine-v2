@@ -1,8 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { 
-  Moon, ArrowUpRight, ArrowDownRight, Compass, Sparkles, 
-  Eye, Waves, Calendar, Target, Activity, Clock 
-} from 'lucide-react';
+import { Compass, Eye, Waves, Calendar, Target } from 'lucide-react';
 import { PhaseVisual } from '../common/PhaseVisual';
 import { 
   CONFIG, 
@@ -176,23 +173,18 @@ export const LunarAlmanacCard = ({
   const tideTypeLabel = tides ? tides.type : "Transitional";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 h-full flex flex-col justify-between select-none">
+    <div className="flex flex-col h-full w-full justify-between select-none">
       
-      {/* Top Header Bar & Solstice Pins */}
+      {/* Top Inline Fast-Jump Shortcuts Rail */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-        <div>
-          <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Moon className="w-5 h-5 text-indigo-600" /> Lunar & Tidal Almanac
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            365-day annual moonrise/moonset drift ribbons & live ocean harmonic tide wave
-          </p>
-        </div>
+        <p className="text-xs text-slate-400">
+          365-day annual moonrise/moonset drift ribbons &amp; live ocean harmonic tide wave
+        </p>
 
         {/* Solstice & Phase Shortcut Pins */}
         <div className="flex items-center gap-1.5 flex-wrap text-xs">
           <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mr-1 flex items-center gap-1">
-            <Target className="w-3 h-3 text-indigo-500" /> Fast-Jump:
+            <Target className="w-3 h-3 text-indigo-400" /> Fast-Jump:
           </span>
           {shortcuts.map(s => {
             const isActive = Math.abs(activeDay - s.day) <= 1;
@@ -201,10 +193,10 @@ export const LunarAlmanacCard = ({
                 key={s.label}
                 onClick={() => onDayChange && onDayChange(s.day)}
                 title={s.title}
-                className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border ${
                   isActive 
-                    ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300' 
-                    : 'bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 border border-slate-200'
+                    ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400 border-indigo-500' 
+                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-indigo-500 hover:text-white'
                 }`}
               >
                 {s.label}
@@ -218,7 +210,7 @@ export const LunarAlmanacCard = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch flex-1 min-h-[300px]">
         
         {/* Left Column: Annual Lunar Ribbon Matrix (col-span-7) */}
-        <div className="lg:col-span-7 flex flex-col justify-between h-full bg-slate-900 rounded-xl p-3.5 text-white">
+        <div className="lg:col-span-7 flex flex-col justify-between h-full bg-slate-950 rounded-xl p-3.5 border border-slate-800 text-white">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-indigo-400" /> 365-Day Moonrise & Moonset Ribbon Matrix
@@ -310,7 +302,7 @@ export const LunarAlmanacCard = ({
         <div className="lg:col-span-5 flex flex-col justify-between h-full gap-3">
           
           {/* Sky Orientation & Phase Banner */}
-          <div className="bg-slate-900 text-white rounded-xl p-3 border border-slate-800 flex justify-between items-center">
+          <div className="bg-slate-950/80 text-slate-200 rounded-xl p-3 border border-slate-800 flex justify-between items-center">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Phase & Observer View</span>
               <h4 className="text-base font-black text-blue-100">{phase.name} ({illPercent}%)</h4>
@@ -327,7 +319,7 @@ export const LunarAlmanacCard = ({
           </div>
 
           {/* CONCEPT 2: Tidal Rhythm Harmonic Waveform */}
-          <div className="bg-slate-900 text-white rounded-xl p-3 border border-slate-800 flex flex-col justify-between flex-1">
+          <div className="bg-slate-950/80 text-slate-200 rounded-xl p-3 border border-slate-800 flex flex-col justify-between flex-1">
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <Waves className="w-3.5 h-3.5 text-cyan-400" /> Tidal Rhythm Waveform
@@ -378,21 +370,21 @@ export const LunarAlmanacCard = ({
 
           {/* Moonrise, Transit, Moonset Triple Grid */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 flex flex-col items-center">
+            <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
               <span className="text-[9px] font-bold text-slate-400 uppercase">Moonrise</span>
-              <span className="text-xs font-mono font-bold text-slate-700">{formatTime(moonrise)}</span>
+              <span className="text-xs font-mono font-bold text-slate-200">{formatTime(moonrise)}</span>
             </div>
             <div 
               onClick={() => transit && onSetTime && onSetTime(transit)}
-              className="bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer p-2 rounded-lg border border-indigo-100 flex flex-col items-center"
+              className="bg-indigo-950/60 hover:bg-indigo-900/80 transition-colors cursor-pointer p-2 rounded-lg border border-indigo-500/40 flex flex-col items-center text-indigo-300"
               title="Click to jump clock to Lunar Transit"
             >
-              <span className="text-[9px] font-bold text-indigo-600 uppercase flex items-center gap-0.5"><Compass className="w-2.5 h-2.5" /> Transit</span>
-              <span className="text-xs font-mono font-bold text-indigo-700">{formatTime(transit)}</span>
+              <span className="text-[9px] font-bold text-indigo-400 uppercase flex items-center gap-0.5"><Compass className="w-2.5 h-2.5" /> Transit</span>
+              <span className="text-xs font-mono font-bold text-indigo-200">{formatTime(transit)}</span>
             </div>
-            <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 flex flex-col items-center">
+            <div className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
               <span className="text-[9px] font-bold text-slate-400 uppercase">Moonset</span>
-              <span className="text-xs font-mono font-bold text-slate-700">{formatTime(moonset)}</span>
+              <span className="text-xs font-mono font-bold text-slate-200">{formatTime(moonset)}</span>
             </div>
           </div>
 

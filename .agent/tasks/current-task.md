@@ -1,7 +1,7 @@
 # Current Task: Cosmic Engine V2.0 Architecture & Theme Normalization Protocol
 
 **Role Focus**: Systems Implementation & UI/Engine Normalization  
-**Status**: Phase 2 Completed (Ready for Phase 3)  
+**Status**: Phase 3 Completed (Ready for Phase 4)  
 **Target Platform**: React 19 / Vite / Tailwind CSS v4 / Vitest  
 
 ---
@@ -115,25 +115,25 @@ Every widget root element mounted inside `DashboardWindow` must implement:
 - [x] Run `npm test` and `npm run build` to verify layout structural integrity
 
 ### Phase 3: Theme Normalization for Legacy Light-Mode Widgets
-- [ ] Refactor `src/components/widgets/TerminatorMap.jsx`:
-  - [ ] Replace `bg-white border-slate-200` with unbordered root
-  - [ ] Convert meridian/declination sub-bar to `bg-slate-950/60 border border-slate-800/80 text-slate-300`
-  - [ ] Re-theme continent landmass fills to `#334155` and strokes to `#64748b`
-  - [ ] Re-theme legend bar to `text-slate-400 font-mono`
-- [ ] Refactor `src/components/widgets/LunarAlmanacCard.jsx`:
-  - [ ] Replace `bg-white border-slate-200` with unbordered root
-  - [ ] Re-theme fast-jump buttons to `bg-slate-800 text-slate-300 border-slate-700 hover:border-indigo-500 hover:text-white`
-  - [ ] Re-theme 48-hour ocean harmonic wave container to `bg-slate-950/80 border border-slate-800 text-slate-200`
-  - [ ] Convert lunar statistics cards to `bg-slate-950/60 border-slate-800/80 text-slate-200`
-- [ ] Refactor `src/components/widgets/MicroTideView.jsx`:
-  - [ ] Replace `bg-white border-slate-200` with unbordered root
-  - [ ] Replace `bg-blue-50/50` canvas with `bg-slate-950 border border-slate-800/80`
-  - [ ] Convert water potential badges and tide vectors to dark theme slate/indigo/amber
-- [ ] Refactor `src/components/widgets/SunClock.jsx`:
-  - [ ] Replace `bg-slate-50 border-slate-100 text-slate-700` cards with `bg-slate-950/60 border border-slate-800/80 text-slate-200`
-  - [ ] Replace white center circle (`fill="white"`) with dark glass disc (`fill="#0f172a" stroke="#334155"`)
-  - [ ] Re-theme elevation curve background to `bg-slate-950/60 border-slate-800/80` and elevation badge to `bg-slate-900/90 text-slate-100`
-- [ ] Run `npm test` to verify zero regression
+- [x] Refactor `src/components/widgets/TerminatorMap.jsx`:
+  - [x] Replace `bg-white border-slate-200` with unbordered root
+  - [x] Convert meridian/declination sub-bar to `bg-slate-950/60 border border-slate-800/80 text-slate-300`
+  - [x] Re-theme continent landmass fills to `#334155` and strokes to `#64748b`
+  - [x] Re-theme legend bar to `text-slate-400 font-mono`
+- [x] Refactor `src/components/widgets/LunarAlmanacCard.jsx`:
+  - [x] Replace `bg-white border-slate-200` with unbordered root
+  - [x] Re-theme fast-jump buttons to `bg-slate-800 text-slate-300 border-slate-700 hover:border-indigo-500 hover:text-white`
+  - [x] Re-theme 48-hour ocean harmonic wave container to `bg-slate-950/80 border border-slate-800 text-slate-200`
+  - [x] Convert lunar statistics cards to `bg-slate-950/60 border-slate-800/80 text-slate-200`
+- [x] Refactor `src/components/widgets/MicroTideView.jsx`:
+  - [x] Replace `bg-white border-slate-200` with unbordered root
+  - [x] Replace `bg-blue-50/50` canvas with `bg-slate-950 border border-slate-800/80`
+  - [x] Convert water potential badges and tide vectors to dark theme slate/indigo/amber
+- [x] Refactor `src/components/widgets/SunClock.jsx`:
+  - [x] Replace `bg-slate-50 border-slate-100 text-slate-700` cards with `bg-slate-950/60 border border-slate-800/80 text-slate-200`
+  - [x] Replace white center circle (`fill="white"`) with dark glass disc (`fill="#0f172a" stroke="#334155"`)
+  - [x] Re-theme elevation curve background to `bg-slate-950/60 border-slate-800/80` and elevation badge to `bg-slate-900/90 text-slate-100`
+- [x] Run `npm test` to verify zero regression
 
 ### Phase 4: Integration Verification & Regression Audit
 - [ ] Execute `npm test` — verify all 64 Vitest suites pass cleanly

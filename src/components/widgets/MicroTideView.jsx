@@ -1,6 +1,6 @@
 import React from "react";
-import { ZoomIn } from "lucide-react";
 import { CONFIG } from "../../utils/cosmicMath";
+
 const toRadians = (degrees) => degrees * (Math.PI / 180);
 
 export const MicroTideView = ({
@@ -11,36 +11,44 @@ export const MicroTideView = ({
   hoverDate,
 }) => {
   const tideTextColor =
-    tides.alignment > 0 ? "text-indigo-600" : "text-orange-500";
+    tides.alignment > 0 ? "text-indigo-400" : "text-amber-400";
   const localTideColor =
-    localTideStatus === "High Tide"
-      ? CONFIG.THEME.TIDE_HIGH
-      : CONFIG.THEME.TIDE_LOW;
+    localTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-400";
 
   // Refined "TO SUN" Rotation Logic
   const isLeftHemisphere = Math.abs(angles.sunDegrees) > 90;
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 flex flex-col h-full w-full justify-between">
-      <div className="bg-slate-50 p-3 border-b border-slate-200 flex items-center text-slate-600 text-sm font-medium">
-        <ZoomIn className="w-4 h-4 mr-2 text-indigo-500" /> Micro View: Earth &
-        Tides
+    <div className="flex flex-col h-full w-full justify-between select-none">
+      {/* Top Inline Info Rail */}
+      <div className="flex justify-between items-center gap-2 mb-2">
+        <p className="text-xs text-slate-400">
+          Earth gravitational tidal force vectors &amp; global water potential
+        </p>
       </div>
-      <div className="relative w-full flex-1 min-h-[220px] flex items-center justify-center bg-blue-50/50 p-4">
-        <div className="absolute top-4 right-4 text-right z-10">
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-black mb-0.5">
-            Global Potential
+
+      {/* Main SVG Viewport */}
+      <div className="relative w-full flex-1 min-h-[220px] flex items-center justify-center bg-slate-950 rounded-xl border border-slate-800/80 p-4 overflow-hidden">
+        {/* Global Potential & Local Water Overlay Badge */}
+        <div className="absolute top-3 right-3 text-right z-10 bg-slate-900/90 backdrop-blur px-3 py-2 rounded-xl border border-slate-800 font-mono space-y-1">
+          <div>
+            <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">
+              Global Potential
+            </div>
+            <div className={`text-sm font-bold ${tideTextColor}`}>
+              {tides.type.split(" ")[0].toUpperCase()}
+            </div>
           </div>
-          <div className={`text-lg font-black ${tideTextColor} mb-1.5`}>
-            {tides.type.split(" ")[0].toUpperCase()}
-          </div>
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-black mb-0.5">
-            Local Water
-          </div>
-          <div className={`text-lg font-black ${localTideColor}`}>
-            {localTideStatus === "High Tide" ? "HIGH" : "LOW"}
+          <div>
+            <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">
+              Local Water
+            </div>
+            <div className={`text-sm font-bold ${localTideColor}`}>
+              {localTideStatus === "High Tide" ? "HIGH TIDE" : "LOW TIDE"}
+            </div>
           </div>
         </div>
+
         <svg
           viewBox="-100 -100 200 200"
           className="w-full h-full max-h-[300px] overflow-visible"
@@ -51,7 +59,7 @@ export const MicroTideView = ({
             y1="0"
             x2="100"
             y2="0"
-            stroke="#cbd5e1"
+            stroke="#334155"
             strokeWidth="1"
           />
           <line
@@ -59,7 +67,7 @@ export const MicroTideView = ({
             y1="-100"
             x2="0"
             y2="100"
-            stroke="#cbd5e1"
+            stroke="#334155"
             strokeWidth="1"
           />
 
@@ -78,7 +86,7 @@ export const MicroTideView = ({
               x={95}
               y={3}
               textAnchor={isLeftHemisphere ? "end" : "start"}
-              fill="#b45309"
+              fill="#fbbf24"
               fontSize="9"
               fontWeight="bold"
               transform={isLeftHemisphere ? "rotate(180, 95, 0)" : ""}
@@ -94,10 +102,10 @@ export const MicroTideView = ({
             cy="0"
             rx={tides.rx}
             ry={tides.ry}
-            fill="#60a5fa"
-            opacity="0.45"
-            stroke="#2563eb"
-            strokeWidth="1"
+            fill="#38bdf8"
+            opacity="0.25"
+            stroke="#38bdf8"
+            strokeWidth="1.5"
             transform={`rotate(${angles.moonDegrees})`}
           />
 
@@ -136,7 +144,7 @@ export const MicroTideView = ({
             cy="0"
             r="60"
             fill="none"
-            stroke="#94a3b8"
+            stroke="#475569"
             strokeDasharray="2 2"
           />
 
@@ -144,12 +152,18 @@ export const MicroTideView = ({
           <g
             transform={`translate(${60 * Math.cos(toRadians(angles.moonDegrees))}, ${60 * Math.sin(toRadians(angles.moonDegrees))})`}
           >
-            <circle r="6" fill="#334155" />
+            <circle r="6" fill="#1e293b" stroke="#475569" strokeWidth="1" />
             <g transform={`rotate(${angles.sunDegrees})`}>
               <path d="M 0,-6 A 6,6 0 0,1 0,6 Z" fill="#f1f5f9" />
             </g>
           </g>
         </svg>
+      </div>
+
+      {/* Footer Readout */}
+      <div className="mt-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs font-mono text-slate-400">
+        <span>Alignment: <strong className={tides.alignment > 0 ? "text-indigo-400" : "text-amber-400"}>{tides.type}</strong></span>
+        <span>Local Status: <strong className={localTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-300"}>{localTideStatus}</strong></span>
       </div>
     </div>
   );

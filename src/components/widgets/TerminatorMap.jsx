@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { MapPin } from 'lucide-react';
 import { CONFIG, getTerminatorShadowPaths } from '../../utils/cosmicMath';
 
 // Simplified World Continent Outlines (Geo coordinates: [Longitude, Latitude])
@@ -92,10 +91,10 @@ export const TerminatorMap = ({ solarData, latitude, longitude, timeOfDay, hover
         <path 
           key={idx} 
           d={pathD} 
-          fill="#cbd5e1" 
-          stroke="#94a3b8" 
+          fill="#334155" 
+          stroke="#64748b" 
           strokeWidth="0.75" 
-          opacity="0.75" 
+          opacity="0.85" 
         />
       );
     });
@@ -122,25 +121,23 @@ export const TerminatorMap = ({ solarData, latitude, longitude, timeOfDay, hover
   const relSunX = (normalizedSunLong - longitude + 180 + 360) % 360;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6 flex flex-col h-full w-full justify-between select-none">
-      <div className="flex justify-between items-end mb-3">
-        <div>
-           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-             <MapPin className="w-4 h-4 text-indigo-500" /> Centered Daylight Map & World Continents
-           </h3>
-           <p className="text-xs text-slate-400 mt-0.5">Map dynamically centers on your meridian ({longitude}°)</p>
-        </div>
-        <div className="text-right">
-           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">DECLINATION</div>
-           <div className="font-mono text-indigo-600 font-bold text-sm">{declination.toFixed(1)}°</div>
+    <div className="flex flex-col h-full w-full justify-between select-none">
+      {/* Top Inline Declination & Meridian Info Rail */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+        <p className="text-xs text-slate-400">
+          Map dynamically centers on observer meridian ({longitude >= 0 ? `+${longitude.toFixed(1)}` : `${longitude.toFixed(1)}`}°)
+        </p>
+        <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/80 text-slate-300">
+          <span className="text-[10px] uppercase font-bold text-slate-400">Declination:</span>
+          <strong className="text-amber-400 font-bold">{declination >= 0 ? `+${declination.toFixed(1)}` : declination.toFixed(1)}°</strong>
         </div>
       </div>
       
       {/* Map SVG Container */}
-      <div className="relative w-full flex-1 bg-slate-900 rounded-xl overflow-hidden border border-slate-200 min-h-[220px]">
+      <div className="relative w-full flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 min-h-[220px]">
         <svg viewBox="0 0 360 180" className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
            {/* Ocean Base */}
-           <rect width="360" height="180" fill="#1e293b" />
+           <rect width="360" height="180" fill="#0b0f19" />
 
            {/* Continent Landmasses */}
            {landmassPaths}
@@ -148,13 +145,13 @@ export const TerminatorMap = ({ solarData, latitude, longitude, timeOfDay, hover
            {/* Longitude Grid Lines */}
            {[-180, -90, 0, 90, 180, 270].map(lon => {
               let x = (lon - longitude + 180 + 360) % 360;
-              return <line key={lon} x1={x} y1="0" x2={x} y2="180" stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.5" />;
+              return <line key={lon} x1={x} y1="0" x2={x} y2="180" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.5" />;
            })}
 
            {/* Tropics & Equator Lines */}
-           <line x1="0" y1={90 - 23.5} x2="360" y2={90 - 23.5} stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2" />
-           <line x1="0" y1={90 + 23.5} x2="360" y2={90 + 23.5} stroke="#64748b" strokeWidth="0.5" strokeDasharray="2 2" />
-           <line x1="0" y1="90" x2="360" y2="90" stroke="#64748b" strokeWidth="0.5" strokeOpacity="0.6" />
+           <line x1="0" y1={90 - 23.5} x2="360" y2={90 - 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
+           <line x1="0" y1={90 + 23.5} x2="360" y2={90 + 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
+           <line x1="0" y1={90} x2="360" y2="90" stroke="#475569" strokeWidth="0.5" strokeOpacity="0.6" />
            
            {/* User Latitude & Meridian Crosshairs */}
            <line x1="0" y1={userCy} x2="360" y2={userCy} stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
@@ -184,13 +181,13 @@ export const TerminatorMap = ({ solarData, latitude, longitude, timeOfDay, hover
         </svg>
       </div>
 
-      <div className="mt-3 flex justify-between items-center text-[10px] font-mono text-slate-500">
+      <div className="mt-2.5 p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex justify-between items-center text-[10px] font-mono text-slate-400">
          <span>West (-180°)</span>
          <div className="flex items-center gap-3">
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400 inline-block" /> Civil (-6°)</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-500 inline-block" /> Nautical (-12°)</span>
-           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-800 inline-block" /> Astro (-18°)</span>
-           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-950 inline-block" /> Night</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-700 inline-block" /> Astro (-18°)</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-950 border border-slate-800 inline-block" /> Night</span>
          </div>
          <span>East (+180°)</span>
       </div>
