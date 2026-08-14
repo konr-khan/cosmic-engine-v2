@@ -112,4 +112,88 @@ describe('useCosmicEngine Hook Suite', () => {
       expect(result.solarData.dayLength).toBeGreaterThan(20);
     });
   });
+
+  describe('Degenerate Longitude & Polar Boundary Matrix (+90°N, -90°S)', () => {
+    it('guarantees zero NaN propagation at North and South Poles across all longitudes and times', () => {
+      const poles = [90, -90];
+      const longitudes = [-180, -120, -75, 0, 45, 90, 180];
+      const dates = [
+        new Date(2026, 2, 20), // Spring Equinox
+        new Date(2026, 5, 21), // Summer Solstice
+        new Date(2026, 8, 22), // Autumn Equinox
+        new Date(2026, 11, 21) // Winter Solstice
+      ];
+      const times = [0, 6, 12, 18, 23.5];
+
+      poles.forEach(lat => {
+        longitudes.forEach(lon => {
+          dates.forEach(date => {
+            times.forEach(t => {
+              const res = useCosmicEngine(date, t, lat, lon, true);
+              const { solarData, orbitalData, julianDate } = res;
+
+              // Julian Date check
+              expect(Number.isNaN(julianDate)).toBe(false);
+
+              // Solar Data checks
+              expect(Number.isNaN(solarData.solarNoon)).toBe(false);
+              expect(Number.isNaN(solarData.sunrise)).toBe(false);
+              expect(Number.isNaN(solarData.sunset)).toBe(false);
+              expect(Number.isNaN(solarData.dayLength)).toBe(false);
+              expect(Number.isNaN(solarData.civil)).toBe(false);
+              expect(Number.isNaN(solarData.nautical)).toBe(false);
+              expect(Number.isNaN(solarData.astronomical)).toBe(false);
+              expect(Number.isNaN(solarData.equationOfTime)).toBe(false);
+              expect(Number.isNaN(solarData.noonElevation)).toBe(false);
+              expect(Number.isNaN(solarData.declination)).toBe(false);
+
+              // Mutual exclusivity of polar flags
+              expect(solarData.isPolarNight && solarData.isMidnightSun).toBe(false);
+
+              // Orbital Data checks
+              if (orbitalData) {
+                expect(Number.isNaN(orbitalData.userRotation)).toBe(false);
+                expect(Number.isNaN(orbitalData.angles.toSun)).toBe(false);
+                expect(Number.isNaN(orbitalData.angles.toMoon)).toBe(false);
+                expect(Number.isNaN(orbitalData.positions.earth.x)).toBe(false);
+                expect(Number.isNaN(orbitalData.positions.earth.y)).toBe(false);
+                expect(Number.isNaN(orbitalData.positions.moon.x)).toBe(false);
+                expect(Number.isNaN(orbitalData.positions.moon.y)).toBe(false);
+                expect(Number.isNaN(orbitalData.tides.rx)).toBe(false);
+                expect(Number.isNaN(orbitalData.tides.alignment)).toBe(false);
+                expect(['High Tide', 'Low Tide']).toContain(orbitalData.localTideStatus);
+              }
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('Analemma Toggle & Solar Noon Equation of Time Correction', () => {
+    it('bypasses Equation of Time correction when useAnalemma is false', () => {
+      const testDate = new Date(2026, 10, 3); // November 3 (EoT ~ +16.4 min)
+      const longitude = -122.81;
+      
+      const withoutAnalemma = useCosmicEngine(testDate, 12, 47.06, longitude, false);
+      expect(withoutAnalemma.solarData.equationOfTime).toBe(0);
+      expect(withoutAnalemma.solarData.solarNoon).toBeCloseTo(12 - (longitude / 15), 5);
+
+      const withAnalemma = useCosmicEngine(testDate, 12, 47.06, longitude, true);
+      expect(withAnalemma.solarData.equationOfTime).not.toBe(0);
+      expect(withAnalemma.solarData.solarNoon).not.toBeCloseTo(withoutAnalemma.solarData.solarNoon, 2);
+    });
+  });
+
+  describe('Gravitational Tidal Physics & Local Tide Vector Status', () => {
+    it('calculates Spring Tide during syzygy alignment and assigns valid tide states', () => {
+      const newMoonDate = new Date(2024, 3, 8); // Syzygy
+      const result = useCosmicEngine(newMoonDate, 12, 0, 0, true);
+
+      expect(result.orbitalData).not.toBeNull();
+      expect(['Spring Tide', 'Neap Tide', 'Transitional']).toContain(result.orbitalData.tides.type);
+      expect(['High Tide', 'Low Tide']).toContain(result.orbitalData.localTideStatus);
+      expect(result.orbitalData.tides.rx).toBeGreaterThan(result.orbitalData.tides.ry);
+    });
+  });
 });

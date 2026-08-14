@@ -9,6 +9,7 @@
 - ☀️ **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil, nautical, and astronomical twilight durations, equation of time, and daylight length.
 - 🌙 **Lunar Almanac & Tidal Vectors**: 365-day lunar matrix, moon phases, apogee/perigee, parallactic angle, and tidal force visualization.
 - 🌒 **Eclipse Mechanics & Shadow Geometry**: Umbra/penumbra shadow geometry, solar & lunar eclipse alignment predictors, and historical/future presets.
+- 🧭 **Interactive Astrolabe Chronometer**: 4-concentric SVG dial for direct dragging of date, time, longitude, and latitude, with fast solstice/equinox jumps and modal fine-tuning.
 - 🌐 **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, and right ascension visualizers.
 - 🗺️ **Centered Daylight Terminator Map**: Real-time Earth map showing solar sub-point and illumination shadow terminator.
 - 🪐 **Macro & Micro Views**: Heliocentric planetary orbit view and Earth gravitational tidal force micro-view.
@@ -25,7 +26,7 @@
 - **State Management**: `useSyncExternalStore` external store subscription pattern (`src/store/cosmicStore.js`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.js`)
 - **Icons & Data Viz**: `lucide-react`, `recharts`
-- **Testing**: `vitest` (36 unit tests across math, hooks, state store, and worker manager)
+- **Testing**: `vitest` (64 unit tests across math, hooks, state store, and worker manager)
 
 ---
 
@@ -38,7 +39,7 @@ npm install
 # Start local development server
 npm run dev
 
-# Run unit test suite (36 unit tests across 4 test suites)
+# Run unit test suite (64 unit tests across 4 test suites)
 npm test
 
 # Build production bundle
@@ -49,4 +50,4 @@ npm run build
 
 ## 🤖 Agent & AI Guidelines
 
-This project includes an [`AGENTS.md`](./AGENTS.md) guide specifying architecture maps, mathematical invariants in `src/utils/cosmicMath.js`, state hooks, Web Worker offloading patterns, and guidelines for AI agents working on this codebase.
+This project includes an [`AGENTS.md`](./AGENTS.md) guide specifying architecture maps, mathematical invariants in `src/utils/cosmicMath/`, state hooks, Web Worker offloading patterns, and guidelines for AI agents working on this codebase.

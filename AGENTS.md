@@ -26,7 +26,7 @@ Key capabilities include:
 - **State Management**: `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.js`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.js`)
 - **Icons & Visualization**: `lucide-react`, `recharts`
-- **Testing**: `vitest` (`npm test` — 36 unit tests across math, hooks, store, and worker fallback)
+- **Testing**: `vitest` (`npm test` — 64 unit tests across math, hooks, store, and worker fallback)
 
 ### Essential Commands
 
@@ -62,7 +62,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── solar.js         # Solar declination, EoT & twilight algorithms
 │   │   │   ├── lunar.js         # Lunar ephemeris solver & parallactic angle
 │   │   │   └── eclipse.js       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine
+│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (41 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.js       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.js  # Vitest unit tests for state store & selector equality
@@ -76,10 +76,21 @@ Cosmic Engine V2.0/
 │   │   └── useEphemerisWorker.test.js # Vitest hook tests (worker integration & fallback)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets (SolarAlmanac, LunarAlmanacCard, etc.)
+│       │   ├── EclipseDemonstrator.jsx # Lightweight orchestrator dock container
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
+│       │       ├── EclipseStatusBadge.jsx      # Syzygy classification & proximity badge
+│       │       ├── ShadowRayDiagram.jsx        # SVG shadow ray tracing & geometry viewer
+│       │       ├── NodalPlaneVisualizer.jsx    # 5.14° nodal plane corridor & alignment bar
+│       │       ├── SkyViewSimulator.jsx        # Observer sky viewport (Corona, Blood Moon)
+│       │       └── EclipseScanner.jsx          # Historical presets & 365-day scanner list
 │       ├── controls/            # Interactive astrolabe inputs (ArmillaryRail, LatitudeSlider, etc.)
 │       ├── layout/              # Container layout modules (DashboardWindow, OrbitalChronometer)
+│       │   ├── OrbitalChronometer.jsx # Master astrolabe dock container
 │       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
+│       │       ├── AstrolabeDial.jsx           # 4-concentric interactive SVG astrolabe dial
+│       │       ├── ChronometerReadoutCards.jsx # Direct input cards & parseTimeString validator
+│       │       ├── SolsticeJumpControls.jsx    # Twilight phase pill & solstice fast jumps
+│       │       └── ChronometerModalPopovers.jsx # Accessible modal wrappers for Lat/Lon sliders
 │       └── common/              # Shared visual components (LivingMarble, PhaseVisual, AnnualChart)
 ```
 
@@ -90,7 +101,7 @@ Cosmic Engine V2.0/
 ### A. Mathematical Engine (`src/utils/cosmicMath/`)
 - Contains all pure astronomical functions with full JSDoc type & unit annotations (Julian Date conversions, solar declination, equation of time, lunar phase angles, twilight elevation thresholds, eclipse alignment angles, and tidal vector forces).
 - Contains default constants (`CONFIG`) for solar twilight angles (`OFFICIAL: -0.833°`, `CIVIL: -6.0°`, `NAUTICAL: -12.0°`, `ASTRONOMICAL: -18.0°`), orbital radii, and visual theme tokens.
-- Tested by `src/utils/cosmicMath.test.js`.
+- Rigorously tested by `src/utils/cosmicMath.test.js` across polar singularities ($\pm 90^\circ$ latitude, continuous twilight transitions at $\pm 65^\circ, \pm 70^\circ, \pm 78^\circ, \pm 85^\circ$), all 5 historic/future eclipse presets, node corridor thresholds, and direct input military/time string parsers.
 - **Rule for Agents**: Keep math pure, deterministic, and free of React or UI side-effects.
 
 ### B. External Store & Chronometer Ticker (`src/store/cosmicStore.js`)
@@ -102,7 +113,7 @@ Cosmic Engine V2.0/
 ### C. Simulation Engine Hook (`src/hooks/useCosmicEngine.js`)
 - Manages core astronomical calculations derived from date/time, observer latitude/longitude, and active widget flags.
 - **Selective Calculation Optimization**: Accepts `activeWidgets` flags to bypass heavy Meeus lunar ephemeris series (`calculateLunarEvents`) and eclipse shadow solvers (`calculateEclipseData`) during high-speed animation ticks when corresponding domain widgets are inactive.
-- Tested by `src/hooks/useCosmicEngine.test.js` under `jsdom`.
+- Tested by `src/hooks/useCosmicEngine.test.js` under `jsdom` including degenerate longitudes at poles ($90^\circ\text{N}, -90^\circ\text{S}$) to guarantee zero `NaN` propagation.
 - **Rule for Agents**: Use this hook as the single source of truth for simulation time and observer location.
 
 ### D. Off-Main-Thread Worker Processing (`src/workers/ephemerisWorkerManager.js`, `src/workers/ephemerisWorker.js` & `src/hooks/useEphemerisWorker.js`)
@@ -112,7 +123,11 @@ Cosmic Engine V2.0/
 - Tested by `src/hooks/useEphemerisWorker.test.js`.
 - **Rule for Agents**: Pass calculation flags (`isLunarActive`, `isEclipseActive`) to ensure background worker calculation is requested only when needed.
 
-### E. Master Observatory Layout (`src/App.jsx`)
+### E. Modularized Widget Architecture
+- **Eclipse Demonstrator Subsystem** (`src/components/widgets/eclipse/`): Separated into 5 dedicated modules (`EclipseStatusBadge`, `ShadowRayDiagram`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`) coordinated by a lightweight container.
+- **Orbital Chronometer Subsystem** (`src/components/layout/chronometer/`): Separated into 4 dedicated modules (`AstrolabeDial`, `ChronometerReadoutCards`, `SolsticeJumpControls`, `ChronometerModalPopovers`) supporting dragging interaction, direct input typing, and fast season jumps.
+
+### F. Master Observatory Layout (`src/App.jsx`)
 - Controls module visibility, layout presets (`Master Observatory`, `Solar Suite`, `Lunar & Tide Suite`, `Celestial Observatory`), and grid windowing via `DashboardWindow`.
 - Employs a glassmorphism dark-space aesthetic using slate/zinc backgrounds (`#0f172a`), glowing borders, and crisp typography.
 
