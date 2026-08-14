@@ -4,19 +4,24 @@ import { CONFIG } from "../../utils/cosmicMath";
 const toRadians = (degrees) => degrees * (Math.PI / 180);
 
 export const MicroTideView = ({
-  tides,
-  angles,
-  userRotation,
-  localTideStatus,
+  tides = { alignment: 0, rx: 16, ry: 12, type: 'Transitional' },
+  angles = { sunDegrees: 0, moonDegrees: 0 },
+  userRotation = 0,
+  localTideStatus = "Low Tide",
   hoverDate,
 }) => {
+  const safeTides = tides || { alignment: 0, rx: 16, ry: 12, type: 'Transitional' };
+  const safeAngles = angles || { sunDegrees: 0, moonDegrees: 0 };
+  const safeUserRotation = userRotation || 0;
+  const safeLocalTideStatus = localTideStatus || "Low Tide";
+
   const tideTextColor =
-    tides.alignment > 0 ? "text-indigo-400" : "text-amber-400";
+    (safeTides.alignment || 0) > 0 ? "text-indigo-400" : "text-amber-400";
   const localTideColor =
-    localTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-400";
+    safeLocalTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-400";
 
   // Refined "TO SUN" Rotation Logic
-  const isLeftHemisphere = Math.abs(angles.sunDegrees) > 90;
+  const isLeftHemisphere = Math.abs(safeAngles.sunDegrees || 0) > 90;
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
@@ -36,7 +41,7 @@ export const MicroTideView = ({
               Global Potential
             </div>
             <div className={`text-sm font-bold ${tideTextColor}`}>
-              {tides.type.split(" ")[0].toUpperCase()}
+              {(safeTides.type || 'Transitional').split(" ")[0].toUpperCase()}
             </div>
           </div>
           <div>
@@ -44,7 +49,7 @@ export const MicroTideView = ({
               Local Water
             </div>
             <div className={`text-sm font-bold ${localTideColor}`}>
-              {localTideStatus === "High Tide" ? "HIGH TIDE" : "LOW TIDE"}
+              {safeLocalTideStatus === "High Tide" ? "HIGH TIDE" : "LOW TIDE"}
             </div>
           </div>
         </div>
@@ -72,7 +77,7 @@ export const MicroTideView = ({
           />
 
           {/* Sun Angle Indicator */}
-          <g transform={`rotate(${angles.sunDegrees})`}>
+          <g transform={`rotate(${safeAngles.sunDegrees || 0})`}>
             <line
               x1="0"
               y1="0"
@@ -100,13 +105,13 @@ export const MicroTideView = ({
           <ellipse
             cx="0"
             cy="0"
-            rx={tides.rx}
-            ry={tides.ry}
+            rx={safeTides.rx || 16}
+            ry={safeTides.ry || 12}
             fill="#38bdf8"
             opacity="0.25"
             stroke="#38bdf8"
             strokeWidth="1.5"
-            transform={`rotate(${angles.moonDegrees})`}
+            transform={`rotate(${safeAngles.moonDegrees || 0})`}
           />
 
           {/* Earth Night Base */}
@@ -118,7 +123,7 @@ export const MicroTideView = ({
           />
 
           {/* Earth Lit Side (Facing Sun) */}
-          <g transform={`rotate(${angles.sunDegrees})`}>
+          <g transform={`rotate(${safeAngles.sunDegrees || 0})`}>
             <path
               d="M 0,-12 A 12,12 0 0,1 0,12 Z"
               fill={CONFIG.THEME.DAY_FILL}
@@ -126,7 +131,7 @@ export const MicroTideView = ({
           </g>
 
           {/* User Marker (Rotates by SunAngle + UserRotation) */}
-          <g transform={`rotate(${angles.sunDegrees + userRotation})`}>
+          <g transform={`rotate(${(safeAngles.sunDegrees || 0) + safeUserRotation})`}>
             <circle
               cx="12"
               cy="0"
@@ -150,10 +155,10 @@ export const MicroTideView = ({
 
           {/* Moon Body */}
           <g
-            transform={`translate(${60 * Math.cos(toRadians(angles.moonDegrees))}, ${60 * Math.sin(toRadians(angles.moonDegrees))})`}
+            transform={`translate(${60 * Math.cos(toRadians(safeAngles.moonDegrees || 0))}, ${60 * Math.sin(toRadians(safeAngles.moonDegrees || 0))})`}
           >
             <circle r="6" fill="#1e293b" stroke="#475569" strokeWidth="1" />
-            <g transform={`rotate(${angles.sunDegrees})`}>
+            <g transform={`rotate(${safeAngles.sunDegrees || 0})`}>
               <path d="M 0,-6 A 6,6 0 0,1 0,6 Z" fill="#f1f5f9" />
             </g>
           </g>
@@ -162,8 +167,8 @@ export const MicroTideView = ({
 
       {/* Footer Readout */}
       <div className="mt-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs font-mono text-slate-400">
-        <span>Alignment: <strong className={tides.alignment > 0 ? "text-indigo-400" : "text-amber-400"}>{tides.type}</strong></span>
-        <span>Local Status: <strong className={localTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-300"}>{localTideStatus}</strong></span>
+        <span>Alignment: <strong className={(safeTides.alignment || 0) > 0 ? "text-indigo-400" : "text-amber-400"}>{safeTides.type || "Transitional"}</strong></span>
+        <span>Local Status: <strong className={safeLocalTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-300"}>{safeLocalTideStatus}</strong></span>
       </div>
     </div>
   );

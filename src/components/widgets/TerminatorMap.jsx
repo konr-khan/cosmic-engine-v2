@@ -63,8 +63,8 @@ const WORLD_LANDMASSES = [
   ]
 ];
 
-export const TerminatorMap = ({ solarData, latitude, longitude, timeOfDay, hoverTime }) => {
-  const { declination } = solarData;
+export const TerminatorMap = ({ solarData, latitude = 47.06, longitude = -122.81, timeOfDay = 12, hoverTime }) => {
+  const { declination = 0 } = solarData || {};
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
 
   const sunLong = (12 - activeTime) * 15;

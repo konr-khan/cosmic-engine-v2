@@ -2,12 +2,12 @@ import React from 'react';
 import { Sun } from 'lucide-react';
 import { CONFIG, toRadians, toDegrees, formatTime, getSectorPath } from '../../utils/cosmicMath';
 
-export const SunClock = ({ solarData, currentTime, latitude, hoverTime, onHoverTime }) => {
+export const SunClock = ({ solarData, currentTime = 12, latitude = 47.06, hoverTime, onHoverTime }) => {
   const { 
-    dayLength, civil, nautical, astronomical, 
-    noonElevation, solarNoon, equationOfTime, 
-    isPolarNight, isMidnightSun, sunrise, sunset, declination 
-  } = solarData;
+    dayLength = 12, civil = 13, nautical = 14, astronomical = 15, 
+    noonElevation = 45, solarNoon = 12, equationOfTime = 0, 
+    isPolarNight = false, isMidnightSun = false, sunrise = 6, sunset = 18, declination = 0 
+  } = solarData || {};
   
   const radius = 90;
   const center = 110;

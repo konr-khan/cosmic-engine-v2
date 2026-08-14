@@ -28,15 +28,19 @@ export const LunarAlmanacCard = ({
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDay, setHoverDay] = useState(null);
 
-  const { phase, lunarEvents, tides, localTideStatus } = orbitalData;
-  const illPercent = (phase.value * 100).toFixed(0);
+  const safeOrbital = orbitalData || {};
+  const phase = safeOrbital.phase || { value: 0, name: 'New Moon' };
+  const lunarEvents = safeOrbital.lunarEvents || {};
+  const tides = safeOrbital.tides || { alignment: 0, rx: 16, ry: 12, type: 'Transitional' };
+  const localTideStatus = safeOrbital.localTideStatus || 'Low Tide';
+  const illPercent = ((phase.value ?? 0) * 100).toFixed(0);
 
   const { 
     moonrise, transit, moonset, 
     distanceKm, distanceEarthRadii, 
     isPerigee, isApogee, 
     parallacticAngle = 0 
-  } = lunarEvents || {};
+  } = lunarEvents;
 
   const year = currentDate ? currentDate.getFullYear() : 2026;
   const totalDays = getDaysInYear(year);

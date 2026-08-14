@@ -14,10 +14,10 @@
 - [x] Verify error boundary isolates failures to individual widget windows without unmounting dashboard
 
 ### Phase 2: Defensive Prop Null-Safety & Pipeline Hardening
-- [ ] Add defensive fallback defaults in `src/components/widgets/MicroTideView.jsx` (`tides`, `angles`, `userRotation`)
-- [ ] Add safe destructuring with fallbacks in `src/components/widgets/LunarAlmanacCard.jsx` (`orbitalData || {}`, `phase?.value`)
-- [ ] Add defensive property access in `src/components/widgets/CelestialSphereView.jsx`
-- [ ] Run test suite to verify no null pointer regressions during async worker delays
+- [x] Add defensive fallback defaults in `src/components/widgets/MicroTideView.jsx` (`tides`, `angles`, `userRotation`)
+- [x] Add safe destructuring with fallbacks in `src/components/widgets/LunarAlmanacCard.jsx` (`orbitalData || {}`, `phase?.value`)
+- [x] Add defensive property access in `src/components/widgets/CelestialSphereView.jsx`, `SunClock.jsx`, `TerminatorMap.jsx`, `SolarAlmanac.jsx`
+- [x] Run test suite to verify no null pointer regressions during async worker delays
 
 ### Phase 3: Pure Formatting Utilities Migration & Test Expansion
 - [ ] Migrate `parseTimeString` and `formatTimeHHMM` into `src/utils/cosmicMath/core.js`

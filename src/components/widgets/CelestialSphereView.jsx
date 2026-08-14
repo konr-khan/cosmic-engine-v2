@@ -405,7 +405,7 @@ export const CelestialSphereView = ({
 
       {/* Footer Spatial Context Readout */}
       <div className="mt-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs font-mono text-slate-400">
-        <span>Observer Zenith: <strong className="text-cyan-400">{latitude.toFixed(1)}°N, {longitude.toFixed(1)}°W</strong></span>
+        <span>Observer Zenith: <strong className="text-cyan-400">{Math.abs(latitude).toFixed(1)}°{latitude >= 0 ? 'N' : 'S'}, {Math.abs(longitude).toFixed(1)}°{longitude >= 0 ? 'E' : 'W'}</strong></span>
         <span>Axial Tilt: <strong className="text-amber-400">23.44°</strong></span>
         <span>Lunar Tilt: <strong className="text-emerald-400">5.14°</strong></span>
       </div>

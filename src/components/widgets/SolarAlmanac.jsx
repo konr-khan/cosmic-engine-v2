@@ -11,7 +11,7 @@ import {
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export const SolarAlmanac = ({ latitude, longitude, currentDay, onDayChange, year = 2026, hoverTime, onHoverTime }) => {
+export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay = 1, onDayChange, year = 2026, hoverTime, onHoverTime }) => {
   const svgRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDay, setHoverDay] = useState(null);
