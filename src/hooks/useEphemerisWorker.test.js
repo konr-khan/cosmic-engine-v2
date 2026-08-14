@@ -185,7 +185,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     unsub1();
   });
 
-  it('handles worker errors gracefully and falls back to inactive', () => {
+  it('coalesces concurrent requests with identical parameters into a single worker postMessage call', () => {
     class MockWorker {
       constructor() {
         this.postMessage = vi.fn();
@@ -198,14 +198,108 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     globalThis.Worker = MockWorker;
     const manager = new EphemerisWorkerManager();
 
-    manager.requestCalculation({
-      latitude: 0,
-      longitude: 0,
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+    const identicalParams = {
+      latitude: 47.06,
+      longitude: -122.81,
       julianDate: 2451545.0,
-      timeOfDay: 0,
+      timeOfDay: 12,
       calculateLunar: true,
       calculateEclipse: true
-    }, vi.fn());
+    };
+
+    // Dispatch 2 requests with identical parameters
+    manager.requestCalculation(identicalParams, cb1);
+    manager.requestCalculation(identicalParams, cb2);
+
+    // Should only have posted 1 message to the worker thread
+    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
+
+    // When worker responds, both callbacks must receive the payload
+    manager.worker.onmessage({
+      data: {
+        type: 'EPHEMERIS_SUCCESS',
+        id: 1,
+        payload: { lunarEvents: { distanceKm: 384400 }, eclipse: { type: 'NONE' }, timestamp: 500 }
+      }
+    });
+    expect(cb1).toHaveBeenCalledWith({ lunarEvents: { distanceKm: 384400 }, eclipse: { type: 'NONE' }, timestamp: 500 });
+    expect(cb2).toHaveBeenCalledWith({ lunarEvents: { distanceKm: 384400 }, eclipse: { type: 'NONE' }, timestamp: 500 });
+  });
+
+  it('deduplicates and coalesces identical in-flight requests without sending duplicate messages', () => {
+    class MockWorker {
+      constructor() {
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
+        this.onmessage = null;
+        this.onerror = null;
+      }
+    }
+
+    globalThis.Worker = MockWorker;
+    const manager = new EphemerisWorkerManager();
+
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+
+    const params = {
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      calculateLunar: true,
+      calculateEclipse: true
+    };
+
+    const unsub1 = manager.requestCalculation(params, cb1);
+    const unsub2 = manager.requestCalculation(params, cb2);
+
+    // Only 1 message should be sent to worker despite 2 subscribers
+    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
+
+    // Simulate successful worker response
+    manager.worker.onmessage({
+      data: {
+        type: 'EPHEMERIS_SUCCESS',
+        id: 1,
+        payload: { lunarEvents: { distanceKm: 384400 }, eclipse: null, timestamp: 12345 }
+      }
+    });
+
+    // Both subscribers should receive the payload
+    expect(cb1).toHaveBeenCalledTimes(1);
+    expect(cb2).toHaveBeenCalledTimes(1);
+    expect(cb1).toHaveBeenCalledWith({ lunarEvents: { distanceKm: 384400 }, eclipse: null, timestamp: 12345 });
+    expect(cb2).toHaveBeenCalledWith({ lunarEvents: { distanceKm: 384400 }, eclipse: null, timestamp: 12345 });
+
+    unsub1();
+    unsub2();
+  });
+
+  it('handles worker errors gracefully and dispatches fallback calculations to pending callbacks', () => {
+    class MockWorker {
+      constructor() {
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
+        this.onmessage = null;
+        this.onerror = null;
+      }
+    }
+
+    globalThis.Worker = MockWorker;
+    const manager = new EphemerisWorkerManager();
+
+    const cb = vi.fn();
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      calculateLunar: true,
+      calculateEclipse: true
+    }, cb);
 
     expect(manager.worker).not.toBeNull();
 
@@ -214,6 +308,47 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     expect(manager.isAvailable()).toBe(false);
     expect(manager.worker).toBeNull();
+    expect(cb).toHaveBeenCalledTimes(1);
+    const payload = cb.mock.calls[0][0];
+    expect(payload.lunarEvents).not.toBeNull();
+    expect(payload.eclipse).not.toBeNull();
+  });
+
+  it('dispatches synchronous fallback calculations on EPHEMERIS_ERROR message', () => {
+    class MockWorker {
+      constructor() {
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
+        this.onmessage = null;
+        this.onerror = null;
+      }
+    }
+
+    globalThis.Worker = MockWorker;
+    const manager = new EphemerisWorkerManager();
+
+    const cb = vi.fn();
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      calculateLunar: true,
+      calculateEclipse: true
+    }, cb);
+
+    manager.worker.onmessage({
+      data: {
+        type: 'EPHEMERIS_ERROR',
+        id: 1,
+        error: 'Calculation error'
+      }
+    });
+
+    expect(cb).toHaveBeenCalledTimes(1);
+    const payload = cb.mock.calls[0][0];
+    expect(payload.lunarEvents).not.toBeNull();
+    expect(payload.eclipse).not.toBeNull();
   });
 
   it('terminates active worker and clears pending requests on terminate()', () => {

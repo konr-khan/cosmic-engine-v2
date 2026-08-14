@@ -9,7 +9,9 @@ vi.mock('react', async (importOriginal) => {
     useMemo: (factory) => factory(),
     useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
     useEffect: (effect) => { effect(); },
-    useRef: (initial) => ({ current: initial })
+    useRef: (initial) => ({ current: initial }),
+    useCallback: (fn) => fn,
+    useSyncExternalStore: (subscribe, getSnapshot) => getSnapshot()
   };
 });
 
@@ -22,6 +24,22 @@ describe('useCosmicEngine Hook Suite', () => {
     expect(result.solarData).toBeDefined();
     expect(result.orbitalData).toBeDefined();
     expect(result.solarData.declination).toBeGreaterThan(23.0);
+  });
+
+  it('falls back to cosmicStore state values when invoked without explicit arguments', () => {
+    const result = useCosmicEngine();
+
+    expect(result.julianDate).toBeDefined();
+    expect(result.solarData).toBeDefined();
+    expect(result.orbitalData).toBeDefined();
+  });
+
+  it('merges partial parameter overrides with cosmicStore state', () => {
+    const customDate = new Date(2026, 11, 21); // Winter solstice
+    const result = useCosmicEngine(customDate, null, null, null, null);
+
+    expect(result.julianDate).toBeDefined();
+    expect(result.solarData.declination).toBeLessThan(-23.0);
   });
 
   describe('Selective Calculation & Domain Flag Optimization', () => {

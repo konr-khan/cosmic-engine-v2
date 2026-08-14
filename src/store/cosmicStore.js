@@ -117,7 +117,7 @@ class CosmicStore {
         this.animationFrameId = null;
         return;
       }
-      const deltaMs = now - this.lastTickTime;
+      const deltaMs = Math.min(now - this.lastTickTime, 500);
       this.lastTickTime = now;
       this.tickTime(deltaMs / 1000);
       this.animationFrameId = requestAnimationFrame(loop);

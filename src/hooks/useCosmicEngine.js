@@ -20,13 +20,7 @@ export const useCosmicEngine = (
   paramUseAnalemma,
   activeWidgets = {}
 ) => {
-  const hasExplicitParams = 
-    paramDate !== undefined && paramDate !== null &&
-    paramTimeOfDay !== undefined && paramTimeOfDay !== null &&
-    paramLatitude !== undefined && paramLatitude !== null &&
-    paramLongitude !== undefined && paramLongitude !== null;
-
-  const storeState = hasExplicitParams ? null : useChronometerStore((state) => ({
+  const storeState = useChronometerStore((state) => ({
     date: state.date,
     timeOfDay: state.timeOfDay,
     latitude: state.latitude,
@@ -34,11 +28,11 @@ export const useCosmicEngine = (
     useAnalemma: state.useAnalemma
   }));
 
-  const date = hasExplicitParams ? paramDate : storeState.date;
-  const timeOfDay = hasExplicitParams ? paramTimeOfDay : storeState.timeOfDay;
-  const latitude = hasExplicitParams ? paramLatitude : storeState.latitude;
-  const longitude = hasExplicitParams ? paramLongitude : storeState.longitude;
-  const useAnalemma = hasExplicitParams ? (paramUseAnalemma ?? true) : storeState.useAnalemma;
+  const date = paramDate ?? storeState.date;
+  const timeOfDay = paramTimeOfDay ?? storeState.timeOfDay;
+  const latitude = paramLatitude ?? storeState.latitude;
+  const longitude = paramLongitude ?? storeState.longitude;
+  const useAnalemma = paramUseAnalemma ?? storeState.useAnalemma;
 
   const hasExplicitPositiveOnly = 
     Object.values(activeWidgets).some(v => v === true) && 

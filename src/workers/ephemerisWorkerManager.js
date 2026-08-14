@@ -1,3 +1,5 @@
+import { calculateLunarEvents, calculateEclipseData } from '../utils/cosmicMath';
+
 /**
  * Ephemeris Worker Singleton Manager
  * 
@@ -29,8 +31,10 @@ export class EphemerisWorkerManager {
     this.worker = null;
     /** @type {number} */
     this.nextRequestId = 0;
-    /** @type {Map<number, (payload: EphemerisWorkerPayload) => void>} */
+    /** @type {Map<number, { signature: string, callbacks: Set<(payload: EphemerisWorkerPayload) => void>, params: EphemerisCalculationParams }>} */
     this.pendingRequests = new Map();
+    /** @type {Map<string, number>} */
+    this.signatureToRequestId = new Map();
     /** @type {boolean} */
     this._isAvailable = typeof Worker !== 'undefined';
   }
@@ -41,6 +45,65 @@ export class EphemerisWorkerManager {
    */
   isAvailable() {
     return typeof Worker !== 'undefined' && this._isAvailable !== false;
+  }
+
+  /**
+   * Computes synchronous fallback ephemeris calculations and dispatches to registered callbacks.
+   * @private
+   * @param {{ signature: string, callbacks: Set<(payload: EphemerisWorkerPayload) => void>, params: EphemerisCalculationParams }} entry
+   */
+  _executeSyncFallbackForEntry(entry) {
+    if (!entry || entry.callbacks.size === 0) return;
+    try {
+      const { latitude, longitude, julianDate, timeOfDay, calculateLunar, calculateEclipse } = entry.params;
+      const JD_midnight = julianDate - (timeOfDay / 24);
+      const lunarEvents = calculateLunar
+        ? calculateLunarEvents(latitude, longitude, JD_midnight, timeOfDay)
+        : null;
+      const eclipse = calculateEclipse
+        ? calculateEclipseData(julianDate)
+        : null;
+      const payload = {
+        lunarEvents,
+        eclipse,
+        timestamp: Date.now()
+      };
+      entry.callbacks.forEach((cb) => {
+        try {
+          cb(payload);
+        } catch (e) {
+          console.error('Ephemeris fallback callback error:', e);
+        }
+      });
+    } catch (e) {
+      console.error('Ephemeris synchronous fallback calculation failed:', e);
+    }
+  }
+
+  /**
+   * Handles unexpected worker failure (onerror / postMessage failure) by notifying pending requests
+   * via synchronous fallback calculations and safely clearing the worker instance.
+   * @private
+   * @param {any} [error]
+   */
+  _handleWorkerFailure(error) {
+    this._isAvailable = false;
+    const pending = Array.from(this.pendingRequests.values());
+    this.pendingRequests.clear();
+    this.signatureToRequestId.clear();
+
+    if (this.worker) {
+      try {
+        this.worker.terminate();
+      } catch {
+        // Ignore termination error on failed worker
+      }
+      this.worker = null;
+    }
+
+    for (const entry of pending) {
+      this._executeSyncFallbackForEntry(entry);
+    }
   }
 
   /**
@@ -63,27 +126,30 @@ export class EphemerisWorkerManager {
         this.worker.onmessage = (event) => {
           const { type, id, payload } = event.data || {};
           if (type === 'EPHEMERIS_SUCCESS') {
-            const callback = this.pendingRequests.get(id);
-            if (callback) {
+            const requestEntry = this.pendingRequests.get(id);
+            if (requestEntry) {
               this.pendingRequests.delete(id);
-              callback(payload);
+              this.signatureToRequestId.delete(requestEntry.signature);
+              requestEntry.callbacks.forEach((cb) => {
+                try {
+                  cb(payload);
+                } catch (e) {
+                  console.error('Ephemeris callback error:', e);
+                }
+              });
             }
           } else if (type === 'EPHEMERIS_ERROR') {
-            this.pendingRequests.delete(id);
+            const requestEntry = this.pendingRequests.get(id);
+            if (requestEntry) {
+              this.pendingRequests.delete(id);
+              this.signatureToRequestId.delete(requestEntry.signature);
+              this._executeSyncFallbackForEntry(requestEntry);
+            }
           }
         };
 
-        this.worker.onerror = () => {
-          this._isAvailable = false;
-          this.pendingRequests.clear();
-          if (this.worker) {
-            try {
-              this.worker.terminate();
-            } catch {
-              // Ignore termination error on failed worker
-            }
-            this.worker = null;
-          }
+        this.worker.onerror = (error) => {
+          this._handleWorkerFailure(error);
         };
       } catch {
         this._isAvailable = false;
@@ -96,7 +162,7 @@ export class EphemerisWorkerManager {
   }
 
   /**
-   * Requests an asynchronous ephemeris calculation from the singleton worker.
+   * Requests an asynchronous ephemeris calculation from the singleton worker with in-flight request deduplication.
    * 
    * @param {EphemerisCalculationParams} params
    * @param {(payload: EphemerisWorkerPayload) => void} onResult Callback on successful computation
@@ -107,34 +173,56 @@ export class EphemerisWorkerManager {
       return () => {};
     }
 
+    const calculateLunar = params.calculateLunar !== false;
+    const calculateEclipse = params.calculateEclipse !== false;
+    const signature = `${params.latitude}_${params.longitude}_${params.julianDate}_${params.timeOfDay}_${calculateLunar}_${calculateEclipse}`;
+
+    // In-flight request deduplication / coalescing
+    if (this.signatureToRequestId.has(signature)) {
+      const existingId = this.signatureToRequestId.get(signature);
+      const existingEntry = this.pendingRequests.get(existingId);
+      if (existingEntry) {
+        existingEntry.callbacks.add(onResult);
+        return () => {
+          existingEntry.callbacks.delete(onResult);
+        };
+      }
+    }
+
     const worker = this._getWorker();
     if (!worker) {
       return () => {};
     }
 
     const requestId = ++this.nextRequestId;
-    this.pendingRequests.set(requestId, onResult);
+    const requestEntry = {
+      signature,
+      callbacks: new Set([onResult]),
+      params: {
+        latitude: params.latitude,
+        longitude: params.longitude,
+        julianDate: params.julianDate,
+        timeOfDay: params.timeOfDay,
+        calculateLunar,
+        calculateEclipse
+      }
+    };
+
+    this.pendingRequests.set(requestId, requestEntry);
+    this.signatureToRequestId.set(signature, requestId);
 
     try {
       worker.postMessage({
         type: 'CALCULATE_EPHEMERIS',
         id: requestId,
-        payload: {
-          latitude: params.latitude,
-          longitude: params.longitude,
-          julianDate: params.julianDate,
-          timeOfDay: params.timeOfDay,
-          calculateLunar: params.calculateLunar !== false,
-          calculateEclipse: params.calculateEclipse !== false
-        }
+        payload: requestEntry.params
       });
-    } catch {
-      this._isAvailable = false;
-      this.pendingRequests.delete(requestId);
+    } catch (error) {
+      this._handleWorkerFailure(error);
     }
 
     return () => {
-      this.pendingRequests.delete(requestId);
+      requestEntry.callbacks.delete(onResult);
     };
   }
 
@@ -151,6 +239,7 @@ export class EphemerisWorkerManager {
       this.worker = null;
     }
     this.pendingRequests.clear();
+    this.signatureToRequestId.clear();
     this._isAvailable = typeof Worker !== 'undefined';
   }
 }
