@@ -199,7 +199,7 @@ export const CelestialSphereView = ({
       {/* Top Inline Controls & Mode Switcher */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
         <p className="text-xs text-slate-400">
-          Spatial geometry of Earth's axial tilt ($23.44^\circ$) &amp; Lunar inclination ($5.14^\circ$)
+          Spatial geometry of Earth's axial tilt (23.44°) &amp; Lunar inclination (5.14°)
         </p>
 
         {/* View Mode Selector Tabs */}

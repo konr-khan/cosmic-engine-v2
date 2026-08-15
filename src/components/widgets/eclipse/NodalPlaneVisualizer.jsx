@@ -33,12 +33,22 @@ export const NodalPlaneVisualizer = ({ eclipse }) => {
         {/* Current Moon Position Marker along Tilted Path */}
         {(() => {
           const nodeX = 250 + (beta * 32);
-          const nodeY = 90 - (beta * 11.6);
+          const nodeY = 90 - (beta * 32 * (120 / 440));
           return (
             <g transform={`translate(${nodeX}, ${nodeY})`}>
-              <line x1="0" y1="0" x2="0" y2={90 - nodeY} stroke="#60a5fa" strokeWidth="1.5" strokeDasharray="2 2" />
-              <circle r="9" fill={eclipse.isEclipseActive ? '#f43f5e' : '#3b82f6'} stroke="white" strokeWidth="2" className="drop-shadow" />
-              <text x="12" y="4" className="text-[10px] font-mono font-bold fill-blue-300">
+              <line x1="0" y1="0" x2="0" y2={90 - nodeY} stroke={eclipse.isEclipseActive ? '#f43f5e' : '#94a3b8'} strokeWidth="1.5" strokeDasharray="2 2" />
+              <circle 
+                r="9" 
+                fill={eclipse.isEclipseActive ? '#f43f5e' : '#e2e8f0'} 
+                stroke={eclipse.isEclipseActive ? '#ffffff' : '#475569'} 
+                strokeWidth="2" 
+                className="drop-shadow" 
+              />
+              <text 
+                x="12" 
+                y="4" 
+                className={`text-[10px] font-mono font-bold ${eclipse.isEclipseActive ? 'fill-amber-300' : 'fill-slate-300'}`}
+              >
                 CURRENT MOON (β = {beta}°, Y = {offsetKm > 0 ? `+${offsetKm.toLocaleString()}` : offsetKm.toLocaleString()} km)
               </text>
             </g>

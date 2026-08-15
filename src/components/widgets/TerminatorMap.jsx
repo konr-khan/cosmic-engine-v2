@@ -136,48 +136,56 @@ export const TerminatorMap = ({ solarData, latitude = 47.06, longitude = -122.81
       {/* Map SVG Container */}
       <div className="relative w-full flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 min-h-[220px]">
         <svg viewBox="0 0 360 180" className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
-           {/* Ocean Base */}
-           <rect width="360" height="180" fill="#0b0f19" />
+          <defs>
+            <clipPath id="terminatorBounds">
+              <rect x="0" y="0" width="360" height="180" rx="8" />
+            </clipPath>
+          </defs>
 
-           {/* Continent Landmasses */}
-           {landmassPaths}
+          <g clipPath="url(#terminatorBounds)">
+            {/* Ocean Base */}
+            <rect width="360" height="180" fill="#0b0f19" />
 
-           {/* Longitude Grid Lines */}
-           {[-180, -90, 0, 90, 180, 270].map(lon => {
-              let x = (lon - longitude + 180 + 360) % 360;
-              return <line key={lon} x1={x} y1="0" x2={x} y2="180" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.5" />;
-           })}
+            {/* Continent Landmasses */}
+            {landmassPaths}
 
-           {/* Tropics & Equator Lines */}
-           <line x1="0" y1={90 - 23.5} x2="360" y2={90 - 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
-           <line x1="0" y1={90 + 23.5} x2="360" y2={90 + 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
-           <line x1="0" y1={90} x2="360" y2="90" stroke="#475569" strokeWidth="0.5" strokeOpacity="0.6" />
-           
-           {/* User Latitude & Meridian Crosshairs */}
-           <line x1="0" y1={userCy} x2="360" y2={userCy} stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
-           <line x1={180} y1="0" x2={180} y2="180" stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
+            {/* Longitude Grid Lines */}
+            {[-180, -90, 0, 90, 180, 270].map(lon => {
+               let x = (lon - longitude + 180 + 360) % 360;
+               return <line key={lon} x1={x} y1="0" x2={x} y2="180" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.5" />;
+            })}
 
-           {/* Layered Twilight & Night Shadows */}
-           {/* Astronomical / Night Zone (-18°) */}
-           <path d={astroShadow.combinedPath} fill="#020617" fillOpacity="0.6" />
-           {/* Nautical Zone (-12°) */}
-           <path d={nauticalShadow.combinedPath} fill="#0f172a" fillOpacity="0.45" />
-           {/* Civil Zone (-6°) */}
-           <path d={civilShadow.combinedPath} fill="#1e293b" fillOpacity="0.35" />
-           {/* Official Day Boundary Zone (-0.833°) */}
-           <path d={dayShadow.combinedPath} fill="#fbbf24" fillOpacity="0.15" />
+            {/* Tropics & Equator Lines */}
+            <line x1="0" y1={90 - 23.5} x2="360" y2={90 - 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
+            <line x1="0" y1={90 + 23.5} x2="360" y2={90 + 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
+            <line x1="0" y1={90} x2="360" y2="90" stroke="#475569" strokeWidth="0.5" strokeOpacity="0.6" />
+            
+            {/* User Latitude & Meridian Crosshairs */}
+            <line x1="0" y1={userCy} x2="360" y2={userCy} stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
+            <line x1={180} y1="0" x2={180} y2="180" stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
 
-           {/* Subsolar Point Marker */}
-           <circle cx={relSunX} cy={sunCy} r="5" fill={CONFIG.THEME.SUN_FILL} stroke="white" strokeWidth="1.5" className="drop-shadow" />
-           
-           {/* Hover Subsolar Ray Guide when hover sync active */}
-           {hoverTime !== null && hoverTime !== undefined && (
-             <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.8" />
-           )}
+            {/* Layered Twilight & Night Shadows */}
+            {/* Astronomical / Night Zone (-18°) */}
+            <path d={astroShadow.combinedPath} fill="#020617" fillOpacity="0.6" />
+            {/* Nautical Zone (-12°) */}
+            <path d={nauticalShadow.combinedPath} fill="#0f172a" fillOpacity="0.45" />
+            {/* Civil Zone (-6°) */}
+            <path d={civilShadow.combinedPath} fill="#1e293b" fillOpacity="0.35" />
+            {/* Official Day Boundary Zone (-0.833°) */}
+            <path d={dayShadow.combinedPath} fill="#fbbf24" fillOpacity="0.15" />
 
-           {/* User Observer Position Marker */}
-           <circle cx={180} cy={userCy} r="4" fill="#6366f1" stroke="white" strokeWidth="1.5" className="drop-shadow" />
-           <text x={186} y={userCy - 4} className="text-[8px] fill-indigo-300 font-bold font-mono">YOU</text>
+            {/* Subsolar Point Marker */}
+            <circle cx={relSunX} cy={sunCy} r="5" fill={CONFIG.THEME.SUN_FILL} stroke="white" strokeWidth="1.5" className="drop-shadow" />
+            
+            {/* Hover Subsolar Ray Guide when hover sync active */}
+            {hoverTime !== null && hoverTime !== undefined && (
+              <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.8" />
+            )}
+
+            {/* User Observer Position Marker */}
+            <circle cx={180} cy={userCy} r="4" fill="#6366f1" stroke="white" strokeWidth="1.5" className="drop-shadow" />
+            <text x={186} y={userCy - 4} className="text-[8px] fill-indigo-300 font-bold font-mono">YOU</text>
+          </g>
         </svg>
       </div>
 
