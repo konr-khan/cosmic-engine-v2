@@ -114,45 +114,89 @@ export const CelestialSphereView = ({
 
     const pZenithVault = project3D(zenithX, zenithY, zenithZ, pitch, yaw, scale, cx, cy);
 
-    // 3. Sun Position on Ecliptic Ring (tilted 23.44°)
-    const sunLonRad = toRadians((12 - timeOfDay) * 15 + declination);
-    const sunX0 = sphereR * Math.cos(sunLonRad);
-    const sunZ0 = sphereR * Math.sin(sunLonRad);
+    // 3. True Solar Coordinates on Ecliptic Ring
+    const sunLambdaDeg = solarData?.lambda ?? solarData?.eclipticLongitude ?? ((12 - timeOfDay) * 15 + declination);
+    const sunLambdaRad = toRadians(sunLambdaDeg);
+    const sunX0 = sphereR * Math.cos(sunLambdaRad);
+    const sunZ0 = sphereR * Math.sin(sunLambdaRad);
     const sunY1 = -sunZ0 * Math.sin(radTilt);
     const sunZ1 = sunZ0 * Math.cos(radTilt);
 
     const pSun = project3D(sunX0, sunY1, sunZ1, pitch, yaw, scale, cx, cy);
 
-    // 4. Moon Position on Tilted Moon Orbit (tilted 5.14° to Ecliptic)
-    const moonRad = toRadians(moonDeg);
-    const moonIncRad = toRadians(5.14);
-    const moonX0 = sphereR * Math.cos(moonRad);
-    const moonZ0 = sphereR * Math.sin(moonRad);
-    const moonY1 = -moonZ0 * Math.sin(moonIncRad + radTilt);
-    const moonZ1 = moonZ0 * Math.cos(moonIncRad + radTilt);
+    // 4. True Lunar & Nodal Coordinates
+    const nodeLonDeg = orbitalData?.nodeLongitude ?? orbitalData?.angles?.nodeLongitude ?? 125.0;
+    const nodeLonRad = toRadians(nodeLonDeg);
 
-    const pMoon = project3D(moonX0, moonY1, moonZ1, pitch, yaw, scale, cx, cy);
+    const lunarLambdaDeg = orbitalData?.lunarPos?.lambda ?? orbitalData?.angles?.moonDegrees ?? moonDeg;
+    const lunarBetaDeg = orbitalData?.lunarPos?.beta ?? 0;
+    const lunarLambdaRad = toRadians(lunarLambdaDeg);
+    const lunarBetaRad = toRadians(lunarBetaDeg);
 
-    // 5. Eclipse Node Markers (Ascending & Descending Nodes where Moon Orbit crosses Ecliptic)
-    const nodeAsc3D = { x: sphereR, y: 0, z: 0 };
-    const nodeDesc3D = { x: -sphereR, y: 0, z: 0 };
+    // Lunar position in 3D (Ecliptic frame -> Tilted Ecliptic frame)
+    const moonEclX = sphereR * Math.cos(lunarBetaRad) * Math.cos(lunarLambdaRad);
+    const moonEclY = sphereR * Math.sin(lunarBetaRad);
+    const moonEclZ = sphereR * Math.cos(lunarBetaRad) * Math.sin(lunarLambdaRad);
 
-    const pNodeAsc = project3D(nodeAsc3D.x, nodeAsc3D.y, nodeAsc3D.z, pitch, yaw, scale, cx, cy);
-    const pNodeDesc = project3D(nodeDesc3D.x, nodeDesc3D.y, nodeDesc3D.z, pitch, yaw, scale, cx, cy);
+    const moonX1 = moonEclX;
+    const moonY1 = moonEclY * Math.cos(radTilt) - moonEclZ * Math.sin(radTilt);
+    const moonZ1 = moonEclY * Math.sin(radTilt) + moonEclZ * Math.cos(radTilt);
 
-    // Check if Moon is near Node (Eclipse Proximity)
-    const moonDistToNode = Math.min(
-      Math.abs((moonDeg % 180)),
-      Math.abs(180 - (moonDeg % 180))
+    const pMoon = project3D(moonX1, moonY1, moonZ1, pitch, yaw, scale, cx, cy);
+
+    // 5. Dynamic Eclipse Node Markers (Ascending & Descending on Ecliptic plane)
+    const nodeAscX0 = sphereR * Math.cos(nodeLonRad);
+    const nodeAscZ0 = sphereR * Math.sin(nodeLonRad);
+    const nodeAscY1 = -nodeAscZ0 * Math.sin(radTilt);
+    const nodeAscZ1 = nodeAscZ0 * Math.cos(radTilt);
+
+    const pNodeAsc = project3D(nodeAscX0, nodeAscY1, nodeAscZ1, pitch, yaw, scale, cx, cy);
+    const pNodeDesc = project3D(-nodeAscX0, -nodeAscY1, -nodeAscZ1, pitch, yaw, scale, cx, cy);
+
+    // 6. Dynamic Moon Orbit Ring (Tilted 5.14° to Ecliptic, pivoting at Ascending Node)
+    const moonOrbitPoints = [];
+    const moonOrbitSteps = 72;
+    const incRad = toRadians(5.14);
+
+    for (let i = 0; i <= moonOrbitSteps; i++) {
+      const u = (i / moonOrbitSteps) * 2 * Math.PI; // Argument of latitude
+      const xOrb = sphereR * Math.cos(u);
+      const yOrb = sphereR * Math.sin(u) * Math.sin(incRad);
+      const zOrb = sphereR * Math.sin(u) * Math.cos(incRad);
+
+      // Rotate in ecliptic plane by node longitude
+      const xEcl = xOrb * Math.cos(nodeLonRad) - zOrb * Math.sin(nodeLonRad);
+      const yEcl = yOrb;
+      const zEcl = xOrb * Math.sin(nodeLonRad) + zOrb * Math.cos(nodeLonRad);
+
+      // Tilt around X-axis by ecliptic obliquity (23.44°)
+      const x3D = xEcl;
+      const y3D = yEcl * Math.cos(radTilt) - zEcl * Math.sin(radTilt);
+      const z3D = yEcl * Math.sin(radTilt) + zEcl * Math.cos(radTilt);
+
+      moonOrbitPoints.push(project3D(x3D, y3D, z3D, pitch, yaw, scale, cx, cy));
+    }
+
+    let moonOrbitPathD = `M ${moonOrbitPoints[0].px.toFixed(1)} ${moonOrbitPoints[0].py.toFixed(1)}`;
+    for (let i = 1; i < moonOrbitPoints.length; i++) {
+      moonOrbitPathD += ` L ${moonOrbitPoints[i].px.toFixed(1)} ${moonOrbitPoints[i].py.toFixed(1)}`;
+    }
+
+    // Eclipse Proximity Alert: moon is within 1.5° of ecliptic and within 18° of syzygy
+    const elongationDeg = Math.abs((lunarLambdaDeg - sunLambdaDeg + 360) % 360);
+    const distToSyzygy = Math.min(
+      Math.min(elongationDeg, 360 - elongationDeg), // New Moon
+      Math.abs(elongationDeg - 180)                 // Full Moon
     );
-    const isNearEclipseNode = moonDistToNode < 15;
+    const isNearEclipseNode = Math.abs(lunarBetaDeg) < 1.5 && distToSyzygy < 18;
 
     return {
       pNorth, pSouth, pObsEarth, pZenithVault,
       pSun, pMoon, pNodeAsc, pNodeDesc,
+      moonOrbitPathD,
       isNearEclipseNode, pitch, yaw, scale, cx, cy, sphereR, earthR
     };
-  }, [latitude, longitude, timeOfDay, declination, moonDeg]);
+  }, [latitude, longitude, timeOfDay, declination, moonDeg, solarData, orbitalData]);
 
   // Calculations for Heliocentric Mode
   const heliocentricScene = useMemo(() => {
@@ -269,8 +313,14 @@ export const CelestialSphereView = ({
               {/* 2. Ecliptic Ring (23.44° Tilt) */}
               {renderCircle3D(110, 23.44, 0, "#f59e0b", 2.0, "", 0.85)}
 
-              {/* 3. Moon Orbit Ring (5.14° Inclination relative to Ecliptic) */}
-              {renderCircle3D(110, 28.58, 0, "#34d399", 1.8, "", 0.8)}
+              {/* 3. Dynamic Moon Orbit Ring (5.14° Inclination pivoting at Ascending Node) */}
+              <path 
+                d={geocentricScene.moonOrbitPathD} 
+                fill="none" 
+                stroke="#34d399" 
+                strokeWidth="1.8" 
+                strokeOpacity="0.85" 
+              />
 
               {/* 4. Center Earth Globe */}
               <circle cx="200" cy="160" r="32" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" />

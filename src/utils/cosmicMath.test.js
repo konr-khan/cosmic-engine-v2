@@ -258,7 +258,24 @@ describe('cosmicMath utilities', () => {
         expect(Number.isNaN(res.rightAscension)).toBe(false);
         expect(Number.isNaN(res.distanceKm)).toBe(false);
         expect(Number.isNaN(res.distanceEarthRadii)).toBe(false);
+        expect(Number.isNaN(res.nodeLongitude)).toBe(false);
+        expect(Number.isNaN(res.descendingNodeLongitude)).toBe(false);
+        expect(Number.isNaN(res.angularRadiusDeg)).toBe(false);
+        expect(Number.isNaN(res.parallaxDeg)).toBe(false);
       });
+    });
+
+    it('calculates accurate ascending node longitude and precession rate across epochs', () => {
+      // J2000 epoch (2000-01-01 12:00 UTC, JD 2451545.0)
+      const lunarJ2000 = calculateLunarPosition(2451545.0);
+      expect(lunarJ2000.nodeLongitude).toBeCloseTo(125.04, 1);
+      expect(lunarJ2000.descendingNodeLongitude).toBeCloseTo((125.04 + 180) % 360, 1);
+
+      // 18.61 years after J2000 (one full nodal regression cycle)
+      const jdAfter18Years = 2451545.0 + (18.61295 * 365.25);
+      const lunarAfter = calculateLunarPosition(jdAfter18Years);
+      const diff = Math.abs(lunarAfter.nodeLongitude - lunarJ2000.nodeLongitude);
+      expect(diff < 2 || Math.abs(diff - 360) < 2).toBe(true);
     });
   });
 
@@ -356,6 +373,43 @@ describe('cosmicMath utilities', () => {
       expect(eclipse.category).toBe('NO_ECLIPSE');
       expect(eclipse.type).toBe('NONE');
       expect(eclipse.obscuration).toBe(0);
+    });
+
+    it('accurately verifies NO_ECLIPSE for August 8, 2028 at 01:06 UTC (Waning Gibbous Moon, no false positive)', () => {
+      // August 8, 2028, 01:06 UTC (Month index 7)
+      const d = new Date(Date.UTC(2028, 7, 8, 1, 6, 0));
+      const jd = 2440587.5 + (d.getTime() / 86400000);
+      const eclipse = calculateEclipseData(jd);
+
+      expect(eclipse.isEclipseActive).toBe(false);
+      expect(eclipse.category).toBe('NO_ECLIPSE');
+      expect(eclipse.type).toBe('NONE');
+      expect(eclipse.obscuration).toBe(0);
+    });
+
+    it('accurately detects New Year Eve 2028 Total Lunar Eclipse (2028-12-31 at 16:52 UTC)', () => {
+      // December 31, 2028, 16:52 UTC
+      const d = new Date(Date.UTC(2028, 11, 31, 16, 52, 0));
+      const jd = 2440587.5 + (d.getTime() / 86400000);
+      const eclipse = calculateEclipseData(jd);
+
+      expect(eclipse.isEclipseActive).toBe(true);
+      expect(eclipse.category).toBe('LUNAR');
+      expect(eclipse.type).toBe('TOTAL_LUNAR');
+      expect(eclipse.obscuration).toBe(100);
+      expect(eclipse.nodeProximityDeg).toBeLessThan(0.45);
+    });
+
+    it('accurately detects Great Australian Total Solar Eclipse (2028-07-22 at 02:56 UTC)', () => {
+      // July 22, 2028, 02:56 UTC
+      const d = new Date(Date.UTC(2028, 6, 22, 2, 56, 0));
+      const jd = 2440587.5 + (d.getTime() / 86400000);
+      const eclipse = calculateEclipseData(jd);
+
+      expect(eclipse.isEclipseActive).toBe(true);
+      expect(eclipse.category).toBe('SOLAR');
+      expect(eclipse.type).toBe('TOTAL_SOLAR');
+      expect(eclipse.obscuration).toBeGreaterThanOrEqual(90);
     });
 
     it('calculates correct alignmentPercent and node proximity across lunar inclinations', () => {

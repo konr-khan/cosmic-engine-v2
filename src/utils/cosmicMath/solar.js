@@ -56,10 +56,16 @@ export const calculateSolarPosition = (julianDate) => {
   const isPerihelion = distanceAU < 0.985;
   const isAphelion = distanceAU > 1.015;
   
+  const normLambda = ((lambda % 360) + 360) % 360;
+  const sunAngularRadiusDeg = (sunAngularDiameterArcmin / 60) / 2;
+
   return { 
     declination, 
     equationOfTime, 
-    rightAscension: alpha, 
+    rightAscension: alpha,
+    lambda: parseFloat(normLambda.toFixed(4)),
+    eclipticLongitude: parseFloat(normLambda.toFixed(4)),
+    sunAngularRadiusDeg: parseFloat(sunAngularRadiusDeg.toFixed(4)),
     n,
     distanceAU: parseFloat(distanceAU.toFixed(5)),
     distanceKm: Math.round(distanceKm),

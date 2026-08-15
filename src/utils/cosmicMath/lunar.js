@@ -68,9 +68,27 @@ export const calculateLunarPosition = (julianDate) => {
     Math.cos(lRad)
   );
   let rightAscension = toDegrees(raRad);
-  if (rightAscension < 0) rightAscension += 360;
+  const normLambda = ((lambda % 360) + 360) % 360;
+  const nodeLongitude = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
+  const descendingNodeLongitude = (nodeLongitude + 180) % 360;
+  const angularRadiusDeg = toDegrees(Math.asin(1737.4 / distanceKm));
+  const parallaxDeg = toDegrees(Math.asin(6378.137 / distanceKm));
 
-  return { lambda, beta, declination, rightAscension, distanceKm, distanceEarthRadii: distanceKm / 6371 };
+  return { 
+    lambda: parseFloat(normLambda.toFixed(4)), 
+    eclipticLongitude: parseFloat(normLambda.toFixed(4)),
+    beta: parseFloat(beta.toFixed(4)), 
+    eclipticLatitude: parseFloat(beta.toFixed(4)),
+    declination, 
+    rightAscension, 
+    distanceKm, 
+    distanceEarthRadii: distanceKm / 6371,
+    nodeLongitude: parseFloat(nodeLongitude.toFixed(4)),
+    descendingNodeLongitude: parseFloat(descendingNodeLongitude.toFixed(4)),
+    angularRadiusDeg: parseFloat(angularRadiusDeg.toFixed(4)),
+    parallaxDeg: parseFloat(parallaxDeg.toFixed(4)),
+    argumentOfLatitude: parseFloat(F.toFixed(4))
+  };
 };
 
 /**

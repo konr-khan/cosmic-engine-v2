@@ -25,55 +25,78 @@ export const calculateEclipseData = (julianDate) => {
   const solarPos = calculateSolarPosition(julianDate);
   const lunarPos = calculateLunarPosition(julianDate);
 
-  // Ecliptic longitude difference
+  // Ecliptic longitude elongation (Moon - Sun)
+  const sunLambda = solarPos.lambda ?? solarPos.eclipticLongitude ?? 0;
+  const moonLambda = lunarPos.lambda ?? lunarPos.eclipticLongitude ?? 0;
+  const elongation = ((moonLambda - sunLambda) % 360 + 360) % 360;
+  
+  // Right Ascension difference for equatorial compatibility
   const raDiff = ((lunarPos.rightAscension - solarPos.rightAscension) % 360 + 360) % 360;
   const beta = lunarPos.beta; // Moon ecliptic latitude (-5.14° to +5.14°)
   const absBeta = Math.abs(beta);
   const distanceKm = lunarPos.distanceKm;
+  const sunDistanceKm = solarPos.distanceKm || 149597870.7;
 
   // Phase value 0 (New Moon) to 1
-  const phaseValue = raDiff / 360;
+  const phaseValue = elongation / 360;
 
-  // Distance to nearest Syzygy (0° = New Moon, 180° = Full Moon)
-  const distToNewMoon = Math.min(raDiff, 360 - raDiff);
-  const distToFullMoon = Math.abs(raDiff - 180);
+  // Angular distance to Syzygy along ecliptic (0° = New Moon, 180° = Full Moon)
+  const distToNewMoon = Math.min(elongation, 360 - elongation);
+  const distToFullMoon = Math.abs(elongation - 180);
 
-  const isNearNewMoon = distToNewMoon < 12; // within ~1 day of New Moon
-  const isNearFullMoon = distToFullMoon < 12; // within ~1 day of Full Moon
+  // Angular radii and parallax
+  const sSun = solarPos.sunAngularRadiusDeg ?? (31.986 / (solarPos.distanceAU || 1) / 120); // ~0.267°
+  const sMoon = lunarPos.angularRadiusDeg ?? (Math.asin(1737.4 / distanceKm) * (180 / Math.PI)); // ~0.26° - 0.28°
+  const piMoon = lunarPos.parallaxDeg ?? (Math.asin(6378.137 / distanceKm) * (180 / Math.PI)); // ~0.95° - 1.02°
+  const piSun = Math.asin(6378.137 / sunDistanceKm) * (180 / Math.PI); // ~0.0024°
+
+  // Earth umbra & penumbra radii at Moon's distance (including 1.02 atmospheric enlargement)
+  const umbraRadiusDeg = (piMoon + piSun - sSun) * 1.02;
+  const penumbraRadiusDeg = (piMoon + piSun + sSun) * 1.02;
+
+  // Angular separation from center of Earth's shadow (for Lunar Eclipse)
+  const dLonOpp = ((elongation - 180 + 540) % 360) - 180;
+  const gammaLunar = Math.sqrt(Math.pow(dLonOpp * Math.cos(beta * Math.PI / 180), 2) + Math.pow(beta, 2));
+
+  // Angular separation from Sun center (for Solar Eclipse)
+  const dLonConj = ((elongation + 180) % 360) - 180;
+  const gammaSolar = Math.sqrt(Math.pow(dLonConj * Math.cos(beta * Math.PI / 180), 2) + Math.pow(beta, 2));
 
   let type = "NONE";
   let category = "NO_ECLIPSE"; // 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE'
   let label = "No Eclipse";
   let obscuration = 0; // 0 to 100%
 
-  if (isNearNewMoon && absBeta < 1.5) {
+  // Solar Eclipse Condition (New Moon syzygy & shadow alignment)
+  const isNearNewMoon = distToNewMoon <= 2.2;
+  const solarMaxLimit = piMoon + sSun + sMoon; // ~1.55°
+
+  if (isNearNewMoon && gammaSolar < solarMaxLimit) {
     category = "SOLAR";
-    if (absBeta < 0.35) {
+    if (gammaSolar < 1.0) {
       if (distanceKm < 378000) {
         type = "TOTAL_SOLAR";
         label = "Total Solar Eclipse";
-        obscuration = Math.min(100, Math.round(100 - (absBeta * 15)));
+        obscuration = Math.min(100, Math.round(100 - (absBeta * 10)));
       } else {
         type = "ANNULAR_SOLAR";
         label = "Annular Solar Eclipse";
-        obscuration = Math.min(98, Math.round(95 - (absBeta * 15)));
+        obscuration = Math.min(98, Math.round(95 - (absBeta * 10)));
       }
-    } else if (absBeta < 1.1) {
-      type = "PARTIAL_SOLAR";
-      label = "Partial Solar Eclipse";
-      obscuration = Math.max(10, Math.round(85 - (absBeta * 65)));
     } else {
       type = "PARTIAL_SOLAR";
-      label = "Minor Partial Solar Alignment";
-      obscuration = Math.max(2, Math.round(30 - (absBeta * 20)));
+      label = "Partial Solar Eclipse";
+      obscuration = Math.max(10, Math.round(85 - ((gammaSolar - 1.0) / (solarMaxLimit - 1.0) * 75)));
     }
-  } else if (isNearFullMoon && absBeta < 1.6) {
+  } 
+  // Lunar Eclipse Condition (Full Moon syzygy & shadow alignment)
+  else if (distToFullMoon <= 2.2 && gammaLunar < (penumbraRadiusDeg + sMoon)) {
     category = "LUNAR";
-    if (absBeta < 0.45) {
+    if (gammaLunar <= (umbraRadiusDeg - sMoon + 0.05) && absBeta < 0.45) {
       type = "TOTAL_LUNAR";
       label = "Total Lunar Eclipse (Blood Moon)";
       obscuration = 100;
-    } else if (absBeta < 0.9) {
+    } else if (gammaLunar <= (umbraRadiusDeg + sMoon) && absBeta < 0.9) {
       type = "PARTIAL_LUNAR";
       label = "Partial Lunar Eclipse";
       obscuration = Math.max(15, Math.round(90 - (absBeta * 70)));
@@ -105,6 +128,7 @@ export const calculateEclipseData = (julianDate) => {
     umbraRadiusKm: Math.round(umbraRadiusKm),
     penumbraRadiusKm: Math.round(penumbraRadiusKm),
     raDiff: parseFloat(raDiff.toFixed(2)),
+    elongation: parseFloat(elongation.toFixed(2)),
     phaseValue: parseFloat(phaseValue.toFixed(3))
   };
 };
@@ -160,22 +184,45 @@ export const findUpcomingEclipses = (startDate = new Date(), limit = 4) => {
   const list = [];
   const startJD = getJulianDate(startDate, 12);
   
-  // Scan forward up to 365 days in 1-day steps
+  // Scan forward up to 365 days in 1-day steps, refining to peak syzygy
   for (let dayOffset = 0; dayOffset < 365 && list.length < limit; dayOffset++) {
     const jd = startJD + dayOffset;
-    const eclipse = calculateEclipseData(jd);
-    
-    if (eclipse.isEclipseActive) {
-      // Check if we already added an eclipse within 5 days of this peak
-      const isDuplicate = list.some(item => Math.abs(item.dayOffset - dayOffset) < 5);
-      if (!isDuplicate) {
-        const eventDate = new Date(startDate.getTime() + dayOffset * 86400000);
-        list.push({
-          date: eventDate,
-          dayOffset,
-          title: `${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
-          ...eclipse
-        });
+    const sol = calculateSolarPosition(jd);
+    const lun = calculateLunarPosition(jd);
+    const sunLambda = sol.lambda ?? sol.eclipticLongitude ?? 0;
+    const moonLambda = lun.lambda ?? lun.eclipticLongitude ?? 0;
+    const elongation = ((moonLambda - sunLambda) % 360 + 360) % 360;
+    const distToNewMoon = Math.min(elongation, 360 - elongation);
+    const distToFullMoon = Math.abs(elongation - 180);
+
+    // If near syzygy (within ~1 day), solve exact peak JD
+    let peakJD = jd;
+    let isCandidate = false;
+
+    if (distToNewMoon < 7 && Math.abs(lun.beta) < 1.6) {
+      const dLonConj = ((elongation + 180) % 360) - 180;
+      peakJD = jd - (dLonConj / 12.19);
+      isCandidate = true;
+    } else if (distToFullMoon < 7 && Math.abs(lun.beta) < 1.6) {
+      const dLonOpp = ((elongation - 180 + 540) % 360) - 180;
+      peakJD = jd - (dLonOpp / 12.19);
+      isCandidate = true;
+    }
+
+    if (isCandidate) {
+      const eclipse = calculateEclipseData(peakJD);
+      if (eclipse.isEclipseActive) {
+        const peakOffset = peakJD - startJD;
+        const isDuplicate = list.some(item => Math.abs(item.dayOffset - peakOffset) < 10);
+        if (!isDuplicate && peakOffset >= 0) {
+          const eventDate = new Date(startDate.getTime() + peakOffset * 86400000);
+          list.push({
+            date: eventDate,
+            dayOffset: Math.round(peakOffset),
+            title: `${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+            ...eclipse
+          });
+        }
       }
     }
   }

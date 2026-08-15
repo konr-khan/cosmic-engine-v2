@@ -69,7 +69,8 @@ export const useCosmicEngine = (
   return useMemo(() => {
     const JD = julianDate;
 
-    const { declination, equationOfTime, n } = calculateSolarPosition(JD);
+    const solarPos = calculateSolarPosition(JD);
+    const { declination, equationOfTime, n, lambda: solarLambda } = solarPos;
     const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
     
     const eotCorrection = useAnalemma ? equationOfTime : 0;
@@ -88,6 +89,8 @@ export const useCosmicEngine = (
       daysSinceEpoch: n,
       noonElevation: 90 - Math.abs(latitude - declination),
       declination,
+      lambda: solarLambda,
+      eclipticLongitude: solarLambda,
       isPolarNight: dayLen <= 0,
       isMidnightSun: dayLen >= 24
     };
@@ -95,6 +98,7 @@ export const useCosmicEngine = (
     let orbitalData = null;
 
     if (isOrbitalActive) {
+      const lunarPos = calculateLunarPosition(JD);
       const { earthOrbitRadius, moonOrbitRadius, daysInYear, earthRadius } = CONFIG.ORBIT;
 
       const earthTheta = (n / daysInYear) * 2 * Math.PI;
@@ -140,8 +144,13 @@ export const useCosmicEngine = (
           toSun: angleToSun, 
           toMoon: angleToMoon, 
           sunDegrees: toDegrees(Math.atan2(Math.sin(angleToSun), Math.cos(angleToSun))), 
-          moonDegrees: toDegrees(angleToMoon), 
+          moonDegrees: toDegrees(angleToMoon),
+          nodeLongitude: lunarPos.nodeLongitude,
+          descendingNodeLongitude: lunarPos.descendingNodeLongitude
         },
+        nodeLongitude: lunarPos.nodeLongitude,
+        descendingNodeLongitude: lunarPos.descendingNodeLongitude,
+        lunarPos,
         phase: { value: phase0to1, name: getPhaseName(phase0to1) },
         tides: { rx: tideRx, ry: baseOceanSize, type: tideType, alignment: alignmentFactor },
         userRotation,

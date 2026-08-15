@@ -29,7 +29,7 @@
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.js`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (98 automated unit tests across 5 test suites: pure math, hooks, state store, error boundaries, and worker fallback)
+- **Testing**: `vitest` (102 automated unit tests across 5 test suites: pure math, hooks, state store, error boundaries, and worker fallback)
 
 ---
 
@@ -42,7 +42,7 @@ npm install
 # Start local development server
 npm run dev
 
-# Run Vitest test suite (98 unit tests across 5 suites)
+# Run Vitest test suite (102 unit tests across 5 suites)
 npm test
 
 # Build production bundle to dist/
@@ -75,9 +75,9 @@ Cosmic Engine V2.0/
 │   │   │   ├── constants.js     # Orbital radii, twilight thresholds & theme tokens
 │   │   │   ├── core.js          # Julian dates, hour formatting & trig helpers
 │   │   │   ├── solar.js         # Solar declination, EoT, twilight algorithms & annual solar matrix
-│   │   │   ├── lunar.js         # Lunar ephemeris solver, parallactic angle & annual lunar matrix
+│   │   │   ├── lunar.js         # Lunar ephemeris solver, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   └── eclipse.js       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (57 tests)
+│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (61 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.js       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.js  # Vitest unit tests for state store & selector equality (5 tests)
@@ -95,7 +95,7 @@ Cosmic Engine V2.0/
 │       │   ├── SunClock.jsx     # Polar sun elevation sector dial
 │       │   ├── LunarAlmanacCard.jsx # 365-day lunar matrix & tidal wave
 │       │   ├── EclipseDemonstrator.jsx # Eclipse demonstrator orchestrator
-│       │   ├── CelestialSphereView.jsx # 3D orthographic celestial coordinate sphere
+│       │   ├── CelestialSphereView.jsx # 3D orthographic celestial coordinate sphere with dynamic node alignment
 │       │   ├── TerminatorMap.jsx # Centered daylight terminator world map
 │       │   ├── MacroOrbitView.jsx # Solar system macro orbit view
 │       │   ├── MicroTideView.jsx # Earth gravitational tidal force micro-view
@@ -114,7 +114,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 
 | Test Suite | File | Tests | Focus Areas |
 | :--- | :--- | :--- | :--- |
-| **Cosmic Math** | `src/utils/cosmicMath.test.js` | 57 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, 365/366-day solar & lunar matrices, eclipse presets |
+| **Cosmic Math** | `src/utils/cosmicMath.test.js` | 61 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets & 2028 edge cases |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.js` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.js` | 17 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.jsx` | 6 | Fault isolation, derived state error capture, and in-place module reset recovery |
