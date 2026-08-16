@@ -1,6 +1,13 @@
 import React from 'react';
 import { toRadians } from '../../utils/cosmicMath';
 
+export interface ArmillaryRailProps {
+  radius?: number;
+  width?: number;
+  latitude: number;
+  color?: string;
+}
+
 const PRESETS = [
   { lat: 90, label: "90°N" },
   { lat: 66.5, label: "66.5°N" },
@@ -11,12 +18,17 @@ const PRESETS = [
   { lat: -90, label: "90°S" }
 ];
 
-export const ArmillaryRail = ({ radius = 54, width = 16, latitude, color = "#f43f5e" }) => {
+export const ArmillaryRail: React.FC<ArmillaryRailProps> = ({ 
+  radius = 54, 
+  width = 16, 
+  latitude, 
+  color = "#f43f5e" 
+}) => {
   const latRad = toRadians(Math.max(-90, Math.min(90, latitude)));
   const hx = -radius * Math.cos(latRad);
   const hy = -radius * Math.sin(latRad);
 
-  const formatLatStr = (lat) => `${Math.abs(lat)}°${lat >= 0 ? (lat === 0 ? '' : 'N') : 'S'}`;
+  const formatLatStr = (lat: number): string => `${Math.abs(lat)}°${lat >= 0 ? (lat === 0 ? '' : 'N') : 'S'}`;
 
   return (
     <g className="select-none group touch-none">

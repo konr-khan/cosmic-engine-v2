@@ -3,16 +3,25 @@ import { Globe, Compass, X } from 'lucide-react';
 import { LatitudeSlider } from '../../controls/LatitudeSlider';
 import { PolarLongitudeSelector } from '../../controls/PolarLongitudeSelector';
 
-const formatLat = (l) => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
-const formatLon = (l) => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;
+export interface ChronometerModalPopoversProps {
+  activePopup: 'lat' | 'lon' | null;
+  onClose: () => void;
+  latitude: number;
+  longitude: number;
+  onLatChange?: (lat: number) => void;
+  onLonChange?: (lon: number) => void;
+}
 
-export const ChronometerModalPopovers = ({
+const formatLat = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
+const formatLon = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;
+
+export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> = ({
   activePopup,
   onClose,
   latitude,
   longitude,
-  onLatChange,
-  onLonChange
+  onLatChange = () => {},
+  onLonChange = () => {}
 }) => {
   if (!activePopup) return null;
 
@@ -62,7 +71,7 @@ export const ChronometerModalPopovers = ({
       )}
 
       {/* =======================================================
-          POPOVER 2: POLAR 360° LONGITUDE SELECTOR MODAL
+          POPOVER 2: 360° POLAR LONGITUDE SELECTOR MODAL
          ======================================================= */}
       {activePopup === 'lon' && (
         <div 
@@ -75,7 +84,7 @@ export const ChronometerModalPopovers = ({
           >
             <div className="flex justify-between items-center pb-2 border-b border-slate-800">
               <h4 className="text-sm font-extrabold text-amber-400 flex items-center gap-2">
-                <Compass className="w-4 h-4 text-amber-400" /> Polar 360° Longitude Selector
+                <Compass className="w-4 h-4 text-amber-400" /> 360° Polar Longitude Selector
               </h4>
               <button 
                 onClick={onClose} 
@@ -86,7 +95,7 @@ export const ChronometerModalPopovers = ({
             </div>
 
             <div className="bg-slate-950 p-2 sm:p-3 rounded-xl border border-slate-800 flex justify-center">
-              <PolarLongitudeSelector longitude={longitude} onChange={onLonChange} isDarkMode={true} />
+              <PolarLongitudeSelector longitude={longitude} onChange={onLonChange} />
             </div>
 
             <div className="flex justify-between items-center text-xs font-mono px-1">
@@ -96,7 +105,7 @@ export const ChronometerModalPopovers = ({
 
             <button 
               onClick={onClose} 
-              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-1.5 rounded-xl text-xs transition-colors shadow-md cursor-pointer"
+              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-1.5 rounded-xl text-xs transition-colors shadow-md cursor-pointer"
             >
               DONE
             </button>

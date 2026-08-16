@@ -1,13 +1,26 @@
-import React, { Component } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+
+export interface WindowErrorBoundaryProps {
+  children?: ReactNode;
+  windowTitle?: string;
+  windowId?: string;
+  onReset?: () => void;
+}
+
+export interface WindowErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+}
 
 /**
  * Fault-tolerant React Error Boundary for Dashboard Windows.
  * Isolates runtime calculation and SVG rendering exceptions to individual widget cards,
  * preventing a local crash in one visualizer from unmounting the entire Observatory dashboard.
  */
-export class WindowErrorBoundary extends Component {
-  constructor(props) {
+export class WindowErrorBoundary extends Component<WindowErrorBoundaryProps, WindowErrorBoundaryState> {
+  constructor(props: WindowErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
@@ -16,25 +29,25 @@ export class WindowErrorBoundary extends Component {
     };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): Partial<WindowErrorBoundaryState> {
     return {
       hasError: true,
       error
     };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({
       errorInfo
     });
     // Log error locally in development
-    const isDev = typeof process !== 'undefined' ? process.env?.NODE_ENV !== 'production' : Boolean(import.meta.env?.DEV);
+    const isDev = typeof window !== 'undefined' && Boolean((import.meta as any).env?.DEV);
     if (isDev) {
       console.error(`[WindowErrorBoundary: ${this.props.windowTitle || this.props.windowId || 'Widget'}]`, error, errorInfo);
     }
   }
 
-  handleReset = () => {
+  handleReset = (): void => {
     this.setState({
       hasError: false,
       error: null,
@@ -45,7 +58,7 @@ export class WindowErrorBoundary extends Component {
     }
   };
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
       const { windowTitle = 'Visualizer Module', windowId } = this.props;
       const errorMessage = this.state.error?.message || 'An unexpected rendering error occurred in this module.';
@@ -59,32 +72,24 @@ export class WindowErrorBoundary extends Component {
           <h4 className="text-sm font-bold text-slate-200 tracking-wide mb-1">
             {windowTitle} Offline
           </h4>
-
-          <p className="text-xs text-slate-400 max-w-sm mb-3">
-            An isolated calculation or rendering error occurred. The rest of the Observatory dashboard remains fully operational.
+          <p className="text-xs text-slate-400 max-w-sm mb-4 line-clamp-2 leading-relaxed">
+            {errorMessage}
           </p>
 
-          <div className="text-[11px] font-mono text-rose-400/90 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-800 max-w-md truncate mb-4">
-            {errorMessage}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={this.handleReset}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-xs font-semibold text-slate-200 hover:text-white rounded-lg border border-slate-700 transition-colors shadow-sm cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset Visualizer
+            </button>
           </div>
 
-          <button
-            onClick={this.handleReset}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Retry Module</span>
-          </button>
-
-          {this.state.error?.stack && (
-            <details className="mt-4 text-left w-full max-w-md">
-              <summary className="text-[10px] font-mono text-slate-500 hover:text-slate-400 cursor-pointer text-center">
-                Show Stack Trace
-              </summary>
-              <pre className="mt-2 p-2 bg-slate-900 text-[9px] font-mono text-slate-400 rounded border border-slate-800 overflow-x-auto max-h-32">
-                {this.state.error.stack}
-              </pre>
-            </details>
+          {windowId && (
+            <span className="text-[10px] text-slate-600 font-mono mt-4">
+              Module ID: {windowId}
+            </span>
           )}
         </div>
       );

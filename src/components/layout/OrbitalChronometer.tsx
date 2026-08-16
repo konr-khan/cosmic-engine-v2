@@ -1,12 +1,27 @@
 import React, { useState } from 'react';
 import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
 import { calculateDailySolarEvents, getDayOfYear } from '../../utils/cosmicMath';
+import { SolarAlmanacData } from '../../types';
 import {
   AstrolabeDial,
   ChronometerReadoutCards,
   SolsticeJumpControls,
   ChronometerModalPopovers
 } from './chronometer';
+
+export interface OrbitalChronometerProps {
+  date: Date;
+  onDateChange?: (date: Date) => void;
+  timeOfDay: number;
+  onTimeChange?: (time: number) => void;
+  longitude: number;
+  onLonChange?: (lon: number) => void;
+  latitude: number;
+  onLatChange?: (lat: number) => void;
+  solarData?: SolarAlmanacData | null;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
 
 const THEME = {
   date: "#10b981",
@@ -15,7 +30,7 @@ const THEME = {
   lat: "#f43f5e"
 };
 
-export const OrbitalChronometer = ({
+export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
   date,
   onDateChange,
   timeOfDay,
@@ -28,7 +43,7 @@ export const OrbitalChronometer = ({
   isCollapsed = false,
   onToggleCollapse
 }) => {
-  const [activePopup, setActivePopup] = useState(null); // 'lat' | 'lon' | null
+  const [activePopup, setActivePopup] = useState<'lat' | 'lon' | null>(null);
 
   const dayOfYear = getDayOfYear(date);
   const declination = solarData ? solarData.declination : 0;
@@ -46,13 +61,13 @@ export const OrbitalChronometer = ({
     else currentTwilightPhase = "Night";
   }
 
-  const formatDate = (d) => {
+  const formatDate = (d: number): string => {
     const tempDate = new Date(date.getFullYear(), 0, d);
     return tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
-  const formatLat = (l) => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
-  const formatLon = (l) => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;
-  const formatTimeStr = (t) => {
+  const formatLat = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
+  const formatLon = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;
+  const formatTimeStr = (t: number): string => {
     const h = Math.floor(t);
     const m = Math.floor((t - h) * 60);
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}Z`;

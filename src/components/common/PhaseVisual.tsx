@@ -1,14 +1,19 @@
 import React from 'react';
 import { CONFIG } from '../../utils/cosmicMath';
 
-export const PhaseVisual = ({ phase, parallacticAngle = 0 }) => {
+export interface PhaseVisualProps {
+  phase: number;
+  parallacticAngle?: number;
+}
+
+export const PhaseVisual: React.FC<PhaseVisualProps> = ({ phase, parallacticAngle = 0 }) => {
   const r = 24;
   const isWaxing = phase < 0.5;
   const startY = isWaxing ? 8 : 56;
   const endY = isWaxing ? 56 : 8;
   
   const rxAbs = Math.abs(24 * Math.cos(phase * 2 * Math.PI));
-  let termSweep;
+  let termSweep: number;
   if (isWaxing) {
     termSweep = phase < 0.25 ? 0 : 1;
   } else {

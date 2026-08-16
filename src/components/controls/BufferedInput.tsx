@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, InputHTMLAttributes } from 'react';
 
-export const BufferedInput = ({ value, onChange, type = "text", className, ...props }) => {
-  const [localValue, setLocalValue] = useState(value);
+export interface BufferedInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
+  value: string | number;
+  onChange: (val: string | number) => void;
+  type?: string;
+  className?: string;
+}
+
+export const BufferedInput: React.FC<BufferedInputProps> = ({ 
+  value, 
+  onChange, 
+  type = "text", 
+  className, 
+  ...props 
+}) => {
+  const [localValue, setLocalValue] = useState<string | number>(value);
   const [active, setActive] = useState(false);
 
   // Sync with prop value only when not active (not typing)
@@ -13,7 +26,7 @@ export const BufferedInput = ({ value, onChange, type = "text", className, ...pr
     onChange(localValue);
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.currentTarget.blur(); // Triggers onBlur which commits
     }
@@ -32,4 +45,5 @@ export const BufferedInput = ({ value, onChange, type = "text", className, ...pr
     />
   );
 };
+
 export default BufferedInput;

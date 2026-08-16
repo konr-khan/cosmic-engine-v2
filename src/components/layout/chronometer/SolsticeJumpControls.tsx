@@ -1,12 +1,18 @@
 import React from 'react';
 import { Settings } from 'lucide-react';
 
-export const SolsticeJumpControls = ({
+export interface SolsticeJumpControlsProps {
+  currentTwilightPhase?: string;
+  date?: Date;
+  onDateChange?: (date: Date) => void;
+}
+
+export const SolsticeJumpControls: React.FC<SolsticeJumpControlsProps> = ({
   currentTwilightPhase = "Daylight",
   date,
   onDateChange
 }) => {
-  const handleJump = (month, day) => {
+  const handleJump = (month: number, day: number) => {
     if (onDateChange) {
       const year = date ? date.getFullYear() : new Date().getFullYear();
       onDateChange(new Date(year, month, day));

@@ -1,11 +1,28 @@
 import React from 'react';
 import { toRadians } from '../../utils/cosmicMath';
 
-export const ControlRing = ({ 
-  radius, width, value, max, color, 
-  formatValue, rangeOffset = 0
+export interface ControlRingProps {
+  radius: number;
+  width: number;
+  value: number;
+  max: number;
+  color: string;
+  formatValue?: (val: number) => string;
+  rangeOffset?: number;
+  onHover?: (hovered: boolean) => void;
+}
+
+export const ControlRing: React.FC<ControlRingProps> = ({ 
+  radius, 
+  width, 
+  value, 
+  max, 
+  color, 
+  formatValue, 
+  rangeOffset = 0,
+  onHover
 }) => {
-  // Convert value to angle (0-360 deg)
+  // Convert value to angle (0-360 deg, 0° at 12 o'clock, clockwise)
   let normalizedValue = value - rangeOffset;
   normalizedValue = ((normalizedValue % max) + max) % max;
   
@@ -20,7 +37,11 @@ export const ControlRing = ({
   const largeArcFlag = clampedAngle > 180 ? 1 : 0;
 
   return (
-    <g className="select-none group touch-none">
+    <g 
+      className="select-none group touch-none"
+      onPointerEnter={() => onHover && onHover(true)}
+      onPointerLeave={() => onHover && onHover(false)}
+    >
       {/* Background Track */}
       <circle cx="0" cy="0" r={radius} fill="none" stroke="#1e293b" strokeWidth={width} />
       
@@ -44,16 +65,6 @@ export const ControlRing = ({
       <g transform={`translate(${ix}, ${iy})`}>
         <circle r={width / 1.8} fill="#0f172a" stroke={color} strokeWidth={2} className="drop-shadow-lg" />
         <circle r={4} fill={color} />
-        
-        {/* Tooltip Readout */}
-        <text 
-          y={32} 
-          textAnchor="middle" 
-          className="text-[10px] font-mono font-bold fill-white pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.9)' }}
-        >
-          {formatValue(value)}
-        </text>
       </g>
     </g>
   );
