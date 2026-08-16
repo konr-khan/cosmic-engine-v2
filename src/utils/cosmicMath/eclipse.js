@@ -92,14 +92,15 @@ export const calculateEclipseData = (julianDate) => {
   // Lunar Eclipse Condition (Full Moon syzygy & shadow alignment)
   else if (distToFullMoon <= 2.2 && gammaLunar < (penumbraRadiusDeg + sMoon)) {
     category = "LUNAR";
-    if (gammaLunar <= (umbraRadiusDeg - sMoon + 0.05) && absBeta < 0.45) {
+    if (gammaLunar <= (umbraRadiusDeg - sMoon + 0.05)) {
       type = "TOTAL_LUNAR";
       label = "Total Lunar Eclipse (Blood Moon)";
       obscuration = 100;
-    } else if (gammaLunar <= (umbraRadiusDeg + sMoon) && absBeta < 0.9) {
+    } else if (gammaLunar <= (umbraRadiusDeg + sMoon)) {
       type = "PARTIAL_LUNAR";
       label = "Partial Lunar Eclipse";
-      obscuration = Math.max(15, Math.round(90 - (absBeta * 70)));
+      const fraction = (umbraRadiusDeg + sMoon - gammaLunar) / (2 * sMoon);
+      obscuration = Math.max(10, Math.min(99, Math.round(fraction * 100)));
     } else {
       type = "PENUMBRAL_LUNAR";
       label = "Penumbral Lunar Eclipse";

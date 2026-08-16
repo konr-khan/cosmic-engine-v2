@@ -28,14 +28,14 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.js`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.js`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.js`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 102 unit tests across 5 test suites)
+- **Testing**: `vitest` (`npm test` — 104 unit tests across 5 test suites)
 
 ### Essential Commands
 
 | Command | Purpose |
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
-| `npm test` | Runs Vitest unit test suite (102 unit tests across 5 test suites) |
+| `npm test` | Runs Vitest unit test suite (104 unit tests across 5 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
@@ -65,7 +65,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── solar.js         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.js         # Lunar ephemeris solver, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   └── eclipse.js       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (61 tests)
+│   │   └── cosmicMath.test.js   # Vitest unit tests for math engine (63 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.js       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.js  # Vitest unit tests for state store & selector equality (5 tests)
@@ -201,7 +201,7 @@ Standard coordinate conventions used throughout the engine:
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval.
 4. **Preserve Math Accuracy**: Cite standard astronomical references for formula changes and verify polar/solstice edge cases.
-5. **No Regressions**: All 102 unit tests across the 5 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.js`, `useCosmicEngine.test.js`, `useEphemerisWorker.test.js`, `WindowErrorBoundary.test.jsx`, or `cosmicStore.test.js`.
+5. **No Regressions**: All 104 unit tests across the 5 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.js`, `useCosmicEngine.test.js`, `useEphemerisWorker.test.js`, `WindowErrorBoundary.test.jsx`, or `cosmicStore.test.js`.
 
 ### B. Testing & Mocking Standards for Agents
 - **Vitest Mocking Guidelines**:

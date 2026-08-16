@@ -400,6 +400,32 @@ describe('cosmicMath utilities', () => {
       expect(eclipse.nodeProximityDeg).toBeLessThan(0.45);
     });
 
+    it('accurately detects March 3, 2026 Total Lunar Eclipse (2026-03-03 at 11:34 UTC)', () => {
+      // March 3, 2026, 11:34 UTC (Month index 2)
+      const d = new Date(Date.UTC(2026, 2, 3, 11, 34, 0));
+      const jd = 2440587.5 + (d.getTime() / 86400000);
+      const eclipse = calculateEclipseData(jd);
+
+      expect(eclipse.isEclipseActive).toBe(true);
+      expect(eclipse.category).toBe('LUNAR');
+      expect(eclipse.type).toBe('TOTAL_LUNAR');
+      expect(eclipse.obscuration).toBe(100);
+      expect(eclipse.nodeProximityDeg).toBeLessThan(0.50);
+    });
+
+    it('accurately detects June 26, 2029 Total Lunar Eclipse (2029-06-26 at 03:22 UTC)', () => {
+      // June 26, 2029, 03:22 UTC (Month index 5)
+      const d = new Date(Date.UTC(2029, 5, 26, 3, 22, 0));
+      const jd = 2440587.5 + (d.getTime() / 86400000);
+      const eclipse = calculateEclipseData(jd);
+
+      expect(eclipse.isEclipseActive).toBe(true);
+      expect(eclipse.category).toBe('LUNAR');
+      expect(eclipse.type).toBe('TOTAL_LUNAR');
+      expect(eclipse.obscuration).toBe(100);
+      expect(eclipse.nodeProximityDeg).toBeLessThan(0.20);
+    });
+
     it('accurately detects Great Australian Total Solar Eclipse (2028-07-22 at 02:56 UTC)', () => {
       // July 22, 2028, 02:56 UTC
       const d = new Date(Date.UTC(2028, 6, 22, 2, 56, 0));
