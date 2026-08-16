@@ -45,20 +45,41 @@ export interface SolarAlmanacData {
   isMidnightSun: boolean;
 }
 
+/** Full instantaneous solar position & Earth orbital dynamics */
+export interface SolarPositionFull extends SolarPosition {
+  rightAscension: number;
+  distanceAU: number;
+  distanceKm: number;
+  orbitalSpeedKms: number;
+  solarIrradianceWm2: number;
+  solarIrradiancePercent: number;
+  sunAngularDiameterArcmin: number;
+  sunAngularRadiusDeg: number;
+  isPerihelion: boolean;
+  isAphelion: boolean;
+  meanAnomaly: number;
+  eclipticLongitude: number;
+}
+
 /** Single-day record in the 365-day annual solar matrix */
-export interface SolarMatrixRecord {
-  dayOfYear: number;
-  dateStr: string;
-  dayLength: number;
+export interface AnnualSolarMatrixItem {
+  day: number;
+  declination: Degrees | number;
+  equationOfTime: number;
+  solarNoon: number;
   sunrise: number;
   sunset: number;
-  noonElevation: number;
-  isPolarNight: boolean;
-  isMidnightSun: boolean;
-  civilDuration: number;
-  nauticalDuration: number;
-  astronomicalDuration: number;
+  civilDawn: number;
+  civilDusk: number;
+  nauticalDawn: number;
+  nauticalDusk: number;
+  astroDawn: number;
+  astroDusk: number;
+  dayLength: number;
 }
+
+/** Alias for annual solar matrix item record */
+export type SolarMatrixRecord = AnnualSolarMatrixItem;
 
 /** Lunar phase classification names */
 export type LunarPhaseName = 
@@ -93,28 +114,44 @@ export interface LunarPosition {
   argumentOfLatitude?: number;
 }
 
-/** Lunar calendar events & apsides proximity */
-export interface LunarEvents {
-  nextNewMoon: number | null;
-  nextFullMoon: number | null;
-  perigeeDistance: number;
-  apogeeDistance: number;
-  isPerigeeNear: boolean;
-  isApogeeNear: boolean;
+/** Full lunar position solver output with extended angular metrics */
+export interface LunarPositionFull extends LunarPosition {
+  distanceEarthRadii: number;
+  angularRadiusDeg: number;
+  parallaxDeg: number;
+  argumentOfLatitude: number;
 }
 
-/** Single-day record in the 365-day annual lunar matrix */
-export interface LunarMatrixRecord {
-  dayOfYear: number;
-  dateStr: string;
-  phase: number;
-  phaseName: LunarPhaseName;
-  distance: number;
-  elongation: number;
-  nodeLongitude: number;
+/** Lunar calendar events, transit timings & apsides metrics */
+export interface LunarEvents {
+  moonrise: number | null;
+  transit: number;
+  moonset: number | null;
+  distanceKm: number;
+  distanceEarthRadii: number;
   isPerigee: boolean;
   isApogee: boolean;
+  declination: Degrees | number;
+  parallacticAngle: number;
 }
+
+/** Alias for lunar event metrics */
+export type LunarEventMetrics = LunarEvents;
+
+/** Single-day record in the 365-day annual lunar matrix */
+export interface AnnualLunarMatrixItem {
+  day: number;
+  moonrise: number | null;
+  transit: number;
+  moonset: number | null;
+  phaseValue: number;
+  isPerigee: boolean;
+  isApogee: boolean;
+  distanceKm: number;
+}
+
+/** Alias for annual lunar matrix item record */
+export type LunarMatrixRecord = AnnualLunarMatrixItem;
 
 /** Gravitational tidal classification */
 export type TideType = 'Spring Tide' | 'Neap Tide' | 'Transitional';

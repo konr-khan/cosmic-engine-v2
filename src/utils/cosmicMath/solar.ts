@@ -1,22 +1,9 @@
 import { CONFIG } from './constants';
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees } from '../../types/units';
-import { SolarPosition, SolarMatrixRecord } from '../../types/astronomy';
+import { SolarPosition, SolarPositionFull, AnnualSolarMatrixItem } from '../../types/astronomy';
 
-export interface SolarPositionFull extends SolarPosition {
-  rightAscension: number;
-  distanceAU: number;
-  distanceKm: number;
-  orbitalSpeedKms: number;
-  solarIrradianceWm2: number;
-  solarIrradiancePercent: number;
-  sunAngularDiameterArcmin: number;
-  sunAngularRadiusDeg: number;
-  isPerihelion: boolean;
-  isAphelion: boolean;
-  meanAnomaly: number;
-  eclipticLongitude: number;
-}
+export type { SolarPositionFull, AnnualSolarMatrixItem };
 
 /**
  * Calculates solar position, declination, right ascension, equation of time, and Earth-Sun orbital physics.
@@ -365,22 +352,6 @@ export const calculateDailySolarEvents = (
     polarState: overallPolarState
   };
 };
-
-export interface AnnualSolarMatrixItem {
-  day: number;
-  declination: Degrees | number;
-  equationOfTime: number;
-  solarNoon: number;
-  sunrise: number;
-  sunset: number;
-  civilDawn: number;
-  civilDusk: number;
-  nauticalDawn: number;
-  nauticalDusk: number;
-  astroDawn: number;
-  astroDusk: number;
-  dayLength: number;
-}
 
 /**
  * Calculates the full annual matrix (365 or 366 days for leap years) of daily solar events.

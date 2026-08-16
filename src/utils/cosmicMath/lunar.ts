@@ -1,14 +1,16 @@
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { calculateSolarPosition } from './solar';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees, HoursDecimal } from '../../types/units';
-import { LunarPhaseName, LunarPosition, LunarEvents } from '../../types/astronomy';
+import { 
+  LunarPhaseName, 
+  LunarPosition, 
+  LunarEvents, 
+  LunarPositionFull, 
+  LunarEventMetrics, 
+  AnnualLunarMatrixItem 
+} from '../../types/astronomy';
 
-export interface LunarPositionFull extends LunarPosition {
-  distanceEarthRadii: number;
-  angularRadiusDeg: number;
-  parallaxDeg: number;
-  argumentOfLatitude: number;
-}
+export type { LunarPositionFull, LunarEventMetrics, AnnualLunarMatrixItem };
 
 /**
  * High-precision Lunar Ephemeris Solver based on Meeus truncated series.
@@ -134,18 +136,6 @@ export const calculateParallacticAngle = (
   return eta;
 };
 
-export interface LunarEventMetrics {
-  moonrise: number | null;
-  transit: number;
-  moonset: number | null;
-  distanceKm: number;
-  distanceEarthRadii: number;
-  isPerigee: boolean;
-  isApogee: boolean;
-  declination: Degrees | number;
-  parallacticAngle: number;
-}
-
 /**
  * Calculates Moonrise, Transit, Moonset, Perigee/Apogee, and Parallactic Angle.
  * @param lat - Observer latitude
@@ -221,17 +211,6 @@ export const getPhaseName = (phase: number): LunarPhaseName => {
   if (phase < 0.78) return "Last Quarter";
   return "Waning Crescent";
 };
-
-export interface AnnualLunarMatrixItem {
-  day: number;
-  moonrise: number | null;
-  transit: number;
-  moonset: number | null;
-  phaseValue: number;
-  isPerigee: boolean;
-  isApogee: boolean;
-  distanceKm: number;
-}
 
 /**
  * Calculates the full annual matrix (365 or 366 days for leap years) of daily lunar events.

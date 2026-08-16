@@ -3,7 +3,7 @@
  * Type definitions for off-main-thread Web Worker serialization contracts and RPC messages.
  */
 
-import { LunarEvents, EclipseData, SolarMatrixRecord, LunarMatrixRecord } from './astronomy';
+import { LunarEvents, EclipseData, AnnualSolarMatrixItem, AnnualLunarMatrixItem } from './astronomy';
 import { Latitude, Longitude, JulianDate, HoursDecimal } from './units';
 
 /** Instantaneous ephemeris calculation input parameters */
@@ -19,8 +19,8 @@ export interface EphemerisCalculationParams {
 
 /** Instantaneous ephemeris calculation worker payload output */
 export interface EphemerisWorkerPayload {
-  lunarEvents: any;
-  eclipse: any;
+  lunarEvents: LunarEvents | null;
+  eclipse: EclipseData | null;
   timestamp: number;
 }
 
@@ -49,6 +49,6 @@ export interface EphemerisWorkerResponse {
   id: number;
   type: EphemerisWorkerRequestType;
   success: boolean;
-  data?: EphemerisWorkerPayload | SolarMatrixRecord[] | LunarMatrixRecord[];
+  data?: EphemerisWorkerPayload | AnnualSolarMatrixItem[] | AnnualLunarMatrixItem[];
   error?: string;
 }
