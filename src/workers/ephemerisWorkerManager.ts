@@ -4,16 +4,23 @@ import {
   calculateAnnualSolarMatrix,
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
-import { EphemerisCalculationParams, EphemerisWorkerPayload } from '../types/worker';
+import { 
+  EphemerisCalculationParams, 
+  EphemerisWorkerPayload,
+  PendingRequestEntry,
+  PendingEphemerisEntry,
+  PendingAnnualSolarEntry,
+  PendingAnnualLunarEntry
+} from '../types/worker';
 import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude } from '../types/units';
 
-export interface PendingRequestEntry {
-  type: string;
-  signature: string;
-  callbacks: Set<(payload: any) => void>;
-  params: any;
-}
+export type { 
+  PendingRequestEntry, 
+  PendingEphemerisEntry, 
+  PendingAnnualSolarEntry, 
+  PendingAnnualLunarEntry 
+};
 
 /**
  * Ephemeris Worker Singleton Manager
@@ -110,7 +117,7 @@ export class EphemerisWorkerManager {
    * Handles unexpected worker failure (onerror / postMessage failure) by notifying pending requests
    * via synchronous fallback calculations and safely clearing the worker instance.
    */
-  public _handleWorkerFailure(error?: any): void {
+  public _handleWorkerFailure(error?: unknown): void {
     this._isAvailable = false;
     const pending = Array.from(this.pendingRequests.values());
     this.pendingRequests.clear();
@@ -149,7 +156,7 @@ export class EphemerisWorkerManager {
           const { type, id, payload } = event.data || {};
           if (type === 'EPHEMERIS_SUCCESS') {
             const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry) {
+            if (requestEntry && requestEntry.type === 'EPHEMERIS') {
               this.pendingRequests.delete(id);
               this.signatureToRequestId.delete(requestEntry.signature);
               requestEntry.callbacks.forEach((cb) => {
@@ -169,7 +176,7 @@ export class EphemerisWorkerManager {
             }
           } else if (type === 'ANNUAL_SOLAR_SUCCESS') {
             const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry) {
+            if (requestEntry && requestEntry.type === 'ANNUAL_SOLAR') {
               this.pendingRequests.delete(id);
               this.signatureToRequestId.delete(requestEntry.signature);
               if (payload?.annualSolar) {
@@ -192,7 +199,7 @@ export class EphemerisWorkerManager {
             }
           } else if (type === 'ANNUAL_LUNAR_SUCCESS') {
             const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry) {
+            if (requestEntry && requestEntry.type === 'ANNUAL_LUNAR') {
               this.pendingRequests.delete(id);
               this.signatureToRequestId.delete(requestEntry.signature);
               if (payload?.annualLunar) {
@@ -248,7 +255,7 @@ export class EphemerisWorkerManager {
     if (this.signatureToRequestId.has(signature)) {
       const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
-      if (existingEntry) {
+      if (existingEntry && existingEntry.type === 'EPHEMERIS') {
         existingEntry.callbacks.add(onResult);
         return () => {
           existingEntry.callbacks.delete(onResult);
@@ -262,7 +269,7 @@ export class EphemerisWorkerManager {
     }
 
     const requestId = ++this.nextRequestId;
-    const requestEntry: PendingRequestEntry = {
+    const requestEntry: PendingEphemerisEntry = {
       type: 'EPHEMERIS',
       signature,
       callbacks: new Set([onResult]),
@@ -325,7 +332,7 @@ export class EphemerisWorkerManager {
     if (this.signatureToRequestId.has(signature)) {
       const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
-      if (existingEntry) {
+      if (existingEntry && existingEntry.type === 'ANNUAL_SOLAR') {
         existingEntry.callbacks.add(onResult);
         return () => {
           existingEntry.callbacks.delete(onResult);
@@ -346,7 +353,7 @@ export class EphemerisWorkerManager {
     }
 
     const requestId = ++this.nextRequestId;
-    const requestEntry: PendingRequestEntry = {
+    const requestEntry: PendingAnnualSolarEntry = {
       type: 'ANNUAL_SOLAR',
       signature,
       callbacks: new Set([onResult]),
@@ -402,7 +409,7 @@ export class EphemerisWorkerManager {
     if (this.signatureToRequestId.has(signature)) {
       const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
-      if (existingEntry) {
+      if (existingEntry && existingEntry.type === 'ANNUAL_LUNAR') {
         existingEntry.callbacks.add(onResult);
         return () => {
           existingEntry.callbacks.delete(onResult);
@@ -423,7 +430,7 @@ export class EphemerisWorkerManager {
     }
 
     const requestId = ++this.nextRequestId;
-    const requestEntry: PendingRequestEntry = {
+    const requestEntry: PendingAnnualLunarEntry = {
       type: 'ANNUAL_LUNAR',
       signature,
       callbacks: new Set([onResult]),

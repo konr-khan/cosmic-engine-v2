@@ -1,5 +1,5 @@
 import React from "react";
-import { CONFIG } from "../../utils/cosmicMath";
+import { CONFIG, toRadians } from "../../utils/cosmicMath";
 import { TidalVectors } from "../../types";
 
 export interface MicroTideViewProps {
@@ -9,8 +9,6 @@ export interface MicroTideViewProps {
   localTideStatus?: "High Tide" | "Low Tide" | string;
   hoverDate?: Date | null;
 }
-
-const toRadians = (degrees: number): number => degrees * (Math.PI / 180);
 
 export const MicroTideView: React.FC<MicroTideViewProps> = ({
   tides = { alignment: 0, rx: 16, ry: 12, type: 'Transitional' },

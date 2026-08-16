@@ -52,3 +52,34 @@ export interface EphemerisWorkerResponse {
   data?: EphemerisWorkerPayload | AnnualSolarMatrixItem[] | AnnualLunarMatrixItem[];
   error?: string;
 }
+
+/** Discriminated pending entry for instantaneous ephemeris calculation */
+export interface PendingEphemerisEntry {
+  type: 'EPHEMERIS';
+  signature: string;
+  callbacks: Set<(payload: EphemerisWorkerPayload) => void>;
+  params: EphemerisCalculationParams & { calculateLunar?: boolean; calculateEclipse?: boolean };
+}
+
+/** Discriminated pending entry for 365-day annual solar matrix calculation */
+export interface PendingAnnualSolarEntry {
+  type: 'ANNUAL_SOLAR';
+  signature: string;
+  callbacks: Set<(payload: { annualSolar: AnnualSolarMatrixItem[] }) => void>;
+  params: { year: number; latitude: Latitude };
+}
+
+/** Discriminated pending entry for 365-day annual lunar matrix calculation */
+export interface PendingAnnualLunarEntry {
+  type: 'ANNUAL_LUNAR';
+  signature: string;
+  callbacks: Set<(payload: { annualLunar: AnnualLunarMatrixItem[] }) => void>;
+  params: { year: number; latitude: Latitude; longitude: Longitude };
+}
+
+/** Discriminated union of all pending worker manager requests */
+export type PendingRequestEntry =
+  | PendingEphemerisEntry
+  | PendingAnnualSolarEntry
+  | PendingAnnualLunarEntry;
+
