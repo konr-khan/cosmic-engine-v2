@@ -148,6 +148,21 @@ Cosmic Engine V2.0/
 
 ---
 
+## 📐 TypeScript Unit Typing Strategy
+
+Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-time mathematical safety in orbital/trigonometric algorithms with frictionless React UI state management:
+
+1. **Nominal Symbol Branding for High-Risk Invariants**:
+   - Angular metrics (`Degrees`, `Radians`) and temporal epochs (`JulianDate`, `JulianCenturies`) use unique symbol-branded nominal types ([`src/types/units.ts`](src/types/units.ts)).
+   - The TypeScript compiler will reject any attempt to pass degrees into trigonometric solvers expecting radians (`Math.sin`, Meeus ephemeris equations) without an explicit conversion.
+2. **Ergonomic Type Aliases for Presentation & UI**:
+   - Coordinates, sliders, and timeline parameters (`Latitude`, `Longitude`, `HoursDecimal`, `DayOfYear`, `Pixels`) remain pure `number` type aliases.
+   - This eliminates casting friction across React components, SVG viewports, and native `<input>` form handlers.
+3. **Conversion Gatekeepers**:
+   - Dedicated gatekeeper utility functions (`toRadians(deg: Degrees): Radians`, `toDegrees(rad: Radians): Degrees`, `julianDateToCenturies(jd: JulianDate): JulianCenturies`) serve as the verified, compile-time bridges between distinct unit spaces.
+
+---
+
 ## 🧪 Testing
 
 The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, and asynchronous worker operations:
