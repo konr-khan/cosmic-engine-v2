@@ -63,7 +63,14 @@ export class CosmicStore {
     let hasChanged = false;
     for (const key in nextState) {
       const k = key as keyof CosmicStoreState;
-      if (this.state[k] !== nextState[k]) {
+      const prevVal = this.state[k];
+      const nextVal = nextState[k];
+      if (prevVal instanceof Date && nextVal instanceof Date) {
+        if (prevVal.getTime() !== nextVal.getTime()) {
+          hasChanged = true;
+          break;
+        }
+      } else if (!Object.is(prevVal, nextVal)) {
         hasChanged = true;
         break;
       }
