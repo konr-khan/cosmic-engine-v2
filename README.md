@@ -71,7 +71,7 @@ Cosmic Engine V2.0/
 ├── package.json                 # Project dependencies & Vite scripts
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── tsconfig.node.json           # TypeScript build tooling configuration
-├── vite.config.js               # Vite configuration & plugin setup
+├── vite.config.ts               # Vite configuration & plugin setup
 ├── tailwind.config.js           # Tailwind CSS configuration
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & quick start
@@ -93,7 +93,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── index.ts         # Central re-export entry file
 │   │   │   ├── constants.ts     # Orbital radii, twilight thresholds & theme tokens
 │   │   │   ├── core.ts          # Julian dates, hour formatting & trig helpers
-│   │   │   ├── solar.js         # Solar declination, EoT, twilight algorithms & annual solar matrix
+│   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   └── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
 │   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (64 tests)

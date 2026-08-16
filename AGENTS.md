@@ -54,7 +54,7 @@ Cosmic Engine V2.0/
 ├── package.json                 # Project dependencies & Vite scripts
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── tsconfig.node.json           # TypeScript build tooling configuration
-├── vite.config.js               # Vite configuration & plugin setup
+├── vite.config.ts               # Vite configuration & plugin setup
 ├── tailwind.config.js           # Tailwind CSS configuration
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & getting started
@@ -192,6 +192,9 @@ Standard coordinate conventions used throughout the engine:
 ### C. External Store & 60 FPS Performance Budget (`src/store/cosmicStore.ts`)
 - Decouples high-frequency animation ticking (`requestAnimationFrame`) and observer state updates from React's component render tree.
 - Uses React 19 `useSyncExternalStore` with shallow equality selectors.
+- **Snapshot Reference Stability Invariant**: The `getSnapshot` callback passed to `useSyncExternalStore` must maintain a stable function reference across renders. Dynamic selectors and equality comparators must be tracked via `useRef` inside `useChronometerStore` to prevent React 19 concurrent scheduler cascading re-render loops (`forceStoreRerender` / *"Maximum update depth exceeded"*).
+- **Static Selectors**: Components subscribing to observer parameters should reuse static top-level selector functions rather than creating anonymous closures inside component render trees.
+- **State Change Detection**: `CosmicStore.setState` verifies value equivalence (including `Date.getTime()` timestamp comparison for `Date` objects) before dispatching subscriber updates to eliminate redundant renders.
 - **Zero-Allocation Per Frame Rule**: The chronometer runs continuous `requestAnimationFrame` loops. Never allocate temporary objects, array literals, or anonymous closures inside per-frame tick handlers and math hot paths to prevent garbage collection stutter.
 - **Selective Selector Granularity**: Enforce granular subscriptions (e.g., `useCosmicStore(s => s.julianDate)`) so time scrubbing updates only active visualizer components, avoiding dashboard-wide re-renders.
 
