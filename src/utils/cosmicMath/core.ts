@@ -1,33 +1,50 @@
+import { 
+  Degrees, 
+  Radians, 
+  JulianDate, 
+  HoursDecimal, 
+  DayOfYear,
+  asDegrees, 
+  asRadians, 
+  asJulianDate 
+} from '../../types/units';
+
 /**
  * Converts degrees to radians.
- * @param {number} deg - Angle in degrees
- * @returns {number} Angle in radians
+ * @param deg - Angle in degrees
+ * @returns Angle in radians
  */
-export const toRadians = (deg) => deg * (Math.PI / 180);
+export const toRadians = (deg: Degrees | number): Radians => {
+  return asRadians(deg * (Math.PI / 180));
+};
 
 /**
  * Converts radians to degrees.
- * @param {number} rad - Angle in radians
- * @returns {number} Angle in degrees
+ * @param rad - Angle in radians
+ * @returns Angle in degrees
  */
-export const toDegrees = (rad) => rad * (180 / Math.PI);
+export const toDegrees = (rad: Radians | number): Degrees => {
+  return asDegrees(rad * (180 / Math.PI));
+};
 
 /**
  * Clamps a numerical value within [min, max] bounds.
- * @param {number} val - Input value
- * @param {number} min - Lower bound
- * @param {number} max - Upper bound
- * @returns {number} Clamped value
+ * @param val - Input value
+ * @param min - Lower bound
+ * @param max - Upper bound
+ * @returns Clamped value
  */
-export const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+export const clamp = (val: number, min: number, max: number): number => {
+  return Math.max(min, Math.min(max, val));
+};
 
 /**
  * Formats a decimal hour value (0..24) into a standard HH:MM:SS string.
- * @param {number} decimalHours - Decimal hour value
- * @returns {string} Formatted HH:MM:SS string
+ * @param decimalHours - Decimal hour value
+ * @returns Formatted HH:MM:SS string
  */
-export const formatTime = (decimalHours) => {
-  if (isNaN(decimalHours) || decimalHours === null || decimalHours === undefined) return "--:--:--";
+export const formatTime = (decimalHours: number | null | undefined): string => {
+  if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) return "--:--:--";
   let normalized = decimalHours % 24;
   if (normalized < 0) normalized += 24;
   
@@ -40,12 +57,12 @@ export const formatTime = (decimalHours) => {
 
 /**
  * Generates an SVG path string for daylight/twilight sector wedges in SunClock.
- * @param {number} duration - Sector duration in decimal hours
- * @param {number} center - SVG canvas center coordinate in pixels
- * @param {number} radius - Sector arc radius in pixels
- * @returns {string} SVG path `d` attribute string
+ * @param duration - Sector duration in decimal hours
+ * @param center - SVG canvas center coordinate in pixels
+ * @param radius - Sector arc radius in pixels
+ * @returns SVG path `d` attribute string
  */
-export const getSectorPath = (duration, center, radius) => {
+export const getSectorPath = (duration: number, center: number, radius: number): string => {
   if (duration <= 0) return "";
   if (duration >= 24) {
     return `M ${center},${center - radius} A ${radius},${radius} 0 1,1 ${center},${center + radius} A ${radius},${radius} 0 1,1 ${center},${center - radius}`;
@@ -66,11 +83,11 @@ export const getSectorPath = (duration, center, radius) => {
 
 /**
  * Calculates the Astronomical Julian Date (JD) for a JavaScript Date and optional decimal hour.
- * @param {Date} date - Local calendar date
- * @param {number} [timeOfDay=12] - Time of day in decimal hours (0 to 24)
- * @returns {number} Julian Date (JD)
+ * @param date - Local calendar date
+ * @param timeOfDay - Time of day in decimal hours (0 to 24)
+ * @returns Julian Date (JD)
  */
-export const getJulianDate = (date, timeOfDay = 12) => {
+export const getJulianDate = (date: Date, timeOfDay: number = 12): JulianDate => {
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();
@@ -85,15 +102,15 @@ export const getJulianDate = (date, timeOfDay = 12) => {
   const A = Math.floor(y / 100);
   const B = 2 - A + Math.floor(A / 4);
   const JD_midnight = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + B - 1524.5;
-  return JD_midnight + (timeOfDay / 24.0);
+  return asJulianDate(JD_midnight + (timeOfDay / 24.0));
 };
 
 /**
  * Formats a Date object as a YYYY-MM-DD string.
- * @param {Date} date - JavaScript Date object
- * @returns {string} Formatted YYYY-MM-DD date string
+ * @param date - JavaScript Date object
+ * @returns Formatted YYYY-MM-DD date string
  */
-export const formatYMD = (date) => {
+export const formatYMD = (date: Date | null | undefined): string => {
   if (!date || isNaN(date.getTime())) return "";
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -103,24 +120,28 @@ export const formatYMD = (date) => {
 
 /**
  * Determines whether a given year is a leap year.
- * @param {number} year - Four-digit year
- * @returns {boolean} True if leap year
+ * @param year - Four-digit year
+ * @returns True if leap year
  */
-export const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+export const isLeapYear = (year: number): boolean => {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+};
 
 /**
  * Returns total days in a given calendar year (365 or 366).
- * @param {number} year - Four-digit year
- * @returns {number} 366 for leap year, 365 otherwise
+ * @param year - Four-digit year
+ * @returns 366 for leap year, 365 otherwise
  */
-export const getDaysInYear = (year) => (isLeapYear(year) ? 366 : 365);
+export const getDaysInYear = (year: number): number => {
+  return isLeapYear(year) ? 366 : 365;
+};
 
 /**
  * Returns day of the year (1..366) for a given Date, computed deterministically via UTC.
- * @param {Date} date - JavaScript Date object
- * @returns {number} Day of year (1 to 366)
+ * @param date - JavaScript Date object
+ * @returns Day of year (1 to 366)
  */
-export const getDayOfYear = (date) => {
+export const getDayOfYear = (date: Date | null | undefined): DayOfYear => {
   if (!date || isNaN(date.getTime())) return 1;
   const y = date.getFullYear();
   const m = date.getMonth();
@@ -136,10 +157,10 @@ export const getDayOfYear = (date) => {
  * (e.g. "2:30 PM", "11:45 am", "02:30:15 pm", "12:00 AM", "12:00 PM"),
  * military time "1415", "0930", "930", and decimal hours "14.25".
  * 
- * @param {string|number} val - Input time string or number
- * @returns {number|undefined} Decimal hour value (0..23.999...) or undefined if unparseable
+ * @param val - Input time string or number
+ * @returns Decimal hour value (0..23.999...) or undefined if unparseable
  */
-export const parseTimeString = (val) => {
+export const parseTimeString = (val: string | number | null | undefined): HoursDecimal | undefined => {
   if (val === undefined || val === null) return undefined;
   if (typeof val === 'number') {
     if (isNaN(val)) return undefined;
@@ -207,10 +228,10 @@ export const parseTimeString = (val) => {
 
 /**
  * Formats a decimal hour value (0..24) into an "HH:MM" 24-hour time string.
- * @param {number} t - Decimal hour value
- * @returns {string} Formatted "HH:MM" string
+ * @param t - Decimal hour value
+ * @returns Formatted "HH:MM" string
  */
-export const formatTimeHHMM = (t) => {
+export const formatTimeHHMM = (t: number | null | undefined): string => {
   if (t === undefined || t === null || isNaN(t)) return "00:00";
   let norm = (t % 24 + 24) % 24;
   const h = Math.floor(norm);

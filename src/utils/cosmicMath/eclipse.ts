@@ -1,27 +1,32 @@
 import { getJulianDate } from './core';
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
+import { JulianDate } from '../../types/units';
+import { EclipseType, EclipseClassification, EclipseScannerPreset } from '../../types/astronomy';
+
+export interface EclipseCalculationResult {
+  type: string;
+  category: 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE';
+  label: string;
+  obscuration: number;
+  beta: number;
+  nodeProximityDeg: number;
+  alignmentPercent: number;
+  isEclipseActive: boolean;
+  distanceKm: number;
+  umbraRadiusKm: number;
+  penumbraRadiusKm: number;
+  raDiff: number;
+  elongation: number;
+  phaseValue: number;
+}
 
 /**
  * Solves solar and lunar eclipse alignment, shadow radiuses, and obscuration percentages for a Julian Date.
- * @param {number} julianDate - Julian Date
- * @returns {{
- *   type: string,
- *   category: 'SOLAR'|'LUNAR'|'NO_ECLIPSE',
- *   label: string,
- *   obscuration: number,
- *   beta: number,
- *   nodeProximityDeg: number,
- *   alignmentPercent: number,
- *   isEclipseActive: boolean,
- *   distanceKm: number,
- *   umbraRadiusKm: number,
- *   penumbraRadiusKm: number,
- *   raDiff: number,
- *   phaseValue: number
- * }} Eclipse status and alignment details
+ * @param julianDate - Julian Date
+ * @returns Eclipse status and alignment details
  */
-export const calculateEclipseData = (julianDate) => {
+export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCalculationResult => {
   const solarPos = calculateSolarPosition(julianDate);
   const lunarPos = calculateLunarPosition(julianDate);
 
@@ -63,7 +68,7 @@ export const calculateEclipseData = (julianDate) => {
   const gammaSolar = Math.sqrt(Math.pow(dLonConj * Math.cos(beta * Math.PI / 180), 2) + Math.pow(beta, 2));
 
   let type = "NONE";
-  let category = "NO_ECLIPSE"; // 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE'
+  let category: 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE' = "NO_ECLIPSE";
   let label = "No Eclipse";
   let obscuration = 0; // 0 to 100%
 
@@ -134,10 +139,18 @@ export const calculateEclipseData = (julianDate) => {
   };
 };
 
+export interface EclipsePresetItem {
+  date: Date;
+  title: string;
+  type: string;
+  category: 'SOLAR' | 'LUNAR';
+  description: string;
+}
+
 /**
  * Preset historic and future total/annular solar and lunar eclipses.
  */
-export const ECLIPSE_PRESETS = [
+export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
   {
     date: new Date(2024, 3, 8, 18, 17), // April 8, 2024 Total Solar Eclipse
     title: "Apr 8, 2024 - Great American Eclipse",
@@ -175,14 +188,23 @@ export const ECLIPSE_PRESETS = [
   }
 ];
 
+export interface UpcomingEclipseEvent extends EclipseCalculationResult {
+  date: Date;
+  dayOffset: number;
+  title: string;
+}
+
 /**
  * Scans forward from a start date to detect upcoming solar or lunar eclipses.
- * @param {Date} [startDate=new Date()] - Starting calendar date
- * @param {number} [limit=4] - Maximum number of upcoming eclipses to return
- * @returns {Array<{ date: Date, dayOffset: number, title: string, type: string, obscuration: number }>} List of upcoming eclipse events
+ * @param startDate - Starting calendar date
+ * @param limit - Maximum number of upcoming eclipses to return
+ * @returns List of upcoming eclipse events
  */
-export const findUpcomingEclipses = (startDate = new Date(), limit = 4) => {
-  const list = [];
+export const findUpcomingEclipses = (
+  startDate: Date = new Date(), 
+  limit: number = 4
+): UpcomingEclipseEvent[] => {
+  const list: UpcomingEclipseEvent[] = [];
   const startJD = getJulianDate(startDate, 12);
   
   // Scan forward up to 365 days in 1-day steps, refining to peak syzygy
@@ -202,11 +224,11 @@ export const findUpcomingEclipses = (startDate = new Date(), limit = 4) => {
 
     if (distToNewMoon < 7 && Math.abs(lun.beta) < 1.6) {
       const dLonConj = ((elongation + 180) % 360) - 180;
-      peakJD = jd - (dLonConj / 12.19);
+      peakJD = (jd - (dLonConj / 12.19)) as JulianDate;
       isCandidate = true;
     } else if (distToFullMoon < 7 && Math.abs(lun.beta) < 1.6) {
       const dLonOpp = ((elongation - 180 + 540) % 360) - 180;
-      peakJD = jd - (dLonOpp / 12.19);
+      peakJD = (jd - (dLonOpp / 12.19)) as JulianDate;
       isCandidate = true;
     }
 

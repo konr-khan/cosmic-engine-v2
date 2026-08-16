@@ -1,26 +1,29 @@
 import { CONFIG } from './constants';
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
+import { JulianDate, Latitude, Longitude, Degrees, asDegrees } from '../../types/units';
+import { SolarPosition, SolarMatrixRecord } from '../../types/astronomy';
+
+export interface SolarPositionFull extends SolarPosition {
+  rightAscension: number;
+  distanceAU: number;
+  distanceKm: number;
+  orbitalSpeedKms: number;
+  solarIrradianceWm2: number;
+  solarIrradiancePercent: number;
+  sunAngularDiameterArcmin: number;
+  sunAngularRadiusDeg: number;
+  isPerihelion: boolean;
+  isAphelion: boolean;
+  meanAnomaly: number;
+  eclipticLongitude: number;
+}
 
 /**
  * Calculates solar position, declination, right ascension, equation of time, and Earth-Sun orbital physics.
- * @param {number} julianDate - Julian Date
- * @returns {{
- *   declination: number,
- *   equationOfTime: number,
- *   rightAscension: number,
- *   n: number,
- *   distanceAU: number,
- *   distanceKm: number,
- *   orbitalSpeedKms: number,
- *   solarIrradianceWm2: number,
- *   solarIrradiancePercent: number,
- *   sunAngularDiameterArcmin: number,
- *   isPerihelion: boolean,
- *   isAphelion: boolean,
- *   meanAnomaly: number
- * }} Solar position and orbital metrics
+ * @param julianDate - Julian Date
+ * @returns Solar position and orbital metrics
  */
-export const calculateSolarPosition = (julianDate) => {
+export const calculateSolarPosition = (julianDate: JulianDate | number): SolarPositionFull => {
   const n = julianDate - 2451545.0;
   let L = (280.460 + 0.9856474 * n) % 360;
   if (L < 0) L += 360;
@@ -36,7 +39,7 @@ export const calculateSolarPosition = (julianDate) => {
   
   const alphaRad = Math.atan2(Math.cos(epsilonRad) * Math.sin(lambdaRad), Math.cos(lambdaRad));
   let alpha = toDegrees(alphaRad);
-  if (alpha < 0) alpha += 360;
+  if (alpha < 0) alpha = asDegrees(alpha + 360);
   
   const deltaRad = Math.asin(clamp(Math.sin(epsilonRad) * Math.sin(lambdaRad), -1, 1));
   const declination = toDegrees(deltaRad);
@@ -60,10 +63,10 @@ export const calculateSolarPosition = (julianDate) => {
   const sunAngularRadiusDeg = (sunAngularDiameterArcmin / 60) / 2;
 
   return { 
-    declination, 
+    declination: asDegrees(declination), 
     equationOfTime, 
     rightAscension: alpha,
-    lambda: parseFloat(normLambda.toFixed(4)),
+    lambda: asDegrees(parseFloat(normLambda.toFixed(4))),
     eclipticLongitude: parseFloat(normLambda.toFixed(4)),
     sunAngularRadiusDeg: parseFloat(sunAngularRadiusDeg.toFixed(4)),
     n,
@@ -81,20 +84,33 @@ export const calculateSolarPosition = (julianDate) => {
 
 /**
  * Alias for calculateSolarPosition providing Earth orbital dynamics.
- * @param {number} julianDate - Julian Date
- * @returns {Object} Earth orbital physics
+ * @param julianDate - Julian Date
+ * @returns Earth orbital physics
  */
-export const calculateEarthOrbitalPhysics = (julianDate) => calculateSolarPosition(julianDate);
+export const calculateEarthOrbitalPhysics = (julianDate: JulianDate | number): SolarPositionFull => {
+  return calculateSolarPosition(julianDate);
+};
+
+export interface TerminatorShadowPaths {
+  southPath: string;
+  northPath: string;
+  combinedPath: string;
+}
 
 /**
  * Computes SVG polygon paths for Earth's daylight terminator shadow overlay.
- * @param {number} longitude - Observer center longitude (-180 to 180)
- * @param {number} sunLong - Solar sub-point longitude (-180 to 180)
- * @param {number} declination - Solar declination in degrees
- * @param {number} [altThreshold=-0.833] - Solar altitude threshold in degrees
- * @returns {{ southPath: string, northPath: string, combinedPath: string }} SVG path d attributes
+ * @param longitude - Observer center longitude (-180 to 180)
+ * @param sunLong - Solar sub-point longitude (-180 to 180)
+ * @param declination - Solar declination in degrees
+ * @param altThreshold - Solar altitude threshold in degrees (-0.833 default)
+ * @returns SVG path d attributes
  */
-export const getTerminatorShadowPaths = (longitude, sunLong, declination, altThreshold = -0.833) => {
+export const getTerminatorShadowPaths = (
+  longitude: Longitude, 
+  sunLong: Longitude, 
+  declination: Degrees | number, 
+  altThreshold: number = -0.833
+): TerminatorShadowPaths => {
   const step = 2;
   const decRad = toRadians(declination);
   const altRad = toRadians(altThreshold);
@@ -102,8 +118,8 @@ export const getTerminatorShadowPaths = (longitude, sunLong, declination, altThr
   const sinDec = Math.sin(decRad);
   const cosDec = Math.cos(decRad);
 
-  const southPoints = [];
-  const northPoints = [];
+  const southPoints: string[] = [];
+  const northPoints: string[] = [];
 
   for (let x = 0; x <= 360; x += step) {
     const geoLon = longitude - 180 + x;
@@ -160,51 +176,29 @@ export const getTerminatorShadowPaths = (longitude, sunLong, declination, altThr
 
 /**
  * Structured polar state enums for extreme high-latitude solar conditions.
- * @readonly
- * @enum {string}
  */
 export const POLAR_STATES = {
   NORMAL: 'NORMAL',
   PERPETUAL_DAY: 'PERPETUAL_DAY',
   PERPETUAL_NIGHT: 'PERPETUAL_NIGHT',
   PERPETUAL_TWILIGHT: 'PERPETUAL_TWILIGHT'
-};
+} as const;
 
-/**
- * Determines the global polar state enum for an observer location and solar declination.
- * @param {number} lat - Observer latitude in degrees (-90 to +90)
- * @param {number} declination - Solar declination in degrees (-23.44 to +23.44)
- * @returns {string} Polar state enum (NORMAL, PERPETUAL_DAY, PERPETUAL_NIGHT, PERPETUAL_TWILIGHT)
- */
-export const calculatePolarState = (lat, declination) => {
-  const { OFFICIAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
-  const dayDuration = calculateDaylightDurationPrecise(lat, declination, OFFICIAL);
-  const astroDuration = calculateDaylightDurationPrecise(lat, declination, ASTRONOMICAL);
-
-  if (dayDuration >= 24) {
-    return POLAR_STATES.PERPETUAL_DAY;
-  }
-  if (astroDuration <= 0) {
-    return POLAR_STATES.PERPETUAL_NIGHT;
-  }
-  if (dayDuration <= 0 && astroDuration > 0) {
-    return POLAR_STATES.PERPETUAL_TWILIGHT;
-  }
-  if (dayDuration > 0 && dayDuration < 24 && astroDuration >= 24) {
-    return POLAR_STATES.PERPETUAL_TWILIGHT;
-  }
-  return POLAR_STATES.NORMAL;
-};
+export type PolarState = (typeof POLAR_STATES)[keyof typeof POLAR_STATES];
 
 /**
  * Calculates daylight or twilight duration in decimal hours for a specific latitude and declination.
  * Uses explicit piecewise functions for polar bounds where solar elevation threshold criteria are met.
- * @param {number} lat - Observer latitude in degrees (-90 to +90)
- * @param {number} declination - Solar declination in degrees (-23.44 to +23.44)
- * @param {number} angleThreshold - Solar altitude threshold in degrees (-0.833, -6, -12, -18)
- * @returns {number} Duration in decimal hours (0 to 24)
+ * @param lat - Observer latitude in degrees (-90 to +90)
+ * @param declination - Solar declination in degrees (-23.44 to +23.44)
+ * @param angleThreshold - Solar altitude threshold in degrees (-0.833, -6, -12, -18)
+ * @returns Duration in decimal hours (0 to 24)
  */
-export const calculateDaylightDurationPrecise = (lat, declination, angleThreshold) => {
+export const calculateDaylightDurationPrecise = (
+  lat: Latitude, 
+  declination: Degrees | number, 
+  angleThreshold: Degrees | number
+): number => {
   const clampLat = clamp(lat, -90, 90);
   
   const latRad = toRadians(clampLat);
@@ -258,28 +252,69 @@ export const calculateDaylightDurationPrecise = (lat, declination, angleThreshol
 };
 
 /**
- * Calculates daily solar events (twilight boundaries, solar noon, solar midnight) for a given location.
- * @param {number} lat - Observer latitude in degrees (-90 to +90)
- * @param {number} declination - Solar declination in degrees
- * @param {number} solarNoon - Solar noon in local decimal hours
- * @returns {{
- *   official: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
- *   civil: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
- *   nautical: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
- *   astronomical: { morning: number, evening: number, duration: number, isFullSun: boolean, isPolarNight: boolean, polarState: string },
- *   solarNoon: number,
- *   solarMidnightStart: number,
- *   solarMidnightEnd: number,
- *   polarState: string
- * }} Daily solar event timestamps and polar states
+ * Determines the global polar state enum for an observer location and solar declination.
+ * @param lat - Observer latitude in degrees (-90 to +90)
+ * @param declination - Solar declination in degrees (-23.44 to +23.44)
+ * @returns Polar state enum (NORMAL, PERPETUAL_DAY, PERPETUAL_NIGHT, PERPETUAL_TWILIGHT)
  */
-export const calculateDailySolarEvents = (lat, declination, solarNoon) => {
+export const calculatePolarState = (lat: Latitude, declination: Degrees | number): PolarState => {
+  const { OFFICIAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
+  const dayDuration = calculateDaylightDurationPrecise(lat, declination, OFFICIAL);
+  const astroDuration = calculateDaylightDurationPrecise(lat, declination, ASTRONOMICAL);
+
+  if (dayDuration >= 24) {
+    return POLAR_STATES.PERPETUAL_DAY;
+  }
+  if (astroDuration <= 0) {
+    return POLAR_STATES.PERPETUAL_NIGHT;
+  }
+  if (dayDuration <= 0 && astroDuration > 0) {
+    return POLAR_STATES.PERPETUAL_TWILIGHT;
+  }
+  if (dayDuration > 0 && dayDuration < 24 && astroDuration >= 24) {
+    return POLAR_STATES.PERPETUAL_TWILIGHT;
+  }
+  return POLAR_STATES.NORMAL;
+};
+
+export interface TwilightBandTimes {
+  morning: number;
+  evening: number;
+  duration: number;
+  isFullSun: boolean;
+  isPolarNight: boolean;
+  polarState: PolarState;
+}
+
+export interface DailySolarEvents {
+  official: TwilightBandTimes;
+  civil: TwilightBandTimes;
+  nautical: TwilightBandTimes;
+  astronomical: TwilightBandTimes;
+  solarNoon: number;
+  solarMidnightStart: number;
+  solarMidnightEnd: number;
+  polarState: PolarState;
+}
+
+/**
+ * Calculates daily solar events (twilight boundaries, solar noon, solar midnight) for a given location.
+ * @param lat - Observer latitude in degrees (-90 to +90)
+ * @param declination - Solar declination in degrees
+ * @param solarNoon - Solar noon in local decimal hours
+ * @returns Daily solar event timestamps and polar states
+ */
+export const calculateDailySolarEvents = (
+  lat: Latitude, 
+  declination: Degrees | number, 
+  solarNoon: number
+): DailySolarEvents => {
   const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
   const overallPolarState = calculatePolarState(lat, declination);
   
-  const getTimesForAngle = (angle) => {
+  const getTimesForAngle = (angle: number): TwilightBandTimes => {
     const duration = calculateDaylightDurationPrecise(lat, declination, angle);
-    let bandPolarState = POLAR_STATES.NORMAL;
+    let bandPolarState: PolarState = POLAR_STATES.NORMAL;
     if (duration <= 0) {
       bandPolarState = POLAR_STATES.PERPETUAL_NIGHT;
     } else if (duration >= 24) {
@@ -331,29 +366,31 @@ export const calculateDailySolarEvents = (lat, declination, solarNoon) => {
   };
 };
 
+export interface AnnualSolarMatrixItem {
+  day: number;
+  declination: Degrees | number;
+  equationOfTime: number;
+  solarNoon: number;
+  sunrise: number;
+  sunset: number;
+  civilDawn: number;
+  civilDusk: number;
+  nauticalDawn: number;
+  nauticalDusk: number;
+  astroDawn: number;
+  astroDusk: number;
+  dayLength: number;
+}
+
 /**
  * Calculates the full annual matrix (365 or 366 days for leap years) of daily solar events.
- * @param {number} year - Calendar year (e.g., 2026)
- * @param {number} latitude - Observer latitude in degrees (-90 to +90)
- * @returns {Array<{
- *   day: number,
- *   declination: number,
- *   equationOfTime: number,
- *   solarNoon: number,
- *   sunrise: number,
- *   sunset: number,
- *   civilDawn: number,
- *   civilDusk: number,
- *   nauticalDawn: number,
- *   nauticalDusk: number,
- *   astroDawn: number,
- *   astroDusk: number,
- *   dayLength: number
- * }>} Annual solar matrix array
+ * @param year - Calendar year (e.g., 2026)
+ * @param latitude - Observer latitude in degrees (-90 to +90)
+ * @returns Annual solar matrix array
  */
-export const calculateAnnualSolarMatrix = (year, latitude) => {
+export const calculateAnnualSolarMatrix = (year: number, latitude: Latitude): AnnualSolarMatrixItem[] => {
   const totalDays = getDaysInYear(year);
-  const days = [];
+  const days: AnnualSolarMatrixItem[] = [];
   for (let day = 1; day <= totalDays; day++) {
     const d = new Date(year, 0, day);
     const jd = getJulianDate(d, 12);

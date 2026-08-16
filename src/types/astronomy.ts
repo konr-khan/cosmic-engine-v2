@@ -75,7 +75,9 @@ export type LunarPhaseName =
 export interface LunarPosition {
   rightAscension: HoursDecimal | number;
   declination: Degrees | number;
-  distance: number;
+  distance?: number;
+  distanceKm: number;
+  distanceEarthRadii?: number;
   phase: number;
   phaseName: LunarPhaseName;
   elongation: Degrees | number;
@@ -83,7 +85,12 @@ export interface LunarPosition {
   nodeLongitude: Degrees | number;
   descendingNodeLongitude: Degrees | number;
   lambda: Degrees | number;
+  eclipticLongitude?: Degrees | number;
   beta: Degrees | number;
+  eclipticLatitude?: Degrees | number;
+  angularRadiusDeg?: number;
+  parallaxDeg?: number;
+  argumentOfLatitude?: number;
 }
 
 /** Lunar calendar events & apsides proximity */

@@ -1,19 +1,21 @@
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { calculateSolarPosition } from './solar';
+import { JulianDate, Latitude, Longitude, Degrees, asDegrees, HoursDecimal } from '../../types/units';
+import { LunarPhaseName, LunarPosition, LunarEvents } from '../../types/astronomy';
+
+export interface LunarPositionFull extends LunarPosition {
+  distanceEarthRadii: number;
+  angularRadiusDeg: number;
+  parallaxDeg: number;
+  argumentOfLatitude: number;
+}
 
 /**
  * High-precision Lunar Ephemeris Solver based on Meeus truncated series.
- * @param {number} julianDate - Julian Date
- * @returns {{
- *   lambda: number,
- *   beta: number,
- *   declination: number,
- *   rightAscension: number,
- *   distanceKm: number,
- *   distanceEarthRadii: number
- * }} Lunar position and coordinates
+ * @param julianDate - Julian Date
+ * @returns Lunar position and coordinates
  */
-export const calculateLunarPosition = (julianDate) => {
+export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPositionFull => {
   const T = (julianDate - 2451545.0) / 36525.0;
   
   let L_prime = (218.3164477 + 481267.88123421 * T) % 360;
@@ -68,21 +70,30 @@ export const calculateLunarPosition = (julianDate) => {
     Math.cos(lRad)
   );
   let rightAscension = toDegrees(raRad);
+  if (rightAscension < 0) rightAscension = asDegrees(rightAscension + 360);
+
   const normLambda = ((lambda % 360) + 360) % 360;
   const nodeLongitude = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
   const descendingNodeLongitude = (nodeLongitude + 180) % 360;
   const angularRadiusDeg = toDegrees(Math.asin(1737.4 / distanceKm));
   const parallaxDeg = toDegrees(Math.asin(6378.137 / distanceKm));
 
+  const phase0to1 = ((D % 360) + 360) % 360 / 360;
+  const phaseName = getPhaseName(phase0to1);
+
   return { 
-    lambda: parseFloat(normLambda.toFixed(4)), 
-    eclipticLongitude: parseFloat(normLambda.toFixed(4)),
-    beta: parseFloat(beta.toFixed(4)), 
-    eclipticLatitude: parseFloat(beta.toFixed(4)),
+    lambda: asDegrees(parseFloat(normLambda.toFixed(4))), 
+    eclipticLongitude: asDegrees(parseFloat(normLambda.toFixed(4))),
+    beta: asDegrees(parseFloat(beta.toFixed(4))), 
+    eclipticLatitude: asDegrees(parseFloat(beta.toFixed(4))),
     declination, 
     rightAscension, 
     distanceKm, 
     distanceEarthRadii: distanceKm / 6371,
+    phase: phase0to1,
+    phaseName,
+    elongation: D,
+    parallacticAngle: 0,
     nodeLongitude: parseFloat(nodeLongitude.toFixed(4)),
     descendingNodeLongitude: parseFloat(descendingNodeLongitude.toFixed(4)),
     angularRadiusDeg: parseFloat(angularRadiusDeg.toFixed(4)),
@@ -93,14 +104,20 @@ export const calculateLunarPosition = (julianDate) => {
 
 /**
  * Computes Astronomical Parallactic Angle (tilt of Moon relative to local zenith).
- * @param {number} lat - Observer latitude in degrees
- * @param {number} lon - Observer longitude in degrees
- * @param {number} julianDate - Julian Date
- * @param {number} decDeg - Declination in degrees
- * @param {number} raDeg - Right Ascension in degrees
- * @returns {number} Parallactic angle in degrees
+ * @param lat - Observer latitude in degrees
+ * @param lon - Observer longitude in degrees
+ * @param julianDate - Julian Date
+ * @param decDeg - Declination in degrees
+ * @param raDeg - Right Ascension in degrees
+ * @returns Parallactic angle in degrees
  */
-export const calculateParallacticAngle = (lat, lon, julianDate, decDeg, raDeg) => {
+export const calculateParallacticAngle = (
+  lat: Latitude, 
+  lon: Longitude, 
+  julianDate: JulianDate | number, 
+  decDeg: Degrees | number, 
+  raDeg: Degrees | HoursDecimal | number
+): number => {
   const d = julianDate - 2451545.0;
   const gmst = (280.46061837 + 360.98564736629 * d) % 360;
   const lst = (gmst + lon + 360) % 360;
@@ -117,25 +134,32 @@ export const calculateParallacticAngle = (lat, lon, julianDate, decDeg, raDeg) =
   return eta;
 };
 
+export interface LunarEventMetrics {
+  moonrise: number | null;
+  transit: number;
+  moonset: number | null;
+  distanceKm: number;
+  distanceEarthRadii: number;
+  isPerigee: boolean;
+  isApogee: boolean;
+  declination: Degrees | number;
+  parallacticAngle: number;
+}
+
 /**
  * Calculates Moonrise, Transit, Moonset, Perigee/Apogee, and Parallactic Angle.
- * @param {number} lat - Observer latitude
- * @param {number} lon - Observer longitude
- * @param {number} julianDate - Julian Date
- * @param {number} [timeOfDay=12] - Decimal hour of day
- * @returns {{
- *   moonrise: number|null,
- *   transit: number,
- *   moonset: number|null,
- *   distanceKm: number,
- *   distanceEarthRadii: number,
- *   isPerigee: boolean,
- *   isApogee: boolean,
- *   declination: number,
- *   parallacticAngle: number
- * }} Lunar event metrics
+ * @param lat - Observer latitude
+ * @param lon - Observer longitude
+ * @param julianDate - Julian Date
+ * @param timeOfDay - Decimal hour of day
+ * @returns Lunar event metrics
  */
-export const calculateLunarEvents = (lat, lon, julianDate, timeOfDay = 12) => {
+export const calculateLunarEvents = (
+  lat: Latitude, 
+  lon: Longitude, 
+  julianDate: JulianDate | number, 
+  timeOfDay: HoursDecimal = 12
+): LunarEventMetrics => {
   const julianDateExact = julianDate - 0.5 + (timeOfDay / 24.0);
   const lunarNow = calculateLunarPosition(julianDateExact);
   const solarNoon = calculateSolarPosition(julianDateExact);
@@ -154,8 +178,8 @@ export const calculateLunarEvents = (lat, lon, julianDate, timeOfDay = 12) => {
   const denominator = Math.cos(latRad) * Math.cos(decRad);
   const cosH = numerator / denominator;
 
-  let moonriseUTC = null;
-  let moonsetUTC = null;
+  let moonriseUTC: number | null = null;
+  let moonsetUTC: number | null = null;
 
   if (cosH >= -1 && cosH <= 1) {
     const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;
@@ -184,10 +208,10 @@ export const calculateLunarEvents = (lat, lon, julianDate, timeOfDay = 12) => {
 
 /**
  * Returns human-readable lunar phase name from a 0.0 to 1.0 phase fraction.
- * @param {number} phase - Lunar phase value (0 = New Moon, 0.5 = Full Moon)
- * @returns {string} Name of moon phase
+ * @param phase - Lunar phase value (0 = New Moon, 0.5 = Full Moon)
+ * @returns Name of moon phase
  */
-export const getPhaseName = (phase) => {
+export const getPhaseName = (phase: number): LunarPhaseName => {
   if (phase < 0.03 || phase > 0.97) return "New Moon";
   if (phase < 0.22) return "Waxing Crescent";
   if (phase < 0.28) return "First Quarter";
@@ -198,25 +222,31 @@ export const getPhaseName = (phase) => {
   return "Waning Crescent";
 };
 
+export interface AnnualLunarMatrixItem {
+  day: number;
+  moonrise: number | null;
+  transit: number;
+  moonset: number | null;
+  phaseValue: number;
+  isPerigee: boolean;
+  isApogee: boolean;
+  distanceKm: number;
+}
+
 /**
  * Calculates the full annual matrix (365 or 366 days for leap years) of daily lunar events.
- * @param {number} year - Calendar year (e.g., 2026)
- * @param {number} latitude - Observer latitude in degrees (-90 to +90)
- * @param {number} longitude - Observer longitude in degrees (-180 to +180)
- * @returns {Array<{
- *   day: number,
- *   moonrise: number|null,
- *   transit: number,
- *   moonset: number|null,
- *   phaseValue: number,
- *   isPerigee: boolean,
- *   isApogee: boolean,
- *   distanceKm: number
- * }>} Annual lunar matrix array
+ * @param year - Calendar year (e.g., 2026)
+ * @param latitude - Observer latitude in degrees (-90 to +90)
+ * @param longitude - Observer longitude in degrees (-180 to +180)
+ * @returns Annual lunar matrix array
  */
-export const calculateAnnualLunarMatrix = (year, latitude, longitude) => {
+export const calculateAnnualLunarMatrix = (
+  year: number, 
+  latitude: Latitude, 
+  longitude: Longitude
+): AnnualLunarMatrixItem[] => {
   const totalDays = getDaysInYear(year);
-  const list = [];
+  const list: AnnualLunarMatrixItem[] = [];
   for (let day = 1; day <= totalDays; day++) {
     const d = new Date(year, 0, day);
     const jd = getJulianDate(d, 12);

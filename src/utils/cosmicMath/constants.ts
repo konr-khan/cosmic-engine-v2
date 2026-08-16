@@ -18,7 +18,12 @@ export const CONFIG = {
     ACCENT: "#6366f1"         // indigo-500
   },
   SOLAR: {
-    TWILIGHT: { OFFICIAL: -0.833, CIVIL: -6.0, NAUTICAL: -12.0, ASTRONOMICAL: -18.0 }
+    TWILIGHT: { 
+      OFFICIAL: -0.833, 
+      CIVIL: -6.0, 
+      NAUTICAL: -12.0, 
+      ASTRONOMICAL: -18.0 
+    }
   },
   ORBIT: {
     earthOrbitRadius: 200,
@@ -43,4 +48,6 @@ export const CONFIG = {
     { lat: -66.5, label: "Antarctic Circle" },
     { lat: -90, label: "S. Pole" },
   ]
-};
+} as const;
+
+export type ConfigType = typeof CONFIG;
