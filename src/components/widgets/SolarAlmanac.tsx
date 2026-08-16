@@ -7,6 +7,7 @@ import {
   clamp 
 } from '../../utils/cosmicMath';
 import { useAnnualSolarWorker } from '../../hooks/useEphemerisWorker';
+import { AnnualSolarMatrixItem } from '../../types';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -37,7 +38,7 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
   const activeDay = Math.min(totalDays, hoverDay !== null ? hoverDay : currentDay);
 
   // Compute totalDays of solar twilight thresholds for the current latitude (offloaded to Web Worker)
-  const almanacData: any[] = useAnnualSolarWorker({ year, latitude }) || [];
+  const almanacData: AnnualSolarMatrixItem[] = useAnnualSolarWorker({ year, latitude }) || [];
 
   const keyStats = useMemo(() => {
     let earliestSunrise = almanacData[0] || { day: 1, sunrise: 6, sunset: 18, dayLength: 12 };
@@ -76,24 +77,24 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
     return paddingTop + chartH - (clamped / 24) * chartH;
   };
 
-  const buildBandPath = (topKey: string, bottomKey: string): string => {
+  const buildBandPath = (topKey: keyof AnnualSolarMatrixItem, bottomKey: keyof AnnualSolarMatrixItem): string => {
     if (!almanacData.length) return '';
-    let path = `M ${dayToX(1)},${timeToY(almanacData[0][topKey])}`;
+    let path = `M ${dayToX(1)},${timeToY(almanacData[0][topKey] as number)}`;
     for (let i = 0; i < almanacData.length; i++) {
-      path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][topKey])}`;
+      path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][topKey] as number)}`;
     }
     for (let i = almanacData.length - 1; i >= 0; i--) {
-      path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][bottomKey])}`;
+      path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][bottomKey] as number)}`;
     }
     path += ` Z`;
     return path;
   };
 
-  const buildLinePath = (key: string): string => {
+  const buildLinePath = (key: keyof AnnualSolarMatrixItem): string => {
     if (!almanacData.length) return '';
-    let path = `M ${dayToX(1)},${timeToY(almanacData[0][key])}`;
+    let path = `M ${dayToX(1)},${timeToY(almanacData[0][key] as number)}`;
     for (let i = 1; i < almanacData.length; i++) {
-      path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][key])}`;
+      path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][key] as number)}`;
     }
     return path;
   };
@@ -108,15 +109,39 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
     const day = xToDay(svgX);
     setHoverDay(day);
 
-    if (onHoverTime && svgY >= paddingTop && svgY <= paddingTop + chartH) {
-      const timeHours = (1 - (svgY - paddingTop) / chartH) * 24;
-      const clamped = clamp(timeHours, 0, 24);
-      const quantized = Math.round(clamped * 20) / 20;
-      onHoverTime(quantized);
+    // Calculate time from vertical Y position and broadcast hover time
+    const relY = svgY - paddingTop;
+    if (relY >= 0 && relY <= chartH && onHoverTime) {
+      const timeVal = ((chartH - relY) / chartH) * 24;
+      onHoverTime(parseFloat(timeVal.toFixed(3)));
     }
+  };
 
-    if ((isDragging || e.type === 'pointerdown') && onDayChange) {
-      onDayChange(day);
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    setIsDragging(true);
+    handlePointer(e);
+    if (svgRef.current) {
+      svgRef.current.setPointerCapture(e.pointerId);
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    handlePointer(e);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    setIsDragging(false);
+    if (hoverDay !== null && onDayChange) {
+      onDayChange(hoverDay);
+    }
+    setHoverDay(null);
+    if (onHoverTime) onHoverTime(null);
+    if (svgRef.current) {
+      try {
+        svgRef.current.releasePointerCapture(e.pointerId);
+      } catch {
+        // Ignore if pointer capture was already released
+      }
     }
   };
 
@@ -130,11 +155,11 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
   const sunsetY = timeToY(activeData.sunset);
 
   // Compute equivalent daylight mirror day across Solstice
-  const mirrorDayData = useMemo(() => {
+  const mirrorDayData = useMemo<AnnualSolarMatrixItem | null>(() => {
     if (!almanacData.length) return null;
     const targetLength = activeData.dayLength;
     
-    let bestDay: any = null;
+    let bestDay: AnnualSolarMatrixItem | null = null;
     let minDiff = 999;
     
     almanacData.forEach(d => {

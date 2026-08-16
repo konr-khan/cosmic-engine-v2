@@ -78,7 +78,7 @@ describe('useCosmicEngine Hook Suite', () => {
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true);
 
       expect(result.orbitalData!.lunarEvents).not.toBeNull();
-      expect((result.orbitalData!.lunarEvents as any).distanceKm).toBeGreaterThan(350000);
+      expect(result.orbitalData!.lunarEvents!.distanceKm).toBeGreaterThan(350000);
       expect(result.orbitalData!.eclipse).not.toBeNull();
     });
 

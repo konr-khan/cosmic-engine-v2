@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Sparkles, Zap, Flame, Compass, Info } from 'lucide-react';
 import { CONFIG, calculateEarthOrbitalPhysics, getJulianDate } from '../../utils/cosmicMath';
-import { EclipseData, SolarAlmanacData, OrbitalPositions } from '../../types';
+import { EclipseData, SolarAlmanacData, OrbitalPositions, SolarPositionFull } from '../../types';
 
 export interface MilestoneItem {
   id: string;
@@ -154,7 +154,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
 
   // Calculate live Keplerian orbital physics
   const julianDate = getJulianDate(currentDate, 12);
-  const physics: any = (solarData && (solarData as any).distanceAU) ? solarData : calculateEarthOrbitalPhysics(julianDate);
+  const physics: SolarPositionFull = calculateEarthOrbitalPhysics(julianDate);
 
   const {
     distanceAU = 1.00,

@@ -134,11 +134,11 @@ export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({
     const pSun = project3D(sunX0, sunY1, sunZ1, pitch, yaw, scale, cx, cy);
 
     // 4. True Lunar & Nodal Coordinates
-    const nodeLonDeg = ((orbitalData?.nodeLongitude ?? (orbitalData?.angles as any)?.nodeLongitude ?? 125.0) as number);
+    const nodeLonDeg = orbitalData?.nodeLongitude ?? orbitalData?.angles?.nodeLongitude ?? 125.0;
     const nodeLonRad = toRadians(nodeLonDeg);
 
-    const lunarLambdaDeg = ((orbitalData?.lunarPos?.lambda ?? orbitalData?.angles?.moonDegrees ?? moonDeg) as number);
-    const lunarBetaDeg = ((orbitalData?.lunarPos?.beta ?? 0) as number);
+    const lunarLambdaDeg = orbitalData?.lunarPos?.lambda ?? orbitalData?.angles?.moonDegrees ?? moonDeg;
+    const lunarBetaDeg = orbitalData?.lunarPos?.beta ?? 0;
     const lunarLambdaRad = toRadians(lunarLambdaDeg);
     const lunarBetaRad = toRadians(lunarBetaDeg);
 

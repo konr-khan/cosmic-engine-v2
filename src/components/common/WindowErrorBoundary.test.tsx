@@ -77,7 +77,7 @@ describe('WindowErrorBoundary Component Suite', () => {
       errorInfo: null
     };
 
-    const rendered = boundary.render() as any;
+    const rendered = boundary.render() as React.ReactElement<{ className?: string }>;
     expect(rendered).not.toBeNull();
     expect(rendered.type).toBe('div');
     expect(rendered.props.className).toContain('bg-slate-950/90');

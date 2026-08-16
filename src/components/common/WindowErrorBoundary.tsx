@@ -41,7 +41,7 @@ export class WindowErrorBoundary extends Component<WindowErrorBoundaryProps, Win
       errorInfo
     });
     // Log error locally in development
-    const isDev = typeof window !== 'undefined' && Boolean((import.meta as any).env?.DEV);
+    const isDev = typeof window !== 'undefined' && Boolean(import.meta.env?.DEV);
     if (isDev) {
       console.error(`[WindowErrorBoundary: ${this.props.windowTitle || this.props.windowId || 'Widget'}]`, error, errorInfo);
     }

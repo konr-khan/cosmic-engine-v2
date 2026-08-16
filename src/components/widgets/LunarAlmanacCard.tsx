@@ -8,7 +8,7 @@ import {
   clamp 
 } from '../../utils/cosmicMath';
 import { useAnnualLunarWorker } from '../../hooks/useEphemerisWorker';
-import { OrbitalData } from '../../types';
+import { OrbitalData, AnnualLunarMatrixItem, LunarEvents } from '../../types';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -41,10 +41,10 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
 
   const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
   const phase = safeOrbital.phase || { value: 0, name: 'New Moon' };
-  const lunarEvents = (safeOrbital.lunarEvents || {}) as any;
+  const lunarEvents: Partial<LunarEvents> = safeOrbital.lunarEvents || {};
   const tides = safeOrbital.tides || { alignment: 0, rx: 16, ry: 12, type: 'Transitional' };
   const localTideStatus = safeOrbital.localTideStatus || 'Low Tide';
-  const illPercent = (((phase.value as number) ?? 0) * 100).toFixed(0);
+  const illPercent = ((phase.value ?? 0) * 100).toFixed(0);
 
   const { 
     moonrise = 6, transit = 12, moonset = 18, 
@@ -63,7 +63,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   );
 
   // 1. 365-Day Annual Lunar Ephemeris Computation (offloaded to Web Worker)
-  const annualLunarData: any[] = useAnnualLunarWorker({ year, latitude, longitude }) || [];
+  const annualLunarData: AnnualLunarMatrixItem[] = useAnnualLunarWorker({ year, latitude, longitude }) || [];
 
   // Key Lunar Solstice / Phase Fast-Jump Shortcuts
   const shortcuts = useMemo(() => {
@@ -143,7 +143,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
     moonrise: moonrise ?? 6, 
     moonset: moonset ?? 18, 
     transit: transit ?? 12, 
-    phaseValue: (phase.value as number) ?? 0.5 
+    phaseValue: phase.value ?? 0.5 
   };
 
   const activeRiseY = activeData.moonrise !== null && activeData.moonrise !== undefined ? timeToY(activeData.moonrise) : null;
@@ -409,7 +409,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         <div className="col-span-12 md:col-span-5 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center gap-4">
           <div className="w-16 h-16 shrink-0 relative flex items-center justify-center bg-slate-900 rounded-full border border-slate-800">
             <PhaseVisual 
-              phase={phase.value as number} 
+              phase={phase.value} 
               size={56} 
               parallacticAngle={parallacticAngle} 
             />
