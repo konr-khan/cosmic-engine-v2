@@ -32,7 +32,7 @@
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (105 automated unit tests across 5 test suites: pure math, hooks, state store, error boundaries, and worker fallback)
+- **Testing**: `vitest` (112 automated unit tests across 6 test suites: pure math, hooks, layout state, state store, error boundaries, and worker fallback)
 
 ---
 
@@ -48,7 +48,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (105 unit tests across 5 suites)
+# Run Vitest test suite (112 unit tests across 6 suites)
 npm test
 
 # Run full test suite in single-run CI mode
@@ -78,7 +78,7 @@ Cosmic Engine V2.0/
 ├── AGENTS.md                    # Agent guidelines & architecture map
 ├── src/
 │   ├── main.tsx                 # React root renderer
-│   ├── App.tsx                  # Master Observatory dashboard & layout preset manager
+│   ├── App.tsx                  # Master Observatory dashboard container
 │   ├── vite-env.d.ts            # Vite client environment types
 │   ├── index.css                # Global styles & Tailwind imports
 │   ├── types/                   # Foundational TypeScript domain models
@@ -107,17 +107,31 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   └── useEphemerisWorker.test.ts # Vitest hook tests (17 tests)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (17 tests)
+│   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
+│   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & solstice paths
 │       │   ├── SunClock.tsx     # 24h polar dial (00:00Z top, 12:00Z bottom) & Sun Elevation Arc
-│       │   ├── LunarAlmanacCard.tsx # 365-day 24h moonrise/moonset braided ribbon & tidal wave
+│       │   ├── LunarAlmanacCard.tsx # Backward-compatible re-export entry
 │       │   ├── EclipseDemonstrator.tsx # Master eclipse demonstrator container
-│       │   ├── CelestialSphereView.tsx # 3D orthographic celestial coordinate sphere
+│       │   ├── CelestialSphereView.tsx # Backward-compatible re-export entry
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator world map
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view
+│       │   ├── celestial/       # Decomposed celestial sphere subsystem modules
+│       │   │   ├── projection3D.tsx        # Pure 3D projection & SVG ring builder
+│       │   │   ├── GeocentricSphereView.tsx # 3D equatorial sphere, zenith ray, ecliptic & lunar tilt
+│       │   │   ├── HeliocentricOrbitView.tsx # 1 AU Keplerian Earth orbit ring & seasonal nodes
+│       │   │   ├── CelestialSphereView.tsx  # Subsystem coordinator container
+│       │   │   └── index.ts                 # Barrel export
+│       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
+│       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
+│       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
+│       │   │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
+│       │   │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
 │       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
 │       │       ├── ShadowRayDiagram.tsx        # SVG shadow ray tracing & geometry viewer
@@ -132,6 +146,7 @@ Cosmic Engine V2.0/
 │       │   ├── LatitudeSlider.tsx         # Latitude coordinate slider
 │       │   └── PolarLongitudeSelector.tsx # Polar stereographic longitude selector
 │       ├── layout/              # Container layout modules
+│       │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
 │       │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
 │       │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
 │       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
@@ -172,6 +187,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 64 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, smooth obscuration continuity |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 17 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
+| **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` | 7 | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` | 6 | Fault isolation, derived state error capture, and in-place module reset recovery |
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` | 5 | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping |
 

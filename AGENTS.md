@@ -31,7 +31,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 105 unit tests across 5 test suites)
+- **Testing**: `vitest` (`npm test` — 112 unit tests across 6 test suites)
 
 ### Essential Commands
 
@@ -39,7 +39,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (105 unit tests across 5 test suites) |
+| `npm test` | Runs Vitest unit test suite (112 unit tests across 6 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
@@ -61,7 +61,7 @@ Cosmic Engine V2.0/
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
 ├── src/
 │   ├── main.tsx                 # React root renderer
-│   ├── App.tsx                  # Master Observatory dashboard & layout preset manager
+│   ├── App.tsx                  # Master Observatory dashboard container
 │   ├── vite-env.d.ts            # Vite client environment types
 │   ├── index.css                # Global styles & Tailwind imports
 │   ├── types/                   # Foundational TypeScript domain models
@@ -90,17 +90,31 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests: state transitions & polar edge cases)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   └── useEphemerisWorker.test.ts # Vitest hook tests (17 tests: worker integration, coalescing, matrix caching & fallback)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (17 tests: worker integration, coalescing, matrix caching & fallback)
+│   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
+│   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & solstice paths
 │       │   ├── SunClock.tsx     # 24h polar dial (00:00Z top, 12:00Z bottom) & Sun Elevation Arc
-│       │   ├── LunarAlmanacCard.tsx # 365-day 24h moonrise/moonset braided ribbon & tidal wave
+│       │   ├── LunarAlmanacCard.tsx # Backward-compatible re-export entry
 │       │   ├── EclipseDemonstrator.tsx # Master eclipse demonstrator dock container
-│       │   ├── CelestialSphereView.tsx # 3D orthographic celestial coordinate sphere
+│       │   ├── CelestialSphereView.tsx # Backward-compatible re-export entry
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator world map
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view
+│       │   ├── celestial/       # Decomposed celestial sphere subsystem modules
+│       │   │   ├── projection3D.tsx        # Pure 3D projection & SVG ring builder
+│       │   │   ├── GeocentricSphereView.tsx # 3D equatorial sphere, zenith ray, ecliptic & lunar tilt
+│       │   │   ├── HeliocentricOrbitView.tsx # 1 AU Keplerian Earth orbit ring & seasonal nodes
+│       │   │   ├── CelestialSphereView.tsx  # Subsystem coordinator container
+│       │   │   └── index.ts                 # Barrel export
+│       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
+│       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
+│       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
+│       │   │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
+│       │   │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
 │       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
 │       │       ├── ShadowRayDiagram.tsx        # SVG shadow ray tracing & geometry viewer
@@ -115,6 +129,7 @@ Cosmic Engine V2.0/
 │       │   ├── LatitudeSlider.tsx         # Latitude coordinate slider
 │       │   └── PolarLongitudeSelector.tsx # Polar stereographic longitude selector
 │       ├── layout/              # Container layout modules
+│       │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
 │       │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
 │       │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
 │       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
@@ -201,6 +216,7 @@ Standard coordinate conventions used throughout the engine:
 ### D. Off-Main-Thread Worker Processing & Serialization (`src/workers/`, `src/hooks/useEphemerisWorker.ts`)
 - Multiplexes calculation requests through the application-level singleton worker manager (`ephemerisWorkerManager.ts`).
 - Offloads heavy Meeus lunar ephemeris series and eclipse shadow geometry solvers to dedicated Web Workers to maintain 60 FPS UI performance.
+- **Worker Contract Discriminated Unions**: All pending calculation callbacks and RPC dispatch entries adhere to discriminated union typing (`PendingRequestEntry = PendingEphemerisEntry | PendingAnnualSolarEntry | PendingAnnualLunarEntry` in `src/types/worker.ts`), eliminating unsafe `any` casts.
 - **Message Payload Serialization Contract**: All messages exchanged across `postMessage` must adhere to strict structured cloning contracts. Pass only plain serializable numbers, strings, arrays, and POJOs. Never pass functions, class instances with prototypes, DOM nodes, or cyclical structures.
 - **Synchronous Fallback Invariant**: Any newly introduced astronomical solver must provide a synchronous fallback path within its consuming hook (`useEphemerisWorker.ts`) to guarantee functionality when Web Workers are blocked, unsupported, or executing in test/SSR environments.
 
@@ -223,7 +239,7 @@ Standard coordinate conventions used throughout the engine:
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval. Run `npm run typecheck` (`tsc --noEmit`) to verify.
 4. **Preserve Math Accuracy**: Cite standard astronomical references for formula changes and verify polar/solstice edge cases.
-5. **No Regressions**: All 105 unit tests across the 5 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `WindowErrorBoundary.test.tsx`, or `cosmicStore.test.ts`.
+5. **No Regressions**: All 112 unit tests across the 6 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, or `cosmicStore.test.ts`.
 
 ### B. Testing & Mocking Standards for Agents
 - **Vitest Mocking Guidelines**:
