@@ -1,9 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Globe, Sun, Sparkles } from 'lucide-react';
-import { toRadians, toDegrees, CONFIG } from '../../utils/cosmicMath';
+import { toRadians, CONFIG } from '../../utils/cosmicMath';
+import { SolarAlmanacData, OrbitalData } from '../../types';
+
+export interface CelestialSphereViewProps {
+  latitude?: number;
+  longitude?: number;
+  solarData?: SolarAlmanacData | null;
+  orbitalData?: OrbitalData | null;
+  timeOfDay?: number;
+}
 
 // Orthographic 3D Projection Helper
-const project3D = (x, y, z, pitch = 22, yaw = -35, scale = 1.0, cx = 200, cy = 160) => {
+const project3D = (x: number, y: number, z: number, pitch = 22, yaw = -35, scale = 1.0, cx = 200, cy = 160) => {
   const radP = toRadians(pitch);
   const radY = toRadians(yaw);
 
@@ -22,21 +31,21 @@ const project3D = (x, y, z, pitch = 22, yaw = -35, scale = 1.0, cx = 200, cy = 1
   };
 };
 
-export const CelestialSphereView = ({ 
+export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({ 
   latitude = 47.06, 
   longitude = -122.81, 
   solarData, 
   orbitalData, 
   timeOfDay = 12 
 }) => {
-  const [viewMode, setViewMode] = useState('geocentric'); // 'geocentric' | 'heliocentric'
+  const [viewMode, setViewMode] = useState<'geocentric' | 'heliocentric'>('geocentric');
 
-  const declination = solarData ? solarData.declination : 0;
-  const moonDeg = orbitalData && orbitalData.angles ? orbitalData.angles.moonDegrees : 0;
+  const declination = (solarData ? solarData.declination : 0) as number;
+  const moonDeg = orbitalData && orbitalData.angles ? (orbitalData.angles.moonDegrees as number) : 0;
 
   // Render 3D Circle/Ellipse Path
-  const renderCircle3D = (radius, tiltXDeg, rotateYDeg, color, strokeWidth = 1.5, strokeDash = "", opacity = 0.8, pitch = 22, yaw = -35, scale = 1.0, cx = 200, cy = 160) => {
-    const points = [];
+  const renderCircle3D = (radius: number, tiltXDeg: number, rotateYDeg: number, color: string, strokeWidth = 1.5, strokeDash = "", opacity = 0.8, pitch = 22, yaw = -35, scale = 1.0, cx = 200, cy = 160) => {
+    const points: { px: number; py: number; z: number }[] = [];
     const steps = 72;
     const radTilt = toRadians(tiltXDeg);
     const radRotY = toRadians(rotateYDeg);
@@ -44,17 +53,17 @@ export const CelestialSphereView = ({
     for (let i = 0; i <= steps; i++) {
       const theta = (i / steps) * 2 * Math.PI;
       // Circle in 3D plane
-      let x0 = radius * Math.cos(theta);
-      let y0 = 0;
-      let z0 = radius * Math.sin(theta);
+      const x0 = radius * Math.cos(theta);
+      const y0 = 0;
+      const z0 = radius * Math.sin(theta);
 
       // Tilt around X axis
-      let y1 = y0 * Math.cos(radTilt) - z0 * Math.sin(radTilt);
-      let z1 = y0 * Math.sin(radTilt) + z0 * Math.cos(radTilt);
+      const y1 = y0 * Math.cos(radTilt) - z0 * Math.sin(radTilt);
+      const z1 = y0 * Math.sin(radTilt) + z0 * Math.cos(radTilt);
 
       // Rotate around Y axis
-      let x2 = x0 * Math.cos(radRotY) + z1 * Math.sin(radRotY);
-      let z2 = -x0 * Math.sin(radRotY) + z1 * Math.cos(radRotY);
+      const x2 = x0 * Math.cos(radRotY) + z1 * Math.sin(radRotY);
+      const z2 = -x0 * Math.sin(radRotY) + z1 * Math.cos(radRotY);
 
       const proj = project3D(x2, y1, z2, pitch, yaw, scale, cx, cy);
       points.push(proj);
@@ -115,7 +124,7 @@ export const CelestialSphereView = ({
     const pZenithVault = project3D(zenithX, zenithY, zenithZ, pitch, yaw, scale, cx, cy);
 
     // 3. True Solar Coordinates on Ecliptic Ring
-    const sunLambdaDeg = solarData?.lambda ?? solarData?.eclipticLongitude ?? ((12 - timeOfDay) * 15 + declination);
+    const sunLambdaDeg = ((solarData?.lambda ?? solarData?.eclipticLongitude ?? ((12 - timeOfDay) * 15 + declination)) as number);
     const sunLambdaRad = toRadians(sunLambdaDeg);
     const sunX0 = sphereR * Math.cos(sunLambdaRad);
     const sunZ0 = sphereR * Math.sin(sunLambdaRad);
@@ -125,11 +134,11 @@ export const CelestialSphereView = ({
     const pSun = project3D(sunX0, sunY1, sunZ1, pitch, yaw, scale, cx, cy);
 
     // 4. True Lunar & Nodal Coordinates
-    const nodeLonDeg = orbitalData?.nodeLongitude ?? orbitalData?.angles?.nodeLongitude ?? 125.0;
+    const nodeLonDeg = ((orbitalData?.nodeLongitude ?? (orbitalData?.angles as any)?.nodeLongitude ?? 125.0) as number);
     const nodeLonRad = toRadians(nodeLonDeg);
 
-    const lunarLambdaDeg = orbitalData?.lunarPos?.lambda ?? orbitalData?.angles?.moonDegrees ?? moonDeg;
-    const lunarBetaDeg = orbitalData?.lunarPos?.beta ?? 0;
+    const lunarLambdaDeg = ((orbitalData?.lunarPos?.lambda ?? orbitalData?.angles?.moonDegrees ?? moonDeg) as number);
+    const lunarBetaDeg = ((orbitalData?.lunarPos?.beta ?? 0) as number);
     const lunarLambdaRad = toRadians(lunarLambdaDeg);
     const lunarBetaRad = toRadians(lunarBetaDeg);
 
@@ -154,7 +163,7 @@ export const CelestialSphereView = ({
     const pNodeDesc = project3D(-nodeAscX0, -nodeAscY1, -nodeAscZ1, pitch, yaw, scale, cx, cy);
 
     // 6. Dynamic Moon Orbit Ring (Tilted 5.14° to Ecliptic, pivoting at Ascending Node)
-    const moonOrbitPoints = [];
+    const moonOrbitPoints: { px: number; py: number; z: number }[] = [];
     const moonOrbitSteps = 72;
     const incRad = toRadians(5.14);
 
@@ -208,7 +217,7 @@ export const CelestialSphereView = ({
     const orbitR = 120;
 
     // Earth Position on Heliocentric Orbit (based on orbital date / days since epoch)
-    const daysSinceEpoch = solarData ? solarData.daysSinceEpoch : 0;
+    const daysSinceEpoch = solarData ? (solarData.daysSinceEpoch as number) : 0;
     const dayOfYear = ((daysSinceEpoch % 365.25) + 365.25) % 365.25;
     const earthOrbitRad = toRadians(((dayOfYear - 79) / 365.25) * 360);
     const earthX = orbitR * Math.cos(earthOrbitRad);
@@ -235,7 +244,7 @@ export const CelestialSphereView = ({
       solSummer, solWinter, eqSpring, eqAutumn,
       pitch, yaw, scale, cx, cy, orbitR
     };
-  }, [solarData, timeOfDay, moonDeg]);
+  }, [solarData, moonDeg]);
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
@@ -250,7 +259,7 @@ export const CelestialSphereView = ({
         <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs">
           <button
             onClick={() => setViewMode('geocentric')}
-            className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'geocentric'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
@@ -260,7 +269,7 @@ export const CelestialSphereView = ({
           </button>
           <button
             onClick={() => setViewMode('heliocentric')}
-            className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'heliocentric'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'

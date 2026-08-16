@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { ComponentType } from 'react';
 import { Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { EclipseData } from '../../../types';
 
-export const EclipseStatusBadge = ({ eclipse }) => {
+export interface EclipseStatusBadgeProps {
+  eclipse?: EclipseData | null;
+}
+
+export const EclipseStatusBadge: React.FC<EclipseStatusBadgeProps> = ({ eclipse }) => {
   if (!eclipse) return null;
 
-  const getStatusBadge = () => {
+  const getStatusBadge = (): { bg: string; icon: ComponentType<{ className?: string }>; text: string } => {
     if (eclipse.type === 'TOTAL_SOLAR') {
       return { bg: 'bg-amber-950/90 text-amber-300 border-amber-500', icon: Sparkles, text: 'TOTAL SOLAR ECLIPSE' };
     }

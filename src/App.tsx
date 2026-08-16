@@ -1,5 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Sun, Moon, RotateCw, Sliders, MapPin, Globe, Compass, Lock, Unlock, RefreshCcw, LayoutTemplate, Sparkles, Check, Layers } from 'lucide-react';
+import React, { useState, useEffect, ComponentType } from 'react';
+import { 
+  Sun, 
+  Moon, 
+  RotateCw, 
+  Sliders, 
+  MapPin, 
+  Globe, 
+  Compass, 
+  Lock, 
+  Unlock, 
+  RefreshCcw, 
+  LayoutTemplate, 
+  Sparkles, 
+  Check, 
+  Layers 
+} from 'lucide-react';
 import { useCosmicEngine } from './hooks/useCosmicEngine';
 import { useChronometerStore, cosmicActions } from './store/cosmicStore';
 import { TerminatorMap } from './components/widgets/TerminatorMap';
@@ -13,8 +28,9 @@ import { CelestialSphereView } from './components/widgets/CelestialSphereView';
 import { EclipseDemonstrator } from './components/widgets/EclipseDemonstrator';
 import { DashboardWindow } from './components/layout/DashboardWindow';
 import { getDayOfYear } from './utils/cosmicMath';
+import { WindowLayoutConfig } from './types';
 
-const ICON_MAP = {
+const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   almanac: Sun,
   lunarAlmanac: Moon,
   eclipse: Sparkles,
@@ -25,7 +41,16 @@ const ICON_MAP = {
   microTides: RotateCw
 };
 
-const PRESET_LAYOUTS = {
+export interface PresetLayout {
+  id: string;
+  name: string;
+  desc: string;
+  icon: ComponentType<{ className?: string }>;
+  widgets: Record<string, boolean>;
+  windows: WindowLayoutConfig[];
+}
+
+const PRESET_LAYOUTS: Record<string, PresetLayout> = {
   master: {
     id: 'master',
     name: 'Master Observatory',
@@ -99,7 +124,15 @@ const PRESET_LAYOUTS = {
   }
 };
 
-const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
+export interface MemoizedWidgetContentProps {
+  id: string;
+  hoverTime: number | null;
+  setHoverTime: (time: number | null) => void;
+  hoverDate: Date | null;
+  setHoverDate: (date: Date | null) => void;
+}
+
+const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function MemoizedWidgetContent({
   id,
   hoverTime,
   setHoverTime,
@@ -125,7 +158,7 @@ const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
 
   const dayOfYear = getDayOfYear(date);
 
-  const handleDateSlider = (val) => {
+  const handleDateSlider = (val: number) => {
     cosmicActions.setDate(new Date(date.getFullYear(), 0, val));
   };
 
@@ -201,9 +234,7 @@ const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
           positions={orbitalData?.positions} 
           eclipse={orbitalData?.eclipse} 
           solarData={solarData}
-          orbitalData={orbitalData}
           currentDate={date}
-          hoverDate={hoverDate}
         />
       );
     case 'microTides':
@@ -221,7 +252,12 @@ const MemoizedWidgetContent = React.memo(function MemoizedWidgetContent({
   }
 });
 
-const MemoizedChronometerDock = React.memo(function MemoizedChronometerDock({
+export interface MemoizedChronometerDockProps {
+  isDockCollapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
+const MemoizedChronometerDock = React.memo<MemoizedChronometerDockProps>(function MemoizedChronometerDock({
   isDockCollapsed,
   onToggleCollapse
 }) {
@@ -262,17 +298,17 @@ const MemoizedChronometerDock = React.memo(function MemoizedChronometerDock({
 export default function App() {
   const useAnalemma = useChronometerStore((state) => state.useAnalemma);
 
-  const [activePresetKey, setActivePresetKey] = useState('master');
-  const [showPresetsMenu, setShowPresetsMenu] = useState(false);
-  const [widgets, setWidgets] = useState(PRESET_LAYOUTS.master.widgets);
-  const [showOptions, setShowOptions] = useState(false);
-  const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+  const [activePresetKey, setActivePresetKey] = useState<string>('master');
+  const [showPresetsMenu, setShowPresetsMenu] = useState<boolean>(false);
+  const [widgets, setWidgets] = useState<Record<string, boolean>>(PRESET_LAYOUTS.master.widgets);
+  const [showOptions, setShowOptions] = useState<boolean>(false);
+  const [isDockCollapsed, setIsDockCollapsed] = useState<boolean>(false);
 
   // Shared Cross-Card Interactive Hover Sync
-  const [hoverTime, setHoverTime] = useState(null);
-  const [hoverDate, setHoverDate] = useState(null);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverDate, setHoverDate] = useState<Date | null>(null);
 
-  const [windows, setWindows] = useState(() => {
+  const [windows, setWindows] = useState<WindowLayoutConfig[]>(() => {
     try {
       const saved = localStorage.getItem('cosmic_window_layout_v5');
       if (saved) {
@@ -285,7 +321,7 @@ export default function App() {
     }
   });
 
-  const handleSelectPreset = (key) => {
+  const handleSelectPreset = (key: string) => {
     const preset = PRESET_LAYOUTS[key];
     if (!preset) return;
     setActivePresetKey(key);
@@ -294,8 +330,8 @@ export default function App() {
     setShowPresetsMenu(false);
   };
 
-  const [lockedWindows, setLockedWindows] = useState({});
-  const [isAllLocked, setIsAllLocked] = useState(false);
+  const [lockedWindows, setLockedWindows] = useState<Record<string, boolean>>({});
+  const [isAllLocked, setIsAllLocked] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -308,15 +344,15 @@ export default function App() {
     } catch (e) {}
   }, [windows]);
 
-  const handleDragStart = (e, id) => {
+  const handleDragStart = (e: React.DragEvent<HTMLElement>, id: string) => {
     e.dataTransfer.setData('text/plain', id);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e, targetId) => {
+  const handleDrop = (e: React.DragEvent<HTMLElement>, targetId: string) => {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData('text/plain');
     if (!sourceId || sourceId === targetId) return;
@@ -333,7 +369,7 @@ export default function App() {
     });
   };
 
-  const handleResize = (id, newWidth, newHeight) => {
+  const handleResize = (id: string, _newWidth: number, newHeight: number | string) => {
     setWindows(prev => prev.map(w => {
       if (w.id === id) {
         const heightVal = typeof newHeight === 'string' ? (newHeight.endsWith('px') ? newHeight : `${newHeight}px`) : `${newHeight}px`;
@@ -343,7 +379,7 @@ export default function App() {
     }));
   };
 
-  const handleToggleLock = (id) => {
+  const handleToggleLock = (id: string) => {
     setLockedWindows(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -376,7 +412,7 @@ export default function App() {
                 COSMIC <span className="text-indigo-400 font-light">ENGINE</span>
               </h1>
               <p className="text-[10px] font-mono text-slate-400 hidden sm:block">
-                Astrolabe Celestial Mechanics & Orbital Simulator
+                Astrolabe Celestial Mechanics &amp; Orbital Simulator
               </p>
             </div>
           </div>
@@ -391,7 +427,7 @@ export default function App() {
                   setShowPresetsMenu(!showPresetsMenu);
                   if (showOptions) setShowOptions(false);
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
                   showPresetsMenu
                     ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
                     : 'bg-slate-800 text-amber-400 border-slate-700 hover:border-amber-500 hover:text-amber-300'
@@ -416,7 +452,7 @@ export default function App() {
                       <button
                         key={preset.id}
                         onClick={() => handleSelectPreset(preset.id)}
-                        className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left transition-all ${
+                        className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
                           isActive 
                             ? 'bg-amber-500/15 border border-amber-500/40 text-white' 
                             : 'hover:bg-slate-800 text-slate-300'
@@ -446,7 +482,7 @@ export default function App() {
                   setShowOptions(!showOptions);
                   if (showPresetsMenu) setShowPresetsMenu(false);
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
                   showOptions
                     ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
                     : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600 hover:text-white'
@@ -474,7 +510,7 @@ export default function App() {
                     <button
                       key={opt.key}
                       onClick={() => setWidgets(prev => ({ ...prev, [opt.key]: !prev[opt.key] }))}
-                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         widgets[opt.key] !== false ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-800' : 'hover:bg-slate-800 text-slate-400'
                       }`}
                     >
@@ -489,7 +525,7 @@ export default function App() {
 
                   <button
                     onClick={() => cosmicActions.setUseAnalemma(!useAnalemma)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                       useAnalemma ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-800' : 'hover:bg-slate-800 text-slate-400'
                     }`}
                   >
@@ -505,7 +541,7 @@ export default function App() {
             {/* Lock Layout Button */}
             <button
               onClick={() => setIsAllLocked(!isAllLocked)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
                 isAllLocked ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm' : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
               }`}
               title={isAllLocked ? "Unlock All Windows" : "Lock All Window Positions"}
@@ -517,7 +553,7 @@ export default function App() {
             {/* Reset Layout Button */}
             <button
               onClick={handleResetLayout}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
               title="Reset Window Layout to Defaults"
             >
               <RefreshCcw className="w-3.5 h-3.5 text-slate-400" />
@@ -579,4 +615,3 @@ export default function App() {
     </div>
   );
 }
-

@@ -1,8 +1,17 @@
 import React, { useMemo } from 'react';
 import { CONFIG, getTerminatorShadowPaths } from '../../utils/cosmicMath';
+import { SolarAlmanacData } from '../../types';
+
+export interface TerminatorMapProps {
+  solarData?: SolarAlmanacData | null;
+  latitude?: number;
+  longitude?: number;
+  timeOfDay?: number;
+  hoverTime?: number | null;
+}
 
 // Simplified World Continent Outlines (Geo coordinates: [Longitude, Latitude])
-const WORLD_LANDMASSES = [
+const WORLD_LANDMASSES: [number, number][][] = [
   // North America
   [
     [-168, 65], [-150, 60], [-135, 57], [-124, 48], [-120, 34], [-105, 20], [-90, 16],
@@ -63,8 +72,14 @@ const WORLD_LANDMASSES = [
   ]
 ];
 
-export const TerminatorMap = ({ solarData, latitude = 47.06, longitude = -122.81, timeOfDay = 12, hoverTime }) => {
-  const { declination = 0 } = solarData || {};
+export const TerminatorMap: React.FC<TerminatorMapProps> = ({ 
+  solarData, 
+  latitude = 47.06, 
+  longitude = -122.81, 
+  timeOfDay = 12, 
+  hoverTime 
+}) => {
+  const declination = (solarData?.declination ?? 0) as number;
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
 
   const sunLong = (12 - activeTime) * 15;
@@ -204,4 +219,3 @@ export const TerminatorMap = ({ solarData, latitude = 47.06, longitude = -122.81
 };
 
 export default TerminatorMap;
-

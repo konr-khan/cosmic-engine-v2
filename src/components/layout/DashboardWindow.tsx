@@ -10,10 +10,10 @@ export interface DashboardWindowProps {
   colSpan?: number;
   height?: number | string;
   isLocked?: boolean;
-  onDragStart?: (e: React.DragEvent, id: string) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent, id: string) => void;
-  onResize?: (id: string, width: number, height: number) => void;
+  onDragStart?: (e: React.DragEvent<HTMLElement>, id: string) => void;
+  onDragOver?: (e: React.DragEvent<HTMLElement>) => void;
+  onDrop?: (e: React.DragEvent<HTMLElement>, id: string) => void;
+  onResize?: (id: string, width: number, height: number | string) => void;
   onToggleLock?: (id: string) => void;
   onResetSize?: (id: string) => void;
 }

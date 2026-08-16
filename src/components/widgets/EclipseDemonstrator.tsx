@@ -8,18 +8,26 @@ import {
   SkyViewSimulator,
   EclipseScanner
 } from './eclipse';
+import { OrbitalData, EclipseData } from '../../types';
 
-export const EclipseDemonstrator = ({ 
+export interface EclipseDemonstratorProps {
+  currentDate?: Date;
+  onDateChange?: (date: Date) => void;
+  onTimeChange?: (time: number) => void;
+  orbitalData?: OrbitalData | null;
+}
+
+export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({ 
   currentDate = new Date(), 
   onDateChange, 
-  onTimeChange,
+  onTimeChange, 
   orbitalData 
 }) => {
-  const [activeTab, setActiveTab] = useState('geometry'); // 'geometry' | 'nodes' | 'sky' | 'scanner'
-  const [diagramMode, setDiagramMode] = useState('live'); // 'live' | 'solar' | 'lunar'
-  const [lunarViewSubTab, setLunarViewSubTab] = useState('pov'); // 'pov' | 'orbit'
+  const [activeTab, setActiveTab] = useState<'geometry' | 'nodes' | 'sky' | 'scanner'>('geometry');
+  const [diagramMode, setDiagramMode] = useState<'live' | 'solar' | 'lunar'>('live');
+  const [lunarViewSubTab, setLunarViewSubTab] = useState<'pov' | 'orbit'>('pov');
 
-  const eclipse = (orbitalData && orbitalData.eclipse) 
+  const eclipse: EclipseData = (orbitalData && orbitalData.eclipse) 
     ? orbitalData.eclipse 
     : calculateEclipseData(currentDate ? getJulianDate(currentDate, 12) : 2451545.0);
 
@@ -28,7 +36,7 @@ export const EclipseDemonstrator = ({
     return findUpcomingEclipses(currentDate || new Date(), 4);
   }, [currentDate]);
 
-  const handleSelectPreset = (presetDate) => {
+  const handleSelectPreset = (presetDate: Date) => {
     if (!onDateChange) return;
     onDateChange(new Date(presetDate));
     if (onTimeChange) {
@@ -52,7 +60,7 @@ export const EclipseDemonstrator = ({
           <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs font-bold">
             <button
               onClick={() => setActiveTab('geometry')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'geometry' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -60,7 +68,7 @@ export const EclipseDemonstrator = ({
             </button>
             <button
               onClick={() => setActiveTab('nodes')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'nodes' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -68,7 +76,7 @@ export const EclipseDemonstrator = ({
             </button>
             <button
               onClick={() => setActiveTab('sky')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'sky' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -76,7 +84,7 @@ export const EclipseDemonstrator = ({
             </button>
             <button
               onClick={() => setActiveTab('scanner')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'scanner' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >

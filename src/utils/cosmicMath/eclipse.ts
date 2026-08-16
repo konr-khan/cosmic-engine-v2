@@ -5,7 +5,7 @@ import { JulianDate } from '../../types/units';
 import { EclipseType, EclipseClassification, EclipseScannerPreset } from '../../types/astronomy';
 
 export interface EclipseCalculationResult {
-  type: string;
+  type: EclipseType;
   category: 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE';
   label: string;
   obscuration: number;
@@ -67,7 +67,7 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
   const dLonConj = ((elongation + 180) % 360) - 180;
   const gammaSolar = Math.sqrt(Math.pow(dLonConj * Math.cos(beta * Math.PI / 180), 2) + Math.pow(beta, 2));
 
-  let type = "NONE";
+  let type: EclipseType = "NONE";
   let category: 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE' = "NO_ECLIPSE";
   let label = "No Eclipse";
   let obscuration = 0; // 0 to 100%

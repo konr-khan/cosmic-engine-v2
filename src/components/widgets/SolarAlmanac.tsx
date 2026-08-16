@@ -2,30 +2,48 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Calendar, Clock, Target } from 'lucide-react';
 import { 
   CONFIG, 
-  formatTime,
-  getDaysInYear,
-  clamp
+  formatTime, 
+  getDaysInYear, 
+  clamp 
 } from '../../utils/cosmicMath';
 import { useAnnualSolarWorker } from '../../hooks/useEphemerisWorker';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay = 1, onDayChange, year = 2026, hoverTime, onHoverTime }) => {
-  const svgRef = useRef(null);
+export interface SolarAlmanacProps {
+  latitude?: number;
+  longitude?: number;
+  currentDay?: number;
+  onDayChange?: (day: number) => void;
+  year?: number;
+  hoverTime?: number | null;
+  onHoverTime?: (time: number | null) => void;
+}
+
+export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({ 
+  latitude = 47.06, 
+  longitude = -122.81, 
+  currentDay = 1, 
+  onDayChange, 
+  year = 2026, 
+  hoverTime, 
+  onHoverTime 
+}) => {
+  const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [hoverDay, setHoverDay] = useState(null);
+  const [hoverDay, setHoverDay] = useState<number | null>(null);
 
   const totalDays = getDaysInYear(year);
   const activeDay = Math.min(totalDays, hoverDay !== null ? hoverDay : currentDay);
 
   // Compute totalDays of solar twilight thresholds for the current latitude (offloaded to Web Worker)
-  const almanacData = useAnnualSolarWorker({ year, latitude });
+  const almanacData: any[] = useAnnualSolarWorker({ year, latitude }) || [];
 
   const keyStats = useMemo(() => {
-    let earliestSunrise = almanacData[0] || {};
-    let latestSunset = almanacData[0] || {};
-    let longestDay = almanacData[0] || {};
-    let shortestDay = almanacData[0] || {};
+    let earliestSunrise = almanacData[0] || { day: 1, sunrise: 6, sunset: 18, dayLength: 12 };
+    let latestSunset = almanacData[0] || { day: 1, sunrise: 6, sunset: 18, dayLength: 12 };
+    let longestDay = almanacData[0] || { day: 1, sunrise: 6, sunset: 18, dayLength: 12 };
+    let shortestDay = almanacData[0] || { day: 1, sunrise: 6, sunset: 18, dayLength: 12 };
 
     almanacData.forEach(d => {
       if (d.sunrise < earliestSunrise.sunrise) earliestSunrise = d;
@@ -47,18 +65,19 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
   const chartW = width - paddingLeft - paddingRight;
   const chartH = height - paddingTop - paddingBottom;
 
-  const xToDay = useCallback((x) => {
+  const xToDay = useCallback((x: number): number => {
     const rawDay = 1 + ((x - paddingLeft) / chartW) * (totalDays - 1);
     return Math.max(1, Math.min(totalDays, Math.round(rawDay)));
   }, [chartW, paddingLeft, totalDays]);
 
-  const dayToX = (day) => paddingLeft + ((day - 1) / (totalDays - 1)) * chartW;
-  const timeToY = (timeHours) => {
+  const dayToX = (day: number): number => paddingLeft + ((day - 1) / (totalDays - 1)) * chartW;
+  const timeToY = (timeHours: number): number => {
     const clamped = Math.max(0, Math.min(24, timeHours));
     return paddingTop + chartH - (clamped / 24) * chartH;
   };
 
-  const buildBandPath = (topKey, bottomKey) => {
+  const buildBandPath = (topKey: string, bottomKey: string): string => {
+    if (!almanacData.length) return '';
     let path = `M ${dayToX(1)},${timeToY(almanacData[0][topKey])}`;
     for (let i = 0; i < almanacData.length; i++) {
       path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][topKey])}`;
@@ -70,7 +89,8 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
     return path;
   };
 
-  const buildLinePath = (key) => {
+  const buildLinePath = (key: string): string => {
+    if (!almanacData.length) return '';
     let path = `M ${dayToX(1)},${timeToY(almanacData[0][key])}`;
     for (let i = 1; i < almanacData.length; i++) {
       path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][key])}`;
@@ -78,7 +98,7 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
     return path;
   };
 
-  const handlePointer = (e) => {
+  const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     const clientX = e.clientX - rect.left;
@@ -95,17 +115,17 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
       onHoverTime(quantized);
     }
 
-    if (isDragging || e.type === 'pointerdown') {
+    if ((isDragging || e.type === 'pointerdown') && onDayChange) {
       onDayChange(day);
     }
   };
 
-  const getDayLabel = (dayNum) => {
+  const getDayLabel = (dayNum: number): string => {
     const d = new Date(year, 0, dayNum);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const activeData = almanacData[activeDay - 1] || almanacData[0];
+  const activeData = almanacData[activeDay - 1] || almanacData[0] || { sunrise: 6, sunset: 18, dayLength: 12, solarNoon: 12 };
   const sunriseY = timeToY(activeData.sunrise);
   const sunsetY = timeToY(activeData.sunset);
 
@@ -114,7 +134,7 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
     if (!almanacData.length) return null;
     const targetLength = activeData.dayLength;
     
-    let bestDay = null;
+    let bestDay: any = null;
     let minDiff = 999;
     
     almanacData.forEach(d => {
@@ -166,9 +186,9 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
           return (
             <button
               key={s.label}
-              onClick={() => onDayChange(s.day)}
+              onClick={() => onDayChange && onDayChange(s.day)}
               title={s.title}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                 isActive 
                   ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' 
                   : 'bg-slate-950/60 hover:bg-slate-800 hover:text-white text-slate-300 border border-slate-800/80'
@@ -240,8 +260,8 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
                 <line 
                   x1={paddingLeft} y1={y} x2={paddingLeft + chartW} y2={y} 
                   stroke={isMidnightOrNoon ? "#ffffff" : "#ffffff"} 
-                  strokeWidth={isMidnightOrNoon ? "1" : "0.5"} 
-                  strokeOpacity={isMidnightOrNoon ? "0.35" : "0.1"} 
+                  strokeWidth={isMidnightOrNoon ? 1 : 0.5} 
+                  strokeOpacity={isMidnightOrNoon ? 0.35 : 0.1} 
                 />
                 <text x={paddingLeft - 8} y={y + 4} textAnchor="end" className={`text-xs font-mono ${isMidnightOrNoon ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
                   {label}
@@ -303,7 +323,7 @@ export const SolarAlmanac = ({ latitude = 47.06, longitude = -122.81, currentDay
             </g>
           )}
 
-          {/* Dynamically Generated Sunrise & Sunset Labels (Bumped Font Size) */}
+          {/* Dynamically Generated Sunrise & Sunset Labels */}
           <g transform={`translate(${paddingLeft + chartW + 6}, ${sunriseY + 4})`}>
             <text className="text-xs font-mono font-black fill-amber-400">
               {formatTime(activeData.sunrise).substring(0, 5)}

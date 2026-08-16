@@ -1,6 +1,11 @@
 import React from 'react';
+import { EclipseData } from '../../../types';
 
-export const SkyViewSimulator = ({ eclipse }) => {
+export interface SkyViewSimulatorProps {
+  eclipse?: EclipseData | null;
+}
+
+export const SkyViewSimulator: React.FC<SkyViewSimulatorProps> = ({ eclipse }) => {
   if (!eclipse) return null;
 
   return (
@@ -42,7 +47,7 @@ export const SkyViewSimulator = ({ eclipse }) => {
                   r="42" 
                   fill="#020617" 
                   stroke={eclipse.type === 'ANNULAR_SOLAR' ? '#f59e0b' : '#334155'} 
-                  strokeWidth={eclipse.type === 'ANNULAR_SOLAR' ? '3' : '1'} 
+                  strokeWidth={eclipse.type === 'ANNULAR_SOLAR' ? 3 : 1} 
                 />
               );
             })()}

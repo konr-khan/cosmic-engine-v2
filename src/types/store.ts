@@ -23,18 +23,19 @@ export type StateUpdater<T> = Partial<T> | ((prevState: T) => Partial<T>);
 export type StateSelector<T, R> = (state: T) => R;
 
 /** Layout item configuration for draggable/resizable windows */
-export interface WindowLayoutItem {
+export interface WindowLayoutConfig {
   id: string;
-  title?: string;
-  colSpan?: number;
+  title: string;
+  colSpan: number;
+  height: string;
+  isLocked?: boolean;
   rowSpan?: number;
   isMinimized?: boolean;
-  isLocked?: boolean;
   order?: number;
 }
 
 /** Complete window layout configuration dictionary */
-export type WindowLayoutConfig = Record<string, WindowLayoutItem>;
+export type WindowLayoutDictionary = Record<string, WindowLayoutConfig>;
 
 /** Predefined observatory dashboard layouts */
-export type WindowLayoutPreset = 'default' | 'astronomer' | 'solar' | 'lunar' | 'eclipses' | 'minimal';
+export type WindowLayoutPreset = 'default' | 'astronomer' | 'solar' | 'lunar' | 'eclipses' | 'minimal' | 'master' | 'ultrawide';

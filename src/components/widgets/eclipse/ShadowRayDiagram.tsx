@@ -1,6 +1,15 @@
 import React from 'react';
+import { EclipseData } from '../../../types';
 
-export const ShadowRayDiagram = ({
+export interface ShadowRayDiagramProps {
+  eclipse?: EclipseData | null;
+  diagramMode?: 'live' | 'solar' | 'lunar';
+  setDiagramMode?: (mode: 'live' | 'solar' | 'lunar') => void;
+  lunarViewSubTab?: 'pov' | 'orbit';
+  setLunarViewSubTab?: (tab: 'pov' | 'orbit') => void;
+}
+
+export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   eclipse,
   diagramMode = 'live',
   setDiagramMode,
@@ -51,7 +60,7 @@ export const ShadowRayDiagram = ({
           <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 gap-1">
             <button
               onClick={() => setDiagramMode && setDiagramMode('live')}
-              className={`px-2.5 py-0.5 rounded font-bold transition-all ${
+              className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
                 diagramMode === 'live' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -59,7 +68,7 @@ export const ShadowRayDiagram = ({
             </button>
             <button
               onClick={() => setDiagramMode && setDiagramMode('solar')}
-              className={`px-2.5 py-0.5 rounded font-bold transition-all ${
+              className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
                 diagramMode === 'solar' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -67,7 +76,7 @@ export const ShadowRayDiagram = ({
             </button>
             <button
               onClick={() => setDiagramMode && setDiagramMode('lunar')}
-              className={`px-2.5 py-0.5 rounded font-bold transition-all ${
+              className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
                 diagramMode === 'lunar' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -81,7 +90,7 @@ export const ShadowRayDiagram = ({
           <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 gap-1 text-[10px]">
             <button
               onClick={() => setLunarViewSubTab && setLunarViewSubTab('pov')}
-              className={`px-2 py-0.5 rounded font-bold transition-all ${
+              className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
                 lunarViewSubTab === 'pov' ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -89,7 +98,7 @@ export const ShadowRayDiagram = ({
             </button>
             <button
               onClick={() => setLunarViewSubTab && setLunarViewSubTab('orbit')}
-              className={`px-2 py-0.5 rounded font-bold transition-all ${
+              className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
                 lunarViewSubTab === 'orbit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >

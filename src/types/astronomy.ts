@@ -128,7 +128,20 @@ export interface TidalVectors {
 }
 
 /** Eclipse geometrical classifications */
-export type EclipseType = 'total' | 'annular' | 'partial' | 'penumbral' | 'hybrid' | 'none';
+export type EclipseType = 
+  | 'TOTAL_SOLAR' 
+  | 'ANNULAR_SOLAR' 
+  | 'PARTIAL_SOLAR' 
+  | 'TOTAL_LUNAR' 
+  | 'PARTIAL_LUNAR' 
+  | 'PENUMBRAL_LUNAR' 
+  | 'NONE'
+  | 'total' 
+  | 'annular' 
+  | 'partial' 
+  | 'penumbral' 
+  | 'hybrid' 
+  | 'none';
 
 export type EclipseClassification = 
   | 'Total Solar'
@@ -141,16 +154,28 @@ export type EclipseClassification =
 
 /** Syzygy eclipse analysis metrics */
 export interface EclipseData {
-  isEclipse: boolean;
   type: EclipseType;
-  classification: EclipseClassification;
-  target: 'Solar' | 'Lunar' | 'None';
+  category: 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE';
+  label: string;
   obscuration: number;
-  magnitude: number;
-  nodeAlignment: number;
-  nodeAngleDeg: number;
-  isWithinNodeCorridor: boolean;
-  gamma: number;
+  beta: number;
+  nodeProximityDeg: number;
+  alignmentPercent: number;
+  isEclipseActive: boolean;
+  distanceKm: number;
+  umbraRadiusKm: number;
+  penumbraRadiusKm: number;
+  raDiff: number;
+  elongation: number;
+  phaseValue: number;
+  isEclipse?: boolean;
+  classification?: EclipseClassification | string;
+  target?: 'Solar' | 'Lunar' | 'None';
+  magnitude?: number;
+  nodeAlignment?: number;
+  nodeAngleDeg?: number;
+  isWithinNodeCorridor?: boolean;
+  gamma?: number;
   pathWidthKm?: number;
 }
 
@@ -158,7 +183,7 @@ export interface EclipseData {
 export interface EclipseScannerPreset {
   id: string;
   name: string;
-  date: string;
+  date: string | Date;
   timeOfDay: number;
   latitude: number;
   longitude: number;

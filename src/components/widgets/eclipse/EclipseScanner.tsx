@@ -2,7 +2,20 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ECLIPSE_PRESETS, formatYMD } from '../../../utils/cosmicMath';
 
-export const EclipseScanner = ({
+export interface EclipseDiscoveryItem {
+  date: Date;
+  title: string;
+  label: string;
+  dayOffset: number;
+}
+
+export interface EclipseScannerProps {
+  currentDate?: Date;
+  upcomingEclipses?: EclipseDiscoveryItem[];
+  onSelectPreset?: (date: Date) => void;
+}
+
+export const EclipseScanner: React.FC<EclipseScannerProps> = ({
   currentDate = new Date(),
   upcomingEclipses = [],
   onSelectPreset
@@ -19,7 +32,7 @@ export const EclipseScanner = ({
             <button
               key={idx}
               onClick={() => onSelectPreset && onSelectPreset(preset.date)}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500 p-2.5 rounded-xl text-left transition-all group flex items-start justify-between"
+              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500 p-2.5 rounded-xl text-left transition-all group flex items-start justify-between cursor-pointer"
             >
               <div>
                 <div className="text-xs font-bold font-mono text-indigo-300 group-hover:text-amber-400">
@@ -46,7 +59,7 @@ export const EclipseScanner = ({
               <button
                 key={idx}
                 onClick={() => onSelectPreset && onSelectPreset(item.date)}
-                className="bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500 p-2 rounded-xl text-left transition-all flex items-center justify-between"
+                className="bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500 p-2 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer"
               >
                 <div>
                   <div className="text-xs font-bold font-mono text-slate-200">
