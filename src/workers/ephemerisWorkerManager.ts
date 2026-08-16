@@ -4,6 +4,16 @@ import {
   calculateAnnualSolarMatrix,
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
+import { EphemerisCalculationParams, EphemerisWorkerPayload } from '../types/worker';
+import { SolarMatrixRecord, LunarMatrixRecord } from '../types/astronomy';
+import { Latitude, Longitude } from '../types/units';
+
+export interface PendingRequestEntry {
+  type: string;
+  signature: string;
+  callbacks: Set<(payload: any) => void>;
+  params: any;
+}
 
 /**
  * Ephemeris Worker Singleton Manager
@@ -13,56 +23,36 @@ import {
  * multiplexing concurrent calculation requests across mounted dashboard windows to prevent
  * worker thread proliferation.
  */
-
-/**
- * @typedef {Object} EphemerisCalculationParams
- * @property {number} latitude Observer latitude in degrees
- * @property {number} longitude Observer longitude in degrees
- * @property {number} julianDate Current Julian Date
- * @property {number} timeOfDay Hour of day (0-24)
- * @property {boolean} [calculateLunar=true] Whether lunar almanac calculations are requested
- * @property {boolean} [calculateEclipse=true] Whether eclipse geometry calculations are requested
- */
-
-/**
- * @typedef {Object} EphemerisWorkerPayload
- * @property {Object|null} lunarEvents
- * @property {Object|null} eclipse
- * @property {number} timestamp
- */
-
 export class EphemerisWorkerManager {
+  public worker: Worker | null;
+  public nextRequestId: number;
+  public pendingRequests: Map<number, PendingRequestEntry>;
+  public signatureToRequestId: Map<string, number>;
+  public annualSolarCache: Map<string, any[]>;
+  public annualLunarCache: Map<string, any[]>;
+  public _isAvailable: boolean;
+
   constructor() {
-    /** @type {Worker|null} */
     this.worker = null;
-    /** @type {number} */
     this.nextRequestId = 0;
-    /** @type {Map<number, { type: string, signature: string, callbacks: Set<Function>, params: Object }>} */
     this.pendingRequests = new Map();
-    /** @type {Map<string, number>} */
     this.signatureToRequestId = new Map();
-    /** @type {Map<string, Array<Object>>} */
     this.annualSolarCache = new Map();
-    /** @type {Map<string, Array<Object>>} */
     this.annualLunarCache = new Map();
-    /** @type {boolean} */
     this._isAvailable = typeof Worker !== 'undefined';
   }
 
   /**
    * Returns whether Web Worker support is available and functional.
-   * @returns {boolean}
    */
-  isAvailable() {
+  isAvailable(): boolean {
     return typeof Worker !== 'undefined' && this._isAvailable !== false;
   }
 
   /**
    * Computes synchronous fallback ephemeris calculations and dispatches to registered callbacks.
-   * @private
-   * @param {{ type: string, signature: string, callbacks: Set<Function>, params: Object }} entry
    */
-  _executeSyncFallbackForEntry(entry) {
+  public _executeSyncFallbackForEntry(entry: PendingRequestEntry): void {
     if (!entry || entry.callbacks.size === 0) return;
     try {
       if (entry.type === 'ANNUAL_SOLAR') {
@@ -98,7 +88,7 @@ export class EphemerisWorkerManager {
         const eclipse = calculateEclipse
           ? calculateEclipseData(julianDate)
           : null;
-        const payload = {
+        const payload: EphemerisWorkerPayload = {
           lunarEvents,
           eclipse,
           timestamp: Date.now()
@@ -119,10 +109,8 @@ export class EphemerisWorkerManager {
   /**
    * Handles unexpected worker failure (onerror / postMessage failure) by notifying pending requests
    * via synchronous fallback calculations and safely clearing the worker instance.
-   * @private
-   * @param {any} [error]
    */
-  _handleWorkerFailure(error) {
+  public _handleWorkerFailure(error?: any): void {
     this._isAvailable = false;
     const pending = Array.from(this.pendingRequests.values());
     this.pendingRequests.clear();
@@ -144,10 +132,8 @@ export class EphemerisWorkerManager {
 
   /**
    * Initializes or retrieves the singleton Web Worker instance.
-   * @private
-   * @returns {Worker|null}
    */
-  _getWorker() {
+  public _getWorker(): Worker | null {
     if (!this.isAvailable()) {
       return null;
     }
@@ -155,11 +141,11 @@ export class EphemerisWorkerManager {
     if (!this.worker) {
       try {
         this.worker = new Worker(
-          new URL('./ephemerisWorker.js', import.meta.url),
+          new URL('./ephemerisWorker.ts', import.meta.url),
           { type: 'module' }
         );
 
-        this.worker.onmessage = (event) => {
+        this.worker.onmessage = (event: MessageEvent) => {
           const { type, id, payload } = event.data || {};
           if (type === 'EPHEMERIS_SUCCESS') {
             const requestEntry = this.pendingRequests.get(id);
@@ -245,23 +231,22 @@ export class EphemerisWorkerManager {
 
   /**
    * Requests an asynchronous ephemeris calculation from the singleton worker with in-flight request deduplication.
-   * 
-   * @param {EphemerisCalculationParams} params
-   * @param {(payload: EphemerisWorkerPayload) => void} onResult Callback on successful computation
-   * @returns {() => void} Cleanup function to unsubscribe and cancel the pending callback
    */
-  requestCalculation(params, onResult) {
+  requestCalculation(
+    params: EphemerisCalculationParams & { calculateLunar?: boolean; calculateEclipse?: boolean },
+    onResult: (payload: EphemerisWorkerPayload) => void
+  ): () => void {
     if (!this.isAvailable()) {
       return () => {};
     }
 
-    const calculateLunar = params.calculateLunar !== false;
-    const calculateEclipse = params.calculateEclipse !== false;
+    const calculateLunar = params.calculateLunar !== false && params.isLunarActive !== false;
+    const calculateEclipse = params.calculateEclipse !== false && params.isEclipseActive !== false;
     const signature = `EPHEMERIS_${params.latitude}_${params.longitude}_${params.julianDate}_${params.timeOfDay}_${calculateLunar}_${calculateEclipse}`;
 
     // In-flight request deduplication / coalescing
     if (this.signatureToRequestId.has(signature)) {
-      const existingId = this.signatureToRequestId.get(signature);
+      const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
       if (existingEntry) {
         existingEntry.callbacks.add(onResult);
@@ -277,7 +262,7 @@ export class EphemerisWorkerManager {
     }
 
     const requestId = ++this.nextRequestId;
-    const requestEntry = {
+    const requestEntry: PendingRequestEntry = {
       type: 'EPHEMERIS',
       signature,
       callbacks: new Set([onResult]),
@@ -311,16 +296,16 @@ export class EphemerisWorkerManager {
 
   /**
    * Requests an annual solar ephemeris matrix calculation with caching, deduplication, and fallback.
-   * @param {{ year: number, latitude: number }} params
-   * @param {(payload: { annualSolar: Array<Object> }) => void} onResult
-   * @returns {() => void} Cleanup unsubscribe function
    */
-  requestAnnualSolarCalculation({ year, latitude }, onResult) {
+  requestAnnualSolarCalculation(
+    { year, latitude }: { year: number; latitude: Latitude },
+    onResult: (payload: { annualSolar: any[] }) => void
+  ): () => void {
     const signature = `SOLAR_${year}_${latitude}`;
 
     // Cache hit
     if (this.annualSolarCache.has(signature)) {
-      onResult({ annualSolar: this.annualSolarCache.get(signature) });
+      onResult({ annualSolar: this.annualSolarCache.get(signature)! });
       return () => {};
     }
 
@@ -338,7 +323,7 @@ export class EphemerisWorkerManager {
 
     // In-flight request deduplication / coalescing
     if (this.signatureToRequestId.has(signature)) {
-      const existingId = this.signatureToRequestId.get(signature);
+      const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
       if (existingEntry) {
         existingEntry.callbacks.add(onResult);
@@ -361,7 +346,7 @@ export class EphemerisWorkerManager {
     }
 
     const requestId = ++this.nextRequestId;
-    const requestEntry = {
+    const requestEntry: PendingRequestEntry = {
       type: 'ANNUAL_SOLAR',
       signature,
       callbacks: new Set([onResult]),
@@ -388,16 +373,16 @@ export class EphemerisWorkerManager {
 
   /**
    * Requests an annual lunar ephemeris matrix calculation with caching, deduplication, and fallback.
-   * @param {{ year: number, latitude: number, longitude: number }} params
-   * @param {(payload: { annualLunar: Array<Object> }) => void} onResult
-   * @returns {() => void} Cleanup unsubscribe function
    */
-  requestAnnualLunarCalculation({ year, latitude, longitude }, onResult) {
+  requestAnnualLunarCalculation(
+    { year, latitude, longitude }: { year: number; latitude: Latitude; longitude: Longitude },
+    onResult: (payload: { annualLunar: any[] }) => void
+  ): () => void {
     const signature = `LUNAR_${year}_${latitude}_${longitude}`;
 
     // Cache hit
     if (this.annualLunarCache.has(signature)) {
-      onResult({ annualLunar: this.annualLunarCache.get(signature) });
+      onResult({ annualLunar: this.annualLunarCache.get(signature)! });
       return () => {};
     }
 
@@ -415,7 +400,7 @@ export class EphemerisWorkerManager {
 
     // In-flight request deduplication / coalescing
     if (this.signatureToRequestId.has(signature)) {
-      const existingId = this.signatureToRequestId.get(signature);
+      const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
       if (existingEntry) {
         existingEntry.callbacks.add(onResult);
@@ -438,7 +423,7 @@ export class EphemerisWorkerManager {
     }
 
     const requestId = ++this.nextRequestId;
-    const requestEntry = {
+    const requestEntry: PendingRequestEntry = {
       type: 'ANNUAL_LUNAR',
       signature,
       callbacks: new Set([onResult]),
@@ -466,7 +451,7 @@ export class EphemerisWorkerManager {
   /**
    * Terminates the active singleton worker instance and resets pending requests and caches.
    */
-  terminate() {
+  terminate(): void {
     if (this.worker) {
       try {
         this.worker.terminate();

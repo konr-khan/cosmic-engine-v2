@@ -4,13 +4,13 @@ import { EphemerisWorkerManager, ephemerisWorkerManager } from '../workers/ephem
 
 // Mock React's hooks to execute synchronously in pure unit test environment
 vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual: any = await importOriginal();
   return {
     ...actual,
-    useMemo: (factory) => factory(),
-    useEffect: (effect) => effect(),
-    useState: (initial) => [typeof initial === 'function' ? initial() : initial, vi.fn()],
-    useRef: (initial) => ({ current: initial })
+    useMemo: (factory: () => any) => factory(),
+    useEffect: (effect: () => any) => effect(),
+    useState: (initial: any) => [typeof initial === 'function' ? initial() : initial, vi.fn()],
+    useRef: (initial: any) => ({ current: initial })
   };
 });
 
@@ -95,7 +95,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('handles environment where Worker is undefined', () => {
-    delete globalThis.Worker;
+    delete (globalThis as any).Worker;
     const manager = new EphemerisWorkerManager();
 
     expect(manager.isAvailable()).toBe(false);
@@ -119,18 +119,20 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     let workerInstanceCount = 0;
 
     class MockWorker {
-      constructor(url, options) {
+      url: any;
+      options: any;
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
+      constructor(url?: any, options?: any) {
         workerInstanceCount++;
         this.url = url;
         this.options = options;
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
       }
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     expect(manager.isAvailable()).toBe(true);
@@ -158,8 +160,8 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     // Exactly 1 worker instance should be created
     expect(workerInstanceCount).toBe(1);
-    expect(manager.worker.postMessage).toHaveBeenCalledTimes(2);
-    expect(manager.worker.postMessage).toHaveBeenNthCalledWith(1, {
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
+    expect((manager.worker as any).postMessage).toHaveBeenNthCalledWith(1, {
       type: 'CALCULATE_EPHEMERIS',
       id: 1,
       payload: {
@@ -171,7 +173,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
         calculateEclipse: true
       }
     });
-    expect(manager.worker.postMessage).toHaveBeenNthCalledWith(2, {
+    expect((manager.worker as any).postMessage).toHaveBeenNthCalledWith(2, {
       type: 'CALCULATE_EPHEMERIS',
       id: 2,
       payload: {
@@ -185,7 +187,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     });
 
     // Simulate worker response for request 1
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'EPHEMERIS_SUCCESS',
         id: 1,
@@ -198,7 +200,8 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     // Test unsubscribe before response for request 2
     unsub2();
-    manager.worker.onmessage({
+
+    (manager.worker as any).onmessage({
       data: {
         type: 'EPHEMERIS_SUCCESS',
         id: 2,
@@ -212,15 +215,13 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('coalesces concurrent requests with identical parameters into a single worker postMessage call', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
@@ -239,10 +240,10 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     manager.requestCalculation(identicalParams, cb2);
 
     // Should only have posted 1 message to the worker thread
-    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
 
     // When worker responds, both callbacks must receive the payload
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'EPHEMERIS_SUCCESS',
         id: 1,
@@ -255,15 +256,13 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('deduplicates and coalesces identical in-flight requests without sending duplicate messages', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
@@ -282,10 +281,10 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     const unsub2 = manager.requestCalculation(params, cb2);
 
     // Only 1 message should be sent to worker despite 2 subscribers
-    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
 
     // Simulate successful worker response
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'EPHEMERIS_SUCCESS',
         id: 1,
@@ -305,15 +304,13 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('handles worker errors gracefully and dispatches fallback calculations to pending callbacks', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
@@ -329,7 +326,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     expect(manager.worker).not.toBeNull();
 
     // Trigger worker error
-    manager.worker.onerror(new Error('Worker script load failure'));
+    (manager.worker as any).onerror(new Error('Worker script load failure'));
 
     expect(manager.isAvailable()).toBe(false);
     expect(manager.worker).toBeNull();
@@ -341,15 +338,13 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('dispatches synchronous fallback calculations on EPHEMERIS_ERROR message', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
@@ -362,7 +357,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       calculateEclipse: true
     }, cb);
 
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'EPHEMERIS_ERROR',
         id: 1,
@@ -378,15 +373,13 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('handles annual solar calculation dispatch, result delivery, and deduplication', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
@@ -396,8 +389,8 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb1);
     manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb2);
 
-    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
-    expect(manager.worker.postMessage).toHaveBeenCalledWith({
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    expect((manager.worker as any).postMessage).toHaveBeenCalledWith({
       type: 'CALCULATE_ANNUAL_SOLAR',
       id: 1,
       payload: { year: 2026, latitude: 47.06 }
@@ -405,7 +398,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     // Simulate worker success response
     const mockSolar = [{ day: 1, sunrise: 7.5, sunset: 16.5 }];
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'ANNUAL_SOLAR_SUCCESS',
         id: 1,
@@ -419,27 +412,25 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     // Subsequent request should hit cache directly without posting to worker
     const cb3 = vi.fn();
     manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb3);
-    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1); // Still 1
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1); // Still 1
     expect(cb3).toHaveBeenCalledWith({ annualSolar: mockSolar });
   });
 
   it('handles annual solar fallback on ANNUAL_SOLAR_ERROR', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
     manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb);
 
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'ANNUAL_SOLAR_ERROR',
         id: 1,
@@ -454,15 +445,13 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('handles annual lunar calculation dispatch, result delivery, and deduplication', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
@@ -472,8 +461,8 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb1);
     manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb2);
 
-    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1);
-    expect(manager.worker.postMessage).toHaveBeenCalledWith({
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    expect((manager.worker as any).postMessage).toHaveBeenCalledWith({
       type: 'CALCULATE_ANNUAL_LUNAR',
       id: 1,
       payload: { year: 2026, latitude: 47.06, longitude: -122.81 }
@@ -481,7 +470,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     // Simulate worker success response
     const mockLunar = [{ day: 1, moonrise: 10, moonset: 22, distanceKm: 384400 }];
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'ANNUAL_LUNAR_SUCCESS',
         id: 1,
@@ -495,27 +484,25 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     // Subsequent request should hit cache directly without posting to worker
     const cb3 = vi.fn();
     manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb3);
-    expect(manager.worker.postMessage).toHaveBeenCalledTimes(1); // Still 1
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1); // Still 1
     expect(cb3).toHaveBeenCalledWith({ annualLunar: mockLunar });
   });
 
   it('handles annual lunar fallback on ANNUAL_LUNAR_ERROR', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
     manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb);
 
-    manager.worker.onmessage({
+    (manager.worker as any).onmessage({
       data: {
         type: 'ANNUAL_LUNAR_ERROR',
         id: 1,
@@ -530,15 +517,13 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('terminates active worker and clears pending requests on terminate()', () => {
     class MockWorker {
-      constructor() {
-        this.postMessage = vi.fn();
-        this.terminate = vi.fn();
-        this.onmessage = null;
-        this.onerror = null;
-      }
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
     }
 
-    globalThis.Worker = MockWorker;
+    globalThis.Worker = MockWorker as any;
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
@@ -551,7 +536,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       calculateEclipse: true
     }, cb);
 
-    const workerInstance = manager.worker;
+    const workerInstance = manager.worker as any;
     expect(workerInstance).not.toBeNull();
 
     manager.terminate();

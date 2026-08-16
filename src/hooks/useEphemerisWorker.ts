@@ -6,24 +6,29 @@ import {
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
 import { ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
+import { EphemerisCalculationParams, EphemerisWorkerPayload } from '../types/worker';
+import { LunarEvents, EclipseData } from '../types/astronomy';
+import { Latitude, Longitude, JulianDate, HoursDecimal } from '../types/units';
+
+export interface UseEphemerisWorkerParams {
+  latitude: Latitude;
+  longitude: Longitude;
+  julianDate: JulianDate | number;
+  timeOfDay: HoursDecimal;
+  isLunarActive?: boolean;
+  isEclipseActive?: boolean;
+  isOrbitalActive?: boolean;
+}
+
+export interface UseEphemerisWorkerResult {
+  lunarEvents: LunarEvents | null | any;
+  eclipse: EclipseData | null | any;
+  isWorkerActive: boolean;
+}
 
 /**
  * Custom hook to offload heavy Meeus lunar ephemeris and eclipse calculations to a singleton Web Worker.
  * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
- *
- * @param {Object} params
- * @param {number} params.latitude Observer latitude in degrees
- * @param {number} params.longitude Observer longitude in degrees
- * @param {number} params.julianDate Current Julian Date
- * @param {number} params.timeOfDay Hour of day (0-24)
- * @param {boolean} [params.isLunarActive=true] Whether lunar almanac events are requested
- * @param {boolean} [params.isEclipseActive=true] Whether eclipse data is requested
- * @param {boolean} [params.isOrbitalActive=true] Whether orbital data calculation is active
- * @returns {{
- *   lunarEvents: Object|null,
- *   eclipse: Object|null,
- *   isWorkerActive: boolean
- * }}
  */
 export const useEphemerisWorker = ({
   latitude,
@@ -33,9 +38,9 @@ export const useEphemerisWorker = ({
   isLunarActive = true,
   isEclipseActive = true,
   isOrbitalActive = true
-}) => {
-  const [workerResult, setWorkerResult] = useState(null);
-  const [isWorkerActive, setIsWorkerActive] = useState(() => ephemerisWorkerManager.isAvailable());
+}: UseEphemerisWorkerParams): UseEphemerisWorkerResult => {
+  const [workerResult, setWorkerResult] = useState<EphemerisWorkerPayload | null>(null);
+  const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
 
   // Post calculation request to singleton worker manager when inputs change
   useEffect(() => {
@@ -105,29 +110,10 @@ export const useEphemerisWorker = ({
 /**
  * Custom hook to offload annual 365-day solar ephemeris matrix calculation to a Web Worker.
  * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
- *
- * @param {Object} params
- * @param {number} params.year Calendar year
- * @param {number} params.latitude Observer latitude in degrees
- * @returns {Array<{
- *   day: number,
- *   declination: number,
- *   equationOfTime: number,
- *   solarNoon: number,
- *   sunrise: number,
- *   sunset: number,
- *   civilDawn: number,
- *   civilDusk: number,
- *   nauticalDawn: number,
- *   nauticalDusk: number,
- *   astroDawn: number,
- *   astroDusk: number,
- *   dayLength: number
- * }>}
  */
-export const useAnnualSolarWorker = ({ year, latitude }) => {
-  const [workerSolar, setWorkerSolar] = useState(null);
-  const [isWorkerActive, setIsWorkerActive] = useState(() => ephemerisWorkerManager.isAvailable());
+export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitude: Latitude }) => {
+  const [workerSolar, setWorkerSolar] = useState<any[] | null>(null);
+  const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
 
   useEffect(() => {
     if (!ephemerisWorkerManager.isAvailable()) {
@@ -165,25 +151,18 @@ export const useAnnualSolarWorker = ({ year, latitude }) => {
 /**
  * Custom hook to offload annual 365-day lunar ephemeris matrix calculation to a Web Worker.
  * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
- *
- * @param {Object} params
- * @param {number} params.year Calendar year
- * @param {number} params.latitude Observer latitude in degrees
- * @param {number} params.longitude Observer longitude in degrees
- * @returns {Array<{
- *   day: number,
- *   moonrise: number|null,
- *   transit: number,
- *   moonset: number|null,
- *   phaseValue: number,
- *   isPerigee: boolean,
- *   isApogee: boolean,
- *   distanceKm: number
- * }>}
  */
-export const useAnnualLunarWorker = ({ year, latitude, longitude }) => {
-  const [workerLunar, setWorkerLunar] = useState(null);
-  const [isWorkerActive, setIsWorkerActive] = useState(() => ephemerisWorkerManager.isAvailable());
+export const useAnnualLunarWorker = ({ 
+  year, 
+  latitude, 
+  longitude 
+}: { 
+  year: number; 
+  latitude: Latitude; 
+  longitude: Longitude; 
+}) => {
+  const [workerLunar, setWorkerLunar] = useState<any[] | null>(null);
+  const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
 
   useEffect(() => {
     if (!ephemerisWorkerManager.isAvailable()) {

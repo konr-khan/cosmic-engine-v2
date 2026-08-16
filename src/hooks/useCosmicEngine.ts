@@ -11,15 +11,17 @@ import {
 } from '../utils/cosmicMath';
 import { useChronometerStore } from '../store/cosmicStore';
 import { useEphemerisWorker } from './useEphemerisWorker';
+import { ActiveWidgetsFilter, CosmicEngineData, SolarAlmanacData, OrbitalData, TideType } from '../types/astronomy';
+import { Latitude, Longitude, HoursDecimal, JulianDate } from '../types/units';
 
 export const useCosmicEngine = (
-  paramDate, 
-  paramTimeOfDay, 
-  paramLatitude, 
-  paramLongitude, 
-  paramUseAnalemma,
-  activeWidgets = {}
-) => {
+  paramDate?: Date | null, 
+  paramTimeOfDay?: HoursDecimal | null, 
+  paramLatitude?: Latitude | null, 
+  paramLongitude?: Longitude | null, 
+  paramUseAnalemma?: boolean | null,
+  activeWidgets: ActiveWidgetsFilter = {}
+): CosmicEngineData => {
   const storeState = useChronometerStore((state) => ({
     date: state.date,
     timeOfDay: state.timeOfDay,
@@ -77,7 +79,7 @@ export const useCosmicEngine = (
     const solarNoon = 12 - (longitude / 15) - (eotCorrection / 60);
     const dayLen = calculateDaylightDurationPrecise(latitude, declination, OFFICIAL);
     
-    const solarData = {
+    const solarData: SolarAlmanacData = {
       dayLength: dayLen,
       civil: calculateDaylightDurationPrecise(latitude, declination, CIVIL),
       nautical: calculateDaylightDurationPrecise(latitude, declination, NAUTICAL),
@@ -95,7 +97,7 @@ export const useCosmicEngine = (
       isMidnightSun: dayLen >= 24
     };
 
-    let orbitalData = null;
+    let orbitalData: OrbitalData | null = null;
 
     if (isOrbitalActive) {
       const lunarPos = calculateLunarPosition(JD);
@@ -125,7 +127,7 @@ export const useCosmicEngine = (
       const alignmentFactor = Math.cos(2 * (angleToMoon - angleToSun));
       const baseOceanSize = earthRadius + 4;
       const tideRx = baseOceanSize + 6 + (3 * alignmentFactor);
-      let tideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
+      let tideType: TideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
 
       const userRotation = ((timeOfDay - 12) * 15) + longitude;
       const moonPhaseAngleDeg = phase0to1 * 360;
@@ -133,7 +135,7 @@ export const useCosmicEngine = (
       let diff = (userRotation - moonPhaseAngleDeg) % 360;
       if (diff < 0) diff += 360; 
       
-      let localTideStatus = "Low Tide";
+      let localTideStatus: 'High Tide' | 'Low Tide' = "Low Tide";
       if (diff <= 45 || diff >= 315 || (diff >= 135 && diff <= 225)) {
         localTideStatus = "High Tide";
       }
@@ -163,6 +165,3 @@ export const useCosmicEngine = (
     return { solarData, orbitalData, julianDate: JD };
   }, [date, timeOfDay, latitude, longitude, useAnalemma, isLunarActive, isEclipseActive, isOrbitalActive, julianDate, ephemeris]);
 };
-
-
-

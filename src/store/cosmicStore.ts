@@ -1,10 +1,11 @@
 import { useSyncExternalStore, useRef, useCallback } from 'react';
+import { CosmicStoreState, StateSelector, StateUpdater } from '../types/store';
 
 /**
  * Utility for shallow equality comparison between two objects or values.
  * Prevents unnecessary re-renders in useSyncExternalStore when selector outputs an object.
  */
-export function shallowEqual(objA, objB) {
+export function shallowEqual(objA: any, objB: any): boolean {
   if (Object.is(objA, objB)) return true;
   if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
     return false;
@@ -21,7 +22,12 @@ export function shallowEqual(objA, objB) {
   return true;
 }
 
-class CosmicStore {
+export class CosmicStore {
+  private state: CosmicStoreState;
+  private listeners: Set<() => void>;
+  private animationFrameId: number | null;
+  private lastTickTime: number | null;
+
   constructor() {
     const now = new Date();
     const initialTimeOfDay = parseFloat(
@@ -43,18 +49,19 @@ class CosmicStore {
     this.lastTickTime = null;
   }
 
-  getState = () => this.state;
+  getState = (): CosmicStoreState => this.state;
 
-  subscribe = (listener) => {
+  subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   };
 
-  setState = (partialState) => {
+  setState = (partialState: StateUpdater<CosmicStoreState>): void => {
     const nextState = typeof partialState === 'function' ? partialState(this.state) : partialState;
     let hasChanged = false;
     for (const key in nextState) {
-      if (this.state[key] !== nextState[key]) {
+      const k = key as keyof CosmicStoreState;
+      if (this.state[k] !== nextState[k]) {
         hasChanged = true;
         break;
       }
@@ -65,15 +72,15 @@ class CosmicStore {
     }
   };
 
-  setDate = (date) => this.setState({ date });
-  setTimeOfDay = (timeOfDay) => this.setState({ timeOfDay });
-  setLatitude = (latitude) => this.setState({ latitude });
-  setLongitude = (longitude) => this.setState({ longitude });
-  setObserverLocation = (latitude, longitude) => this.setState({ latitude, longitude });
-  setSpeed = (speed) => this.setState({ speed });
-  setUseAnalemma = (useAnalemma) => this.setState({ useAnalemma });
+  setDate = (date: Date): void => this.setState({ date });
+  setTimeOfDay = (timeOfDay: number): void => this.setState({ timeOfDay });
+  setLatitude = (latitude: number): void => this.setState({ latitude });
+  setLongitude = (longitude: number): void => this.setState({ longitude });
+  setObserverLocation = (latitude: number, longitude: number): void => this.setState({ latitude, longitude });
+  setSpeed = (speed: number): void => this.setState({ speed });
+  setUseAnalemma = (useAnalemma: boolean): void => this.setState({ useAnalemma });
 
-  setIsPlaying = (isPlaying) => {
+  setIsPlaying = (isPlaying: boolean): void => {
     this.setState({ isPlaying });
     if (isPlaying) {
       this.startTicker();
@@ -82,11 +89,11 @@ class CosmicStore {
     }
   };
 
-  togglePlay = () => {
+  togglePlay = (): void => {
     this.setIsPlaying(!this.state.isPlaying);
   };
 
-  tickTime = (deltaSeconds) => {
+  tickTime = (deltaSeconds: number): void => {
     const { timeOfDay, speed, date } = this.state;
     let newTime = timeOfDay + (deltaSeconds * speed) / 3600;
     let newDate = date;
@@ -109,15 +116,15 @@ class CosmicStore {
     });
   };
 
-  startTicker = () => {
+  startTicker = (): void => {
     if (this.animationFrameId) return;
     this.lastTickTime = performance.now();
-    const loop = (now) => {
+    const loop = (now: number) => {
       if (!this.state.isPlaying) {
         this.animationFrameId = null;
         return;
       }
-      const deltaMs = Math.min(now - this.lastTickTime, 500);
+      const deltaMs = Math.min(now - (this.lastTickTime || now), 500);
       this.lastTickTime = now;
       this.tickTime(deltaMs / 1000);
       this.animationFrameId = requestAnimationFrame(loop);
@@ -125,7 +132,7 @@ class CosmicStore {
     this.animationFrameId = requestAnimationFrame(loop);
   };
 
-  stopTicker = () => {
+  stopTicker = (): void => {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
@@ -139,11 +146,14 @@ export const cosmicStore = new CosmicStore();
  * Custom hook to subscribe to cosmicStore state slices using React's useSyncExternalStore.
  * Memoizes getSnapshot results via shallow equality to prevent infinite re-render loops.
  */
-export function useChronometerStore(selector = (state) => state, isEquivalent = shallowEqual) {
-  const lastStateRef = useRef(null);
-  const lastSelectedRef = useRef(null);
+export function useChronometerStore<T = CosmicStoreState>(
+  selector: StateSelector<CosmicStoreState, T> = (state) => state as unknown as T,
+  isEquivalent: (a: any, b: any) => boolean = shallowEqual
+): T {
+  const lastStateRef = useRef<CosmicStoreState | null>(null);
+  const lastSelectedRef = useRef<T | null>(null);
 
-  const getSnapshot = useCallback(() => {
+  const getSnapshot = useCallback((): T => {
     const currentState = cosmicStore.getState();
 
     if (lastStateRef.current === currentState && lastSelectedRef.current !== null) {
@@ -170,14 +180,14 @@ export function useChronometerStore(selector = (state) => state, isEquivalent = 
 }
 
 export const cosmicActions = {
-  setDate: (d) => cosmicStore.setDate(d),
-  setTimeOfDay: (t) => cosmicStore.setTimeOfDay(t),
-  setLatitude: (lat) => cosmicStore.setLatitude(lat),
-  setLongitude: (lon) => cosmicStore.setLongitude(lon),
-  setObserverLocation: (lat, lon) => cosmicStore.setObserverLocation(lat, lon),
-  setSpeed: (s) => cosmicStore.setSpeed(s),
-  setIsPlaying: (p) => cosmicStore.setIsPlaying(p),
+  setDate: (d: Date) => cosmicStore.setDate(d),
+  setTimeOfDay: (t: number) => cosmicStore.setTimeOfDay(t),
+  setLatitude: (lat: number) => cosmicStore.setLatitude(lat),
+  setLongitude: (lon: number) => cosmicStore.setLongitude(lon),
+  setObserverLocation: (lat: number, lon: number) => cosmicStore.setObserverLocation(lat, lon),
+  setSpeed: (s: number) => cosmicStore.setSpeed(s),
+  setIsPlaying: (p: boolean) => cosmicStore.setIsPlaying(p),
   togglePlay: () => cosmicStore.togglePlay(),
-  setUseAnalemma: (u) => cosmicStore.setUseAnalemma(u),
-  tickTime: (dt) => cosmicStore.tickTime(dt),
+  setUseAnalemma: (u: boolean) => cosmicStore.setUseAnalemma(u),
+  tickTime: (dt: number) => cosmicStore.tickTime(dt),
 };

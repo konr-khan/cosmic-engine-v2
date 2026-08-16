@@ -19,8 +19,8 @@ export interface EphemerisCalculationParams {
 
 /** Instantaneous ephemeris calculation worker payload output */
 export interface EphemerisWorkerPayload {
-  lunarEvents: LunarEvents | null;
-  eclipse: EclipseData | null;
+  lunarEvents: any;
+  eclipse: any;
   timestamp: number;
 }
 

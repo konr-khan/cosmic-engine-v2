@@ -3,15 +3,15 @@ import { useCosmicEngine } from './useCosmicEngine';
 
 // Mock React hooks to execute immediately in pure unit test environment
 vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual: any = await importOriginal();
   return {
     ...actual,
-    useMemo: (factory) => factory(),
-    useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
-    useEffect: (effect) => { effect(); },
-    useRef: (initial) => ({ current: initial }),
-    useCallback: (fn) => fn,
-    useSyncExternalStore: (subscribe, getSnapshot) => getSnapshot()
+    useMemo: (factory: () => any) => factory(),
+    useState: (initial: any) => [typeof initial === 'function' ? initial() : initial, () => {}],
+    useEffect: (effect: () => any) => { effect(); },
+    useRef: (initial: any) => ({ current: initial }),
+    useCallback: (fn: any) => fn,
+    useSyncExternalStore: (subscribe: any, getSnapshot: () => any) => getSnapshot()
   };
 });
 
@@ -49,7 +49,7 @@ describe('useCosmicEngine Hook Suite', () => {
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);
 
       expect(result.orbitalData).not.toBeNull();
-      expect(result.orbitalData.lunarEvents).toBeNull();
+      expect(result.orbitalData!.lunarEvents).toBeNull();
     });
 
     it('skips eclipse calculations when eclipse and macroOrbit widgets are false', () => {
@@ -58,7 +58,7 @@ describe('useCosmicEngine Hook Suite', () => {
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);
 
       expect(result.orbitalData).not.toBeNull();
-      expect(result.orbitalData.eclipse).toBeNull();
+      expect(result.orbitalData!.eclipse).toBeNull();
     });
 
     it('skips entire orbitalData structure when all orbital widgets are false', () => {
@@ -77,9 +77,9 @@ describe('useCosmicEngine Hook Suite', () => {
       const testDate = new Date(2026, 5, 21);
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true);
 
-      expect(result.orbitalData.lunarEvents).not.toBeNull();
-      expect(result.orbitalData.lunarEvents.distanceKm).toBeGreaterThan(350000);
-      expect(result.orbitalData.eclipse).not.toBeNull();
+      expect(result.orbitalData!.lunarEvents).not.toBeNull();
+      expect((result.orbitalData!.lunarEvents as any).distanceKm).toBeGreaterThan(350000);
+      expect(result.orbitalData!.eclipse).not.toBeNull();
     });
 
     it('scopes calculations for solar-only widget { sunclock: true } bypassing orbitalData and worker', () => {
@@ -95,8 +95,8 @@ describe('useCosmicEngine Hook Suite', () => {
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { lunarAlmanac: true });
 
       expect(result.orbitalData).not.toBeNull();
-      expect(result.orbitalData.lunarEvents).not.toBeNull();
-      expect(result.orbitalData.eclipse).toBeNull();
+      expect(result.orbitalData!.lunarEvents).not.toBeNull();
+      expect(result.orbitalData!.eclipse).toBeNull();
     });
 
     it('scopes calculations for { eclipse: true } calculating eclipse and skipping lunarEvents', () => {
@@ -104,8 +104,8 @@ describe('useCosmicEngine Hook Suite', () => {
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { eclipse: true });
 
       expect(result.orbitalData).not.toBeNull();
-      expect(result.orbitalData.eclipse).not.toBeNull();
-      expect(result.orbitalData.lunarEvents).toBeNull();
+      expect(result.orbitalData!.eclipse).not.toBeNull();
+      expect(result.orbitalData!.lunarEvents).toBeNull();
     });
   });
 
@@ -115,7 +115,7 @@ describe('useCosmicEngine Hook Suite', () => {
       const initial = useCosmicEngine(testDate, 0, 0, 0);
       const noon = useCosmicEngine(testDate, 12, 0, 0);
 
-      expect(noon.julianDate - initial.julianDate).toBeCloseTo(0.5, 4);
+      expect((noon.julianDate as number) - (initial.julianDate as number)).toBeCloseTo(0.5, 4);
     });
   });
 
@@ -235,9 +235,9 @@ describe('useCosmicEngine Hook Suite', () => {
       const result = useCosmicEngine(newMoonDate, 12, 0, 0, true);
 
       expect(result.orbitalData).not.toBeNull();
-      expect(['Spring Tide', 'Neap Tide', 'Transitional']).toContain(result.orbitalData.tides.type);
-      expect(['High Tide', 'Low Tide']).toContain(result.orbitalData.localTideStatus);
-      expect(result.orbitalData.tides.rx).toBeGreaterThan(result.orbitalData.tides.ry);
+      expect(['Spring Tide', 'Neap Tide', 'Transitional']).toContain(result.orbitalData!.tides.type);
+      expect(['High Tide', 'Low Tide']).toContain(result.orbitalData!.localTideStatus);
+      expect(result.orbitalData!.tides.rx).toBeGreaterThan(result.orbitalData!.tides.ry);
     });
   });
 });

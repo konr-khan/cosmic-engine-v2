@@ -9,7 +9,7 @@ import {
  * Dedicated Web Worker for off-main-thread Meeus lunar ephemeris,
  * syzygy eclipse shadow geometry, and annual solar/lunar ephemeris matrix calculations.
  */
-self.onmessage = (event) => {
+self.onmessage = (event: MessageEvent) => {
   const { type, id, payload } = event.data || {};
 
   if (type === 'CALCULATE_EPHEMERIS') {
@@ -42,7 +42,7 @@ self.onmessage = (event) => {
           timestamp: Date.now()
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       self.postMessage({
         type: 'EPHEMERIS_ERROR',
         id,
@@ -61,7 +61,7 @@ self.onmessage = (event) => {
           annualSolar
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       self.postMessage({
         type: 'ANNUAL_SOLAR_ERROR',
         id,
@@ -80,7 +80,7 @@ self.onmessage = (event) => {
           annualLunar
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       self.postMessage({
         type: 'ANNUAL_LUNAR_ERROR',
         id,
