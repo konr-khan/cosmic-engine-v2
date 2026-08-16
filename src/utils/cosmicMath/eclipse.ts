@@ -78,20 +78,26 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
 
   if (isNearNewMoon && gammaSolar < solarMaxLimit) {
     category = "SOLAR";
+    const isTotalityCapable = distanceKm < 378000;
     if (gammaSolar < 1.0) {
-      if (distanceKm < 378000) {
+      if (isTotalityCapable) {
         type = "TOTAL_SOLAR";
         label = "Total Solar Eclipse";
-        obscuration = Math.min(100, Math.round(100 - (absBeta * 10)));
+        // Smooth quadratic scaling from 100% at shadow center to 95% at Earth limb boundary
+        obscuration = Math.max(95, Math.min(100, Math.round(100 - (gammaSolar * gammaSolar * 5))));
       } else {
         type = "ANNULAR_SOLAR";
         label = "Annular Solar Eclipse";
-        obscuration = Math.min(98, Math.round(95 - (absBeta * 10)));
+        const maxAnnular = Math.min(98, Math.round(Math.pow(sMoon / sSun, 2) * 100) || 94);
+        obscuration = Math.max(90, Math.min(maxAnnular, Math.round(maxAnnular - (gammaSolar * gammaSolar * 4))));
       }
     } else {
       type = "PARTIAL_SOLAR";
       label = "Partial Solar Eclipse";
-      obscuration = Math.max(10, Math.round(85 - ((gammaSolar - 1.0) / (solarMaxLimit - 1.0) * 75)));
+      // Smooth continuous power decay from boundary (95% / 90%) down to 1% at penumbral limit
+      const fraction = Math.max(0, Math.min(1, (solarMaxLimit - gammaSolar) / (solarMaxLimit - 1.0)));
+      const baseEdge = isTotalityCapable ? 95 : 90;
+      obscuration = Math.max(1, Math.min(baseEdge, Math.round(baseEdge * Math.pow(fraction, 1.15))));
     }
   } 
   // Lunar Eclipse Condition (Full Moon syzygy & shadow alignment)

@@ -392,7 +392,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           {/* Earth Body on Orbit */}
           <g transform={`translate(${renderEarthX}, ${renderEarthY})`}>
             {/* Moon Orbit Ring */}
-            <circle r="44" fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="2 2" className="pointer-events-none" />
+            <circle r={CONFIG.ORBIT.moonOrbitRadius} fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="2 2" className="pointer-events-none" />
             {/* Earth Body */}
             <circle r="11" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" className="drop-shadow pointer-events-none" />
             <text x="0" y="17" textAnchor="middle" className="text-[10px] font-mono font-bold fill-blue-300 select-none pointer-events-none">EARTH</text>

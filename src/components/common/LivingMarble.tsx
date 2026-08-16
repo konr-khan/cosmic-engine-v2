@@ -32,97 +32,153 @@ export const LivingMarble: React.FC<LivingMarbleProps> = ({
   const subY = -radius * sy; // -Y is North in SVG
   const isSubsolarVisible = sz >= 0;
 
-  // 2. Build mathematical twilight and daylight paths using 3D orthographic projection
+  // 2. Build exact, non-tearing twilight and daylight paths using 3D spherical geometry
   const generateIlluminationPath = (thresholdDeg: number): string => {
     const h0Rad = toRadians(thresholdDeg);
     const sinH0 = Math.sin(h0Rad);
     const cosH0 = Math.cos(h0Rad);
 
-    // Orthonormal basis (u, v, s) where s is sun vector
-    const sLenSq = sx * sx + sy * sy;
-    let ux: number, uy: number, uz: number;
-    let vx: number, vy: number, vz: number;
+    // Magnitude of Sun vector component in the screen plane (X-Y)
+    const sPerpSq = sx * sx + sy * sy;
+    const sPerp = Math.sqrt(sPerpSq);
 
-    if (sLenSq > 1e-6) {
-      const sLen = Math.sqrt(sLenSq);
-      ux = -sy / sLen;
-      uy = sx / sLen;
-      uz = 0;
-
-      vx = -sx * sz / sLen;
-      vy = -sy * sz / sLen;
-      vz = sLen;
-    } else {
-      ux = 1; uy = 0; uz = 0;
-      vx = 0; vy = 1; vz = 0;
-    }
-
-    // Sample the circle of altitude h0 on the sphere (3D points)
-    const NUM_SAMPLES = 72;
-    const frontPoints: { x: number; y: number; phi: number }[] = [];
-
-    for (let i = 0; i <= NUM_SAMPLES; i++) {
-      const phi = (i / NUM_SAMPLES) * 2 * Math.PI;
-      const cosPhi = Math.cos(phi);
-      const sinPhi = Math.sin(phi);
-
-      const px = cosH0 * cosPhi * ux + cosH0 * sinPhi * vx + sinH0 * sx;
-      const py = cosH0 * cosPhi * uy + cosH0 * sinPhi * vy + sinH0 * sy;
-      const pz = cosH0 * cosPhi * uz + cosH0 * sinPhi * vz + sinH0 * sz;
-
-      if (pz >= 0) {
-        frontPoints.push({
-          x: radius * px,
-          y: -radius * py,
-          phi
-        });
+    // Handle polar singularity where Sun vector is purely along Z (normal to screen)
+    if (sPerp < 1e-6) {
+      if (sz >= sinH0) {
+        // Entire visible hemisphere is illuminated
+        return `M 0 -${radius} A ${radius} ${radius} 0 1 1 0 ${radius} A ${radius} ${radius} 0 1 1 0 -${radius} Z`;
       }
+      // Sun is on the opposite side of Earth facing directly away; entire front is dark
+      return '';
     }
 
-    // If completely in front (e.g. sun directly overhead in noon summer polar day)
-    if (frontPoints.length === NUM_SAMPLES + 1) {
-      let d = `M ${frontPoints[0].x.toFixed(2)} ${frontPoints[0].y.toFixed(2)} `;
-      for (let i = 1; i < frontPoints.length; i++) {
-        d += `L ${frontPoints[i].x.toFixed(2)} ${frontPoints[i].y.toFixed(2)} `;
-      }
-      d += 'Z';
-      return d;
-    }
+    // Orthonormal basis (u, v, s) where u is in screen plane, v has positive Z component
+    const ux = -sy / sPerp;
+    const uy = sx / sPerp;
+    const uz = 0;
 
-    // If completely behind the globe (polar night or deep night)
-    if (frontPoints.length === 0) {
-      if (sinH0 < sz) {
+    const vx = -sx * sz / sPerp;
+    const vy = -sy * sz / sPerp;
+    const vz = sPerp;
+
+    // The condition for a point on the circle of altitude h0 to be visible on front hemisphere is:
+    // pz(phi) = cosH0 * vz * sin(phi) + sinH0 * sz >= 0
+    // => sin(phi) >= -(sinH0 * sz) / (cosH0 * sPerp) = mu
+    const denom = cosH0 * sPerp;
+    const mu = -(sinH0 * sz) / denom;
+
+    // Case A: mu >= 1 => sin(phi) >= mu is impossible (terminator is entirely on backside)
+    if (mu >= 1) {
+      if (sz >= sinH0) {
         // Entire visible hemisphere is illuminated
         return `M 0 -${radius} A ${radius} ${radius} 0 1 1 0 ${radius} A ${radius} ${radius} 0 1 1 0 -${radius} Z`;
       }
       return '';
     }
 
-    // If partially on front hemisphere, connect terminator ellipse arc with outer horizon rim arc
-    let path = `M ${frontPoints[0].x.toFixed(2)} ${frontPoints[0].y.toFixed(2)} `;
-    for (let i = 1; i < frontPoints.length; i++) {
-      path += `L ${frontPoints[i].x.toFixed(2)} ${frontPoints[i].y.toFixed(2)} `;
+    // Case B: mu <= -1 => sin(phi) >= mu is true for all phi (terminator circle is entirely on front hemisphere)
+    if (mu <= -1) {
+      const NUM_SAMPLES = 72;
+      const ellipsePoints: { x: number; y: number }[] = [];
+
+      for (let i = 0; i <= NUM_SAMPLES; i++) {
+        const phi = (i / NUM_SAMPLES) * 2 * Math.PI;
+        const cosPhi = Math.cos(phi);
+        const sinPhi = Math.sin(phi);
+
+        const px = cosH0 * cosPhi * ux + cosH0 * sinPhi * vx + sinH0 * sx;
+        const py = cosH0 * cosPhi * uy + cosH0 * sinPhi * vy + sinH0 * sy;
+        ellipsePoints.push({
+          x: radius * px,
+          y: -radius * py
+        });
+      }
+
+      if (sz >= 0) {
+        // Sun is in front: the interior of the ellipse is illuminated
+        let d = `M ${ellipsePoints[0].x.toFixed(2)} ${ellipsePoints[0].y.toFixed(2)} `;
+        for (let i = 1; i < ellipsePoints.length; i++) {
+          d += `L ${ellipsePoints[i].x.toFixed(2)} ${ellipsePoints[i].y.toFixed(2)} `;
+        }
+        d += 'Z';
+        return d;
+      } else {
+        // Sun is on the backside (sz < 0): the center of the globe is DARK night.
+        // The illuminated twilight area is the outer annular rim between the ellipse cutout and the globe edge (radius R).
+        let d = `M 0 -${radius} A ${radius} ${radius} 0 1 1 0 ${radius} A ${radius} ${radius} 0 1 1 0 -${radius} Z `;
+        d += `M ${ellipsePoints[0].x.toFixed(2)} ${ellipsePoints[0].y.toFixed(2)} `;
+        for (let i = ellipsePoints.length - 1; i >= 0; i--) {
+          d += `L ${ellipsePoints[i].x.toFixed(2)} ${ellipsePoints[i].y.toFixed(2)} `;
+        }
+        d += 'Z';
+        return d;
+      }
     }
 
-    // Complete the loop along the outer rim between the end and start points
-    const endPt = frontPoints[frontPoints.length - 1];
-    const startPt = frontPoints[0];
-    
-    const endAngle = Math.atan2(endPt.y, endPt.x);
-    const startAngle = Math.atan2(startPt.y, startPt.x);
-    
-    let arcSweep = (startAngle - endAngle + 2 * Math.PI) % (2 * Math.PI);
-    const largeArc = arcSweep > Math.PI ? 1 : 0;
-    
-    // Choose arc direction towards the illuminated sun hemisphere
-    const midAngle = endAngle + arcSweep / 2;
-    const testX = Math.cos(midAngle);
-    const testY = -Math.sin(midAngle); // North is +
-    const testIllum = testX * sx + testY * sy;
+    // Case C: -1 < mu < 1 => Terminator circle intersects the limb (pz = 0) at exactly two points
+    // The continuous front arc is defined on phi in [phiStart, phiEnd]
+    const phi0 = Math.asin(mu);
+    const phiStart = phi0;
+    const phiEnd = Math.PI - phi0;
 
-    const sweepFlag = testIllum >= 0 ? 1 : 0;
-    path += `A ${radius} ${radius} 0 ${largeArc} ${sweepFlag} ${startPt.x.toFixed(2)} ${startPt.y.toFixed(2)} Z`;
+    const NUM_ARC_SAMPLES = 48;
+    const frontArcPoints: { x: number; y: number; px: number; py: number }[] = [];
 
+    for (let i = 0; i <= NUM_ARC_SAMPLES; i++) {
+      const phi = phiStart + (i / NUM_ARC_SAMPLES) * (phiEnd - phiStart);
+      const cosPhi = Math.cos(phi);
+      const sinPhi = Math.sin(phi);
+
+      const px = cosH0 * cosPhi * ux + cosH0 * sinPhi * vx + sinH0 * sx;
+      const py = cosH0 * cosPhi * uy + cosH0 * sinPhi * vy + sinH0 * sy;
+
+      frontArcPoints.push({
+        x: radius * px,
+        y: -radius * py,
+        px,
+        py
+      });
+    }
+
+    // End point and Start point on the outer limb (where pz = 0 and px^2 + py^2 = 1)
+    const endPt = frontArcPoints[frontArcPoints.length - 1];
+    const startPt = frontArcPoints[0];
+
+    // Compute limb angles (in standard math coordinates where py is North)
+    const thetaEnd = Math.atan2(endPt.py, endPt.px);
+    const thetaStart = Math.atan2(startPt.py, startPt.px);
+
+    // Determine the angular difference connecting thetaEnd to thetaStart
+    let deltaTheta = thetaStart - thetaEnd;
+    while (deltaTheta <= 0) deltaTheta += 2 * Math.PI;
+
+    // Test the midpoint of the forward rim arc vs the backward rim arc to find illuminated side
+    const midTheta1 = thetaEnd + deltaTheta / 2;
+    const illum1 = Math.cos(midTheta1) * sx + Math.sin(midTheta1) * sy;
+
+    let rimSweep = deltaTheta;
+    if (illum1 < sinH0) {
+      // The other arc along the rim is the illuminated one
+      rimSweep = deltaTheta - 2 * Math.PI;
+    }
+
+    // Build the closed SVG polygon path:
+    // 1. Follow front terminator arc from startPt to endPt
+    let path = `M ${frontArcPoints[0].x.toFixed(2)} ${frontArcPoints[0].y.toFixed(2)} `;
+    for (let i = 1; i < frontArcPoints.length; i++) {
+      path += `L ${frontArcPoints[i].x.toFixed(2)} ${frontArcPoints[i].y.toFixed(2)} `;
+    }
+
+    // 2. Sample along the outer circular rim from endPt back to startPt
+    const NUM_RIM_SAMPLES = 32;
+    for (let j = 1; j <= NUM_RIM_SAMPLES; j++) {
+      const theta = thetaEnd + (j / NUM_RIM_SAMPLES) * rimSweep;
+      const rimX = radius * Math.cos(theta);
+      const rimY = -radius * Math.sin(theta);
+      path += `L ${rimX.toFixed(2)} ${rimY.toFixed(2)} `;
+    }
+
+    path += 'Z';
     return path;
   };
 
@@ -165,11 +221,11 @@ export const LivingMarble: React.FC<LivingMarbleProps> = ({
       <circle r={radius} fill={CONFIG.THEME.NIGHT_BG} />
 
       {/* 2. Layered Twilight & Daylight Bands (Clipped to Globe) */}
-      <g clipPath="url(#earthClip)">
-        {astroPath && <path d={astroPath} fill={CONFIG.THEME.ASTRONOMICAL_FILL} />}
-        {nauticalPath && <path d={nauticalPath} fill={CONFIG.THEME.NAUTICAL_FILL} />}
-        {civilPath && <path d={civilPath} fill={CONFIG.THEME.CIVIL_FILL} />}
-        {dayPath && <path d={dayPath} fill={CONFIG.THEME.DAY_FILL} />}
+      <g clipPath="url(#earthClip)" fillRule="evenodd">
+        {astroPath && <path d={astroPath} fill={CONFIG.THEME.ASTRONOMICAL_FILL} fillRule="evenodd" />}
+        {nauticalPath && <path d={nauticalPath} fill={CONFIG.THEME.NAUTICAL_FILL} fillRule="evenodd" />}
+        {civilPath && <path d={civilPath} fill={CONFIG.THEME.CIVIL_FILL} fillRule="evenodd" />}
+        {dayPath && <path d={dayPath} fill={CONFIG.THEME.DAY_FILL} fillRule="evenodd" />}
       </g>
 
       {/* 3. Latitudinal Parallels on Globe */}

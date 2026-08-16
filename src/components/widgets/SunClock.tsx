@@ -26,7 +26,8 @@ export const SunClock: React.FC<SunClockProps> = ({
   
   const radius = 90;
   const center = 110;
-  const rotationAngle = (solarNoon - 12) * 15;
+  // 00:00 UTC is at the top (12 o'clock); Solar Noon (12:00) is at the bottom (6 o'clock)
+  const rotationAngle = (solarNoon * 15);
 
   const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : currentTime;
 
@@ -43,7 +44,9 @@ export const SunClock: React.FC<SunClockProps> = ({
   const elCy = 72;
   const sunX = elCx + elR * Math.sin(toRadians(hourAngle));
   const sunY = elCy - elR * Math.sin(toRadians(currentElevation)); 
-  const handAngle = (displayTime - 12) * 15 - 90;
+  
+  // Clock Hand Angle: 00:00 UTC at -90° (top), 06:00 UTC at 0° (right), 12:00 UTC at 90° (bottom), 18:00 UTC at 180° (left)
+  const handAngle = displayTime * 15 - 90;
 
   // Display Text Logic
   let mainText: string, subText: string, mainClass: string, subClass: string;
@@ -74,7 +77,7 @@ export const SunClock: React.FC<SunClockProps> = ({
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
     let angle = toDegrees(Math.atan2(dy, dx)) + 90;
-    let t = ((angle / 15 + 12) % 24 + 24) % 24;
+    let t = ((angle / 15) % 24 + 24) % 24;
     const quantized = Math.round(t * 20) / 20;
     onHoverTime(quantized);
   };
@@ -82,7 +85,7 @@ export const SunClock: React.FC<SunClockProps> = ({
   return (
     <div className="flex flex-col h-full w-full justify-between items-center select-none space-y-3">
       
-      {/* Upper Area: 24-Hour Polar Sector Dial */}
+      {/* Upper Area: 24-Hour Polar Sector Dial (00:00 UTC at Top, 12:00 UTC at Bottom) */}
       <div 
         className="relative cursor-crosshair group touch-none flex justify-center w-full"
         onPointerMove={handlePointerMove}
@@ -92,7 +95,7 @@ export const SunClock: React.FC<SunClockProps> = ({
           <circle cx={center} cy={center} r={radius + 5} fill={CONFIG.THEME.NIGHT_BG} stroke="#334155" strokeWidth="1" />
           <circle cx={center} cy={center} r={radius} fill={CONFIG.THEME.NIGHT_STROKE} stroke="#334155" strokeWidth="2" />
           {[0, 6, 12, 18].map(h => {
-             const a = (h - 12) * 15 - 90;
+             const a = h * 15 - 90;
              return <line key={h} x1={center + (radius - 5) * Math.cos(toRadians(a))} y1={center + (radius - 5) * Math.sin(toRadians(a))} x2={center + radius * Math.cos(toRadians(a))} y2={center + radius * Math.sin(toRadians(a))} stroke="#64748b" strokeWidth="2" />;
           })}
           <g transform={`rotate(${rotationAngle}, ${center}, ${center})`}>
@@ -113,8 +116,8 @@ export const SunClock: React.FC<SunClockProps> = ({
             strokeLinecap="round" 
           />
           <circle cx={center} cy={center} r="4" fill={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "white"} />
-          <text x={center} y={center - radius - 12} textAnchor="middle" className="text-[10px] fill-slate-500 font-bold">12:00 UTC</text>
-          <text x={center} y={center + radius + 15} textAnchor="middle" className="text-[10px] fill-slate-500 font-bold">00:00 UTC</text>
+          <text x={center} y={center - radius - 12} textAnchor="middle" className="text-[10px] fill-slate-500 font-bold">00:00 UTC</text>
+          <text x={center} y={center + radius + 15} textAnchor="middle" className="text-[10px] fill-slate-500 font-bold">12:00 UTC</text>
           
           {/* Center Hub Overlay */}
           <circle cx={center} cy={center} r="42" fill={CONFIG.THEME.NIGHT_BG} stroke="#334155" strokeWidth="2" />

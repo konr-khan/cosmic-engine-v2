@@ -360,6 +360,20 @@ describe('cosmicMath utilities', () => {
       expect(eclipse.nodeProximityDeg).toBeLessThan(0.35);
       expect(preset.type).toBe('TOTAL_SOLAR');
     });
+
+    it('verifies smooth, monotonic obscuration decay across gamma = 1.0 boundary for August 12, 2026', () => {
+      // August 12, 2026 from 18:50Z (18.83h) to 19:00Z (19.00h)
+      const times = [18.80, 18.85, 18.90, 18.95, 19.00];
+      const obscurations = times.map(t => {
+        const jd = getJulianDate(new Date(2026, 7, 12), t);
+        return calculateEclipseData(jd).obscuration;
+      });
+      // Obscurations should decay monotonically without any discrete step cliff
+      for (let i = 1; i < obscurations.length; i++) {
+        expect(obscurations[i]).toBeLessThanOrEqual(obscurations[i - 1]);
+        expect(obscurations[i - 1] - obscurations[i]).toBeLessThanOrEqual(10);
+      }
+    });
   });
 
   describe('Eclipse Corridor Boundary Conditions & Geometric Solver', () => {
