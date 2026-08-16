@@ -5,7 +5,7 @@ import {
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
 import { EphemerisCalculationParams, EphemerisWorkerPayload } from '../types/worker';
-import { SolarMatrixRecord, LunarMatrixRecord } from '../types/astronomy';
+import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude } from '../types/units';
 
 export interface PendingRequestEntry {
@@ -28,8 +28,8 @@ export class EphemerisWorkerManager {
   public nextRequestId: number;
   public pendingRequests: Map<number, PendingRequestEntry>;
   public signatureToRequestId: Map<string, number>;
-  public annualSolarCache: Map<string, any[]>;
-  public annualLunarCache: Map<string, any[]>;
+  public annualSolarCache: Map<string, AnnualSolarMatrixItem[]>;
+  public annualLunarCache: Map<string, AnnualLunarMatrixItem[]>;
   public _isAvailable: boolean;
 
   constructor() {
@@ -299,7 +299,7 @@ export class EphemerisWorkerManager {
    */
   requestAnnualSolarCalculation(
     { year, latitude }: { year: number; latitude: Latitude },
-    onResult: (payload: { annualSolar: any[] }) => void
+    onResult: (payload: { annualSolar: AnnualSolarMatrixItem[] }) => void
   ): () => void {
     const signature = `SOLAR_${year}_${latitude}`;
 
@@ -376,7 +376,7 @@ export class EphemerisWorkerManager {
    */
   requestAnnualLunarCalculation(
     { year, latitude, longitude }: { year: number; latitude: Latitude; longitude: Longitude },
-    onResult: (payload: { annualLunar: any[] }) => void
+    onResult: (payload: { annualLunar: AnnualLunarMatrixItem[] }) => void
   ): () => void {
     const signature = `LUNAR_${year}_${latitude}_${longitude}`;
 

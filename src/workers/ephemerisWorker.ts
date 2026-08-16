@@ -42,11 +42,11 @@ self.onmessage = (event: MessageEvent) => {
           timestamp: Date.now()
         }
       });
-    } catch (error: any) {
+    } catch (error) {
       self.postMessage({
         type: 'EPHEMERIS_ERROR',
         id,
-        error: error?.message || 'Ephemeris worker calculation failed'
+        error: error instanceof Error ? error.message : 'Ephemeris worker calculation failed'
       });
     }
   } else if (type === 'CALCULATE_ANNUAL_SOLAR') {
@@ -61,11 +61,11 @@ self.onmessage = (event: MessageEvent) => {
           annualSolar
         }
       });
-    } catch (error: any) {
+    } catch (error) {
       self.postMessage({
         type: 'ANNUAL_SOLAR_ERROR',
         id,
-        error: error?.message || 'Annual solar worker calculation failed'
+        error: error instanceof Error ? error.message : 'Annual solar worker calculation failed'
       });
     }
   } else if (type === 'CALCULATE_ANNUAL_LUNAR') {
@@ -80,11 +80,11 @@ self.onmessage = (event: MessageEvent) => {
           annualLunar
         }
       });
-    } catch (error: any) {
+    } catch (error) {
       self.postMessage({
         type: 'ANNUAL_LUNAR_ERROR',
         id,
-        error: error?.message || 'Annual lunar worker calculation failed'
+        error: error instanceof Error ? error.message : 'Annual lunar worker calculation failed'
       });
     }
   }

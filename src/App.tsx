@@ -124,6 +124,14 @@ const PRESET_LAYOUTS: Record<string, PresetLayout> = {
   }
 };
 
+const selectObserverParams = (state: { date: Date; timeOfDay: number; latitude: number; longitude: number; useAnalemma: boolean }) => ({
+  date: state.date,
+  timeOfDay: state.timeOfDay,
+  latitude: state.latitude,
+  longitude: state.longitude,
+  useAnalemma: state.useAnalemma
+});
+
 export interface MemoizedWidgetContentProps {
   id: string;
   hoverTime: number | null;
@@ -139,13 +147,7 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
   hoverDate,
   setHoverDate
 }) {
-  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore((state) => ({
-    date: state.date,
-    timeOfDay: state.timeOfDay,
-    latitude: state.latitude,
-    longitude: state.longitude,
-    useAnalemma: state.useAnalemma
-  }));
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectObserverParams);
 
   const { solarData, orbitalData } = useCosmicEngine(
     date,
@@ -261,13 +263,7 @@ const MemoizedChronometerDock = React.memo<MemoizedChronometerDockProps>(functio
   isDockCollapsed,
   onToggleCollapse
 }) {
-  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore((state) => ({
-    date: state.date,
-    timeOfDay: state.timeOfDay,
-    latitude: state.latitude,
-    longitude: state.longitude,
-    useAnalemma: state.useAnalemma
-  }));
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectObserverParams);
 
   const { solarData } = useCosmicEngine(
     date,

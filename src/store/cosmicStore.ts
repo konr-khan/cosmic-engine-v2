@@ -5,17 +5,19 @@ import { CosmicStoreState, StateSelector, StateUpdater } from '../types/store';
  * Utility for shallow equality comparison between two objects or values.
  * Prevents unnecessary re-renders in useSyncExternalStore when selector outputs an object.
  */
-export function shallowEqual(objA: any, objB: any): boolean {
+export function shallowEqual(objA: unknown, objB: unknown): boolean {
   if (Object.is(objA, objB)) return true;
   if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
     return false;
   }
-  const keysA = Object.keys(objA);
-  const keysB = Object.keys(objB);
+  const a = objA as Record<string, unknown>;
+  const b = objB as Record<string, unknown>;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
   for (let i = 0; i < keysA.length; i++) {
     const key = keysA[i];
-    if (!Object.prototype.hasOwnProperty.call(objB, key) || !Object.is(objA[key], objB[key])) {
+    if (!Object.prototype.hasOwnProperty.call(b, key) || !Object.is(a[key], b[key])) {
       return false;
     }
   }
@@ -148,21 +150,28 @@ export const cosmicStore = new CosmicStore();
  */
 export function useChronometerStore<T = CosmicStoreState>(
   selector: StateSelector<CosmicStoreState, T> = (state) => state as unknown as T,
-  isEquivalent: (a: any, b: any) => boolean = shallowEqual
+  isEquivalent: (a: T, b: T) => boolean = (a, b) => shallowEqual(a, b)
 ): T {
+  const selectorRef = useRef(selector);
+  const isEquivalentRef = useRef(isEquivalent);
+  selectorRef.current = selector;
+  isEquivalentRef.current = isEquivalent;
+
   const lastStateRef = useRef<CosmicStoreState | null>(null);
   const lastSelectedRef = useRef<T | null>(null);
 
   const getSnapshot = useCallback((): T => {
     const currentState = cosmicStore.getState();
+    const currentSelector = selectorRef.current;
+    const currentEquivalent = isEquivalentRef.current;
 
     if (lastStateRef.current === currentState && lastSelectedRef.current !== null) {
       return lastSelectedRef.current;
     }
 
-    const nextSelected = selector(currentState);
+    const nextSelected = currentSelector(currentState);
 
-    if (lastSelectedRef.current !== null && isEquivalent(lastSelectedRef.current, nextSelected)) {
+    if (lastSelectedRef.current !== null && currentEquivalent(lastSelectedRef.current, nextSelected)) {
       lastStateRef.current = currentState;
       return lastSelectedRef.current;
     }
@@ -170,7 +179,7 @@ export function useChronometerStore<T = CosmicStoreState>(
     lastStateRef.current = currentState;
     lastSelectedRef.current = nextSelected;
     return nextSelected;
-  }, [selector, isEquivalent]);
+  }, []);
 
   try {
     return useSyncExternalStore(cosmicStore.subscribe, getSnapshot, getSnapshot);

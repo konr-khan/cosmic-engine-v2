@@ -28,7 +28,7 @@ describe('useEphemerisWorker Hook Suite', () => {
 
     expect(result.isWorkerActive).toBe(false);
     expect(result.lunarEvents).not.toBeNull();
-    expect(result.lunarEvents.distanceKm).toBeGreaterThan(350000);
+    expect(result.lunarEvents!.distanceKm).toBeGreaterThan(350000);
     expect(result.eclipse).not.toBeNull();
   });
 

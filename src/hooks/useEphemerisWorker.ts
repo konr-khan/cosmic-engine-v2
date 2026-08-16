@@ -7,7 +7,7 @@ import {
 } from '../utils/cosmicMath';
 import { ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
 import { EphemerisCalculationParams, EphemerisWorkerPayload } from '../types/worker';
-import { LunarEvents, EclipseData } from '../types/astronomy';
+import { LunarEvents, EclipseData, AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude, JulianDate, HoursDecimal } from '../types/units';
 
 export interface UseEphemerisWorkerParams {
@@ -21,8 +21,8 @@ export interface UseEphemerisWorkerParams {
 }
 
 export interface UseEphemerisWorkerResult {
-  lunarEvents: LunarEvents | null | any;
-  eclipse: EclipseData | null | any;
+  lunarEvents: LunarEvents | null;
+  eclipse: EclipseData | null;
   isWorkerActive: boolean;
 }
 
@@ -111,8 +111,8 @@ export const useEphemerisWorker = ({
  * Custom hook to offload annual 365-day solar ephemeris matrix calculation to a Web Worker.
  * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
  */
-export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitude: Latitude }) => {
-  const [workerSolar, setWorkerSolar] = useState<any[] | null>(null);
+export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitude: Latitude }): AnnualSolarMatrixItem[] => {
+  const [workerSolar, setWorkerSolar] = useState<AnnualSolarMatrixItem[] | null>(null);
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
 
   useEffect(() => {
@@ -160,8 +160,8 @@ export const useAnnualLunarWorker = ({
   year: number; 
   latitude: Latitude; 
   longitude: Longitude; 
-}) => {
-  const [workerLunar, setWorkerLunar] = useState<any[] | null>(null);
+}): AnnualLunarMatrixItem[] => {
+  const [workerLunar, setWorkerLunar] = useState<AnnualLunarMatrixItem[] | null>(null);
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
 
   useEffect(() => {

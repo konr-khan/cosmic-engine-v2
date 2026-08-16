@@ -14,6 +14,14 @@ import { useEphemerisWorker } from './useEphemerisWorker';
 import { ActiveWidgetsFilter, CosmicEngineData, SolarAlmanacData, OrbitalData, TideType } from '../types/astronomy';
 import { Latitude, Longitude, HoursDecimal, JulianDate } from '../types/units';
 
+const selectStoreState = (state: { date: Date; timeOfDay: number; latitude: number; longitude: number; useAnalemma: boolean }) => ({
+  date: state.date,
+  timeOfDay: state.timeOfDay,
+  latitude: state.latitude,
+  longitude: state.longitude,
+  useAnalemma: state.useAnalemma
+});
+
 export const useCosmicEngine = (
   paramDate?: Date | null, 
   paramTimeOfDay?: HoursDecimal | null, 
@@ -22,13 +30,7 @@ export const useCosmicEngine = (
   paramUseAnalemma?: boolean | null,
   activeWidgets: ActiveWidgetsFilter = {}
 ): CosmicEngineData => {
-  const storeState = useChronometerStore((state) => ({
-    date: state.date,
-    timeOfDay: state.timeOfDay,
-    latitude: state.latitude,
-    longitude: state.longitude,
-    useAnalemma: state.useAnalemma
-  }));
+  const storeState = useChronometerStore(selectStoreState);
 
   const date = paramDate ?? storeState.date;
   const timeOfDay = paramTimeOfDay ?? storeState.timeOfDay;
