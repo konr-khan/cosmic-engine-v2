@@ -82,6 +82,7 @@ export interface TerminatorShadowPaths {
   southPath: string;
   northPath: string;
   combinedPath: string;
+  linePath: string;
 }
 
 /**
@@ -158,7 +159,46 @@ export const getTerminatorShadowPaths = (
   }
   northPath += ` L 360,0 Z`;
 
-  return { southPath, northPath, combinedPath: `${southPath} ${northPath}` };
+  // Line segments that only trace actual boundary curve inside the map (excluding artificial outer borders)
+  const lineSegments: string[] = [];
+  
+  let inSouthSegment = false;
+  for (let i = 0; i < southPoints.length; i++) {
+    const pt = southPoints[i].split(',');
+    const x = pt[0];
+    const y = parseFloat(pt[1]);
+    if (y < 179.95 && y > 0.05) {
+      if (!inSouthSegment) {
+        lineSegments.push(`M ${x},${y}`);
+        inSouthSegment = true;
+      } else {
+        lineSegments.push(`L ${x},${y}`);
+      }
+    } else {
+      inSouthSegment = false;
+    }
+  }
+
+  let inNorthSegment = false;
+  for (let i = 0; i < northPoints.length; i++) {
+    const pt = northPoints[i].split(',');
+    const x = pt[0];
+    const y = parseFloat(pt[1]);
+    if (y > 0.05 && y < 179.95) {
+      if (!inNorthSegment) {
+        lineSegments.push(`M ${x},${y}`);
+        inNorthSegment = true;
+      } else {
+        lineSegments.push(`L ${x},${y}`);
+      }
+    } else {
+      inNorthSegment = false;
+    }
+  }
+
+  const linePath = lineSegments.join(' ');
+
+  return { southPath, northPath, combinedPath: `${southPath} ${northPath}`, linePath };
 };
 
 /**

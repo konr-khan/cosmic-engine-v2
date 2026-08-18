@@ -179,26 +179,33 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             <line x1="0" y1={userCy} x2="360" y2={userCy} stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
             <line x1={180} y1="0" x2={180} y2="180" stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
 
-            {/* Layered Twilight & Night Shadows */}
-            {/* Astronomical / Night Zone (-18°) */}
-            <path d={astroShadow.combinedPath} fill="#020617" fillOpacity="0.6" />
-            {/* Nautical Zone (-12°) */}
-            <path d={nauticalShadow.combinedPath} fill="#0f172a" fillOpacity="0.45" />
-            {/* Civil Zone (-6°) */}
-            <path d={civilShadow.combinedPath} fill="#1e293b" fillOpacity="0.35" />
-            {/* Official Day Boundary Zone (-0.833°) */}
-            <path d={dayShadow.combinedPath} fill="#fbbf24" fillOpacity="0.15" />
+            {/* Layered Twilight & Night Shadows (Progressively darkening into deep space night) */}
+            {/* 1. Base Shadow from Horizon (Day boundary / Civil Twilight transition: h < -0.833°) */}
+            <path d={dayShadow.combinedPath} fill="#020617" fillOpacity="0.25" />
+            {/* 2. Civil Twilight Shadow (h < -6°) */}
+            <path d={civilShadow.combinedPath} fill="#020617" fillOpacity="0.25" />
+            {/* 3. Nautical Twilight Shadow (h < -12°) */}
+            <path d={nauticalShadow.combinedPath} fill="#020617" fillOpacity="0.25" />
+            {/* 4. Astronomical / Deep Night Shadow (h < -18°) */}
+            <path d={astroShadow.combinedPath} fill="#020617" fillOpacity="0.35" />
 
-            {/* Subsolar Point Marker */}
-            <circle cx={relSunX} cy={sunCy} r="5" fill={CONFIG.THEME.SUN_FILL} stroke="white" strokeWidth="1.5" className="drop-shadow" />
+            {/* Glowing Amber Terminator Edge (Strictly along sunrise/sunset boundary between day & twilight) */}
+            {dayShadow.linePath && (
+              <path d={dayShadow.linePath} fill="none" stroke="#fbbf24" strokeWidth="1" strokeOpacity="0.8" strokeDasharray="3 2" />
+            )}
+
+            {/* Subsolar Point Marker with Pulsating Glow */}
+            <circle cx={relSunX} cy={sunCy} r="10" fill={CONFIG.THEME.SUN_FILL} opacity="0.2" className="animate-pulse" />
+            <circle cx={relSunX} cy={sunCy} r="4.5" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
             
             {/* Hover Subsolar Ray Guide when hover sync active */}
             {hoverTime !== null && hoverTime !== undefined && (
-              <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.8" />
+              <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.85" />
             )}
 
-            {/* User Observer Position Marker */}
-            <circle cx={180} cy={userCy} r="4" fill="#6366f1" stroke="white" strokeWidth="1.5" className="drop-shadow" />
+            {/* User Observer Position Marker with Glow */}
+            <circle cx={180} cy={userCy} r="8" fill="#6366f1" opacity="0.2" className="animate-pulse" />
+            <circle cx={180} cy={userCy} r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="1.2" className="drop-shadow" />
             <text x={186} y={userCy - 4} className="text-[8px] fill-indigo-300 font-bold font-mono">YOU</text>
           </g>
         </svg>
@@ -207,7 +214,8 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
       <div className="mt-2.5 p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex justify-between items-center text-[10px] font-mono text-slate-400">
          <span>West (-180°)</span>
          <div className="flex items-center gap-3">
-           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400 inline-block" /> Civil (-6°)</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400 border border-amber-300 inline-block" /> Day</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-500/80 inline-block" /> Civil (-6°)</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-500 inline-block" /> Nautical (-12°)</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-700 inline-block" /> Astro (-18°)</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-950 border border-slate-800 inline-block" /> Night</span>

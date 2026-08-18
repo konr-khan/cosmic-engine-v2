@@ -202,8 +202,8 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
       </div>
 
       {/* Solstice & Equinox Fast-Jump Shortcut Bar */}
-      <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1 border-b border-slate-800 text-xs">
-        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mr-1 flex items-center gap-1">
+      <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1.5 border-b border-slate-800/80 text-xs">
+        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mr-1 flex items-center gap-1">
           <Target className="w-3 h-3 text-indigo-400" /> Fast-Jump:
         </span>
         {shortcuts.map(s => {
@@ -216,7 +216,7 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                 isActive 
                   ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' 
-                  : 'bg-slate-950/60 hover:bg-slate-800 hover:text-white text-slate-300 border border-slate-800/80'
+                  : 'bg-slate-900/60 hover:bg-slate-800 hover:text-white text-slate-300 border border-slate-800/80 hover:border-slate-700'
               }`}
             >
               {s.label}
@@ -239,43 +239,45 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
         >
           <defs>
             <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#fef08a" />
-              <stop offset="100%" stopColor="#fde047" />
+              <stop offset="0%" stopColor="#fde047" />
+              <stop offset="100%" stopColor="#fbbf24" />
             </linearGradient>
             <linearGradient id="civilGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#fde047" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#fcd34d" stopOpacity="0.85" />
+              <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.85" />
             </linearGradient>
             <linearGradient id="nauticalGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#64748b" stopOpacity="0.8" />
+              <stop offset="0%" stopColor="#64748b" stopOpacity="0.75" />
+              <stop offset="100%" stopColor="#475569" stopOpacity="0.75" />
             </linearGradient>
             <linearGradient id="astroGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#475569" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#334155" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="#334155" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#1e293b" stopOpacity="0.8" />
             </linearGradient>
           </defs>
 
-          <rect x={paddingLeft} y={paddingTop} width={chartW} height={chartH} fill={CONFIG.THEME.NIGHT_FILL} rx="4" />
+          {/* Night Base Canvas */}
+          <rect x={paddingLeft} y={paddingTop} width={chartW} height={chartH} fill="#020617" rx="6" />
 
+          {/* Twilight Bands */}
           <path d={buildBandPath('astroDusk', 'astroDawn')} fill="url(#astroGrad)" />
           <path d={buildBandPath('nauticalDusk', 'nauticalDawn')} fill="url(#nauticalGrad)" />
           <path d={buildBandPath('civilDusk', 'civilDawn')} fill="url(#civilGrad)" />
           <path d={buildBandPath('sunset', 'sunrise')} fill="url(#dayGrad)" />
 
-          {/* Month Axis Labels */}
+          {/* Month Axis Dividers & Labels */}
           {MONTH_NAMES.map((m, idx) => {
             const firstDayOfMonth = Math.round(idx * 30.4 + 1);
             const x = dayToX(firstDayOfMonth);
             return (
               <g key={m}>
-                <line x1={x} y1={paddingTop} x2={x} y2={paddingTop + chartH} stroke="#ffffff" strokeWidth="0.5" strokeOpacity="0.15" strokeDasharray="3 3" />
+                <line x1={x} y1={paddingTop} x2={x} y2={paddingTop + chartH} stroke="#334155" strokeWidth="0.5" strokeOpacity="0.3" strokeDasharray="3 3" />
                 <text x={x + 10} y={height - 10} className="text-xs font-bold fill-slate-400 font-mono">{m}</text>
               </g>
             );
           })}
 
-          {/* Time Axis Labels */}
+          {/* Time Axis Grid Lines & Labels */}
           {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24].map((h) => {
             const y = timeToY(h);
             const label = h === 0 || h === 24 ? "12 AM" : (h === 12 ? "12 PM" : (h < 12 ? `${h} AM` : `${h - 12} PM`));
@@ -284,9 +286,9 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
               <g key={h}>
                 <line 
                   x1={paddingLeft} y1={y} x2={paddingLeft + chartW} y2={y} 
-                  stroke={isMidnightOrNoon ? "#ffffff" : "#ffffff"} 
-                  strokeWidth={isMidnightOrNoon ? 1 : 0.5} 
-                  strokeOpacity={isMidnightOrNoon ? 0.35 : 0.1} 
+                  stroke="#334155" 
+                  strokeWidth={isMidnightOrNoon ? 0.75 : 0.5} 
+                  strokeOpacity={isMidnightOrNoon ? 0.45 : 0.2} 
                 />
                 <text x={paddingLeft - 8} y={y + 4} textAnchor="end" className={`text-xs font-mono ${isMidnightOrNoon ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
                   {label}
@@ -298,12 +300,12 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             );
           })}
 
-          {/* Black Boundary Curves */}
-          <path d={buildLinePath('sunrise')} fill="none" stroke="#000000" strokeWidth="1.5" />
-          <path d={buildLinePath('sunset')} fill="none" stroke="#000000" strokeWidth="1.5" />
-          <path d={buildLinePath('solarNoon')} fill="none" stroke="#1e293b" strokeWidth="1" strokeDasharray="4 2" />
-          <path d={buildLinePath('civilDawn')} fill="none" stroke="#334155" strokeWidth="0.8" opacity="0.6" />
-          <path d={buildLinePath('civilDusk')} fill="none" stroke="#334155" strokeWidth="0.8" opacity="0.6" />
+          {/* Boundary Curves */}
+          <path d={buildLinePath('sunrise')} fill="none" stroke="#000000" strokeWidth="1.5" strokeOpacity="0.85" />
+          <path d={buildLinePath('sunset')} fill="none" stroke="#000000" strokeWidth="1.5" strokeOpacity="0.85" />
+          <path d={buildLinePath('solarNoon')} fill="none" stroke="#64748b" strokeWidth="1" strokeDasharray="4 2" opacity="0.6" />
+          <path d={buildLinePath('civilDawn')} fill="none" stroke="#475569" strokeWidth="0.75" opacity="0.5" />
+          <path d={buildLinePath('civilDusk')} fill="none" stroke="#475569" strokeWidth="0.75" opacity="0.5" />
 
           {/* Key Stats Annotations */}
           <g transform={`translate(${dayToX(keyStats.earliestSunrise.day)}, ${timeToY(keyStats.earliestSunrise.sunrise)})`}>
@@ -324,12 +326,12 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
           <line 
             x1={paddingLeft} y1={sunriseY} 
             x2={paddingLeft + chartW} y2={sunriseY} 
-            stroke="#eab308" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.9" 
+            stroke="#eab308" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" 
           />
           <line 
             x1={paddingLeft} y1={sunsetY} 
             x2={paddingLeft + chartW} y2={sunsetY} 
-            stroke="#eab308" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.9" 
+            stroke="#eab308" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" 
           />
 
           {/* Synced Hover Time Horizontal Guideline */}
@@ -338,10 +340,10 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
               <line 
                 x1={paddingLeft} y1={timeToY(hoverTime)} 
                 x2={paddingLeft + chartW} y2={timeToY(hoverTime)} 
-                stroke="#38bdf8" strokeWidth="2" strokeDasharray="3 3" className="drop-shadow-sm" 
+                stroke="#38bdf8" strokeWidth="1.8" strokeDasharray="3 3" className="drop-shadow-sm" 
               />
               <g transform={`translate(${paddingLeft - 6}, ${timeToY(hoverTime) + 4})`}>
-                <text textAnchor="end" className="text-[10px] font-mono font-black fill-sky-500">
+                <text textAnchor="end" className="text-[10px] font-mono font-black fill-sky-400">
                   {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
                 </text>
               </g>
@@ -366,11 +368,11 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
               <line 
                 x1={dayToX(mirrorDayData.day)} y1={paddingTop} 
                 x2={dayToX(mirrorDayData.day)} y2={paddingTop + chartH} 
-                stroke="#6366f1" strokeWidth="1.8" strokeDasharray="4 3" opacity="0.9" 
+                stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.85" 
               />
               {/* Intersection Dots on Mirrored Day */}
-              <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunrise)} r="4" fill="#6366f1" stroke="white" strokeWidth="1.5" />
-              <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunset)} r="4" fill="#6366f1" stroke="white" strokeWidth="1.5" />
+              <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunrise)} r="3.5" fill="#6366f1" stroke="white" strokeWidth="1.5" />
+              <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunset)} r="3.5" fill="#6366f1" stroke="white" strokeWidth="1.5" />
               {/* Top Mirrored Day Badge */}
               <g transform={`translate(${dayToX(mirrorDayData.day)}, ${paddingTop - 8})`}>
                 <text textAnchor="middle" className="text-xs font-mono font-bold fill-indigo-400">
@@ -394,17 +396,17 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
         </svg>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 pt-3 border-t border-slate-800 text-[10px] font-medium font-mono">
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2.5 border-t border-slate-800/80 text-[10px] font-medium font-mono">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-yellow-300 border border-amber-400" />
+          <div className="w-3 h-3 rounded bg-amber-400 border border-amber-300" />
           <span className="text-slate-300 font-bold">Daylight</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-amber-400" />
+          <div className="w-3 h-3 rounded bg-amber-500/80" />
           <span className="text-slate-400">Civil (-6°)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-slate-400" />
+          <div className="w-3 h-3 rounded bg-slate-500" />
           <span className="text-slate-400">Nautical (-12°)</span>
         </div>
         <div className="flex items-center gap-1.5">

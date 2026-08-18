@@ -92,18 +92,36 @@ export const SunClock: React.FC<SunClockProps> = ({
         onPointerLeave={() => onHoverTime && onHoverTime(null)}
       >
         <svg width="220" height="220" className="drop-shadow-lg overflow-visible">
-          <circle cx={center} cy={center} r={radius + 5} fill={CONFIG.THEME.NIGHT_BG} stroke="#334155" strokeWidth="1" />
-          <circle cx={center} cy={center} r={radius} fill={CONFIG.THEME.NIGHT_STROKE} stroke="#334155" strokeWidth="2" />
+          <defs>
+            <linearGradient id="sunClockDayGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fde047" />
+              <stop offset="100%" stopColor="#fbbf24" />
+            </linearGradient>
+            <linearGradient id="sunClockCivilGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.85" />
+            </linearGradient>
+            <linearGradient id="sunClockNauticalGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#64748b" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#475569" stopOpacity="0.8" />
+            </linearGradient>
+            <linearGradient id="sunClockAstroGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#334155" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#1e293b" stopOpacity="0.85" />
+            </linearGradient>
+          </defs>
+          <circle cx={center} cy={center} r={radius + 5} fill="#020617" stroke="#334155" strokeWidth="0.75" />
+          <circle cx={center} cy={center} r={radius} fill="#020617" stroke="#1e293b" strokeWidth="1" />
           {[0, 6, 12, 18].map(h => {
              const a = h * 15 - 90;
-             return <line key={h} x1={center + (radius - 5) * Math.cos(toRadians(a))} y1={center + (radius - 5) * Math.sin(toRadians(a))} x2={center + radius * Math.cos(toRadians(a))} y2={center + radius * Math.sin(toRadians(a))} stroke="#64748b" strokeWidth="2" />;
+             return <line key={h} x1={center + (radius - 5) * Math.cos(toRadians(a))} y1={center + (radius - 5) * Math.sin(toRadians(a))} x2={center + radius * Math.cos(toRadians(a))} y2={center + radius * Math.sin(toRadians(a))} stroke="#64748b" strokeWidth="1.5" strokeOpacity="0.8" />;
           })}
           <g transform={`rotate(${rotationAngle}, ${center}, ${center})`}>
-             <path d={getSectorPath(astronomical, center, radius)} fill="#4338ca" opacity="0.3" />
-             <path d={getSectorPath(nautical, center, radius)} fill="#3b82f6" opacity="0.4" />
-             <path d={getSectorPath(civil, center, radius)} fill="#f87171" opacity="0.5" />
-             <path d={getSectorPath(dayLength, center, radius)} fill={CONFIG.THEME.SUN_FILL} opacity="0.8" />
-             <line x1={center} y1={center - radius} x2={center} y2={center - radius + 10} stroke={CONFIG.THEME.SUN_FILL} strokeWidth="2" />
+             <path d={getSectorPath(astronomical, center, radius)} fill="url(#sunClockAstroGrad)" />
+             <path d={getSectorPath(nautical, center, radius)} fill="url(#sunClockNauticalGrad)" />
+             <path d={getSectorPath(civil, center, radius)} fill="url(#sunClockCivilGrad)" />
+             <path d={getSectorPath(dayLength, center, radius)} fill="url(#sunClockDayGrad)" />
+             <line x1={center} y1={center - radius} x2={center} y2={center - radius + 10} stroke="#fbbf24" strokeWidth="2" />
           </g>
           
           {/* Active / Hover Ray */}
@@ -111,31 +129,31 @@ export const SunClock: React.FC<SunClockProps> = ({
             x1={center} y1={center} 
             x2={center + radius * Math.cos(toRadians(handAngle))} 
             y2={center + radius * Math.sin(toRadians(handAngle))} 
-            stroke={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "white"} 
-            strokeWidth={hoverTime !== null && hoverTime !== undefined ? 3 : 2} 
+            stroke={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "#f8fafc"} 
+            strokeWidth={hoverTime !== null && hoverTime !== undefined ? 2.5 : 1.8} 
             strokeLinecap="round" 
           />
-          <circle cx={center} cy={center} r="4" fill={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "white"} />
-          <text x={center} y={center - radius - 12} textAnchor="middle" className="text-[10px] fill-slate-500 font-bold">00:00 UTC</text>
-          <text x={center} y={center + radius + 15} textAnchor="middle" className="text-[10px] fill-slate-500 font-bold">12:00 UTC</text>
+          <circle cx={center} cy={center} r="3.5" fill={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "#f8fafc"} />
+          <text x={center} y={center - radius - 10} textAnchor="middle" className="text-[10px] font-mono fill-slate-400 font-bold">00:00 UTC</text>
+          <text x={center} y={center + radius + 14} textAnchor="middle" className="text-[10px] font-mono fill-slate-400 font-bold">12:00 UTC</text>
           
           {/* Center Hub Overlay */}
-          <circle cx={center} cy={center} r="42" fill={CONFIG.THEME.NIGHT_BG} stroke="#334155" strokeWidth="2" />
+          <circle cx={center} cy={center} r="42" fill="#020617" stroke="#334155" strokeWidth="1.5" />
           <text x={center} y={center - 4} textAnchor="middle" className={mainClass}>{mainText}</text>
           <text x={center} y={center + 10} textAnchor="middle" className={subClass}>{subText}</text>
         </svg>
 
         {/* Hover Pill Readout */}
         {hoverTime !== null && hoverTime !== undefined && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-sky-950/90 text-sky-300 border border-sky-500/80 px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold shadow-lg pointer-events-none">
+          <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-sky-950/95 text-sky-300 border border-sky-500/80 px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold shadow-xl pointer-events-none">
             {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
           </div>
         )}
       </div>
 
       {/* Sun Elevation Arc Dome Viewport */}
-      <div className="w-full bg-slate-900/90 rounded-xl p-3 border border-slate-800 flex flex-col items-center shadow-inner">
-        <div className="w-full flex justify-between items-center mb-1 px-2 font-mono">
+      <div className="w-full bg-slate-900/60 rounded-xl p-3 border border-slate-800/80 flex flex-col items-center shadow-inner backdrop-blur-sm">
+        <div className="w-full flex justify-between items-center mb-1 px-1 font-mono">
           <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
             <Sun className="w-3 h-3 text-amber-400" /> Sun Elevation Arc
           </div>
@@ -146,19 +164,19 @@ export const SunClock: React.FC<SunClockProps> = ({
 
         <svg viewBox="0 0 200 90" className="w-full max-h-[85px] overflow-visible" preserveAspectRatio="xMidYMid meet">
           {/* Horizon Line (0°) */}
-          <line x1="20" y1={elCy} x2="180" y2={elCy} stroke="#475569" strokeWidth="1.5" />
-          <text x="18" y={elCy + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-500">0°</text>
-          <text x="182" y={elCy + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-500">0°</text>
+          <line x1="20" y1={elCy} x2="180" y2={elCy} stroke="#475569" strokeWidth="1.2" />
+          <text x="18" y={elCy + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-400">0°</text>
+          <text x="182" y={elCy + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-400">0°</text>
 
           {/* Semicircular Elevation Arc Dome */}
-          <path d={`M ${elCx - elR} ${elCy} A ${elR} ${elR} 0 0 1 ${elCx + elR} ${elCy}`} fill="none" stroke="#334155" strokeWidth="1.5" strokeDasharray="4 3" />
+          <path d={`M ${elCx - elR} ${elCy} A ${elR} ${elR} 0 0 1 ${elCx + elR} ${elCy}`} fill="none" stroke="#334155" strokeWidth="1.2" strokeDasharray="4 3" />
           
           {/* Zenith Marker (90°) */}
           <line x1={elCx} y1={elCy - elR - 3} x2={elCx} y2={elCy - elR + 3} stroke="#64748b" strokeWidth="1" />
-          <text x={elCx} y={elCy - elR - 6} textAnchor="middle" className="text-[8px] font-mono fill-slate-500">+90°</text>
+          <text x={elCx} y={elCy - elR - 5} textAnchor="middle" className="text-[8px] font-mono fill-slate-400">+90°</text>
 
           {/* Observer Horizon Center Origin */}
-          <circle cx={elCx} cy={elCy} r="3" fill="#64748b" stroke="#334155" strokeWidth="1" />
+          <circle cx={elCx} cy={elCy} r="2.5" fill="#64748b" stroke="#334155" strokeWidth="1" />
 
           {/* Sun Elevation Vector & Disc */}
           {currentElevation > -18 && (
@@ -167,14 +185,14 @@ export const SunClock: React.FC<SunClockProps> = ({
                 x1={elCx} y1={elCy} 
                 x2={sunX} y2={sunY} 
                 stroke={currentElevation >= 0 ? "#fbbf24" : "#64748b"} 
-                strokeWidth="1.5" 
+                strokeWidth="1.2" 
                 strokeDasharray="2 2" 
-                opacity="0.8" 
+                opacity="0.85" 
               />
               <circle 
                 cx={sunX} 
                 cy={sunY} 
-                r="6" 
+                r="5.5" 
                 fill={currentElevation >= 0 ? "#fbbf24" : "#475569"} 
                 stroke="#ffffff" 
                 strokeWidth="1.5" 
@@ -185,8 +203,8 @@ export const SunClock: React.FC<SunClockProps> = ({
         </svg>
 
         {/* Live Elevation Angle Readout Badge */}
-        <div className="text-center -mt-3 bg-slate-950/90 px-3 py-0.5 rounded-lg border border-slate-800 shadow-md">
-          <div className={`text-base font-mono font-bold ${currentElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}`}>
+        <div className="text-center -mt-3 bg-slate-950/95 px-3 py-1 rounded-lg border border-slate-800 shadow-md">
+          <div className={`text-sm font-mono font-bold ${currentElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}`}>
             {currentElevation >= 0 ? `+${currentElevation.toFixed(1)}°` : `${currentElevation.toFixed(1)}°`}
             <span className="text-[9px] text-slate-400 uppercase font-sans ml-1.5 font-normal">
               {currentElevation > 0 ? '(Above Horizon)' : '(Below Horizon)'}
@@ -196,18 +214,18 @@ export const SunClock: React.FC<SunClockProps> = ({
       </div>
 
       {/* Summary Footer Badges */}
-      <div className="grid grid-cols-3 gap-2 w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs font-mono">
-         <div className="text-center">
+      <div className="grid grid-cols-3 gap-2 w-full bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 text-xs font-mono">
+         <div className="text-center bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/60">
             <span className="text-[9px] text-slate-400 block uppercase font-bold">Sunrise / Sunset</span>
-            <span className="text-slate-200 font-bold">{formatTime(sunrise).substring(0, 5)} / {formatTime(sunset).substring(0, 5)}</span>
+            <span className="text-slate-200 font-bold text-xs">{formatTime(sunrise).substring(0, 5)} / {formatTime(sunset).substring(0, 5)}</span>
          </div>
-         <div className="text-center">
+         <div className="text-center bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/60">
             <span className="text-[9px] text-slate-400 block uppercase font-bold">Solar Noon</span>
-            <span className="text-amber-400 font-bold">{formatTime(solarNoon).substring(0, 5)} UTC</span>
+            <span className="text-amber-400 font-bold text-xs">{formatTime(solarNoon).substring(0, 5)} UTC</span>
          </div>
-         <div className="text-center">
+         <div className="text-center bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/60">
             <span className="text-[9px] text-slate-400 block uppercase font-bold">Eq of Time</span>
-            <span className={equationOfTime >= 0 ? 'text-indigo-400 font-bold' : 'text-rose-400 font-bold'}>
+            <span className={`text-xs font-bold ${equationOfTime >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
               {equationOfTime >= 0 ? `+${equationOfTime.toFixed(1)}m` : `${equationOfTime.toFixed(1)}m`}
             </span>
          </div>
