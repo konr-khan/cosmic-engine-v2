@@ -109,9 +109,9 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         <p className="text-xs text-slate-400">
           365-day 24h moonrise/moonset braided ribbon, ephemeris transit &amp; declination matrix
         </p>
-        <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/80">
-          <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="font-bold text-slate-200">{getDayLabel(activeDay)}</span>
+        <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/60">
+          <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="font-semibold text-slate-200">{getDayLabel(activeDay)}</span>
         </div>
       </div>
 
@@ -139,9 +139,9 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
       {/* Lower Area: Clean 3-Box Summary Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-2.5 font-mono">
         {/* Box 1 (Moonrise / Moonset) */}
-        <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex flex-col items-center justify-center text-center shadow-inner">
-          <span className="text-[9px] text-slate-400 block uppercase font-bold">Moonrise / Moonset</span>
-          <span className="text-slate-200 font-bold text-xs mt-0.5">
+        <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 flex flex-col items-center justify-center text-center shadow-inner">
+          <span className="text-[9px] text-slate-400 block uppercase font-sans font-medium">Moonrise / Moonset</span>
+          <span className="text-slate-200 font-semibold text-xs mt-0.5 font-mono">
             {activeData.moonrise !== null && activeData.moonrise !== undefined ? formatTime(activeData.moonrise).substring(0, 5) : '--:--'} / {activeData.moonset !== null && activeData.moonset !== undefined ? formatTime(activeData.moonset).substring(0, 5) : '--:--'}
           </span>
         </div>
@@ -149,21 +149,21 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         {/* Box 2 (Lunar Transit) */}
         <div 
           onClick={() => transitHour && onSetTime && onSetTime(transitHour)}
-          className="bg-indigo-950/80 hover:bg-indigo-900/90 transition-all cursor-pointer p-2.5 rounded-xl border border-indigo-500/50 flex flex-col items-center justify-center text-center text-indigo-300 shadow-sm"
+          className="bg-indigo-950/60 hover:bg-indigo-900/80 transition-all cursor-pointer p-2.5 rounded-xl border border-indigo-500/40 flex flex-col items-center justify-center text-center text-indigo-300 shadow-sm"
           title="Click to jump clock to Lunar Transit"
         >
-          <span className="text-[9px] font-bold text-indigo-400 uppercase flex items-center gap-0.5">
-            <Compass className="w-2.5 h-2.5" /> Transit
+          <span className="text-[9px] font-medium text-indigo-400 uppercase font-sans flex items-center gap-0.5">
+            <Compass className="w-2.5 h-2.5" /> Lunar Transit
           </span>
-          <span className="text-xs font-mono font-bold text-indigo-200 mt-0.5">
-            {formatTime(transitHour).substring(0, 5)} UTC
+          <span className="text-xs font-mono font-semibold text-indigo-200 mt-0.5">
+            {formatTime(transitHour).substring(0, 5)} <span className="text-indigo-400/80 text-[10px] font-normal font-sans">UTC</span>
           </span>
         </div>
 
         {/* Box 3 (Declination) */}
-        <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex flex-col items-center justify-center text-center shadow-inner">
-          <span className="text-[9px] text-slate-400 block uppercase font-bold">Declination (δ)</span>
-          <span className="text-indigo-300 font-bold text-xs mt-0.5">
+        <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 flex flex-col items-center justify-center text-center shadow-inner">
+          <span className="text-[9px] text-slate-400 block uppercase font-sans font-medium">Declination (δ)</span>
+          <span className={`font-semibold text-xs mt-0.5 font-mono ${decDeg >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
             {decDeg >= 0 ? `+${decDeg.toFixed(1)}°` : `${decDeg.toFixed(1)}°`}
           </span>
         </div>

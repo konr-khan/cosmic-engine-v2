@@ -243,7 +243,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           </button>
 
           {isEclipse && (
-            <div className="flex items-center gap-1 bg-amber-950/90 text-amber-300 border border-amber-500/80 px-2.5 py-1 rounded-lg text-xs font-mono font-bold animate-pulse">
+            <div className="flex items-center gap-1 bg-amber-950/90 text-amber-300 border border-amber-500/70 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>Syzygy Active</span>
             </div>
@@ -387,7 +387,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           {/* Center Sun at Focus F1 */}
           <g transform={`translate(${renderSunX}, ${renderSunY})`} className="pointer-events-none">
             {/* Sun Corona Rays */}
-            <circle r="22" fill={CONFIG.THEME.SUN_FILL} opacity="0.2" className="animate-pulse" />
+            <circle r="22" fill={CONFIG.THEME.SUN_FILL} opacity="0.2" />
             <circle r="15" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow-lg" />
             <text x="0" y="3" textAnchor="middle" className="text-[8px] font-black fill-amber-950 font-mono select-none">
               SUN
@@ -423,40 +423,40 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
       </div>
 
       {/* Dynamic Physics HUD Footer */}
-      <div className="mt-2 p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80 text-xs font-mono text-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
-          <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
-            <Compass className="w-3.5 h-3.5 text-indigo-400" /> Earth-Sun Distance
+      <div className="mt-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/50 text-xs font-mono text-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="bg-slate-900/40 p-2 rounded-lg border border-slate-800/40 flex flex-col items-center text-center">
+          <span className="text-slate-400 text-[9px] font-sans font-medium uppercase tracking-wider flex items-center gap-1">
+            <Compass className="w-3 h-3 text-indigo-400" /> Earth-Sun Dist
           </span>
-          <span className="font-bold text-indigo-300 text-xs mt-0.5">
-            {distanceAU} AU <span className="text-slate-400 text-[10px]">({(distanceKm / 1e6).toFixed(1)}M km)</span>
-          </span>
-        </div>
-
-        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
-          <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5 text-amber-400" /> Orbital Speed
-          </span>
-          <span className="font-bold text-amber-300 text-xs mt-0.5">
-            {orbitalSpeedKms} km/s
+          <span className="font-semibold text-indigo-300 text-xs mt-0.5 font-mono">
+            {distanceAU} AU <span className="text-slate-400 text-[10px] font-normal font-sans">({(distanceKm / 1e6).toFixed(1)}M km)</span>
           </span>
         </div>
 
-        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
-          <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
-            <Flame className="w-3.5 h-3.5 text-rose-400" /> Solar Irradiance
+        <div className="bg-slate-900/40 p-2 rounded-lg border border-slate-800/40 flex flex-col items-center text-center">
+          <span className="text-slate-400 text-[9px] font-sans font-medium uppercase tracking-wider flex items-center gap-1">
+            <Zap className="w-3 h-3 text-amber-400" /> Orbital Speed
           </span>
-          <span className="font-bold text-rose-300 text-xs mt-0.5">
-            {solarIrradiancePercent}% <span className="text-slate-400 text-[10px]">of mean</span>
+          <span className="font-semibold text-amber-300 text-xs mt-0.5 font-mono">
+            {orbitalSpeedKms} <span className="text-slate-400 text-[10px] font-normal font-sans">km/s</span>
           </span>
         </div>
 
-        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
-          <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
-            <Info className="w-3.5 h-3.5 text-cyan-400" /> Solar Diameter
+        <div className="bg-slate-900/40 p-2 rounded-lg border border-slate-800/40 flex flex-col items-center text-center">
+          <span className="text-slate-400 text-[9px] font-sans font-medium uppercase tracking-wider flex items-center gap-1">
+            <Flame className="w-3 h-3 text-rose-400" /> Irradiance
           </span>
-          <span className="font-bold text-cyan-300 text-xs mt-0.5">
-            {sunAngularDiameterArcmin}' <span className="text-slate-400 text-[10px]">arcmin</span>
+          <span className="font-semibold text-rose-300 text-xs mt-0.5 font-mono">
+            {solarIrradiancePercent}% <span className="text-slate-400 text-[10px] font-normal font-sans">of mean</span>
+          </span>
+        </div>
+
+        <div className="bg-slate-900/40 p-2 rounded-lg border border-slate-800/40 flex flex-col items-center text-center">
+          <span className="text-slate-400 text-[9px] font-sans font-medium uppercase tracking-wider flex items-center gap-1">
+            <Info className="w-3 h-3 text-slate-300" /> Sun Diameter
+          </span>
+          <span className="font-semibold text-slate-200 text-xs mt-0.5 font-mono">
+            {sunAngularDiameterArcmin}' <span className="text-slate-400 text-[10px] font-normal font-sans">arcmin</span>
           </span>
         </div>
       </div>

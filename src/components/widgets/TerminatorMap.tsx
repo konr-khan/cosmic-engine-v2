@@ -263,13 +263,13 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               <path d={dayShadow.linePath} fill="none" stroke="#fbbf24" strokeWidth="1" strokeOpacity="0.8" strokeDasharray="3 2" />
             )}
 
-            {/* Subsolar Point Marker with Pulsating Glow */}
+            {/* Subsolar Point Marker with Soft Glow */}
             <g 
               className="cursor-pointer"
               onPointerEnter={() => setHoveredPoint('sun')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
-              <circle cx={relSunX} cy={sunCy} r="11" fill={CONFIG.THEME.SUN_FILL} opacity="0.25" className="animate-pulse" />
+              <circle cx={relSunX} cy={sunCy} r="11" fill={CONFIG.THEME.SUN_FILL} opacity="0.25" />
               <circle cx={relSunX} cy={sunCy} r="4.5" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
               <text x={relSunX + 7} y={sunCy + 3} className="text-[7.5px] fill-amber-300 font-bold font-mono select-none pointer-events-none">
                 SUN
@@ -287,7 +287,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               onPointerEnter={() => setHoveredPoint('moon')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
-              <circle cx={relMoonX} cy={moonCy} r="10" fill="#94a3b8" opacity="0.25" className="animate-pulse" />
+              <circle cx={relMoonX} cy={moonCy} r="10" fill="#94a3b8" opacity="0.25" />
               <circle cx={relMoonX} cy={moonCy} r="4" fill="#f8fafc" stroke="#475569" strokeWidth="1.5" className="drop-shadow" />
               <text x={relMoonX + 7} y={moonCy + 3} className="text-[7.5px] fill-slate-300 font-bold font-mono select-none pointer-events-none">
                 MOON
@@ -300,7 +300,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               onPointerEnter={() => setHoveredPoint('observer')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
-              <circle cx={180} cy={userCy} r="8" fill="#6366f1" opacity="0.2" className="animate-pulse" />
+              <circle cx={180} cy={userCy} r="8" fill="#6366f1" opacity="0.25" />
               <circle cx={180} cy={userCy} r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="1.2" className="drop-shadow" />
               <text x={186} y={userCy - 4} className="text-[8px] fill-indigo-300 font-bold font-mono">YOU</text>
             </g>

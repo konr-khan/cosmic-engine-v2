@@ -107,7 +107,7 @@ export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({
 
         {/* Eclipse Proximity Alert */}
         {viewMode === 'geocentric' && isNearEclipseNode && (
-          <div className="absolute top-3 right-3 bg-amber-950/90 border border-amber-600/80 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 animate-pulse z-10 backdrop-blur-sm shadow-md">
+          <div className="absolute top-3 right-3 bg-amber-950/90 border border-amber-600/70 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 z-10 backdrop-blur-sm shadow-md">
             <Sparkles className="w-4 h-4 text-amber-400" /> Near Eclipse Node Zone (Alignment!)
           </div>
         )}

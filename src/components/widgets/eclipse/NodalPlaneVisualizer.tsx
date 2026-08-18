@@ -35,7 +35,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({ ecli
         </text>
 
         {/* Intersection Node Point (Ascending Node ☊) */}
-        <circle cx="250" cy="90" r="8" fill="#f43f5e" opacity="0.25" className="animate-pulse" />
+        <circle cx="250" cy="90" r="8" fill="#f43f5e" opacity="0.25" />
         <circle cx="250" cy="90" r="5" fill="#f43f5e" stroke="white" strokeWidth="1.5" />
         <text x="250" y="112" textAnchor="middle" className="text-[10px] font-mono font-bold fill-rose-400">
           Ascending Node ☊ (Eclipse Crossing Point)

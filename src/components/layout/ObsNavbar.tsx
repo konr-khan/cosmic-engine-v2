@@ -66,7 +66,7 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
         {/* Brand Logo */}
         <div className="flex items-center gap-2.5">
           <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-600/30 border border-indigo-500/40">
-            <Globe className="w-4 h-4 animate-pulse" />
+            <Globe className="w-4 h-4" />
           </div>
           <div>
             <h1 className="font-black text-sm sm:text-base tracking-widest text-white uppercase flex items-center gap-1.5 font-mono">

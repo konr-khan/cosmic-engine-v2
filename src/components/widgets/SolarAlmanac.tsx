@@ -246,20 +246,20 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
       {/* Top Inline Date Badge & Summary */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
         <p className="text-xs text-slate-400">
-          24-hour annual sun path showing daylight, twilights &amp; instantaneous 24h polar sector dial
+          24-hour annual sun path showing daylight, twilights &amp; instantaneous 24h polar sector
         </p>
-        <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/80">
+        <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/60">
           <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="font-bold text-slate-200">{getDayLabel(activeDay)}</span>
-          <span className="text-slate-500">|</span>
+          <span className="font-semibold text-slate-200">{getDayLabel(activeDay)}</span>
+          <span className="text-slate-600">|</span>
           <Clock className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-bold text-amber-400">{(activeData.dayLength).toFixed(1)}h Daylight</span>
+          <span className="font-semibold text-amber-400">{(activeData.dayLength).toFixed(1)}h <span className="text-slate-400 text-[10px] font-normal font-sans">Daylight</span></span>
         </div>
       </div>
 
       {/* Solstice & Equinox Fast-Jump Shortcut Bar */}
-      <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1.5 border-b border-slate-800/80 text-xs">
-        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mr-1 flex items-center gap-1">
+      <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1.5 border-b border-slate-800/60 text-xs">
+        <span className="text-[10px] font-medium uppercase font-sans text-slate-400 tracking-wider mr-1 flex items-center gap-1">
           <Target className="w-3 h-3 text-indigo-400" /> Fast-Jump:
         </span>
         {shortcuts.map(s => {
@@ -269,10 +269,10 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
               key={s.label}
               onClick={() => onDayChange && onDayChange(s.day)}
               title={s.title}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono transition-all flex items-center gap-1 cursor-pointer border ${
                 isActive 
-                  ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' 
-                  : 'bg-slate-900/60 hover:bg-slate-800 hover:text-white text-slate-300 border border-slate-800/80 hover:border-slate-700'
+                  ? 'bg-indigo-600 text-white font-semibold border-indigo-500 shadow-sm' 
+                  : 'bg-slate-900/40 text-slate-400 hover:text-slate-200 border-slate-800/40 hover:border-slate-700'
               }`}
             >
               {s.label}
@@ -330,8 +330,8 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
               const x = dayToX(firstDayOfMonth);
               return (
                 <g key={m}>
-                  <line x1={x} y1={paddingTop} x2={x} y2={paddingTop + chartH} stroke="#334155" strokeWidth="0.5" strokeOpacity="0.3" strokeDasharray="3 3" />
-                  <text x={x + 10} y={height - 10} className="text-xs font-bold fill-slate-400 font-mono">{m}</text>
+                  <line x1={x} y1={paddingTop} x2={x} y2={paddingTop + chartH} stroke="#334155" strokeWidth="0.5" strokeOpacity="0.25" strokeDasharray="3 3" />
+                  <text x={x + 10} y={height - 10} className="text-[11px] font-medium fill-slate-400 font-mono">{m}</text>
                 </g>
               );
             })}
@@ -346,13 +346,13 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
                   <line 
                     x1={paddingLeft} y1={y} x2={paddingLeft + chartW} y2={y} 
                     stroke="#334155" 
-                    strokeWidth={isMidnightOrNoon ? 0.75 : 0.5} 
-                    strokeOpacity={isMidnightOrNoon ? 0.45 : 0.2} 
+                    strokeWidth="0.5" 
+                    strokeOpacity={isMidnightOrNoon ? 0.4 : 0.18} 
                   />
-                  <text x={paddingLeft - 8} y={y + 4} textAnchor="end" className={`text-xs font-mono ${isMidnightOrNoon ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
+                  <text x={paddingLeft - 8} y={y + 4} textAnchor="end" className={`text-xs font-mono ${isMidnightOrNoon ? 'fill-slate-200 font-semibold' : 'fill-slate-400 font-normal'}`}>
                     {label}
                   </text>
-                  <text x={paddingLeft + chartW + 8} y={y + 4} textAnchor="start" className="text-xs font-mono fill-slate-400 font-bold">
+                  <text x={paddingLeft + chartW + 8} y={y + 4} textAnchor="start" className="text-xs font-mono fill-slate-400 font-medium">
                     {h === 0 || h === 24 ? "Midnight" : (h === 12 ? "Noon" : "")}
                   </text>
                 </g>
@@ -369,14 +369,14 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             {/* Key Stats Annotations */}
             <g transform={`translate(${dayToX(keyStats.earliestSunrise.day)}, ${timeToY(keyStats.earliestSunrise.sunrise)})`}>
               <circle r="3" fill="#000000" />
-              <text y="14" textAnchor="middle" className="text-[10px] font-bold fill-indigo-300 font-mono">
+              <text y="14" textAnchor="middle" className="text-[10px] font-semibold fill-indigo-300 font-mono">
                 {getDayLabel(keyStats.earliestSunrise.day)}
               </text>
             </g>
 
             <g transform={`translate(${dayToX(keyStats.latestSunset.day)}, ${timeToY(keyStats.latestSunset.sunset)})`}>
               <circle r="3" fill="#000000" />
-              <text y="-8" textAnchor="middle" className="text-[10px] font-bold fill-indigo-300 font-mono">
+              <text y="-8" textAnchor="middle" className="text-[10px] font-semibold fill-indigo-300 font-mono">
                 {getDayLabel(keyStats.latestSunset.day)}
               </text>
             </g>
@@ -385,12 +385,12 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             <line 
               x1={paddingLeft} y1={sunriseY} 
               x2={paddingLeft + chartW} y2={sunriseY} 
-              stroke="#eab308" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" 
+              stroke="#eab308" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" 
             />
             <line 
               x1={paddingLeft} y1={sunsetY} 
               x2={paddingLeft + chartW} y2={sunsetY} 
-              stroke="#eab308" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" 
+              stroke="#eab308" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" 
             />
 
             {/* Synced Hover Time Horizontal Guideline */}
@@ -399,10 +399,10 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
                 <line 
                   x1={paddingLeft} y1={timeToY(hoverTime)} 
                   x2={paddingLeft + chartW} y2={timeToY(hoverTime)} 
-                  stroke="#38bdf8" strokeWidth="1.8" strokeDasharray="3 3" className="drop-shadow-sm" 
+                  stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3 3" className="drop-shadow-sm" 
                 />
                 <g transform={`translate(${paddingLeft - 6}, ${timeToY(hoverTime) + 4})`}>
-                  <text textAnchor="end" className="text-[10px] font-mono font-black fill-sky-400">
+                  <text textAnchor="end" className="text-[10px] font-mono font-bold fill-sky-400">
                     {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
                   </text>
                 </g>
@@ -411,12 +411,12 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
 
             {/* Dynamically Generated Sunrise & Sunset Labels */}
             <g transform={`translate(${paddingLeft + chartW + 6}, ${sunriseY + 4})`}>
-              <text className="text-xs font-mono font-black fill-amber-400">
+              <text className="text-xs font-mono font-bold fill-amber-400">
                 {formatTime(activeData.sunrise).substring(0, 5)}
               </text>
             </g>
             <g transform={`translate(${paddingLeft + chartW + 6}, ${sunsetY + 4})`}>
-              <text className="text-xs font-mono font-black fill-amber-400">
+              <text className="text-xs font-mono font-bold fill-amber-400">
                 {formatTime(activeData.sunset).substring(0, 5)}
               </text>
             </g>
@@ -427,14 +427,14 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
                 <line 
                   x1={dayToX(mirrorDayData.day)} y1={paddingTop} 
                   x2={dayToX(mirrorDayData.day)} y2={paddingTop + chartH} 
-                  stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.85" 
+                  stroke="#6366f1" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.8" 
                 />
                 {/* Intersection Dots on Mirrored Day */}
-                <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunrise)} r="3.5" fill="#6366f1" stroke="white" strokeWidth="1.5" />
-                <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunset)} r="3.5" fill="#6366f1" stroke="white" strokeWidth="1.5" />
+                <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunrise)} r="3" fill="#6366f1" stroke="white" strokeWidth="1.2" />
+                <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunset)} r="3" fill="#6366f1" stroke="white" strokeWidth="1.2" />
                 {/* Top Mirrored Day Badge */}
                 <g transform={`translate(${dayToX(mirrorDayData.day)}, ${paddingTop - 8})`}>
-                  <text textAnchor="middle" className="text-xs font-mono font-bold fill-indigo-400">
+                  <text textAnchor="middle" className="text-xs font-mono font-semibold fill-indigo-400">
                     Equiv: {getDayLabel(mirrorDayData.day)} ({mirrorDayData.dayLength.toFixed(1)}h)
                   </text>
                 </g>
@@ -445,20 +445,20 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             <line 
               x1={dayToX(activeDay)} y1={paddingTop} 
               x2={dayToX(activeDay)} y2={paddingTop + chartH} 
-              stroke="#ef4444" strokeWidth="1.8" strokeDasharray="4 3" 
+              stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 3" 
             />
 
             {/* Active Day Markers */}
-            <circle cx={dayToX(activeDay)} cy={sunriseY} r="4" fill="#ef4444" stroke="white" strokeWidth="1.5" />
-            <circle cx={dayToX(activeDay)} cy={sunsetY} r="4" fill="#ef4444" stroke="white" strokeWidth="1.5" />
-            <circle cx={dayToX(activeDay)} cy={timeToY(activeData.solarNoon)} r="3" fill="#fbbf24" stroke="black" strokeWidth="1" />
+            <circle cx={dayToX(activeDay)} cy={sunriseY} r="3.5" fill="#ef4444" stroke="white" strokeWidth="1.2" />
+            <circle cx={dayToX(activeDay)} cy={sunsetY} r="3.5" fill="#ef4444" stroke="white" strokeWidth="1.2" />
+            <circle cx={dayToX(activeDay)} cy={timeToY(activeData.solarNoon)} r="2.5" fill="#fbbf24" stroke="black" strokeWidth="1" />
           </svg>
         </div>
 
         {/* Right Side (4 cols on XL): 24-Hour Polar Clock Dial */}
-        <div className="xl:col-span-4 2xl:col-span-4 flex flex-col items-center justify-center p-3 bg-slate-950/80 rounded-2xl border border-slate-800/80 shadow-inner">
+        <div className="xl:col-span-4 2xl:col-span-4 flex flex-col items-center justify-center p-3 bg-slate-950/60 rounded-2xl border border-slate-800/60 shadow-inner">
           <div className="w-full flex justify-between items-center mb-2 px-1 font-mono text-xs text-slate-400">
-            <span className="font-bold text-amber-400 flex items-center gap-1">
+            <span className="font-semibold text-amber-400 flex items-center gap-1 font-sans text-xs uppercase tracking-wider">
               <Sun className="w-3.5 h-3.5" /> 24h Polar Sunlight Clock
             </span>
           </div>
@@ -479,65 +479,68 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
                   <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.85" />
                 </linearGradient>
                 <linearGradient id="solarAlmanacPolarNauticalGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#64748b" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#475569" stopOpacity="0.8" />
+                  <stop offset="0%" stopColor="#64748b" stopOpacity="0.75" />
+                  <stop offset="100%" stopColor="#475569" stopOpacity="0.75" />
                 </linearGradient>
                 <linearGradient id="solarAlmanacPolarAstroGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#334155" stopOpacity="0.85" />
-                  <stop offset="100%" stopColor="#1e293b" stopOpacity="0.85" />
+                  <stop offset="0%" stopColor="#334155" stopOpacity="0.65" />
+                  <stop offset="100%" stopColor="#1e293b" stopOpacity="0.65" />
                 </linearGradient>
               </defs>
 
-              <circle cx={center} cy={center} r={radius + 5} fill="#020617" stroke="#334155" strokeWidth="0.75" />
-              <circle cx={center} cy={center} r={radius} fill="#020617" stroke="#1e293b" strokeWidth="1" />
-              
-              {[0, 6, 12, 18].map(h => {
-                const a = h * 15 - 90;
-                return (
-                  <line 
-                    key={h} 
-                    x1={center + (radius - 5) * Math.cos(toRadians(a))} 
-                    y1={center + (radius - 5) * Math.sin(toRadians(a))} 
-                    x2={center + radius * Math.cos(toRadians(a))} 
-                    y2={center + radius * Math.sin(toRadians(a))} 
-                    stroke="#64748b" 
-                    strokeWidth="1.5" 
-                    strokeOpacity="0.8" 
-                  />
-                );
-              })}
+              {/* Base Dial Plate with Subtle Border */}
+              <circle cx={center} cy={center} r={radius} fill="#0b0f19" stroke="#334155" strokeWidth="1" />
 
+              {/* Sector Paths */}
               <g transform={`rotate(${rotationAngle}, ${center}, ${center})`}>
                 <path d={getSectorPath(astronomical, center, radius)} fill="url(#solarAlmanacPolarAstroGrad)" />
                 <path d={getSectorPath(nautical, center, radius)} fill="url(#solarAlmanacPolarNauticalGrad)" />
                 <path d={getSectorPath(civil, center, radius)} fill="url(#solarAlmanacPolarCivilGrad)" />
                 <path d={getSectorPath(dayLength, center, radius)} fill="url(#solarAlmanacPolarDayGrad)" />
-                <line x1={center} y1={center - radius} x2={center} y2={center - radius + 10} stroke="#fbbf24" strokeWidth="2" />
               </g>
-              
-              {/* Active / Hover Ray */}
+
+              {/* Dial 24-Hour Tick Marks */}
+              {Array.from({ length: 24 }).map((_, i) => {
+                const angle = i * 15 - 90;
+                const isMajor = i % 6 === 0;
+                const tickLen = isMajor ? 6 : 3;
+                const x1 = center + (radius - tickLen) * Math.cos(toRadians(angle));
+                const y1 = center + (radius - tickLen) * Math.sin(toRadians(angle));
+                const x2 = center + radius * Math.cos(toRadians(angle));
+                const y2 = center + radius * Math.sin(toRadians(angle));
+                return (
+                  <line 
+                    key={i} 
+                    x1={x1} y1={y1} x2={x2} y2={y2} 
+                    stroke={isMajor ? "#64748b" : "#334155"} 
+                    strokeWidth={isMajor ? 1 : 0.5} 
+                  />
+                );
+              })}
+
+              {/* Hand Vector Line */}
               <line 
                 x1={center} y1={center} 
                 x2={center + radius * Math.cos(toRadians(handAngle))} 
                 y2={center + radius * Math.sin(toRadians(handAngle))} 
                 stroke={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "#f8fafc"} 
-                strokeWidth={hoverTime !== null && hoverTime !== undefined ? 2.5 : 1.8} 
+                strokeWidth={hoverTime !== null && hoverTime !== undefined ? 2 : 1.5} 
                 strokeLinecap="round" 
               />
-              <circle cx={center} cy={center} r="3.5" fill={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "#f8fafc"} />
+              <circle cx={center} cy={center} r="3" fill={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "#f8fafc"} />
               
-              <text x={center} y={center - radius - 8} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-bold">00:00 UTC</text>
-              <text x={center} y={center + radius + 12} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-bold">12:00 UTC</text>
+              <text x={center} y={center - radius - 8} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-medium">00:00 UTC</text>
+              <text x={center} y={center + radius + 12} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-medium">12:00 UTC</text>
               
               {/* Center Hub Overlay */}
-              <circle cx={center} cy={center} r="40" fill="#020617" stroke="#334155" strokeWidth="1.5" />
+              <circle cx={center} cy={center} r="40" fill="#020617" stroke="#334155" strokeWidth="1" />
               <text x={center} y={center - 3} textAnchor="middle" className={polarMainClass}>{polarMainText}</text>
               <text x={center} y={center + 10} textAnchor="middle" className={polarSubClass}>{polarSubText}</text>
             </svg>
 
             {/* Hover Pill Readout */}
             {hoverTime !== null && hoverTime !== undefined && (
-              <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-sky-950/95 text-sky-300 border border-sky-500/80 px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold shadow-xl pointer-events-none">
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-sky-950/95 text-sky-300 border border-sky-500/80 px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-semibold shadow-xl pointer-events-none">
                 {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
               </div>
             )}
@@ -547,10 +550,10 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
       </div>
 
       {/* Bottom Legend */}
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2.5 border-t border-slate-800/80 text-[10px] font-medium font-mono">
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2.5 border-t border-slate-800/60 text-[10px] font-medium font-mono">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-amber-400 border border-amber-300" />
-          <span className="text-slate-300 font-bold">Daylight</span>
+          <span className="text-slate-300 font-semibold">Daylight</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-amber-500/80" />

@@ -58,32 +58,32 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
           <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-bold font-mono">
             <button
               onClick={() => setActiveTab('geometry')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'geometry' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
+                activeTab === 'geometry' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Layers className="w-3.5 h-3.5" /> Shadow Rays
             </button>
             <button
               onClick={() => setActiveTab('nodes')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'nodes' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
+                activeTab === 'nodes' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Compass className="w-3.5 h-3.5" /> 5.14° Nodes
             </button>
             <button
               onClick={() => setActiveTab('sky')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'sky' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
+                activeTab === 'sky' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Eye className="w-3.5 h-3.5 text-cyan-400" /> Sky View
+              <Eye className="w-3.5 h-3.5 text-slate-300" /> Sky View
             </button>
             <button
               onClick={() => setActiveTab('scanner')}
-              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'scanner' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
+                activeTab === 'scanner' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Calendar className="w-3.5 h-3.5 text-emerald-400" /> Scanner
@@ -93,7 +93,7 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
       </div>
 
       {/* Main Canvas Viewport */}
-      <div className="relative w-full flex-1 min-h-[280px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center p-3">
+      <div className="relative w-full flex-1 min-h-[280px] bg-slate-950/60 rounded-xl overflow-hidden border border-slate-800/60 flex items-center justify-center p-3">
         {activeTab === 'geometry' && (
           <ShadowRayDiagram
             eclipse={eclipse}
@@ -122,14 +122,14 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
         const nodeGapStr = `${(eclipse.nodeProximityDeg ?? Math.abs(eclipse.beta)).toFixed(1)}°`;
 
         return (
-          <div className="mt-2 bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800/80 flex flex-wrap justify-between items-center text-xs font-mono text-slate-400 gap-2 shadow-sm">
-            <span>Obscuration: <strong className={eclipse.obscuration > 0 ? "text-amber-400" : "text-slate-300"}>{eclipse.obscuration}%</strong></span>
+          <div className="mt-2 bg-slate-950/60 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800/50 flex flex-wrap justify-between items-center text-xs font-mono text-slate-400 gap-2 shadow-sm">
+            <span>Obscuration: <strong className={`font-semibold ${eclipse.obscuration > 0 ? "text-amber-400" : "text-slate-300"}`}>{eclipse.obscuration}%</strong></span>
             <span className="text-slate-700 hidden sm:inline">|</span>
-            <span>Node Gap: <strong className="text-rose-400">{nodeGapStr}</strong></span>
+            <span>Node Gap: <strong className="text-rose-400 font-semibold">{nodeGapStr}</strong></span>
             <span className="text-slate-700 hidden sm:inline">|</span>
-            <span>Vertical Miss: <strong className={verticalMissKm === 0 ? "text-emerald-400" : (verticalMissKm > 0 ? "text-amber-400" : "text-indigo-400")}>{verticalMissStr}</strong></span>
+            <span>Vertical Miss: <strong className={`font-semibold ${verticalMissKm === 0 ? "text-emerald-400" : (verticalMissKm > 0 ? "text-amber-400" : "text-indigo-400")}`}>{verticalMissStr}</strong></span>
             <span className="text-slate-700 hidden sm:inline">|</span>
-            <span>Alignment: <strong className="text-emerald-400">{eclipse.alignmentPercent}%</strong></span>
+            <span>Alignment: <strong className="text-emerald-400 font-semibold">{eclipse.alignmentPercent}%</strong></span>
           </div>
         );
       })()}

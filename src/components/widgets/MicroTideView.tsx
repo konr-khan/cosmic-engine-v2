@@ -76,14 +76,15 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             className="w-full h-full max-h-[260px] overflow-visible"
             preserveAspectRatio="xMidYMid meet"
           >
+            {/* Coordinate Crosshairs */}
             <line
               x1="-100"
               y1="0"
               x2="100"
               y2="0"
               stroke="#334155"
-              strokeWidth="0.75"
-              strokeOpacity="0.35"
+              strokeWidth="0.5"
+              strokeOpacity="0.25"
             />
             <line
               x1="0"
@@ -91,8 +92,8 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
               x2="0"
               y2="100"
               stroke="#334155"
-              strokeWidth="0.75"
-              strokeOpacity="0.35"
+              strokeWidth="0.5"
+              strokeOpacity="0.25"
             />
 
             {/* Sun Angle Indicator */}
@@ -103,9 +104,9 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
                 x2="90"
                 y2="0"
                 stroke="#fbbf24"
-                strokeWidth="1.5"
+                strokeWidth="1.2"
                 strokeDasharray="4 2"
-                opacity="0.9"
+                opacity="0.85"
               />
               <text
                 x={95}
@@ -113,7 +114,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
                 textAnchor={isLeftHemisphere ? "end" : "start"}
                 fill="#fbbf24"
                 fontSize="9"
-                fontWeight="bold"
+                fontWeight="600"
                 fontFamily="monospace"
                 transform={isLeftHemisphere ? "rotate(180, 95, 0)" : ""}
               >
@@ -159,7 +160,6 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
                 r="6"
                 fill="#fbbf24"
                 opacity="0.2"
-                className="animate-pulse"
               />
               <circle
                 cx="12"
@@ -203,20 +203,20 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             localTideStatus={safeLocalTideStatus}
           />
 
-          <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex flex-col justify-between text-xs font-mono text-slate-400 gap-1.5">
+          <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60 flex flex-col justify-between text-xs font-mono text-slate-400 gap-1.5">
             <div className="flex justify-between items-center">
-              <span>Gravitational Alignment:</span>
-              <strong className={(safeTides.alignment || 0) > 0 ? "text-indigo-400" : "text-amber-400"}>
+              <span className="text-[11px] font-sans text-slate-400">Gravitational Alignment:</span>
+              <strong className={`font-semibold font-mono ${(safeTides.alignment || 0) > 0 ? "text-indigo-400" : "text-amber-400"}`}>
                 {safeTides.type || "Transitional"}
               </strong>
             </div>
             <div className="flex justify-between items-center">
-              <span>Local Observer Water:</span>
-              <strong className={safeLocalTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-300"}>
+              <span className="text-[11px] font-sans text-slate-400">Local Observer Water:</span>
+              <strong className={`font-semibold font-mono ${safeLocalTideStatus === "High Tide" ? "text-slate-200" : "text-slate-300"}`}>
                 {safeLocalTideStatus}
               </strong>
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-400 border-t border-slate-800/80 pt-1">
+            <div className="flex justify-between items-center text-[10px] text-slate-400 border-t border-slate-800/60 pt-1">
               <span>Syzygy Factor: {((safeTides.alignment || 0) * 100).toFixed(0)}%</span>
               <span>Bulge Radius: {(safeTides.rx || 16).toFixed(1)} RE</span>
             </div>

@@ -140,12 +140,12 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
   };
 
   return (
-    <div className="relative w-full bg-slate-950/80 rounded-xl border border-slate-800/80 p-3 my-1 touch-none">
+    <div className="relative w-full bg-slate-950/60 rounded-xl border border-slate-800/60 p-3 my-1 touch-none">
       <div className="text-[10px] font-mono text-slate-400 mb-1.5 flex justify-between items-center">
-        <span className="font-bold text-cyan-300 flex items-center gap-1.5">
-          <Moon className="w-3 h-3 text-cyan-400" /> 365-Day Moonrise &amp; Moonset Braided Ribbon (24h UTC)
+        <span className="font-semibold text-slate-200 flex items-center gap-1.5 font-sans">
+          <Moon className="w-3 h-3 text-slate-300" /> 365-Day Moonrise &amp; Moonset Braided Ribbon (24h UTC)
         </span>
-        <span className="text-slate-400">Scrub chart to scan date &amp; time</span>
+        <span className="text-slate-500 text-[9px] font-sans">Scrub chart to scan date &amp; time</span>
       </div>
 
       <svg
@@ -166,8 +166,8 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
           const x = dayToX(firstDay);
           return (
             <g key={m}>
-              <line x1={x} y1={padTop} x2={x} y2={padTop + chartH} stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" strokeOpacity="0.35" />
-              <text x={x + 6} y={ribbonHeight - 8} className="text-[10px] font-mono font-bold fill-slate-400">{m}</text>
+              <line x1={x} y1={padTop} x2={x} y2={padTop + chartH} stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" strokeOpacity="0.25" />
+              <text x={x + 6} y={ribbonHeight - 8} className="text-[10px] font-mono font-medium fill-slate-400">{m}</text>
             </g>
           );
         })}
@@ -183,13 +183,13 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
                 x1={padLeft} y1={y} 
                 x2={padLeft + chartW} y2={y} 
                 stroke="#334155" 
-                strokeWidth={isKeyHour ? 0.75 : 0.5} 
-                strokeOpacity={isKeyHour ? 0.45 : 0.2} 
+                strokeWidth={0.5} 
+                strokeOpacity={isKeyHour ? 0.35 : 0.18} 
               />
-              <text x={padLeft - 6} y={y + 3} textAnchor="end" className={`text-[9px] font-mono ${isKeyHour ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
+              <text x={padLeft - 6} y={y + 3} textAnchor="end" className={`text-[9px] font-mono ${isKeyHour ? 'fill-slate-200 font-semibold' : 'fill-slate-400 font-normal'}`}>
                 {label}
               </text>
-              <text x={padLeft + chartW + 6} y={y + 3} textAnchor="start" className={`text-[9px] font-mono ${isKeyHour ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
+              <text x={padLeft + chartW + 6} y={y + 3} textAnchor="start" className={`text-[9px] font-mono ${isKeyHour ? 'fill-slate-200 font-semibold' : 'fill-slate-400 font-normal'}`}>
                 {label}
               </text>
             </g>
@@ -275,7 +275,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
       </svg>
 
       {/* Legend */}
-      <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 mt-2 px-1 border-t border-slate-800/80 pt-2">
+      <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 mt-2 px-1 border-t border-slate-800/60 pt-2">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
             <span className="w-2.5 h-1 bg-sky-400 inline-block rounded-sm" /> Moonrise Path
@@ -290,7 +290,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
             <span className="w-2.5 h-1 bg-white inline-block rounded-sm" /> Full Moon
           </span>
         </div>
-        <span className="text-slate-400 font-bold">Selected: {getDayLabel(activeDay)}</span>
+        <span className="text-slate-400 font-medium">Selected: {getDayLabel(activeDay)}</span>
       </div>
     </div>
   );
