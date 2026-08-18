@@ -32,7 +32,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 113 unit tests across 6 test suites)
+- **Testing**: `vitest` (`npm test` — 114 unit tests across 6 test suites)
 
 ### Essential Commands
 
@@ -40,7 +40,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (113 unit tests across 6 test suites) |
+| `npm test` | Runs Vitest unit test suite (114 unit tests across 6 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
@@ -78,9 +78,9 @@ Cosmic Engine V2.0/
 │   │   │   ├── constants.ts     # Orbital radii, twilight thresholds & theme tokens
 │   │   │   ├── core.ts          # Julian dates, hour formatting & trig helpers
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
-│   │   │   ├── lunar.ts         # Lunar ephemeris solver, nodal precession, parallactic angle & annual lunar matrix
+│   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   └── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (64 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (65 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (5 tests)
@@ -98,9 +98,8 @@ Cosmic Engine V2.0/
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── TodayHorizonView.tsx # Instantaneous Sun & Moon +90° elevation arcs & moon phase
 │       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & 24h polar clock dial
-│       │   ├── SunClock.tsx     # Backward-compatible standalone 24h polar dial & elevation arc
 │       │   ├── LunarAlmanacCard.tsx # 365-day lunar ribbon chart & 3-box summary grid
-│       │   ├── EclipseDemonstrator.tsx # Master eclipse demonstrator dock container
+│       │   ├── EclipseDemonstrator.tsx # Barrel export for eclipse subsystem
 │       │   ├── CelestialSphereView.tsx # 3D celestial sphere & heliocentric orbit view
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
@@ -118,6 +117,7 @@ Cosmic Engine V2.0/
 │       │   │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
 │       │   │   └── index.ts                # Barrel export
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
+│       │       ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
 │       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
 │       │       ├── ShadowRayDiagram.tsx        # SVG shadow ray tracing & geometry viewer
 │       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
@@ -190,7 +190,7 @@ All complex architectural changes and feature additions must follow the structur
 ## 6. Key Subsystems, Data Flow & Mathematical Contracts
 
 ### A. Mathematical Engine & Pure Domain Functions (`src/utils/cosmicMath/`)
-- Contains pure astronomical algorithms with JSDoc type and unit annotations (Julian Date conversions, solar declination, equation of time, lunar phase angles, twilight elevation thresholds, eclipse alignment angles, and tidal vector forces).
+- Contains pure astronomical algorithms with JSDoc type and unit annotations (Julian Date conversions, solar declination, equation of time, lunar phase angles, physical lunar disc illumination fractions, twilight elevation thresholds, eclipse alignment angles, and tidal vector forces).
 - Algorithms reference Jean Meeus *Astronomical Algorithms* and IAU standard models.
 - **Rule**: Keep domain math pure, deterministic, and free of React state or UI side-effects.
 
@@ -241,7 +241,7 @@ Standard coordinate conventions used throughout the engine:
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval. Run `npm run typecheck` (`tsc --noEmit`) to verify.
 4. **Preserve Math Accuracy**: Cite standard astronomical references for formula changes and verify polar/solstice edge cases.
-5. **No Regressions**: All 113 unit tests across the 6 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, or `cosmicStore.test.ts`.
+5. **No Regressions**: All 114 unit tests across the 6 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, or `cosmicStore.test.ts`.
 
 ### B. Testing & Mocking Standards for Agents
 - **Vitest Mocking Guidelines**:

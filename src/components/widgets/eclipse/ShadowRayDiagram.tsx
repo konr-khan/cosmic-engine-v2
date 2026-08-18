@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { EclipseData } from '../../../types';
-import { getPhaseName } from '../../../utils/cosmicMath';
+import { getPhaseName, calculateLunarIllumination } from '../../../utils/cosmicMath';
 
 export interface ShadowRayDiagramProps {
   eclipse?: EclipseData | null;
@@ -28,7 +28,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   const phaseRad = phaseVal * 2 * Math.PI;
   const phaseDeg = Math.round(phaseVal * 360);
   const phaseName = getPhaseName(phaseVal);
-  const illumPercent = Math.round(((1 - Math.cos((phaseDeg * Math.PI) / 180)) / 2) * 100);
+  const illumPercent = calculateLunarIllumination(phaseVal);
 
   // Map -5.14° to +5.14° ecliptic latitude to SVG Y pixel displacement
   const scalePxPerDeg = 8.5;

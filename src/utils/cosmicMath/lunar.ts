@@ -197,6 +197,17 @@ export const calculateLunarEvents = (
 };
 
 /**
+ * Calculates physical lunar disc illumination fraction (0% to 100%) from phase value (0.0 to 1.0).
+ * @param phase - Normalized lunar phase value (0.0 = New Moon, 0.5 = Full Moon)
+ * @returns Illumination percentage (0 to 100)
+ */
+export const calculateLunarIllumination = (phase: number): number => {
+  const normPhase = ((phase % 1) + 1) % 1;
+  const rad = normPhase * 2 * Math.PI;
+  return Math.round(((1 - Math.cos(rad)) / 2) * 100);
+};
+
+/**
  * Returns human-readable lunar phase name from a 0.0 to 1.0 phase fraction.
  * @param phase - Lunar phase value (0 = New Moon, 0.5 = Full Moon)
  * @returns Name of moon phase

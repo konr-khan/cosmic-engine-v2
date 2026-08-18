@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sun, Moon, Compass } from 'lucide-react';
 import { PhaseVisual } from '../common/PhaseVisual';
-import { toRadians, toDegrees, formatTime, clamp } from '../../utils/cosmicMath';
+import { toRadians, toDegrees, formatTime, clamp, calculateLunarIllumination } from '../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../types';
 
 export interface TodayHorizonViewProps {
@@ -81,7 +81,7 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
 
   const moonDeclination = (orbitalData?.lunarPos?.declination ?? declination ?? 0) as number;
 
-  const illPercent = ((phase.value ?? 0) * 100).toFixed(0);
+  const illPercent = calculateLunarIllumination(phase.value ?? 0);
 
   const moonHourAngle = (displayTime - transit) * 15;
   const sinMoonAlt =

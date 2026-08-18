@@ -14,6 +14,7 @@ import {
   calculateEarthOrbitalPhysics,
   calculateLunarPosition,
   getPhaseName,
+  calculateLunarIllumination,
   calculateEclipseData,
   findUpcomingEclipses,
   calculateDailySolarEvents,
@@ -240,6 +241,15 @@ describe('cosmicMath utilities', () => {
       expect(getPhaseName(0.75)).toBe('Last Quarter');
       expect(getPhaseName(0.88)).toBe('Waning Crescent');
       expect(getPhaseName(0.98)).toBe('New Moon');
+    });
+
+    it('calculates physical lunar disc illumination correctly from phase values', () => {
+      expect(calculateLunarIllumination(0.0)).toBe(0);      // New Moon = 0%
+      expect(calculateLunarIllumination(0.25)).toBe(50);    // First Quarter = 50%
+      expect(calculateLunarIllumination(0.48)).toBe(100);   // Full Moon near 0.48 = 100%
+      expect(calculateLunarIllumination(0.50)).toBe(100);   // Exact Full Moon = 100%
+      expect(calculateLunarIllumination(0.75)).toBe(50);    // Last Quarter = 50%
+      expect(calculateLunarIllumination(1.0)).toBe(0);      // New Moon = 0%
     });
 
     it('ensures calculateLunarPosition never produces NaN across various Julian dates', () => {
