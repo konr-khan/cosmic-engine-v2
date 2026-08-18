@@ -23,6 +23,19 @@
 
 ---
 
+## 🎨 Design Philosophy & UX Principles
+
+Cosmic Engine adheres to two foundational principles of scientific information design and human-computer interaction:
+
+1. **Smallest Effective Difference (SED)**:
+   - High-density astronomical data is rendered with minimal visual clutter, subtle contrast gradations, muted coordinate grids, and clean vector geometry.
+   - Eliminates decorative noise ("chartjunk") so the astronomical physics, trajectories, and curves speak for themselves.
+2. **Progressive Disclosure**:
+   - Primary viewports remain clean, uncluttered, and instantly glanceable.
+   - Rich underlying astronomical physics (parallactic angles, exact syzygy obscuration percentages, orbital speeds, perigee/apogee distance metrics) are readily discoverable via interactive scrubbers, hover cards, tooltips, and modal fine-tuning popovers—making it immediately obvious how to access deeper mathematical detail without overwhelming the primary display.
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Framework**: React 19 (`react`, `react-dom`)

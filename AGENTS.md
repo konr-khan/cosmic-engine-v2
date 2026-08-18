@@ -272,3 +272,8 @@ Cosmic Engine V2.0 maintains a sleek, dark observatory aesthetic (slate/zinc dar
 - Widgets in `src/components/widgets/` must remain unbordered and flush with `DashboardWindow`'s body container.
 - Use top inline control rails for interactive mode switches rather than duplicating window titles (`<h3>`).
 - Ensure responsive SVG scaling with proper `viewBox` coordinates and fluid container adaptation.
+
+### C. Information Architecture & Progressive Disclosure Invariants
+- **Smallest Effective Difference (SED)**: Visual distinctions and gridlines must be rendered with minimal visual noise and subtle contrast gradations. Let the vector astronomical curves and orbital bodies carry the primary focal weight.
+- **Progressive Disclosure**: Primary widget viewports must remain glanceable and uncluttered by default. Deep mathematical derivations, extended ephemeris metrics (e.g. parallactic angle, orbital velocities, exact nodal angles), and configuration controls must be accessible through obvious, discoverable affordances (hover tooltips, scrubbers, disclosure panels, modal popovers).
+- **Affordance Clarity**: Any interactive control that reveals deeper data must present unambiguous visual affordances (`cursor-pointer`, `cursor-crosshair`, hover ring highlights, or pill badges) so users immediately recognize how to access extended information.
