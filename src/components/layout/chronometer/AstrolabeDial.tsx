@@ -212,8 +212,9 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
           </radialGradient>
         </defs>
 
-        {/* Outer Bezel Base */}
-        <circle cx="0" cy="0" r="133" fill="none" stroke="#1e293b" strokeWidth="2" />
+        {/* Outer Bezel Base with Precision Hairlines */}
+        <circle cx="0" cy="0" r="134" fill="none" stroke="#334155" strokeWidth="0.75" strokeOpacity="0.5" />
+        <circle cx="0" cy="0" r="132.5" fill="none" stroke="#0f172a" strokeWidth="1.5" />
         <circle cx="0" cy="0" r="45" fill="url(#hubGlow)" />
 
         {/* 1. OUTER RING (R=125): DATE / DAY-OF-YEAR (Emerald) */}
@@ -273,21 +274,22 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
         {currentDisplayRing && (
           <g transform="translate(0, 118)" pointerEvents="none" className="animate-in fade-in zoom-in-90 duration-150">
             <rect 
-              x="-42" 
+              x="-45" 
               y="-12" 
-              width="84" 
-              height="20" 
-              rx="6" 
+              width="90" 
+              height="22" 
+              rx="7" 
               fill="#020617" 
+              fillOpacity="0.95"
               stroke={THEME[currentDisplayRing]} 
               strokeWidth="1.5" 
-              className="drop-shadow-lg"
+              className="drop-shadow-2xl"
             />
             <text 
               x="0" 
-              y="2" 
+              y="3" 
               textAnchor="middle" 
-              className="text-[10px] font-mono font-bold fill-white"
+              className="text-[10.5px] font-mono font-bold fill-white"
             >
               {currentDisplayRing === 'date' && formatDate(dayOfYear)}
               {currentDisplayRing === 'time' && formatTimeStr(timeOfDay)}

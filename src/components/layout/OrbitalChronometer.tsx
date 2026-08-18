@@ -74,24 +74,24 @@ export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/95 backdrop-blur-md text-white border-t border-slate-800 shadow-2xl transition-all duration-300 relative select-none w-full">
+    <div className="bg-slate-950/90 backdrop-blur-xl text-white border-t border-slate-800/80 shadow-2xl transition-all duration-300 relative select-none w-full">
       {/* Top Centered Toggle Tab */}
       <button 
         onClick={onToggleCollapse} 
-        className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-slate-300 hover:text-white px-4 py-1 rounded-t-xl text-xs font-bold flex items-center gap-1.5 shadow-md z-50 cursor-pointer"
+        className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-slate-700/80 hover:border-indigo-500 text-slate-300 hover:text-white px-4 py-1 rounded-t-xl text-[10px] font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-lg z-50 cursor-pointer backdrop-blur-md transition-all"
         title={isCollapsed ? "Expand Astrolabe Control Dock" : "Collapse Dock into minimal status bar"}
       >
-        {isCollapsed ? <ChevronUp className="w-4 h-4 text-indigo-400" /> : <ChevronDown className="w-4 h-4 text-indigo-400" />}
+        {isCollapsed ? <ChevronUp className="w-3.5 h-3.5 text-indigo-400" /> : <ChevronDown className="w-3.5 h-3.5 text-indigo-400" />}
         <span>{isCollapsed ? "EXPAND ASTROLABE DOCK" : "COLLAPSE DOCK"}</span>
       </button>
 
       {isCollapsed ? (
         /* Collapsed Low-Profile Status Bar */
-        <div className="max-w-7xl mx-auto px-6 py-2.5 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Settings className="w-4 h-4 text-indigo-400" />
             <span className="text-xs font-bold text-slate-300 tracking-wider">ASTROLABE PRIMARY DOCK</span>
-            <span className="text-[10px] font-mono text-amber-400 font-bold bg-slate-800 px-2.5 py-0.5 rounded border border-slate-700">
+            <span className="text-[10px] font-mono text-amber-400 font-bold bg-slate-900 px-2.5 py-0.5 rounded border border-slate-800">
               {currentTwilightPhase}
             </span>
           </div>
@@ -105,7 +105,7 @@ export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
         </div>
       ) : (
         /* Expanded 3-Section Horizontal Astrolabe Primary Control Dock */
-        <div className="w-full max-w-[2800px] mx-auto px-4 md:px-8 2xl:px-10 py-3.5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div className="w-full max-w-[2800px] mx-auto px-4 md:px-8 2xl:px-10 py-3 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           {/* Left Column: Compact 4-Ring Astrolabe Dial */}
           <div className="lg:col-span-4 flex items-center justify-center">
             <AstrolabeDial

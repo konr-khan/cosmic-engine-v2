@@ -32,26 +32,26 @@ export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> =
          ======================================================= */}
       {activePopup === 'lat' && (
         <div 
-          className="fixed inset-0 z-[150] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+          className="fixed inset-0 z-[150] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
           onClick={onClose}
         >
           <div 
-            className="bg-slate-900 border border-slate-700 text-white rounded-2xl p-3.5 sm:p-4 shadow-2xl max-w-sm sm:max-w-md w-full relative space-y-3 max-h-[85vh] my-auto overflow-y-auto"
+            className="bg-slate-950/95 border border-slate-800 text-white rounded-2xl p-3.5 sm:p-4 shadow-2xl max-w-sm sm:max-w-md w-full relative space-y-3 max-h-[85vh] my-auto overflow-y-auto backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-              <h4 className="text-sm font-extrabold text-rose-400 flex items-center gap-2">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800/80">
+              <h4 className="text-sm font-extrabold text-rose-400 flex items-center gap-2 font-mono">
                 <Globe className="w-4 h-4 text-rose-400" /> Globular Latitude Selector
               </h4>
               <button 
                 onClick={onClose} 
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="bg-slate-950 p-2 sm:p-3 rounded-xl border border-slate-800 flex justify-center">
+            <div className="bg-slate-900/60 p-2 sm:p-3 rounded-xl border border-slate-800 flex justify-center">
               <LatitudeSlider latitude={latitude} onChange={onLatChange} />
             </div>
 
@@ -62,7 +62,7 @@ export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> =
 
             <button 
               onClick={onClose} 
-              className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-1.5 rounded-xl text-xs transition-colors shadow-md cursor-pointer"
+              className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-xl text-xs font-mono transition-colors shadow-md cursor-pointer"
             >
               DONE
             </button>
@@ -75,26 +75,26 @@ export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> =
          ======================================================= */}
       {activePopup === 'lon' && (
         <div 
-          className="fixed inset-0 z-[150] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+          className="fixed inset-0 z-[150] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
           onClick={onClose}
         >
           <div 
-            className="bg-slate-900 border border-slate-700 text-white rounded-2xl p-3.5 sm:p-4 shadow-2xl max-w-sm sm:max-w-md w-full relative space-y-3 max-h-[85vh] my-auto overflow-y-auto"
+            className="bg-slate-950/95 border border-slate-800 text-white rounded-2xl p-3.5 sm:p-4 shadow-2xl max-w-sm sm:max-w-md w-full relative space-y-3 max-h-[85vh] my-auto overflow-y-auto backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-              <h4 className="text-sm font-extrabold text-amber-400 flex items-center gap-2">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800/80">
+              <h4 className="text-sm font-extrabold text-amber-400 flex items-center gap-2 font-mono">
                 <Compass className="w-4 h-4 text-amber-400" /> 360° Polar Longitude Selector
               </h4>
               <button 
                 onClick={onClose} 
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="bg-slate-950 p-2 sm:p-3 rounded-xl border border-slate-800 flex justify-center">
+            <div className="bg-slate-900/60 p-2 sm:p-3 rounded-xl border border-slate-800 flex justify-center">
               <PolarLongitudeSelector longitude={longitude} onChange={onLonChange} />
             </div>
 
@@ -105,7 +105,7 @@ export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> =
 
             <button 
               onClick={onClose} 
-              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-1.5 rounded-xl text-xs transition-colors shadow-md cursor-pointer"
+              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-xl text-xs font-mono transition-colors shadow-md cursor-pointer"
             >
               DONE
             </button>

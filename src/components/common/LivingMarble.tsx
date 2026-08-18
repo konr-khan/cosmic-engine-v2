@@ -218,7 +218,7 @@ export const LivingMarble: React.FC<LivingMarbleProps> = ({
       </defs>
       
       {/* 1. Base Earth & Night Background */}
-      <circle r={radius} fill={CONFIG.THEME.NIGHT_BG} />
+      <circle r={radius} fill="#0b0f19" />
 
       {/* 2. Layered Twilight & Daylight Bands (Clipped to Globe) */}
       <g clipPath="url(#earthClip)" fillRule="evenodd">
@@ -251,16 +251,18 @@ export const LivingMarble: React.FC<LivingMarbleProps> = ({
       {/* 4. Longitudinal Meridians */}
       {gridLines}
 
-      {/* 5. Subsolar Point (Golden Sun Marker on Surface) */}
+      {/* 5. Subsolar Point (Golden Sun Marker on Surface with Corona Glow) */}
       {isSubsolarVisible && (
         <g transform={`translate(${subX.toFixed(2)}, ${subY.toFixed(2)})`}>
-          <circle r="3.5" fill={CONFIG.THEME.SUN_FILL} stroke="#fff" strokeWidth="1" className="animate-pulse" />
-          <circle r="1.5" fill="#fff" />
+          <circle r="7" fill={CONFIG.THEME.SUN_FILL} opacity="0.25" className="animate-pulse" />
+          <circle r="3.5" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1" />
+          <circle r="1.5" fill="#ffffff" />
         </g>
       )}
 
-      {/* 6. Outer Globe Border & Specular Rim */}
-      <circle r={radius} fill="none" stroke="#475569" strokeWidth="1.5" />
+      {/* 6. Outer Globe Border & Specular Rim Hairlines */}
+      <circle r={radius} fill="none" stroke="#334155" strokeWidth="1.2" strokeOpacity="0.8" />
+      <circle r={radius - 0.5} fill="none" stroke="#64748b" strokeWidth="0.5" strokeOpacity="0.4" />
     </g>
   );
 };

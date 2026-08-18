@@ -42,29 +42,41 @@ export const ControlRing: React.FC<ControlRingProps> = ({
       onPointerEnter={() => onHover && onHover(true)}
       onPointerLeave={() => onHover && onHover(false)}
     >
-      {/* Background Track */}
-      <circle cx="0" cy="0" r={radius} fill="none" stroke="#1e293b" strokeWidth={width} />
+      {/* Background Track with Inner/Outer Hairline Borders */}
+      <circle cx="0" cy="0" r={radius} fill="none" stroke="#0f172a" strokeWidth={width} />
+      <circle cx="0" cy="0" r={radius - width / 2} fill="none" stroke="#334155" strokeWidth="0.5" strokeOpacity="0.4" />
+      <circle cx="0" cy="0" r={radius + width / 2} fill="none" stroke="#334155" strokeWidth="0.5" strokeOpacity="0.4" />
       
-      {/* Active Arc Trail */}
+      {/* Active Arc Trail with Subtle Glow */}
       <path 
         d={`M 0 -${radius} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${ix} ${iy}`} 
         fill="none" 
         stroke={color} 
-        strokeWidth={2} 
-        opacity="0.45" 
+        strokeWidth={2.5} 
+        strokeOpacity="0.8" 
       />
 
       {/* Ticks at 12, 3, 6, 9 o'clock */}
       {[0, 90, 180, 270].map(d => {
-         const tx = Math.cos(toRadians(d - 90)) * (radius - width / 2 + 5);
-         const ty = Math.sin(toRadians(d - 90)) * (radius - width / 2 + 5);
-         return <circle key={d} cx={tx} cy={ty} r={2} fill="#94a3b8" opacity="0.35" />;
+         const tx = Math.cos(toRadians(d - 90)) * (radius);
+         const ty = Math.sin(toRadians(d - 90)) * (radius);
+         return (
+           <circle 
+             key={d} 
+             cx={tx} 
+             cy={ty} 
+             r={1.5} 
+             fill="#94a3b8" 
+             opacity="0.5" 
+           />
+         );
       })}
 
-      {/* Handle Thumb */}
+      {/* Handle Thumb with Glow Halo */}
       <g transform={`translate(${ix}, ${iy})`}>
-        <circle r={width / 1.8} fill="#0f172a" stroke={color} strokeWidth={2} className="drop-shadow-lg" />
-        <circle r={4} fill={color} />
+        <circle r={width / 1.5} fill={color} opacity="0.2" className="group-hover:opacity-35 transition-opacity" />
+        <circle r={width / 2.0} fill="#020617" stroke={color} strokeWidth={1.8} className="drop-shadow-md" />
+        <circle r={3.5} fill={color} />
       </g>
     </g>
   );

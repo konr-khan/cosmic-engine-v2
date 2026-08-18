@@ -37,17 +37,31 @@ export const ArmillaryRail: React.FC<ArmillaryRailProps> = ({
         d={`M 0 -${radius} A ${radius} ${radius} 0 0 1 0 ${radius}`} 
         fill="none" 
         stroke="#334155" 
-        strokeWidth="1.5" 
-        strokeDasharray="3 3" 
-        opacity="0.5" 
+        strokeWidth="1" 
+        strokeDasharray="2 2" 
+        opacity="0.4" 
       />
 
-      {/* Main Active Left Rail Arc Frame */}
+      {/* Main Active Left Rail Arc Frame with Hairline Inner/Outer Guides */}
       <path 
         d={`M 0 -${radius} A ${radius} ${radius} 0 0 0 0 ${radius}`} 
         fill="none" 
-        stroke="#1e293b" 
+        stroke="#0f172a" 
         strokeWidth={width} 
+      />
+      <path 
+        d={`M 0 -${radius - width / 2} A ${radius - width / 2} ${radius - width / 2} 0 0 0 0 ${radius - width / 2}`} 
+        fill="none" 
+        stroke="#334155" 
+        strokeWidth="0.5" 
+        strokeOpacity="0.4" 
+      />
+      <path 
+        d={`M 0 -${radius + width / 2} A ${radius + width / 2} ${radius + width / 2} 0 0 0 0 ${radius + width / 2}`} 
+        fill="none" 
+        stroke="#334155" 
+        strokeWidth="0.5" 
+        strokeOpacity="0.4" 
       />
 
       {/* Active Arc Highlight Trail (from Equator to current Latitude on Left Arc) */}
@@ -60,8 +74,8 @@ export const ArmillaryRail: React.FC<ArmillaryRailProps> = ({
             d={`M ${startX} ${startY} A ${radius} ${radius} 0 0 ${sweep} ${hx} ${hy}`} 
             fill="none" 
             stroke={color} 
-            strokeWidth="3" 
-            opacity="0.85" 
+            strokeWidth="2.5" 
+            opacity="0.9" 
           />
         );
       })()}
@@ -71,15 +85,24 @@ export const ArmillaryRail: React.FC<ArmillaryRailProps> = ({
         const pRad = toRadians(preset.lat);
         const px = -radius * Math.cos(pRad);
         const py = -radius * Math.sin(pRad);
+        const isEquator = preset.lat === 0;
         return (
-          <circle key={preset.label} cx={px} cy={py} r="2" fill="#94a3b8" opacity="0.5" />
+          <circle 
+            key={preset.label} 
+            cx={px} 
+            cy={py} 
+            r={isEquator ? 2 : 1.5} 
+            fill={isEquator ? color : "#94a3b8"} 
+            opacity={isEquator ? 0.9 : 0.45} 
+          />
         );
       })}
 
-      {/* Latitude Handle Thumb */}
+      {/* Latitude Handle Thumb with Outer Glow Halo */}
       <g transform={`translate(${hx}, ${hy})`}>
-        <circle r={width / 2.2} fill="#0f172a" stroke={color} strokeWidth="2" className="drop-shadow-lg cursor-grab active:cursor-grabbing" />
-        <circle r="3" fill={color} />
+        <circle r={width / 1.5} fill={color} opacity="0.2" className="group-hover:opacity-35 transition-opacity" />
+        <circle r={width / 2.2} fill="#020617" stroke={color} strokeWidth={1.8} className="drop-shadow-md cursor-grab active:cursor-grabbing" />
+        <circle r={3} fill={color} />
         
         {/* Tooltip Readout */}
         <text 
