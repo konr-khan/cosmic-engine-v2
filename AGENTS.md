@@ -9,14 +9,15 @@ Welcome to **Cosmic Engine V2.0**. This document provides essential architectura
 **Cosmic Engine V2.0** is an interactive, browser-based astronomical simulation and ephemeris dashboard built with React 19, TypeScript (Strict Mode with Symbol-branded units), Vite, and Tailwind CSS v4. 
 
 Key capabilities include:
-- **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling.
-- **Polar Sunlight Clock & Sun Elevation Arc**: 24-hour polar sector dial oriented with **00:00 UTC at the top** and **12:00 UTC at the bottom** with clockwise progression, paired with an instantaneous **$+90^\circ$ Sun Elevation Arc** horizon dome visualizer.
-- **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart (0000Z to 2400Z), instantaneous **$+90^\circ$ Moon Elevation Arc** dome visualizer with transit peak tracking, moon phases, perigee/apogee distance metrics, astronomical parallactic angles, and harmonized ocean tidal bulge oscillator.
-- **Eclipse Mechanics & Shadow Geometry**: Umbra/penumbra shadow geometry, $5.14^\circ$ lunar nodal plane corridor, smooth $C^1$-continuous syzygy obscuration predictions, and 5 historical/future presets (Apr 2024, Oct 2024, Mar 2025, Aug 2026, Aug 2027).
-- **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date, time, longitude, and latitude, with fast season jumps and direct military/time string parser.
-- **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes.
-- **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing subsolar point, and unclosed horizon boundary curves dividing daylight from twilight shadows.
-- **Macro & Micro Views**: Heliocentric Keplerian planetary orbit view with high-visibility milestone nodes (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD, and Earth gravitational tidal force micro-view.
+- **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Sector Dial (00:00 UTC at Top, 12:00 UTC at Bottom).
+- **Today's Sky Horizon Dome**: Instantaneous dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
+- **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z), real-time hairline time guide scanning, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
+- **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view harmonized with the dynamic ocean tidal wave oscillator, reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
+- **Eclipse Mechanics & Shadow Geometry**: Umbra/penumbra shadow geometry, $5.14^\circ$ lunar nodal plane corridor, smooth $C^1$-continuous syzygy obscuration predictions, explicit orbital elongation tracking ($0^\circ \to 360^\circ$), and 5 historical/future presets (Apr 2024, Oct 2024, Mar 2025, Aug 2026, Aug 2027).
+- **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date (with full year tooltip), time, longitude, and linear latitude slider, with fast season jumps and direct military/time string parser.
+- **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes, featuring a **3D Misalignment Scale Toggle** (True $23.4^\circ / 5.1^\circ$ vs Exaggerated $45^\circ / 15^\circ$).
+- **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing Subsolar Point (Sun Zenith) and Sublunar Point (Moon Zenith), and unclosed horizon boundary curves dividing daylight from twilight shadows with interactive glassmorphic HUD popovers.
+- **Macro & Micro Views**: Heliocentric Keplerian planetary orbit view with high-visibility milestone nodes (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD with collision-free diagonal arc labeling, and Earth gravitational tidal force micro-view.
 - **LivingMarble Globe Visualizer**: Analytical spherical limb intersection and evenodd annular cutout eliminating backside terminator tearing and preserving deep-night contrast.
 - **Cross-Card Interactive Hover Sync**: Hovering over timestamps or calendar dates in any widget synchronizes time/elevation across all visible cards simultaneously.
 
@@ -31,7 +32,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 112 unit tests across 6 test suites)
+- **Testing**: `vitest` (`npm test` — 113 unit tests across 6 test suites)
 
 ### Essential Commands
 
@@ -39,7 +40,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (112 unit tests across 6 test suites) |
+| `npm test` | Runs Vitest unit test suite (113 unit tests across 6 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
@@ -95,14 +96,15 @@ Cosmic Engine V2.0/
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
-│       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & solstice paths
-│       │   ├── SunClock.tsx     # 24h polar dial (00:00Z top, 12:00Z bottom) & Sun Elevation Arc
-│       │   ├── LunarAlmanacCard.tsx # Backward-compatible re-export entry
+│       │   ├── TodayHorizonView.tsx # Instantaneous Sun & Moon +90° elevation arcs & moon phase
+│       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & 24h polar clock dial
+│       │   ├── SunClock.tsx     # Backward-compatible standalone 24h polar dial & elevation arc
+│       │   ├── LunarAlmanacCard.tsx # 365-day lunar ribbon chart & 3-box summary grid
 │       │   ├── EclipseDemonstrator.tsx # Master eclipse demonstrator dock container
-│       │   ├── CelestialSphereView.tsx # Backward-compatible re-export entry
-│       │   ├── TerminatorMap.tsx # Centered daylight terminator world map
+│       │   ├── CelestialSphereView.tsx # 3D celestial sphere & heliocentric orbit view
+│       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
-│       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view
+│       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
 │       │   ├── celestial/       # Decomposed celestial sphere subsystem modules
 │       │   │   ├── projection3D.tsx        # Pure 3D projection & SVG ring builder
 │       │   │   ├── GeocentricSphereView.tsx # 3D equatorial sphere, zenith ray, ecliptic & lunar tilt
@@ -228,7 +230,7 @@ Standard coordinate conventions used throughout the engine:
 ### F. Fault-Tolerant Window Architecture & Error Boundaries (`src/components/layout/DashboardWindow.tsx`)
 - Interactive widgets inside `src/components/widgets/` must be wrapped in React Error Boundaries within `DashboardWindow.tsx`.
 - An isolated calculation or SVG rendering failure in a single visualizer (e.g. 3D orthographic sphere or eclipse ray tracer) will display a local fallback state without unmounting or crashing the rest of the Observatory dashboard.
-- Layout management supports dragging, resizing, locking, and responsive column spanning (`colSpan={12}` spans full width on standard screens, collapsing to 6 columns on ultra-wide displays: `2xl:col-span-6 3xl:col-span-6`). Presets persist in `localStorage` under `cosmic_window_layout_v5`.
+- Layout management supports dragging, resizing, locking, and responsive column spanning (`colSpan={12}` spans full width on standard screens, collapsing to 6 columns on ultra-wide displays: `2xl:col-span-6 3xl:col-span-6`). Presets persist in `localStorage` under `cosmic_window_layout_v7`.
 
 ---
 
@@ -239,7 +241,7 @@ Standard coordinate conventions used throughout the engine:
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval. Run `npm run typecheck` (`tsc --noEmit`) to verify.
 4. **Preserve Math Accuracy**: Cite standard astronomical references for formula changes and verify polar/solstice edge cases.
-5. **No Regressions**: All 112 unit tests across the 6 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, or `cosmicStore.test.ts`.
+5. **No Regressions**: All 113 unit tests across the 6 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, or `cosmicStore.test.ts`.
 
 ### B. Testing & Mocking Standards for Agents
 - **Vitest Mocking Guidelines**:

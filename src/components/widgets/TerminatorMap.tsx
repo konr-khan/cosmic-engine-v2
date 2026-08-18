@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CONFIG, getTerminatorShadowPaths } from '../../utils/cosmicMath';
-import { SolarAlmanacData } from '../../types';
+import { SolarAlmanacData, OrbitalData } from '../../types';
 
 export interface TerminatorMapProps {
   solarData?: SolarAlmanacData | null;
+  orbitalData?: OrbitalData | null;
   latitude?: number;
   longitude?: number;
   timeOfDay?: number;
@@ -74,11 +75,14 @@ const WORLD_LANDMASSES: [number, number][][] = [
 
 export const TerminatorMap: React.FC<TerminatorMapProps> = ({ 
   solarData, 
+  orbitalData,
   latitude = 47.06, 
   longitude = -122.81, 
   timeOfDay = 12, 
   hoverTime 
 }) => {
+  const [hoveredPoint, setHoveredPoint] = useState<'sun' | 'moon' | 'observer' | null>(null);
+
   const declination = (solarData?.declination ?? 0) as number;
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
 
@@ -86,6 +90,19 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   const normalizedSunLong = ((sunLong + 180) % 360 + 360) % 360 - 180;
   const sunCy = 90 - declination;
   const userCy = 90 - latitude;
+
+  // Sublunar Point (Moon) Coordinates & Ephemeris
+  const lunarDec = (orbitalData?.lunarEvents?.declination ?? orbitalData?.lunarPos?.declination ?? 0) as number;
+  const transit = orbitalData?.lunarEvents?.transit ?? 12;
+  const moonPhase = orbitalData?.phase?.name || 'Waxing Crescent';
+  const moonIllum = ((orbitalData?.phase?.value ?? 0.34) * 100).toFixed(0);
+  const moonDistKm = orbitalData?.lunarEvents?.distanceKm || 384400;
+
+  // Map subsolar & sublunar positions relative to centered observer longitude
+  const relSunX = (normalizedSunLong - longitude + 180 + 360) % 360;
+  const moonHourAngle = (activeTime - transit) * 15;
+  const relMoonX = ((180 - moonHourAngle) % 360 + 360) % 360;
+  const moonCy = 90 - lunarDec;
 
   // Render landmasses relative to the centered longitude with wrapping offsets (-360, 0, +360)
   const landmassPaths = useMemo(() => {
@@ -133,8 +150,6 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
     [longitude, normalizedSunLong, declination]
   );
 
-  const relSunX = (normalizedSunLong - longitude + 180 + 360) % 360;
-
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
       {/* Top Inline Declination & Meridian Info Rail */}
@@ -143,13 +158,67 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
           Map dynamically centers on observer meridian ({longitude >= 0 ? `+${longitude.toFixed(1)}` : `${longitude.toFixed(1)}`}°)
         </p>
         <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/80 text-slate-300">
-          <span className="text-[10px] uppercase font-bold text-slate-400">Declination:</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400">Solar Declination:</span>
           <strong className="text-amber-400 font-bold">{declination >= 0 ? `+${declination.toFixed(1)}` : declination.toFixed(1)}°</strong>
+          <span className="text-slate-600">|</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400">Lunar Declination:</span>
+          <strong className="text-cyan-400 font-bold">{lunarDec >= 0 ? `+${lunarDec.toFixed(1)}` : lunarDec.toFixed(1)}°</strong>
         </div>
       </div>
       
       {/* Map SVG Container */}
       <div className="relative w-full flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 min-h-[220px]">
+        {/* Glassmorphic Macro-Orbit style Hover HUD Overlay */}
+        {hoveredPoint === 'sun' && (
+          <div className="absolute top-3 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+            <div className="text-xs font-bold text-amber-400 flex items-center justify-between">
+              <span>Subsolar Point (Sun at Zenith)</span>
+            </div>
+            <div className="text-slate-300">
+              Declination (δ): <strong className="text-white">{declination >= 0 ? `+${declination.toFixed(1)}°` : `${declination.toFixed(1)}°`}</strong>
+            </div>
+            <div className="text-slate-300">
+              Subsolar Longitude: <strong className="text-amber-300">{normalizedSunLong >= 0 ? `+${normalizedSunLong.toFixed(1)}°` : `${normalizedSunLong.toFixed(1)}°`}</strong>
+            </div>
+            <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
+              The Sun is at local zenith (+90° altitude) directly overhead at this surface location.
+            </div>
+          </div>
+        )}
+
+        {hoveredPoint === 'moon' && (
+          <div className="absolute top-3 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+            <div className="text-xs font-bold text-cyan-400 flex items-center justify-between">
+              <span>Sublunar Point (Moon at Zenith)</span>
+              <span className="text-slate-400 text-[9px]">{moonIllum}% Illum</span>
+            </div>
+            <div className="text-slate-300">
+              Phase: <strong className="text-white">{moonPhase}</strong>
+            </div>
+            <div className="text-slate-300">
+              Declination (δ): <strong className="text-cyan-300">{lunarDec >= 0 ? `+${lunarDec.toFixed(1)}°` : `${lunarDec.toFixed(1)}°`}</strong>
+            </div>
+            <div className="text-slate-300">
+              Distance: <strong className="text-indigo-300">{moonDistKm.toLocaleString()} km</strong> ({(moonDistKm / 6371).toFixed(1)} R_E)
+            </div>
+            <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
+              The Moon is at local zenith (+90° altitude) directly overhead at this surface location.
+            </div>
+          </div>
+        )}
+
+        {hoveredPoint === 'observer' && (
+          <div className="absolute top-3 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+            <div className="text-xs font-bold text-indigo-400">Observer Location</div>
+            <div className="text-slate-300">
+              Coordinates: <strong className="text-white">{Math.abs(latitude).toFixed(2)}°{latitude >= 0 ? 'N' : 'S'}, {Math.abs(longitude).toFixed(2)}°{longitude >= 0 ? 'E' : 'W'}</strong>
+            </div>
+            <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
+              Prime center of map projection (centered on your local meridian).
+            </div>
+          </div>
+        )}
+
         <svg viewBox="0 0 360 180" className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
           <defs>
             <clipPath id="terminatorBounds">
@@ -195,32 +264,60 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             )}
 
             {/* Subsolar Point Marker with Pulsating Glow */}
-            <circle cx={relSunX} cy={sunCy} r="10" fill={CONFIG.THEME.SUN_FILL} opacity="0.2" className="animate-pulse" />
-            <circle cx={relSunX} cy={sunCy} r="4.5" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
+            <g 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredPoint('sun')}
+              onPointerLeave={() => setHoveredPoint(null)}
+            >
+              <circle cx={relSunX} cy={sunCy} r="11" fill={CONFIG.THEME.SUN_FILL} opacity="0.25" className="animate-pulse" />
+              <circle cx={relSunX} cy={sunCy} r="4.5" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
+            </g>
             
             {/* Hover Subsolar Ray Guide when hover sync active */}
             {hoverTime !== null && hoverTime !== undefined && (
               <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.85" />
             )}
 
+            {/* Sublunar Point Marker (Moon Zenith) with Glowing Cyan Ring */}
+            <g 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredPoint('moon')}
+              onPointerLeave={() => setHoveredPoint(null)}
+            >
+              <circle cx={relMoonX} cy={moonCy} r="10" fill="#38bdf8" opacity="0.2" className="animate-pulse" />
+              <circle cx={relMoonX} cy={moonCy} r="4" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
+              <text x={relMoonX + 7} y={moonCy + 3} className="text-[7.5px] fill-cyan-300 font-bold font-mono select-none pointer-events-none">
+                MOON
+              </text>
+            </g>
+
             {/* User Observer Position Marker with Glow */}
-            <circle cx={180} cy={userCy} r="8" fill="#6366f1" opacity="0.2" className="animate-pulse" />
-            <circle cx={180} cy={userCy} r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="1.2" className="drop-shadow" />
-            <text x={186} y={userCy - 4} className="text-[8px] fill-indigo-300 font-bold font-mono">YOU</text>
+            <g 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredPoint('observer')}
+              onPointerLeave={() => setHoveredPoint(null)}
+            >
+              <circle cx={180} cy={userCy} r="8" fill="#6366f1" opacity="0.2" className="animate-pulse" />
+              <circle cx={180} cy={userCy} r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="1.2" className="drop-shadow" />
+              <text x={186} y={userCy - 4} className="text-[8px] fill-indigo-300 font-bold font-mono">YOU</text>
+            </g>
           </g>
         </svg>
       </div>
 
       <div className="mt-2.5 p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex justify-between items-center text-[10px] font-mono text-slate-400">
-         <span>West (-180°)</span>
          <div className="flex items-center gap-3">
-           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400 border border-amber-300 inline-block" /> Day</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 border border-amber-300 inline-block" /> Subsolar</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400 border border-cyan-300 inline-block" /> Sublunar</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500 border border-indigo-400 inline-block" /> You</span>
+         </div>
+         <div className="flex items-center gap-2.5">
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400 inline-block" /> Day</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-500/80 inline-block" /> Civil (-6°)</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-500 inline-block" /> Nautical (-12°)</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-700 inline-block" /> Astro (-18°)</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-950 border border-slate-800 inline-block" /> Night</span>
          </div>
-         <span>East (+180°)</span>
       </div>
     </div>
   );

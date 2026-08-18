@@ -6,14 +6,15 @@
 
 ## ✨ Features
 
-- ☀️ **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil, nautical, and astronomical twilight durations, equation of time (analemma correction), solar noon, and daylight duration calculations with polar bounds handling.
-- 🕒 **Polar Sunlight Clock & Sun Elevation Arc**: 24-hour polar sector dial oriented with **00:00 UTC at the top** and **12:00 UTC at the bottom** with clockwise progression, paired with an instantaneous **$+90^\circ$ Sun Elevation Arc** horizon dome visualizer.
-- 🌙 **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart (0000Z to 2400Z), instantaneous **$+90^\circ$ Moon Elevation Arc** dome visualizer with transit peak tracking, moon phases, perigee/apogee distance metrics, astronomical parallactic angles, and harmonized ocean tidal bulge oscillator.
-- 🌒 **Eclipse Mechanics & Shadow Geometry**: Umbra/penumbra shadow ray geometry, $5.14^\circ$ lunar nodal plane corridor, smooth $C^1$-continuous syzygy obscuration predictions, and 5 historical/future eclipse presets (Apr 2024, Oct 2024, Mar 2025, Aug 2026, Aug 2027).
-- 🧭 **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date, time, longitude, and latitude, with fast season jumps and direct military/time string parser.
-- 🌐 **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes.
-- 🗺️ **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing subsolar point, and unclosed horizon boundary curves dividing daylight from civil, nautical, and astronomical twilight shadows.
-- 🪐 **Macro & Micro Views**: Heliocentric Keplerian planetary orbit view with high-visibility milestone nodes (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD, and Earth gravitational tidal force micro-view.
+- ☀️ **Solar Almanac & 24h Polar Sector Dial**: Solstice/equinox pathing, civil, nautical, and astronomical twilight durations, equation of time (analemma correction), solar noon, and daylight duration calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Clock dial (00:00 UTC at top, 12:00 UTC at bottom).
+- 👁️ **Today's Sky Horizon Dome**: Instantaneous dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
+- 🌙 **Lunar Almanac & Ephemeris**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time indexing (0000Z to 2400Z), real-time hairline time guide scanning, perigee/apogee distance metrics in km and $R_E$, and astronomical parallactic angles.
+- 🌊 **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal vector disc harmonized with the dynamic ocean tidal wave oscillator, reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
+- 🌒 **Eclipse Mechanics & Shadow Geometry**: Umbra/penumbra shadow ray geometry, $5.14^\circ$ lunar nodal plane corridor, smooth $C^1$-continuous syzygy obscuration predictions, explicit orbital elongation tracking ($0^\circ \to 360^\circ$), and 5 historical/future eclipse presets (Apr 2024, Oct 2024, Mar 2025, Aug 2026, Aug 2027).
+- 🧭 **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date (with full year tooltip), time, longitude, and linear latitude slider, with fast season jumps and direct military/time string parser.
+- 🌐 **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes, featuring a **3D Misalignment Scale Toggle** (True $23.4^\circ / 5.1^\circ$ vs Exaggerated $45^\circ / 15^\circ$).
+- 🗺️ **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing Subsolar Point (Sun Zenith) and Sublunar Point (Moon Zenith), and unclosed horizon boundary curves dividing daylight from civil, nautical, and astronomical twilight shadows with interactive glassmorphic HUD popovers.
+- 🪐 **Solar System Macro Orbit**: Heliocentric Keplerian planetary orbit view with high-visibility milestone nodes (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD with collision-free diagonal arc labeling, and true vs exaggerated eccentricity modes.
 - 🌍 **LivingMarble Globe Visualizer**: Analytical spherical limb intersection and evenodd annular cutout eliminating backside terminator tearing and preserving deep-night contrast.
 - 🎯 **Cross-Card Interactive Hover Sync**: Hovering over timestamps or calendar dates in any widget synchronizes time/elevation across all visible cards simultaneously.
 - ⚡ **Web Worker Ephemeris Offloading**: Asynchronous, off-main-thread computation for heavy Meeus lunar and syzygy shadow algorithms via an application-level singleton worker manager with request multiplexing and automatic synchronous fallback.
@@ -45,7 +46,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (112 automated unit tests across 6 test suites: pure math, hooks, layout state, state store, error boundaries, and worker fallback)
+- **Testing**: `vitest` (113 automated unit tests across 6 test suites: pure math, hooks, layout state, state store, error boundaries, and worker fallback)
 
 ---
 
@@ -61,7 +62,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (112 unit tests across 6 suites)
+# Run Vitest test suite (113 unit tests across 6 suites)
 npm test
 
 # Run full test suite in single-run CI mode
@@ -125,14 +126,15 @@ Cosmic Engine V2.0/
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
-│       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & solstice paths
-│       │   ├── SunClock.tsx     # 24h polar dial (00:00Z top, 12:00Z bottom) & Sun Elevation Arc
-│       │   ├── LunarAlmanacCard.tsx # Backward-compatible re-export entry
+│       │   ├── TodayHorizonView.tsx # Instantaneous Sun & Moon +90° elevation arcs & moon phase
+│       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & 24h polar clock dial
+│       │   ├── SunClock.tsx     # Backward-compatible standalone 24h polar dial & elevation arc
+│       │   ├── LunarAlmanacCard.tsx # 365-day lunar ribbon chart & 3-box summary grid
 │       │   ├── EclipseDemonstrator.tsx # Master eclipse demonstrator container
-│       │   ├── CelestialSphereView.tsx # Backward-compatible re-export entry
-│       │   ├── TerminatorMap.tsx # Centered daylight terminator world map
+│       │   ├── CelestialSphereView.tsx # 3D celestial sphere & heliocentric orbit view
+│       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
-│       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view
+│       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
 │       │   ├── celestial/       # Decomposed celestial sphere subsystem modules
 │       │   │   ├── projection3D.tsx        # Pure 3D projection & SVG ring builder
 │       │   │   ├── GeocentricSphereView.tsx # 3D equatorial sphere, zenith ray, ecliptic & lunar tilt

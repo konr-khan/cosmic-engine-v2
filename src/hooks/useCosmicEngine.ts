@@ -22,8 +22,8 @@ const selectStoreState = (state: { date: Date; timeOfDay: number; latitude: numb
   useAnalemma: state.useAnalemma
 });
 
-const ORBITAL_WIDGET_KEYS = ['macroOrbit', 'microTides', 'lunarAlmanac', 'celestialSphere', 'eclipse', 'today'] as const;
-const LUNAR_WIDGET_KEYS = ['lunarAlmanac', 'today'] as const;
+const ORBITAL_WIDGET_KEYS = ['macroOrbit', 'microTides', 'lunarAlmanac', 'celestialSphere', 'eclipse', 'today', 'map'] as const;
+const LUNAR_WIDGET_KEYS = ['lunarAlmanac', 'today', 'map'] as const;
 const ECLIPSE_WIDGET_KEYS = ['eclipse', 'macroOrbit'] as const;
 
 export const useCosmicEngine = (

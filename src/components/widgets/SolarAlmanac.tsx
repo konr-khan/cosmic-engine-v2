@@ -461,7 +461,6 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             <span className="font-bold text-amber-400 flex items-center gap-1">
               <Sun className="w-3.5 h-3.5" /> 24h Polar Sunlight Clock
             </span>
-            <span className="text-[10px] text-slate-400">00:00Z Top</span>
           </div>
 
           <div 

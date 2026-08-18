@@ -99,7 +99,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   };
 
   const transitHour = activeData.transit ?? transit ?? 12;
-  const decDeg = (lunarEvents.declination as number) ?? 0;
+  const decDeg = (orbitalData?.lunarPos?.declination ?? lunarEvents.declination ?? 0) as number;
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">

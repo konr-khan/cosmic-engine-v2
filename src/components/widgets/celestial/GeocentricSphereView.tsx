@@ -9,6 +9,7 @@ export interface GeocentricSphereViewProps {
   timeOfDay: number;
   solarData?: SolarAlmanacData | null;
   orbitalData?: OrbitalData | null;
+  isExaggeratedScale?: boolean;
 }
 
 export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
@@ -16,7 +17,8 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
   longitude,
   timeOfDay,
   solarData,
-  orbitalData
+  orbitalData,
+  isExaggeratedScale = false
 }) => {
   const declination = (solarData ? solarData.declination : 0) as number;
   const moonDeg = orbitalData && orbitalData.angles ? (orbitalData.angles.moonDegrees as number) : 0;
@@ -31,7 +33,7 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
     const earthR = 32;
 
     // 1. Earth Axial Tilt & Poles
-    const tiltDeg = 23.44;
+    const tiltDeg = isExaggeratedScale ? 45 : 23.44;
     const radTilt = toRadians(tiltDeg);
 
     const northPole3D = { x: 0, y: earthR * Math.cos(radTilt), z: -earthR * Math.sin(radTilt) };
@@ -96,10 +98,10 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
     const pNodeAsc = project3D(nodeAscX0, nodeAscY1, nodeAscZ1, pitch, yaw, scale, cx, cy);
     const pNodeDesc = project3D(-nodeAscX0, -nodeAscY1, -nodeAscZ1, pitch, yaw, scale, cx, cy);
 
-    // 6. Dynamic Moon Orbit Ring (Tilted 5.14° to Ecliptic, pivoting at Ascending Node)
+    // 6. Dynamic Moon Orbit Ring (Tilted 5.14° or 15° to Ecliptic, pivoting at Ascending Node)
     const moonOrbitPoints: { px: number; py: number; z: number }[] = [];
     const moonOrbitSteps = 72;
-    const incRad = toRadians(5.14);
+    const incRad = toRadians(isExaggeratedScale ? 15 : 5.14);
 
     for (let i = 0; i <= moonOrbitSteps; i++) {
       const u = (i / moonOrbitSteps) * 2 * Math.PI; // Argument of latitude
@@ -112,7 +114,7 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       const yEcl = yOrb;
       const zEcl = xOrb * Math.sin(nodeLonRad) + zOrb * Math.cos(nodeLonRad);
 
-      // Tilt around X-axis by ecliptic obliquity (23.44°)
+      // Tilt around X-axis by ecliptic obliquity (23.44° or 45°)
       const x3D = xEcl;
       const y3D = yEcl * Math.cos(radTilt) - zEcl * Math.sin(radTilt);
       const z3D = yEcl * Math.sin(radTilt) + zEcl * Math.cos(radTilt);
@@ -128,9 +130,10 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
     return {
       pNorth, pSouth, pObsEarth, pZenithVault,
       pSun, pMoon, pNodeAsc, pNodeDesc,
-      moonOrbitPathD
+      moonOrbitPathD,
+      tiltDeg
     };
-  }, [latitude, longitude, timeOfDay, declination, moonDeg, solarData, orbitalData]);
+  }, [latitude, longitude, timeOfDay, declination, moonDeg, solarData, orbitalData, isExaggeratedScale]);
 
   return (
     <g>
@@ -140,10 +143,10 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       {/* 1. Celestial Equator Ring (0° Tilt) */}
       {renderCircle3D(110, 0, 0, "#818cf8", 1.2, "4 2", 0.6)}
 
-      {/* 2. Ecliptic Ring (23.44° Tilt) */}
-      {renderCircle3D(110, 23.44, 0, "#f59e0b", 1.8, "", 0.85)}
+      {/* 2. Ecliptic Ring (23.44° or 45° Tilt) */}
+      {renderCircle3D(110, geocentricScene.tiltDeg, 0, "#f59e0b", 1.8, "", 0.85)}
 
-      {/* 3. Dynamic Moon Orbit Ring (5.14° Inclination pivoting at Ascending Node) */}
+      {/* 3. Dynamic Moon Orbit Ring (5.14° / 15° Inclination pivoting at Ascending Node) */}
       <path 
         d={geocentricScene.moonOrbitPathD} 
         fill="none" 
@@ -154,7 +157,7 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
 
       {/* 4. Center Earth Globe */}
       <circle cx="200" cy="160" r="32" fill="#020617" stroke="#3b82f6" strokeWidth="1.2" />
-      {/* Earth Rotational Axis (23.44°) */}
+      {/* Earth Rotational Axis */}
       <line 
         x1={geocentricScene.pNorth.px} y1={geocentricScene.pNorth.py} 
         x2={geocentricScene.pSouth.px} y2={geocentricScene.pSouth.py} 

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EclipseData } from '../../../types';
+import { getPhaseName } from '../../../utils/cosmicMath';
 
 export interface ShadowRayDiagramProps {
   eclipse?: EclipseData | null;
@@ -16,6 +17,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   lunarViewSubTab = 'pov',
   setLunarViewSubTab
 }) => {
+  const [hoveredEntity, setHoveredEntity] = useState<'sun' | 'earth' | 'moon' | 'umbra' | 'penumbra' | null>(null);
   if (!eclipse) return null;
 
   // Physical vertical offset calculation in km and scaled SVG pixels
@@ -25,6 +27,8 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   const phaseVal = eclipse.phaseValue || 0; // 0.0 (New Moon) to 1.0 (Full Moon = 0.5)
   const phaseRad = phaseVal * 2 * Math.PI;
   const phaseDeg = Math.round(phaseVal * 360);
+  const phaseName = getPhaseName(phaseVal);
+  const illumPercent = Math.round(((1 - Math.cos((phaseDeg * Math.PI) / 180)) / 2) * 100);
 
   // Map -5.14° to +5.14° ecliptic latitude to SVG Y pixel displacement
   const scalePxPerDeg = 8.5;
@@ -41,7 +45,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   const penumbraRad = eclipse.penumbraRadiusKm || 9500;
 
   let shadowStatus = { 
-    text: `Phase: ${phaseDeg}° | Vertical Offset: ${verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : verticalOffsetKm.toLocaleString()} km`, 
+    text: `Elongation: ${phaseDeg}° (${phaseName}) | Offset: ${verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : verticalOffsetKm.toLocaleString()} km`, 
     bg: 'bg-indigo-950/80 text-indigo-300 border-indigo-700' 
   };
   if (eclipse.isEclipseActive) {
@@ -51,16 +55,15 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   }
 
   return (
-    <div className="w-full h-full flex flex-col justify-between">
+    <div className="w-full h-full flex flex-col justify-between relative">
       
-      {/* Top Bar: Mode Selector & Live Dynamic Offset Badge */}
+      {/* Top Bar: Streamlined Mode Selector & Live Dynamic Offset Badge */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 text-xs font-mono">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-400 font-bold">Geometry Focus:</span>
-          <div className="flex bg-slate-950/80 p-1 rounded-lg border border-slate-800/80 gap-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 gap-1">
             <button
               onClick={() => setDiagramMode && setDiagramMode('live')}
-              className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 diagramMode === 'live' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -68,44 +71,44 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
             </button>
             <button
               onClick={() => setDiagramMode && setDiagramMode('solar')}
-              className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 diagramMode === 'solar' ? 'bg-amber-500 text-slate-950 shadow-sm ring-1 ring-amber-400' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Solar Focus (2D Moon Orbit)
+              Solar Focus
             </button>
             <button
               onClick={() => setDiagramMode && setDiagramMode('lunar')}
-              className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 diagramMode === 'lunar' ? 'bg-rose-600 text-white shadow-sm ring-1 ring-rose-400' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Lunar Focus (POV)
+              Lunar Focus
             </button>
           </div>
-        </div>
 
-        {/* Sub-toggle if in Lunar Focus mode */}
-        {diagramMode === 'lunar' && (
-          <div className="flex bg-slate-950/80 p-1 rounded-lg border border-slate-800/80 gap-1 text-[10px]">
-            <button
-              onClick={() => setLunarViewSubTab && setLunarViewSubTab('pov')}
-              className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                lunarViewSubTab === 'pov' ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              🌙 Lunar Surface POV
-            </button>
-            <button
-              onClick={() => setLunarViewSubTab && setLunarViewSubTab('orbit')}
-              className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                lunarViewSubTab === 'orbit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              🌐 Selenocentric Orbit
-            </button>
-          </div>
-        )}
+          {/* Integrated inline sub-toggle when in Lunar Focus mode */}
+          {diagramMode === 'lunar' && (
+            <div className="flex bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 gap-1 text-[11px]">
+              <button
+                onClick={() => setLunarViewSubTab && setLunarViewSubTab('pov')}
+                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  lunarViewSubTab === 'pov' ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Surface POV
+              </button>
+              <button
+                onClick={() => setLunarViewSubTab && setLunarViewSubTab('orbit')}
+                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  lunarViewSubTab === 'orbit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Selenocentric
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Live Shadow State Indicator */}
         {diagramMode !== 'lunar' && (
@@ -115,8 +118,76 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
         )}
       </div>
 
-      {/* SVG Shadow Ray Diagram with Dynamic Real Engine State or Focused Optics */}
-      <svg viewBox="0 0 520 220" className="w-full h-full block max-h-[210px]" preserveAspectRatio="xMidYMid meet">
+      {/* Floating Glassmorphic Macro-Orbit style Hover HUD Overlay */}
+      {hoveredEntity === 'sun' && (
+        <div className="absolute top-12 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+          <div className="text-xs font-bold text-amber-400">Sun (Primary Light Source)</div>
+          <div className="text-slate-300">Distance: <strong className="text-white">~149.6M km (1.00 AU)</strong></div>
+          <div className="text-slate-300">Solar Radius: <strong className="text-amber-300">696,340 km</strong></div>
+          <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
+            Emits direct converging & diverging solar rays shaping Earth's umbra & penumbra shadow cones.
+          </div>
+        </div>
+      )}
+
+      {hoveredEntity === 'earth' && (
+        <div className="absolute top-12 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+          <div className="text-xs font-bold text-blue-400">Earth (Geocentric Reference Origin)</div>
+          <div className="text-slate-300">Radius: <strong className="text-white">6,378 km (1.00 R_E)</strong></div>
+          <div className="text-slate-300">Umbra Radius at Moon: <strong className="text-rose-300">{Math.round(eclipse.umbraRadiusKm).toLocaleString()} km</strong></div>
+          <div className="text-slate-300">Penumbra Radius at Moon: <strong className="text-slate-300">{Math.round(eclipse.penumbraRadiusKm).toLocaleString()} km</strong></div>
+        </div>
+      )}
+
+      {hoveredEntity === 'moon' && (
+        <div className="absolute top-12 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+          <div className="text-xs font-bold text-emerald-400 flex items-center justify-between">
+            <span>Moon ({phaseName})</span>
+            <span className="text-slate-400 text-[9px]">{illumPercent}% Illum</span>
+          </div>
+          <div className="text-slate-300">
+            Orbital Elongation: <strong className="text-white">{phaseDeg}°</strong>
+          </div>
+          <div className="text-slate-300">
+            Distance: <strong className="text-indigo-300">{distKm.toLocaleString()} km</strong> ({(distKm / 6371).toFixed(1)} R_E)
+          </div>
+          <div className="text-slate-300">
+            Ecliptic Lat (β): <strong className="text-rose-300">{beta}°</strong>
+          </div>
+          <div className="text-slate-300">
+            Vertical Miss: <strong className={verticalOffsetKm === 0 ? "text-emerald-400" : (verticalOffsetKm > 0 ? "text-amber-400" : "text-indigo-400")}>
+              {verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : `${verticalOffsetKm.toLocaleString()}`} km
+            </strong>
+          </div>
+          <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
+            {eclipse.isEclipseActive ? `✨ Active Direct Eclipse: ${eclipse.label}` : 'Moon orbital plane alignment currently outside direct shadow cone.'}
+          </div>
+        </div>
+      )}
+
+      {hoveredEntity === 'umbra' && (
+        <div className="absolute top-12 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+          <div className="text-xs font-bold text-rose-400">Earth Umbra Cone (Total Shadow)</div>
+          <div className="text-slate-300">Umbra Radius at Moon: <strong className="text-white">{Math.round(eclipse.umbraRadiusKm).toLocaleString()} km</strong></div>
+          <div className="text-slate-300">Total Shadow Length: <strong className="text-rose-300">~1,384,000 km</strong></div>
+          <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
+            Region where Earth completely blocks direct sunlight. Moon inside umbra turns crimson (Blood Moon).
+          </div>
+        </div>
+      )}
+
+      {hoveredEntity === 'penumbra' && (
+        <div className="absolute top-12 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
+          <div className="text-xs font-bold text-slate-300">Earth Penumbra Cone (Partial Shadow)</div>
+          <div className="text-slate-300">Penumbra Radius at Moon: <strong className="text-white">{Math.round(eclipse.penumbraRadiusKm).toLocaleString()} km</strong></div>
+          <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
+            Region of partial sunlight blockage causing faint subtle dimming of the lunar surface.
+          </div>
+        </div>
+      )}
+
+      {/* SVG Shadow Ray Diagram with Dynamic Real Engine State & Interactive Derivation Tooltips */}
+      <svg viewBox="0 0 520 220" className="w-full h-full block flex-1 min-h-[220px]" preserveAspectRatio="xMidYMid meet">
         <defs>
           {/* Umbra Dark Gradient */}
           <linearGradient id="umbraGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -149,38 +220,72 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
           <g>
             {/* Ecliptic Reference Centerline (0°) */}
             <line x1="10" y1="110" x2="510" y2="110" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-            <text x="15" y="104" className="text-[8px] font-mono fill-slate-500">Ecliptic Plane (0°)</text>
+            <text x="92" y="104" className="text-[8px] font-mono fill-slate-500">Ecliptic Plane (0°)</text>
 
             {/* 1. SUN BODY (Left) */}
-            <circle cx="50" cy="110" r="32" fill="url(#sunGlow)" />
-            <circle cx="50" cy="110" r="28" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
-            <text x="50" y="114" textAnchor="middle" className="text-[10px] font-black fill-slate-950 font-mono">
-              SUN
-            </text>
+            <g 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredEntity('sun')}
+              onPointerLeave={() => setHoveredEntity(null)}
+            >
+              <circle cx="50" cy="110" r="32" fill="url(#sunGlow)" />
+              <circle cx="50" cy="110" r="28" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
+              <text x="50" y="114" textAnchor="middle" className="text-[10px] font-black fill-slate-950 font-mono select-none pointer-events-none">
+                SUN
+              </text>
+            </g>
 
             {/* Earth Shadow Cones projecting rightwards into space */}
-            <polygon points="310,92 510,65 510,155 310,128" fill="url(#penumbraGrad)" />
-            <polygon points="310,92 490,110 310,128" fill="url(#umbraGrad)" stroke="#f43f5e" strokeWidth="1" strokeOpacity="0.6" />
+            <polygon 
+              points="310,92 510,65 510,155 310,128" 
+              fill="url(#penumbraGrad)" 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredEntity('penumbra')}
+              onPointerLeave={() => setHoveredEntity(null)}
+            />
+            <polygon 
+              points="310,92 490,110 310,128" 
+              fill="url(#umbraGrad)" 
+              stroke="#f43f5e" 
+              strokeWidth="1" 
+              strokeOpacity="0.6" 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredEntity('umbra')}
+              onPointerLeave={() => setHoveredEntity(null)}
+            />
 
             {/* Sun Rays to Earth */}
             <line x1="50" y1="82" x2="310" y2="92" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
             <line x1="50" y1="138" x2="310" y2="128" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
 
             {/* Moon Tilted Orbit Path Ellipse around Earth */}
-            <ellipse cx={liveEarthX} cy={liveEarthY} rx={liveOrbitalRx} ry={liveOrbitalRy} fill="none" stroke="#475569" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
-            <text x={liveEarthX + liveOrbitalRx - 20} y={liveEarthY - liveOrbitalRy - 4} className="text-[8px] font-mono fill-emerald-400">Moon Orbit (5.14° Tilt)</text>
+            <g className="cursor-help">
+              <ellipse cx={liveEarthX} cy={liveEarthY} rx={liveOrbitalRx} ry={liveOrbitalRy} fill="none" stroke="#475569" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+              <text x={liveEarthX + liveOrbitalRx - 20} y={liveEarthY - liveOrbitalRy - 4} className="text-[8px] font-mono fill-emerald-400">Moon Orbit (5.14° Tilt)</text>
+            </g>
 
             {/* 2. EARTH BODY (Middle) */}
-            <circle cx={liveEarthX} cy={liveEarthY} r="18" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
-            <text x={liveEarthX} y={liveEarthY + 4} textAnchor="middle" className="text-[9px] font-mono font-bold fill-blue-300">
-              EARTH
-            </text>
+            <g 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredEntity('earth')}
+              onPointerLeave={() => setHoveredEntity(null)}
+            >
+              <circle cx={liveEarthX} cy={liveEarthY} r="18" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
+              <text x={liveEarthX} y={liveEarthY + 4} textAnchor="middle" className="text-[9px] font-mono font-bold fill-blue-300 select-none pointer-events-none">
+                EARTH
+              </text>
+            </g>
 
             {/* Line connecting Earth and Moon */}
             <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
 
             {/* DYNAMIC MOON BODY positioned at exact live phase angle & ecliptic latitude */}
-            <g transform={`translate(${liveMoonX}, ${liveMoonY})`}>
+            <g 
+              transform={`translate(${liveMoonX}, ${liveMoonY})`} 
+              className="cursor-pointer"
+              onPointerEnter={() => setHoveredEntity('moon')}
+              onPointerLeave={() => setHoveredEntity(null)}
+            >
               <circle
                 r="8"
                 fill={eclipse.isEclipseActive ? '#f43f5e' : '#94a3b8'}
@@ -192,9 +297,9 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                 x={liveMoonX > liveEarthX ? 12 : -12}
                 y="4"
                 textAnchor={liveMoonX > liveEarthX ? 'start' : 'end'}
-                className="text-[9px] font-mono font-bold fill-emerald-300"
+                className="text-[9px] font-mono font-bold fill-emerald-300 select-none pointer-events-none"
               >
-                MOON ({phaseDeg}°)
+                MOON ({phaseDeg}° Elong)
               </text>
             </g>
           </g>
@@ -217,17 +322,25 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
               <line x1="10" y1="110" x2="510" y2="110" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
 
               {/* SUN BODY (Left) */}
-              <circle cx="50" cy="110" r="32" fill="url(#sunGlow)" />
-              <circle cx="50" cy="110" r="28" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
-              <text x="50" y="114" textAnchor="middle" className="text-[10px] font-black fill-slate-950 font-mono">
-                SUN
-              </text>
+              <g 
+                className="cursor-pointer"
+                onPointerEnter={() => setHoveredEntity('sun')}
+                onPointerLeave={() => setHoveredEntity(null)}
+              >
+                <circle cx="50" cy="110" r="32" fill="url(#sunGlow)" />
+                <circle cx="50" cy="110" r="28" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
+                <text x="50" y="114" textAnchor="middle" className="text-[10px] font-black fill-slate-950 font-mono select-none pointer-events-none">
+                  SUN
+                </text>
+              </g>
 
               {/* 2D Tilted Lunar Orbital Plane Ring around Earth */}
-              <ellipse cx={earthX} cy={earthY} rx={rx} ry={ry} fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
-              <text x={earthX - rx} y={earthY - ry - 4} className="text-[8px] font-mono fill-emerald-400 font-bold">
-                Moon 2D Orbit Plane (5.14° Inclination)
-              </text>
+              <g className="cursor-help">
+                <ellipse cx={earthX} cy={earthY} rx={rx} ry={ry} fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
+                <text x={earthX - rx} y={earthY - ry - 4} className="text-[8px] font-mono fill-emerald-400 font-bold">
+                  Moon 2D Orbit Plane (5.14° Inclination)
+                </text>
+              </g>
 
               {/* Light Rays from Sun extending towards Earth & Moon */}
               <line x1="50" y1="82" x2={earthX} y2={earthY - 20} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.4" />
@@ -238,26 +351,40 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                 <polygon
                   points={`${moonOrbitalX},${moonOrbitalY - 4} ${earthX},${earthY - (beta * 5) - 6} ${earthX},${earthY - (beta * 5) + 6} ${moonOrbitalX},${moonOrbitalY + 4}`}
                   fill="url(#umbraGrad)" opacity="0.8" stroke="#fbbf24" strokeWidth="0.5"
+                  className="cursor-pointer"
+                  onPointerEnter={() => setHoveredEntity('umbra')}
+                  onPointerLeave={() => setHoveredEntity(null)}
                 />
               )}
 
               {/* MOON BODY orbiting Earth in 2D */}
-              <g transform={`translate(${moonOrbitalX}, ${moonOrbitalY})`}>
+              <g 
+                transform={`translate(${moonOrbitalX}, ${moonOrbitalY})`} 
+                className="cursor-pointer"
+                onPointerEnter={() => setHoveredEntity('moon')}
+                onPointerLeave={() => setHoveredEntity(null)}
+              >
                 {Math.abs(beta) > 0.3 && (
                   <line x1="0" y1="0" x2="0" y2={earthY - moonOrbitalY} stroke="#10b981" strokeWidth="1.5" strokeDasharray="2 2" />
                 )}
                 <circle r="14" fill="none" stroke="#38bdf8" strokeWidth="1" strokeDasharray="2 2" className="animate-spin" />
                 <circle r="9" fill={eclipse.type.includes('SOLAR') ? '#fbbf24' : '#94a3b8'} stroke="#ffffff" strokeWidth="2" className="drop-shadow" />
-                <text x={moonOrbitalX > earthX - 40 ? -12 : 14} y="4" textAnchor={moonOrbitalX > earthX - 40 ? 'end' : 'start'} className="text-[9px] font-mono font-bold fill-emerald-400">
-                  MOON ({phaseDeg}°, β={beta}°)
+                <text x={moonOrbitalX > earthX - 40 ? -12 : 14} y="4" textAnchor={moonOrbitalX > earthX - 40 ? 'end' : 'start'} className="text-[9px] font-mono font-bold fill-emerald-400 select-none pointer-events-none">
+                  MOON ({phaseDeg}° Elong, β={beta}°)
                 </text>
               </g>
 
               {/* EARTH BODY (Right) */}
-              <circle cx={earthX} cy={earthY} r="20" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
-              <text x={earthX} y={earthY + 4} textAnchor="middle" className="text-[9px] font-mono font-bold fill-blue-300">
-                EARTH
-              </text>
+              <g 
+                className="cursor-pointer"
+                onPointerEnter={() => setHoveredEntity('earth')}
+                onPointerLeave={() => setHoveredEntity(null)}
+              >
+                <circle cx={earthX} cy={earthY} r="20" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
+                <text x={earthX} y={earthY + 4} textAnchor="middle" className="text-[9px] font-mono font-bold fill-blue-300 select-none pointer-events-none">
+                  EARTH
+                </text>
+              </g>
 
               {/* Umbra Spot on Earth Surface when solar eclipse active */}
               {eclipse.category === 'SOLAR' && eclipse.isEclipseActive ? (
@@ -293,8 +420,11 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
               {/* Sky Center Coordinates */}
               <g transform="translate(260, 100)">
                 {/* Sun in Lunar Sky */}
-                <circle cx="0" cy="0" r="32" fill="url(#sunGlow)" />
-                <circle cx="0" cy="0" r="26" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
+                <g className="cursor-help">
+                  <title>{`Sun in Lunar Sky\n• Angular Diameter: 32.0' arcmin\n• Distance: ~1.00 AU`}</title>
+                  <circle cx="0" cy="0" r="32" fill="url(#sunGlow)" />
+                  <circle cx="0" cy="0" r="26" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
+                </g>
 
                 {/* Solar Corona Rays if Earth Eclipses Sun */}
                 {eclipse.category === 'LUNAR' && (
@@ -322,7 +452,8 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                   const isTerrestrialLunarEclipse = eclipse.category === 'LUNAR' && eclipse.isEclipseActive;
 
                   return (
-                    <g transform={`translate(${earthX}, ${earthY})`}>
+                    <g transform={`translate(${earthX}, ${earthY})`} className="cursor-help">
+                      <title>{`Earth in Lunar Sky\n• Angular Diameter: ~1.9° (114' arcmin, 3.7x Sun)\n• Phase Offset from Full: ${Math.round(Math.abs(phaseDeg - 180))}°\n• Ecliptic Latitude β: ${beta}°\n• Eclipse Status: ${isTerrestrialLunarEclipse ? 'Direct Solar Eclipse by Earth' : 'Sun Unobstructed'}`}</title>
                       {/* Crimson Atmospheric Ring ("Blood Ring") during Eclipse */}
                       {isTerrestrialLunarEclipse && (
                         <g>
@@ -340,7 +471,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                         <circle cx="0" cy="0" r="44" fill="#3b82f6" fillOpacity="0.3" />
                       )}
 
-                      <text x="0" y="4" textAnchor="middle" className={`text-[10px] font-mono font-extrabold ${isTerrestrialLunarEclipse ? 'fill-rose-300' : 'fill-blue-200'}`}>
+                      <text x="0" y="4" textAnchor="middle" className={`text-[10px] font-mono font-extrabold select-none pointer-events-none ${isTerrestrialLunarEclipse ? 'fill-rose-300' : 'fill-blue-200'}`}>
                         EARTH (1.9°)
                       </text>
                     </g>
@@ -369,16 +500,20 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
               <line x1="10" y1="110" x2="510" y2="110" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
 
               {/* SUN (Left) */}
-              <circle cx="50" cy="110" r="32" fill="url(#sunGlow)" />
-              <circle cx="50" cy="110" r="28" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
-              <text x="50" y="114" textAnchor="middle" className="text-[10px] font-black fill-slate-950 font-mono">
-                SUN
-              </text>
+              <g className="cursor-help">
+                <title>{`Sun (Primary Illuminator)\n• Distance: ~149.6M km (1.00 AU)\n• Angular Diameter: 32.0' arcmin`}</title>
+                <circle cx="50" cy="110" r="32" fill="url(#sunGlow)" />
+                <circle cx="50" cy="110" r="28" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
+                <text x="50" y="114" textAnchor="middle" className="text-[10px] font-black fill-slate-950 font-mono select-none pointer-events-none">
+                  SUN
+                </text>
+              </g>
 
               {/* FIXED MOON AT CENTER (Selenocentric Frame) */}
-              <g transform="translate(260, 110)">
+              <g transform="translate(260, 110)" className="cursor-help">
+                <title>{`Moon (Selenocentric Coordinate Frame Origin)\n• Lunar Radius: 1,737.4 km\n• Geocentric Distance: ${distKm.toLocaleString()} km (${(distKm / 6371).toFixed(1)} R_E)\n• Obscuration: ${eclipse.obscuration}%`}</title>
                 <circle r="14" fill="#64748b" stroke="#ffffff" strokeWidth="2" className="drop-shadow" />
-                <text x="0" y="24" textAnchor="middle" className="text-[9px] font-mono font-bold fill-emerald-300">
+                <text x="0" y="24" textAnchor="middle" className="text-[9px] font-mono font-bold fill-emerald-300 select-none pointer-events-none">
                   MOON (Selenocentric Center)
                 </text>
               </g>
@@ -392,16 +527,31 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                 return (
                   <g>
                     {/* Earth Shadow Cone extending past Moon into space */}
-                    <polygon points={`${selenocentricEarthX},${selenocentricEarthY - 18} 500,60 500,160 ${selenocentricEarthX},${selenocentricEarthY + 18}`} fill="url(#penumbraGrad)" />
-                    <polygon points={`${selenocentricEarthX},${selenocentricEarthY - 18} 480,110 ${selenocentricEarthX},${selenocentricEarthY + 18}`} fill="url(#umbraGrad)" stroke="#f43f5e" strokeWidth="1" />
+                    <polygon 
+                      points={`${selenocentricEarthX},${selenocentricEarthY - 18} 500,60 500,160 ${selenocentricEarthX},${selenocentricEarthY + 18}`} 
+                      fill="url(#penumbraGrad)" 
+                      className="cursor-help"
+                    >
+                      <title>{`Earth Penumbra Cone\n• Penumbra Radius at Moon: ${Math.round(eclipse.penumbraRadiusKm).toLocaleString()} km`}</title>
+                    </polygon>
+                    <polygon 
+                      points={`${selenocentricEarthX},${selenocentricEarthY - 18} 480,110 ${selenocentricEarthX},${selenocentricEarthY + 18}`} 
+                      fill="url(#umbraGrad)" 
+                      stroke="#f43f5e" 
+                      strokeWidth="1" 
+                      className="cursor-help"
+                    >
+                      <title>{`Earth Umbra Cone\n• Umbra Radius at Moon: ${Math.round(eclipse.umbraRadiusKm).toLocaleString()} km`}</title>
+                    </polygon>
 
                     {/* EARTH BODY revolving relative to Moon */}
-                    <g transform={`translate(${selenocentricEarthX}, ${selenocentricEarthY})`}>
+                    <g transform={`translate(${selenocentricEarthX}, ${selenocentricEarthY})`} className="cursor-help">
+                      <title>{`Earth (Relative Orbit Frame)\n• Apparent Separation: ${distKm.toLocaleString()} km\n• Ecliptic Latitude β: ${beta}°\n• Vertical Miss: ${verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : verticalOffsetKm.toLocaleString()} km`}</title>
                       <circle r="18" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
-                      <text x="0" y="4" textAnchor="middle" className="text-[8px] font-mono font-bold fill-blue-200">
+                      <text x="0" y="4" textAnchor="middle" className="text-[8px] font-mono font-bold fill-blue-200 select-none pointer-events-none">
                         EARTH
                       </text>
-                      <text x="0" y="-22" textAnchor="middle" className="text-[8px] font-mono fill-indigo-300 font-bold">
+                      <text x="0" y="-22" textAnchor="middle" className="text-[8px] font-mono fill-indigo-300 font-bold select-none pointer-events-none">
                         Relative Earth Orbit
                       </text>
                     </g>
@@ -412,31 +562,6 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
           )
         )}
       </svg>
-
-      {/* Dynamic Readout Badges */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1 font-mono text-[10px] text-slate-300">
-        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
-          <span className="text-slate-400 font-bold uppercase">Vertical Offset</span>
-          <span className={`font-bold text-xs mt-0.5 ${verticalOffsetKm === 0 ? 'text-emerald-400' : (verticalOffsetKm > 0 ? 'text-amber-400' : 'text-indigo-400')}`}>
-            {verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : `${verticalOffsetKm.toLocaleString()}`} km
-          </span>
-        </div>
-        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
-          <span className="text-slate-400 font-bold uppercase">Ecliptic Lat (β)</span>
-          <span className="text-emerald-400 font-bold text-xs mt-0.5">{beta}° {Math.abs(beta) < 1.5 ? '(In Corridor)' : '(Out Corridor)'}</span>
-        </div>
-        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
-          <span className="text-slate-400 font-bold uppercase">Phase Elongation</span>
-          <span className="text-amber-400 font-bold text-xs mt-0.5">{phaseDeg}° ({(phaseVal * 100).toFixed(0)}%)</span>
-        </div>
-        <div 
-          className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center cursor-help"
-          title={`Geocentric Distance: ${(distKm / 6371).toFixed(1)} R_E (${distKm.toLocaleString()} km)`}
-        >
-          <span className="text-slate-400 font-bold uppercase">Lunar Distance</span>
-          <span className="text-indigo-400 font-bold text-xs mt-0.5">{distKm.toLocaleString()} km</span>
-        </div>
-      </div>
 
     </div>
   );

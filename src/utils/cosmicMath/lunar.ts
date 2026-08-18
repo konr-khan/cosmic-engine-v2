@@ -150,7 +150,7 @@ export const calculateLunarEvents = (
   julianDate: JulianDate | number, 
   timeOfDay: HoursDecimal = 12
 ): LunarEventMetrics => {
-  const julianDateExact = julianDate - 0.5 + (timeOfDay / 24.0);
+  const julianDateExact = julianDate + (timeOfDay / 24.0);
   const lunarNow = calculateLunarPosition(julianDateExact);
   const solarNoon = calculateSolarPosition(julianDateExact);
 
@@ -228,8 +228,9 @@ export const calculateAnnualLunarMatrix = (
   const list: AnnualLunarMatrixItem[] = [];
   for (let day = 1; day <= totalDays; day++) {
     const d = new Date(year, 0, day);
+    const jd0 = getJulianDate(d, 0);
     const jd = getJulianDate(d, 12);
-    const events = calculateLunarEvents(latitude, longitude, jd, 12);
+    const events = calculateLunarEvents(latitude, longitude, jd0, 12);
     const solarPos = calculateSolarPosition(jd);
     const lunarPos = calculateLunarPosition(jd);
     

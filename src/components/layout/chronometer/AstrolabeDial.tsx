@@ -182,7 +182,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
 
   const formatDate = (d: number): string => {
     const tempDate = new Date(date.getFullYear(), 0, d);
-    return tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
   const formatLat = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
   const formatLon = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;
@@ -274,9 +274,9 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
         {currentDisplayRing && (
           <g transform="translate(0, 118)" pointerEvents="none" className="animate-in fade-in zoom-in-90 duration-150">
             <rect 
-              x="-45" 
+              x="-55" 
               y="-12" 
-              width="90" 
+              width="110" 
               height="22" 
               rx="7" 
               fill="#020617" 
@@ -289,7 +289,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
               x="0" 
               y="3" 
               textAnchor="middle" 
-              className="text-[10.5px] font-mono font-bold fill-white"
+              className="text-[10px] font-mono font-bold fill-white"
             >
               {currentDisplayRing === 'date' && formatDate(dayOfYear)}
               {currentDisplayRing === 'time' && formatTimeStr(timeOfDay)}

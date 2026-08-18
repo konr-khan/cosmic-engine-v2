@@ -123,6 +123,7 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
       return (
         <TerminatorMap 
           solarData={solarData} 
+          orbitalData={orbitalData}
           latitude={latitude} 
           longitude={longitude} 
           timeOfDay={timeOfDay} 

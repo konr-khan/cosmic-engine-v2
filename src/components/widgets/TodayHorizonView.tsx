@@ -75,9 +75,11 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
     distanceEarthRadii = 60.3,
     isPerigee = false,
     isApogee = false,
-    declination: moonDeclination = 0,
+    declination = 0,
     parallacticAngle = 0,
   } = lunarEvents;
+
+  const moonDeclination = (orbitalData?.lunarPos?.declination ?? declination ?? 0) as number;
 
   const illPercent = ((phase.value ?? 0) * 100).toFixed(0);
 

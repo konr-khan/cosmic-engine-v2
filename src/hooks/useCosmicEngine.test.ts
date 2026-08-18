@@ -64,7 +64,8 @@ describe('useCosmicEngine Hook Suite', () => {
     it('skips entire orbitalData structure when all orbital widgets are false', () => {
       const testDate = new Date(2026, 5, 21);
       const activeWidgets = { 
-        almanac: true, map: true,
+        almanac: true, 
+        map: false,
         lunarAlmanac: false, eclipse: false, macroOrbit: false, microTides: false, celestialSphere: false 
       };
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);

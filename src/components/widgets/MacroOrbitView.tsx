@@ -285,7 +285,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           <text x="0" y="-103" textAnchor="middle" className="text-[7px] font-mono fill-slate-500 select-none pointer-events-none">0.5 AU</text>
 
           <circle r="200" fill="none" stroke="#334155" strokeWidth="0.75" strokeDasharray="4 4" strokeOpacity="0.6" className="pointer-events-none" />
-          <text x="0" y="-203" textAnchor="middle" className="text-[8px] font-mono fill-slate-400 font-bold select-none pointer-events-none">1.0 AU (149.6M km)</text>
+          <text x="-142" y="-142" textAnchor="middle" className="text-[8px] font-mono fill-slate-400 font-bold select-none pointer-events-none">1.0 AU (149.6M km)</text>
 
           {/* Coordinate Crosshairs */}
           <line x1="-260" y1="0" x2="260" y2="0" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.3" className="pointer-events-none" />
