@@ -71,7 +71,8 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             x2="100"
             y2="0"
             stroke="#334155"
-            strokeWidth="1"
+            strokeWidth="0.75"
+            strokeOpacity="0.35"
           />
           <line
             x1="0"
@@ -79,7 +80,8 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             x2="0"
             y2="100"
             stroke="#334155"
-            strokeWidth="1"
+            strokeWidth="0.75"
+            strokeOpacity="0.35"
           />
 
           {/* Sun Angle Indicator */}
@@ -89,9 +91,10 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
               y1="0"
               x2="90"
               y2="0"
-              stroke={CONFIG.THEME.SUN_FILL}
-              strokeWidth="2"
+              stroke="#fbbf24"
+              strokeWidth="1.5"
               strokeDasharray="4 2"
+              opacity="0.9"
             />
             <text
               x={95}
@@ -100,11 +103,12 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
               fill="#fbbf24"
               fontSize="9"
               fontWeight="bold"
+              fontFamily="monospace"
               transform={isLeftHemisphere ? "rotate(180, 95, 0)" : ""}
             >
               TO SUN
             </text>
-            <polygon points="85,-3 90,0 85,3" fill={CONFIG.THEME.SUN_FILL} />
+            <polygon points="85,-3 90,0 85,3" fill="#fbbf24" />
           </g>
 
           {/* Tide Bulge Ellipse */}
@@ -114,25 +118,25 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             rx={safeTides.rx || 16}
             ry={safeTides.ry || 12}
             fill="#38bdf8"
-            opacity="0.25"
+            opacity="0.2"
             stroke="#38bdf8"
-            strokeWidth="1.5"
+            strokeWidth="1.2"
             transform={`rotate(${safeAngles.moonDegrees || 0})`}
           />
 
           {/* Earth Night Base */}
           <circle
             r="12"
-            fill={CONFIG.THEME.NIGHT_BG}
-            stroke={CONFIG.THEME.NIGHT_STROKE}
-            strokeWidth="1"
+            fill="#020617"
+            stroke="#334155"
+            strokeWidth="0.75"
           />
 
           {/* Earth Lit Side (Facing Sun) */}
           <g transform={`rotate(${safeAngles.sunDegrees || 0})`}>
             <path
               d="M 0,-12 A 12,12 0 0,1 0,12 Z"
-              fill={CONFIG.THEME.DAY_FILL}
+              fill="#fbbf24"
             />
           </g>
 
@@ -141,8 +145,16 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             <circle
               cx="12"
               cy="0"
-              r="3"
-              fill={CONFIG.THEME.SUN_FILL}
+              r="6"
+              fill="#fbbf24"
+              opacity="0.2"
+              className="animate-pulse"
+            />
+            <circle
+              cx="12"
+              cy="0"
+              r="2.5"
+              fill="#fbbf24"
               stroke="white"
               strokeWidth="1"
               className="drop-shadow-sm"
@@ -155,17 +167,18 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             cy="0"
             r="60"
             fill="none"
-            stroke="#475569"
-            strokeDasharray="2 2"
+            stroke="#334155"
+            strokeWidth="0.75"
+            strokeDasharray="3 3"
           />
 
           {/* Moon Body */}
           <g
             transform={`translate(${60 * Math.cos(toRadians(safeAngles.moonDegrees || 0))}, ${60 * Math.sin(toRadians(safeAngles.moonDegrees || 0))})`}
           >
-            <circle r="6" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+            <circle r="6" fill="#020617" stroke="#334155" strokeWidth="0.75" />
             <g transform={`rotate(${safeAngles.sunDegrees || 0})`}>
-              <path d="M 0,-6 A 6,6 0 0,1 0,6 Z" fill="#f1f5f9" />
+              <path d="M 0,-6 A 6,6 0 0,1 0,6 Z" fill="#f8fafc" />
             </g>
           </g>
         </svg>

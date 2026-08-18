@@ -43,7 +43,7 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
     : (tides.rx <= 13 ? "Minimal Neap Tide (Quadrature)" : "Transitional Moderate Tide");
 
   return (
-    <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex flex-col justify-between">
+    <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex flex-col justify-between">
       <div className="flex justify-between items-center text-[10px] font-mono text-slate-300 mb-1">
         <span className="flex items-center gap-1 font-bold text-sky-300">
           <Waves className="w-3.5 h-3.5 text-sky-400" /> Harmonized Ocean Tidal Bulge
@@ -58,12 +58,12 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
         <svg viewBox="0 0 800 90" className="w-full h-full" preserveAspectRatio="none">
           <defs>
             <linearGradient id="tideWaveGradCard" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0284c7" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#0f172a" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="#0284c7" stopOpacity="0.65" />
+              <stop offset="100%" stopColor="#0f172a" stopOpacity="0.85" />
             </linearGradient>
           </defs>
 
-          <line x1="0" y1="45" x2="800" y2="45" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+          <line x1="0" y1="45" x2="800" y2="45" stroke="#334155" strokeWidth="0.75" strokeDasharray="4 4" strokeOpacity="0.5" />
 
           {(() => {
             let pathD = `M ${tideWavePoints[0].x} ${tideWavePoints[0].y}`;
@@ -75,14 +75,15 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
             return (
               <g>
                 <path d={fillD} fill="url(#tideWaveGradCard)" />
-                <path d={pathD} fill="none" stroke="#38bdf8" strokeWidth="2" />
+                <path d={pathD} fill="none" stroke="#38bdf8" strokeWidth="1.8" />
               </g>
             );
           })()}
 
           <g transform={`translate(${buoyPoint.x}, ${buoyPoint.y})`}>
-            <circle r="6" fill="#0284c7" stroke="white" strokeWidth="1.5" className="animate-pulse" />
-            <circle r="2.5" fill="#fef08a" />
+            <circle r="10" fill="#0284c7" opacity="0.25" className="animate-pulse" />
+            <circle r="5" fill="#0284c7" stroke="white" strokeWidth="1.5" />
+            <circle r="2" fill="#fef08a" />
           </g>
         </svg>
       </div>

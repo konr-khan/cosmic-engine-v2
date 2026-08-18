@@ -135,7 +135,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         onPointerLeave={() => { setIsDragging(false); setHoverDay(null); if (onHoverDate) onHoverDate(null); }}
       >
         {/* Chart Background */}
-        <rect x={padLeft} y={padTop} width={chartW} height={chartH} fill="#020617" rx="4" />
+        <rect x={padLeft} y={padTop} width={chartW} height={chartH} fill="#020617" rx="6" />
 
         {/* Month Axis Dividers & Labels */}
         {MONTH_NAMES.map((m, idx) => {
@@ -143,7 +143,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
           const x = dayToX(firstDay);
           return (
             <g key={m}>
-              <line x1={x} y1={padTop} x2={x} y2={padTop + chartH} stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+              <line x1={x} y1={padTop} x2={x} y2={padTop + chartH} stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" strokeOpacity="0.35" />
               <text x={x + 6} y={ribbonHeight - 8} className="text-[10px] font-mono font-bold fill-slate-400">{m}</text>
             </g>
           );
@@ -160,8 +160,8 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
                 x1={padLeft} y1={y} 
                 x2={padLeft + chartW} y2={y} 
                 stroke="#334155" 
-                strokeWidth={isNoonOrMidnight ? 1 : 0.5} 
-                strokeOpacity={isNoonOrMidnight ? 0.4 : 0.2} 
+                strokeWidth={isNoonOrMidnight ? 0.75 : 0.5} 
+                strokeOpacity={isNoonOrMidnight ? 0.45 : 0.2} 
               />
               <text x={padLeft - 6} y={y + 3} textAnchor="end" className="text-[9px] font-mono fill-slate-400 font-bold">
                 {label}
@@ -184,7 +184,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
           const isSuper = d.isPerigee;
           
           const strokeColor = isSuper ? "#10b981" : (isFull ? "#f8fafc" : "#38bdf8");
-          const opacity = isSuper ? 0.9 : (isFull ? 0.8 : 0.4);
+          const opacity = isSuper ? 0.9 : (isFull ? 0.85 : 0.4);
 
           return (
             <line 
@@ -192,7 +192,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
               x1={x} y1={yRise} 
               x2={x} y2={ySet} 
               stroke={strokeColor} 
-              strokeWidth={isSuper ? 2.2 : (isFull ? 1.8 : 1.2)} 
+              strokeWidth={isSuper ? 2 : (isFull ? 1.6 : 1)} 
               strokeOpacity={opacity} 
             />
           );
@@ -200,25 +200,25 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
 
         {/* Continuous Moonrise Curve */}
         {moonrisePathD && (
-          <path d={moonrisePathD} fill="none" stroke="#38bdf8" strokeWidth="1.8" strokeOpacity="0.85" />
+          <path d={moonrisePathD} fill="none" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.9" />
         )}
 
         {/* Continuous Moonset Curve */}
         {moonsetPathD && (
-          <path d={moonsetPathD} fill="none" stroke="#818cf8" strokeWidth="1.8" strokeOpacity="0.85" strokeDasharray="3 2" />
+          <path d={moonsetPathD} fill="none" stroke="#818cf8" strokeWidth="1.5" strokeOpacity="0.9" strokeDasharray="3 2" />
         )}
 
         {/* Active / Hover Day Vertical Cursor */}
         <line
           x1={dayToX(activeDay)} y1={padTop}
           x2={dayToX(activeDay)} y2={padTop + chartH}
-          stroke="#ef4444" strokeWidth="1.8" strokeDasharray="4 3"
+          stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 3"
         />
 
         {/* Active Day Intersection Markers */}
         {activeRiseY !== null && (
           <g transform={`translate(${dayToX(activeDay)}, ${activeRiseY})`}>
-            <circle r="4.5" fill="#38bdf8" stroke="white" strokeWidth="1.5" />
+            <circle r="4" fill="#38bdf8" stroke="white" strokeWidth="1.5" />
             <text x="7" y="3" className="text-[9px] font-mono font-bold fill-sky-300">
               Rise: {formatTime(activeData.moonrise).substring(0, 5)}
             </text>
@@ -227,7 +227,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
 
         {activeSetY !== null && (
           <g transform={`translate(${dayToX(activeDay)}, ${activeSetY})`}>
-            <circle r="4.5" fill="#818cf8" stroke="white" strokeWidth="1.5" />
+            <circle r="4" fill="#818cf8" stroke="white" strokeWidth="1.5" />
             <text x="7" y="3" className="text-[9px] font-mono font-bold fill-indigo-300">
               Set: {formatTime(activeData.moonset).substring(0, 5)}
             </text>
@@ -236,19 +236,19 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
       </svg>
 
       {/* Legend */}
-      <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 mt-2 px-1 border-t border-slate-800/80 pt-1.5">
+      <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 mt-2 px-1 border-t border-slate-800/80 pt-2">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-1 bg-sky-400 inline-block" /> Moonrise Path
+            <span className="w-2.5 h-1 bg-sky-400 inline-block rounded-sm" /> Moonrise Path
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-1 bg-indigo-400 inline-block" /> Moonset Path
+            <span className="w-2.5 h-1 bg-indigo-400 inline-block rounded-sm" /> Moonset Path
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-1 bg-emerald-400 inline-block" /> Supermoon (Perigee)
+            <span className="w-2.5 h-1 bg-emerald-400 inline-block rounded-sm" /> Supermoon (Perigee)
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-1 bg-white inline-block" /> Full Moon
+            <span className="w-2.5 h-1 bg-white inline-block rounded-sm" /> Full Moon
           </span>
         </div>
         <span className="text-slate-400 font-bold">Selected: {getDayLabel(activeDay)}</span>

@@ -37,9 +37,9 @@ const MILESTONES: MilestoneItem[] = [
     speedKms: 30.29,
     description: "Earth's closest approach to the Sun. Orbital velocity peaks according to Kepler's 2nd Law (Equal Areas in Equal Times).",
     textAnchor: 'end',
-    textDx: -10,
+    textDx: -14,
     textDy: -6,
-    subDy: 8
+    subDy: 10
   },
   {
     id: 'mar_equinox',
@@ -55,9 +55,9 @@ const MILESTONES: MilestoneItem[] = [
     speedKms: 29.84,
     description: "Vernal Equinox. Sun crosses the celestial equator northbound; day and night are approximately equal (12h) worldwide.",
     textAnchor: 'end',
-    textDx: -8,
+    textDx: -14,
     textDy: 4,
-    subDy: 16
+    subDy: 18
   },
   {
     id: 'jun_solstice',
@@ -74,8 +74,8 @@ const MILESTONES: MilestoneItem[] = [
     description: "Northern Summer Solstice. Earth's Northern Hemisphere reaches maximum axial tilt (+23.44°) toward the Sun; longest daylight in the North.",
     textAnchor: 'middle',
     textDx: 0,
-    textDy: 16,
-    subDy: 28
+    textDy: 20,
+    subDy: 34
   },
   {
     id: 'aphelion',
@@ -91,9 +91,9 @@ const MILESTONES: MilestoneItem[] = [
     speedKms: 29.29,
     description: "Earth's furthest orbital point from the Sun. Orbital velocity reaches minimum speed according to Kepler's 2nd Law.",
     textAnchor: 'start',
-    textDx: 10,
+    textDx: 14,
     textDy: -6,
-    subDy: 8
+    subDy: 10
   },
   {
     id: 'sep_equinox',
@@ -109,9 +109,9 @@ const MILESTONES: MilestoneItem[] = [
     speedKms: 29.74,
     description: "Autumnal Equinox. Sun crosses the celestial equator southbound; day and night are approximately equal (12h) worldwide.",
     textAnchor: 'start',
-    textDx: 8,
+    textDx: 14,
     textDy: 4,
-    subDy: 16
+    subDy: 18
   },
   {
     id: 'dec_solstice',
@@ -128,8 +128,8 @@ const MILESTONES: MilestoneItem[] = [
     description: "Northern Winter Solstice. Earth's Southern Hemisphere reaches maximum axial tilt toward the Sun; shortest daylight in the North.",
     textAnchor: 'middle',
     textDx: 0,
-    textDy: -16,
-    subDy: -28
+    textDy: -20,
+    subDy: -34
   }
 ];
 
@@ -281,15 +281,15 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           preserveAspectRatio="xMidYMid meet"
         >
           {/* Faint Concentric Distance Reference Rings (0.5 AU, 1.0 AU, 1.25 AU) */}
-          <circle r="100" fill="none" stroke="#1e293b" strokeWidth="0.75" strokeDasharray="3 3" className="pointer-events-none" />
-          <text x="0" y="-103" textAnchor="middle" className="text-[7px] font-mono fill-slate-700 select-none pointer-events-none">0.5 AU</text>
+          <circle r="100" fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" strokeOpacity="0.4" className="pointer-events-none" />
+          <text x="0" y="-103" textAnchor="middle" className="text-[7px] font-mono fill-slate-500 select-none pointer-events-none">0.5 AU</text>
 
-          <circle r="200" fill="none" stroke="#334155" strokeWidth="0.75" strokeDasharray="4 4" className="pointer-events-none" />
-          <text x="0" y="-203" textAnchor="middle" className="text-[8px] font-mono fill-slate-500 font-bold select-none pointer-events-none">1.0 AU (149.6M km)</text>
+          <circle r="200" fill="none" stroke="#334155" strokeWidth="0.75" strokeDasharray="4 4" strokeOpacity="0.6" className="pointer-events-none" />
+          <text x="0" y="-203" textAnchor="middle" className="text-[8px] font-mono fill-slate-400 font-bold select-none pointer-events-none">1.0 AU (149.6M km)</text>
 
           {/* Coordinate Crosshairs */}
-          <line x1="-260" y1="0" x2="260" y2="0" stroke="#1e293b" strokeWidth="0.5" strokeDasharray="2 2" className="pointer-events-none" />
-          <line x1="0" y1="-260" x2="0" y2="260" stroke="#1e293b" strokeWidth="0.5" strokeDasharray="2 2" className="pointer-events-none" />
+          <line x1="-260" y1="0" x2="260" y2="0" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.3" className="pointer-events-none" />
+          <line x1="0" y1="-260" x2="0" y2="260" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.3" className="pointer-events-none" />
 
           {/* Major Orbit Ellipse */}
           <ellipse 
@@ -299,7 +299,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
             ry={orbitalRadius * bRatio} 
             fill="none" 
             stroke="#475569" 
-            strokeWidth="1.5" 
+            strokeWidth="1.2" 
             className="pointer-events-none"
           />
 
@@ -331,23 +331,33 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
             const isHovered = hoveredId === m.id;
             return (
               <g key={m.id}>
-                {/* Visual Node Dot */}
+                {/* Visual Node Dot with Pulsating Hover Halo */}
+                {isHovered && (
+                  <circle 
+                    cx={mx} 
+                    cy={my} 
+                    r="14" 
+                    fill={m.color} 
+                    opacity="0.25" 
+                    className="animate-pulse pointer-events-none" 
+                  />
+                )}
                 <circle 
                   cx={mx} 
                   cy={my} 
-                  r={isHovered ? 7 : 5} 
+                  r={isHovered ? 8.5 : 5.5} 
                   fill={m.color} 
                   stroke="#ffffff" 
                   strokeWidth="1.5" 
-                  className="pointer-events-none transition-all duration-150"
+                  className="pointer-events-none transition-all duration-150 drop-shadow-md"
                 />
                 
-                {/* Labels & Dates with smart radial offsets */}
+                {/* Labels & Dates */}
                 <text 
                   x={mx + m.textDx} 
                   y={my + m.textDy} 
                   textAnchor={m.textAnchor} 
-                  className={`text-[9px] font-mono font-bold ${m.fillColor} select-none pointer-events-none drop-shadow-sm`}
+                  className={`text-xs font-mono font-bold ${m.fillColor} select-none pointer-events-none drop-shadow-sm`}
                 >
                   {m.label}
                 </text>
@@ -355,16 +365,16 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
                   x={mx + m.textDx} 
                   y={my + m.subDy} 
                   textAnchor={m.textAnchor} 
-                  className="text-[7px] font-mono fill-slate-400 select-none pointer-events-none"
+                  className="text-[10px] font-mono fill-slate-400 font-bold select-none pointer-events-none"
                 >
-                  {m.date} ({m.distanceAU} AU)
+                  {m.date}
                 </text>
 
                 {/* Generous hit target area that does not flicker */}
                 <circle
                   cx={mx}
                   cy={my}
-                  r="16"
+                  r="20"
                   fill="transparent"
                   className="cursor-pointer"
                   onPointerEnter={() => setHoveredId(m.id)}
@@ -378,7 +388,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           <g transform={`translate(${renderSunX}, ${renderSunY})`} className="pointer-events-none">
             {/* Sun Corona Rays */}
             <circle r="22" fill={CONFIG.THEME.SUN_FILL} opacity="0.2" className="animate-pulse" />
-            <circle r="16" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="2" className="drop-shadow-lg" />
+            <circle r="15" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow-lg" />
             <text x="0" y="3" textAnchor="middle" className="text-[8px] font-black fill-amber-950 font-mono select-none">
               SUN
             </text>
@@ -392,10 +402,10 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           {/* Earth Body on Orbit */}
           <g transform={`translate(${renderEarthX}, ${renderEarthY})`}>
             {/* Moon Orbit Ring */}
-            <circle r={CONFIG.ORBIT.moonOrbitRadius} fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="2 2" className="pointer-events-none" />
+            <circle r={CONFIG.ORBIT.moonOrbitRadius} fill="none" stroke="#475569" strokeWidth="0.75" strokeDasharray="2 2" className="pointer-events-none" />
             {/* Earth Body */}
-            <circle r="11" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" className="drop-shadow pointer-events-none" />
-            <text x="0" y="17" textAnchor="middle" className="text-[10px] font-mono font-bold fill-blue-300 select-none pointer-events-none">EARTH</text>
+            <circle r="10" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" className="drop-shadow pointer-events-none" />
+            <text x="0" y="16" textAnchor="middle" className="text-[10px] font-mono font-bold fill-blue-300 select-none pointer-events-none">EARTH</text>
             
             {/* Stable Hit Target */}
             <circle 
@@ -408,13 +418,13 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           </g>
           
           {/* Moon Body */}
-          <circle cx={renderMoonX} cy={renderMoonY} r="5" fill="#e2e8f0" stroke="#334155" strokeWidth="1" className="drop-shadow pointer-events-none" />
+          <circle cx={renderMoonX} cy={renderMoonY} r="4.5" fill="#f8fafc" stroke="#334155" strokeWidth="1" className="drop-shadow pointer-events-none" />
         </svg>
       </div>
 
       {/* Dynamic Physics HUD Footer */}
       <div className="mt-2 p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80 text-xs font-mono text-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800 flex flex-col items-center">
+        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
           <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
             <Compass className="w-3.5 h-3.5 text-indigo-400" /> Earth-Sun Distance
           </span>
@@ -423,7 +433,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           </span>
         </div>
 
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800 flex flex-col items-center">
+        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
           <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
             <Zap className="w-3.5 h-3.5 text-amber-400" /> Orbital Speed
           </span>
@@ -432,7 +442,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           </span>
         </div>
 
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800 flex flex-col items-center">
+        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
           <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
             <Flame className="w-3.5 h-3.5 text-rose-400" /> Solar Irradiance
           </span>
@@ -441,7 +451,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           </span>
         </div>
 
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800 flex flex-col items-center">
+        <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 flex flex-col items-center">
           <span className="text-slate-400 text-[11px] font-bold uppercase flex items-center gap-1">
             <Info className="w-3.5 h-3.5 text-cyan-400" /> Solar Diameter
           </span>

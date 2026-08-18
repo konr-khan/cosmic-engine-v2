@@ -25,10 +25,10 @@ export const PhaseVisual: React.FC<PhaseVisualProps> = ({ phase, size = 64, para
 
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" className="drop-shadow-md">
-      <circle cx="32" cy="32" r={r} fill={CONFIG.THEME.NIGHT_BG} stroke="#475569" strokeWidth="1" />
+      <circle cx="32" cy="32" r={r} fill="#020617" stroke="#334155" strokeWidth="0.75" />
       <g transform={`rotate(${parallacticAngle}, 32, 32)`}>
-        { phase > 0.02 && phase < 0.98 && <path d={d} fill="#f1f5f9" /> }
-        { phase > 0.48 && phase < 0.52 && <circle cx="32" cy="32" r={r} fill="#f1f5f9" /> }
+        { phase > 0.02 && phase < 0.98 && <path d={d} fill="#f8fafc" /> }
+        { phase > 0.48 && phase < 0.52 && <circle cx="32" cy="32" r={r} fill="#f8fafc" /> }
       </g>
     </svg>
   );
