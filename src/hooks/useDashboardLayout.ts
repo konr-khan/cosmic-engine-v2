@@ -215,14 +215,11 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     setWidgets(PRESET_LAYOUTS.master.widgets);
     setLockedWindows({});
     setIsAllLocked(false);
-    try { 
-      localStorage.removeItem('cosmic_window_layout'); 
-      localStorage.removeItem('cosmic_window_layout_v2'); 
-      localStorage.removeItem('cosmic_window_layout_v3'); 
-      localStorage.removeItem('cosmic_window_layout_v4'); 
-      localStorage.removeItem('cosmic_window_layout_v5'); 
-      localStorage.removeItem('cosmic_window_layout_v6'); 
-      localStorage.removeItem('cosmic_window_layout_v7'); 
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      for (let i = 1; i <= 10; i++) {
+        localStorage.removeItem(i === 1 ? 'cosmic_window_layout' : `cosmic_window_layout_v${i}`);
+      }
     } catch {}
   };
 

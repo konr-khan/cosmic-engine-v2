@@ -13,8 +13,6 @@ export const CONFIG = {
     SUN_FILL: "#fbbf24",      // amber-400
     SUN_STROKE: "#ffffff",
     GRID_STROKE: "#94a3b8",
-    TIDE_HIGH: "text-indigo-600",
-    TIDE_LOW: "text-slate-500",
     ACCENT: "#6366f1"         // indigo-500
   },
   SOLAR: {

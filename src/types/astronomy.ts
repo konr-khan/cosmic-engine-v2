@@ -172,13 +172,7 @@ export type EclipseType =
   | 'TOTAL_LUNAR' 
   | 'PARTIAL_LUNAR' 
   | 'PENUMBRAL_LUNAR' 
-  | 'NONE'
-  | 'total' 
-  | 'annular' 
-  | 'partial' 
-  | 'penumbral' 
-  | 'hybrid' 
-  | 'none';
+  | 'NONE';
 
 export type EclipseClassification = 
   | 'Total Solar'

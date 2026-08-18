@@ -40,6 +40,8 @@ const SIMULATION_LAYERS = [
   { key: 'microTides', label: 'Earth & Tidal Gravity Micro View', icon: RotateCw }
 ];
 
+const selectUseAnalemma = (state: { useAnalemma: boolean }) => state.useAnalemma;
+
 export const ObsNavbar: React.FC<ObsNavbarProps> = ({
   activePresetKey,
   onSelectPreset,
@@ -51,7 +53,7 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
 }) => {
   const [showPresetsMenu, setShowPresetsMenu] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const useAnalemma = useChronometerStore((state) => state.useAnalemma);
+  const useAnalemma = useChronometerStore(selectUseAnalemma);
 
   const handleSelectPresetClick = (presetId: string) => {
     onSelectPreset(presetId);

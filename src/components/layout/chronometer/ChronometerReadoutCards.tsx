@@ -1,7 +1,7 @@
 import React from 'react';
 import { Globe, Compass, Clock } from 'lucide-react';
 import { BufferedInput } from '../../controls/BufferedInput';
-import { formatYMD, parseTimeString, formatTimeHHMM } from '../../../utils/cosmicMath';
+import { formatYMD, parseTimeString, formatTimeHHMM, getDayOfYear } from '../../../utils/cosmicMath';
 
 export { parseTimeString, formatTimeHHMM };
 
@@ -137,7 +137,7 @@ export const ChronometerReadoutCards: React.FC<ChronometerReadoutCardsProps> = (
         <div className="flex justify-between items-center w-full mb-1.5">
           <span className="text-[9px] font-bold text-slate-400 tracking-wider">DATE</span>
           <span className="text-[9px] font-mono text-emerald-400 font-bold bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-800">
-            DOY {Math.round((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))}
+            DOY {getDayOfYear(date)}
           </span>
         </div>
         <BufferedInput
