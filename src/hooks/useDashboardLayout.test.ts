@@ -43,6 +43,7 @@ describe('useDashboardLayout hook suite', () => {
     expect(layout.activePresetKey).toBe('master');
     expect(layout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
     expect(layout.isAllLocked).toBe(false);
+    expect(layout.widgets.today).toBe(true);
     expect(layout.widgets.almanac).toBe(true);
   });
 
@@ -54,6 +55,7 @@ describe('useDashboardLayout hook suite', () => {
     stateCounter = 0;
     const updated = useDashboardLayout();
     expect(updated.activePresetKey).toBe('solar');
+    expect(updated.widgets.today).toBe(true);
     expect(updated.widgets.almanac).toBe(true);
     expect(updated.widgets.lunarAlmanac).toBe(false);
     expect(updated.windows.length).toBe(PRESET_LAYOUTS.solar.windows.length);

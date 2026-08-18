@@ -22,6 +22,10 @@ const selectStoreState = (state: { date: Date; timeOfDay: number; latitude: numb
   useAnalemma: state.useAnalemma
 });
 
+const ORBITAL_WIDGET_KEYS = ['macroOrbit', 'microTides', 'lunarAlmanac', 'celestialSphere', 'eclipse', 'today'] as const;
+const LUNAR_WIDGET_KEYS = ['lunarAlmanac', 'today'] as const;
+const ECLIPSE_WIDGET_KEYS = ['eclipse', 'macroOrbit'] as const;
+
 export const useCosmicEngine = (
   paramDate?: Date | null, 
   paramTimeOfDay?: HoursDecimal | null, 
@@ -43,20 +47,19 @@ export const useCosmicEngine = (
     !Object.values(activeWidgets).some(v => v === false);
 
   const isLunarActive = hasExplicitPositiveOnly 
-    ? Boolean(activeWidgets.lunarAlmanac)
-    : activeWidgets.lunarAlmanac !== false;
+    ? LUNAR_WIDGET_KEYS.some(k => Boolean(activeWidgets[k]))
+    : LUNAR_WIDGET_KEYS.some(k => activeWidgets[k] === true) ||
+      (!LUNAR_WIDGET_KEYS.some(k => activeWidgets[k] === false));
 
   const isEclipseActive = hasExplicitPositiveOnly
-    ? Boolean(activeWidgets.eclipse || activeWidgets.macroOrbit)
-    : (activeWidgets.eclipse !== false || activeWidgets.macroOrbit !== false);
+    ? ECLIPSE_WIDGET_KEYS.some(k => Boolean(activeWidgets[k]))
+    : ECLIPSE_WIDGET_KEYS.some(k => activeWidgets[k] === true) ||
+      (!ECLIPSE_WIDGET_KEYS.every(k => activeWidgets[k] === false) && !ECLIPSE_WIDGET_KEYS.some(k => activeWidgets[k] === false));
 
   const isOrbitalActive = hasExplicitPositiveOnly
-    ? Boolean(activeWidgets.macroOrbit || activeWidgets.microTides || activeWidgets.lunarAlmanac || activeWidgets.celestialSphere || activeWidgets.eclipse)
-    : (activeWidgets.macroOrbit !== false || 
-       activeWidgets.microTides !== false || 
-       activeWidgets.lunarAlmanac !== false || 
-       activeWidgets.celestialSphere !== false ||
-       activeWidgets.eclipse !== false);
+    ? ORBITAL_WIDGET_KEYS.some(k => Boolean(activeWidgets[k]))
+    : ORBITAL_WIDGET_KEYS.some(k => activeWidgets[k] === true) ||
+      (!ORBITAL_WIDGET_KEYS.some(k => activeWidgets[k] === false));
 
   const julianDate = useMemo(() => getJulianDate(date, timeOfDay), [date, timeOfDay]);
 

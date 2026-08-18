@@ -13,7 +13,8 @@ import {
   Sparkles, 
   Compass, 
   MapPin, 
-  RotateCw 
+  RotateCw,
+  Eye
 } from 'lucide-react';
 import { PRESET_LAYOUTS, PresetLayout } from '../../hooks/useDashboardLayout';
 import { cosmicActions, useChronometerStore } from '../../store/cosmicStore';
@@ -29,8 +30,8 @@ export interface ObsNavbarProps {
 }
 
 const SIMULATION_LAYERS = [
-  { key: 'almanac', label: 'Solar Almanac & Twilight Bands', icon: Sun },
-  { key: 'sunclock', label: 'Daily Sun Elevation & Twilights', icon: Sun },
+  { key: 'today', label: "Today's Sky Horizon", icon: Eye },
+  { key: 'almanac', label: 'Solar Almanac & 24h Polar Clock', icon: Sun },
   { key: 'lunarAlmanac', label: 'Lunar & Tidal Almanac', icon: Moon },
   { key: 'eclipse', label: 'Eclipse Mechanics & Shadow Geometry', icon: Sparkles },
   { key: 'celestialSphere', label: 'Celestial Sphere & Ecliptic View', icon: Compass },

@@ -64,7 +64,7 @@ describe('useCosmicEngine Hook Suite', () => {
     it('skips entire orbitalData structure when all orbital widgets are false', () => {
       const testDate = new Date(2026, 5, 21);
       const activeWidgets = { 
-        almanac: true, sunclock: true, map: true,
+        almanac: true, map: true,
         lunarAlmanac: false, eclipse: false, macroOrbit: false, microTides: false, celestialSphere: false 
       };
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);
@@ -82,9 +82,9 @@ describe('useCosmicEngine Hook Suite', () => {
       expect(result.orbitalData!.eclipse).not.toBeNull();
     });
 
-    it('scopes calculations for solar-only widget { sunclock: true } bypassing orbitalData and worker', () => {
+    it('scopes calculations for solar-only widget { almanac: true } bypassing orbitalData and worker', () => {
       const testDate = new Date(2026, 5, 21);
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { sunclock: true });
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { almanac: true });
 
       expect(result.solarData).not.toBeNull();
       expect(result.orbitalData).toBeNull();
@@ -106,6 +106,16 @@ describe('useCosmicEngine Hook Suite', () => {
       expect(result.orbitalData).not.toBeNull();
       expect(result.orbitalData!.eclipse).not.toBeNull();
       expect(result.orbitalData!.lunarEvents).toBeNull();
+    });
+
+    it('scopes calculations for { today: true } calculating lunarEvents and orbital data', () => {
+      const testDate = new Date(2026, 5, 21);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { today: true });
+
+      expect(result.solarData).not.toBeNull();
+      expect(result.orbitalData).not.toBeNull();
+      expect(result.orbitalData!.lunarEvents).not.toBeNull();
+      expect(result.orbitalData!.eclipse).toBeNull();
     });
   });
 

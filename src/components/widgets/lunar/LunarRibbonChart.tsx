@@ -14,6 +14,8 @@ export interface LunarRibbonChartProps {
   onDayChange?: (day: number) => void;
   onHoverDate?: (date: Date | null) => void;
   getDayLabel: (dayNum: number) => string;
+  hoverTime?: number | null;
+  onHoverTime?: (time: number | null) => void;
 }
 
 export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
@@ -24,11 +26,13 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
   activeData,
   onDayChange,
   onHoverDate,
-  getDayLabel
+  getDayLabel,
+  hoverTime,
+  onHoverTime
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [hoverDay, setHoverDay] = useState<number | null>(null);
+  const [, setHoverDay] = useState<number | null>(null);
 
   const ribbonWidth = 800;
   const ribbonHeight = 220;
@@ -54,13 +58,22 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
     const svgX = (clientX / rect.width) * ribbonWidth;
+    const svgY = (clientY / rect.height) * ribbonHeight;
     const day = xToDay(svgX);
     setHoverDay(day);
 
     if (onHoverDate) {
       const d = new Date(year, 0, day);
       onHoverDate(d);
+    }
+
+    // Bidirectional time scanner: compute hoverTime from vertical pointer Y
+    const relY = svgY - padTop;
+    if (relY >= 0 && relY <= chartH && onHoverTime) {
+      const timeVal = ((chartH - relY) / chartH) * 24;
+      onHoverTime(parseFloat(timeVal.toFixed(3)));
     }
 
     if ((isDragging || e.type === 'pointerdown') && onDayChange) {
@@ -116,13 +129,23 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     return path;
   }, [annualLunarData, chartW, chartH, totalDays]);
 
+  // Zulu tick label formatter
+  const getZuluLabel = (h: number): string => {
+    if (h === 0) return "0000Z";
+    if (h === 6) return "0600Z";
+    if (h === 12) return "1200Z";
+    if (h === 18) return "1800Z";
+    if (h === 24) return "2400Z";
+    return `${h.toString().padStart(2, '0')}00Z`;
+  };
+
   return (
     <div className="relative w-full bg-slate-950/80 rounded-xl border border-slate-800/80 p-3 my-1 touch-none">
       <div className="text-[10px] font-mono text-slate-400 mb-1.5 flex justify-between items-center">
         <span className="font-bold text-cyan-300 flex items-center gap-1.5">
           <Moon className="w-3 h-3 text-cyan-400" /> 365-Day Moonrise &amp; Moonset Braided Ribbon (24h UTC)
         </span>
-        <span className="text-slate-400">Scrub chart to jump calendar date</span>
+        <span className="text-slate-400">Scrub chart to scan date &amp; time</span>
       </div>
 
       <svg
@@ -132,7 +155,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         onPointerDown={(e) => { setIsDragging(true); e.currentTarget.setPointerCapture(e.pointerId); handlePointer(e); }}
         onPointerMove={(e) => handlePointer(e)}
         onPointerUp={(e) => { setIsDragging(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
-        onPointerLeave={() => { setIsDragging(false); setHoverDay(null); if (onHoverDate) onHoverDate(null); }}
+        onPointerLeave={() => { setIsDragging(false); setHoverDay(null); if (onHoverDate) onHoverDate(null); if (onHoverTime) onHoverTime(null); }}
       >
         {/* Chart Background */}
         <rect x={padLeft} y={padTop} width={chartW} height={chartH} fill="#020617" rx="6" />
@@ -152,22 +175,22 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         {/* 6-Hour Horizontal Time Guides (0000Z, 0600Z, 1200Z, 1800Z, 2400Z) */}
         {[0, 6, 12, 18, 24].map((h) => {
           const y = timeToY(h);
-          const label = h === 0 || h === 24 ? "00:00Z" : (h < 10 ? `0${h}:00Z` : `${h}:00Z`);
-          const isNoonOrMidnight = h === 0 || h === 12 || h === 24;
+          const label = getZuluLabel(h);
+          const isKeyHour = h === 0 || h === 12 || h === 24;
           return (
             <g key={h}>
               <line 
                 x1={padLeft} y1={y} 
                 x2={padLeft + chartW} y2={y} 
                 stroke="#334155" 
-                strokeWidth={isNoonOrMidnight ? 0.75 : 0.5} 
-                strokeOpacity={isNoonOrMidnight ? 0.45 : 0.2} 
+                strokeWidth={isKeyHour ? 0.75 : 0.5} 
+                strokeOpacity={isKeyHour ? 0.45 : 0.2} 
               />
-              <text x={padLeft - 6} y={y + 3} textAnchor="end" className="text-[9px] font-mono fill-slate-400 font-bold">
+              <text x={padLeft - 6} y={y + 3} textAnchor="end" className={`text-[9px] font-mono ${isKeyHour ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
                 {label}
               </text>
-              <text x={padLeft + chartW + 6} y={y + 3} textAnchor="start" className="text-[9px] font-mono fill-slate-400 font-bold">
-                {h === 0 || h === 24 ? "Midnight" : (h === 12 ? "Noon" : "")}
+              <text x={padLeft + chartW + 6} y={y + 3} textAnchor="start" className={`text-[9px] font-mono ${isKeyHour ? 'fill-slate-200 font-bold' : 'fill-slate-400'}`}>
+                {label}
               </text>
             </g>
           );
@@ -215,6 +238,22 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
           stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 3"
         />
 
+        {/* Synced Hover Time Horizontal Guideline */}
+        {hoverTime !== null && hoverTime !== undefined && (
+          <g>
+            <line 
+              x1={padLeft} y1={timeToY(hoverTime)} 
+              x2={padLeft + chartW} y2={timeToY(hoverTime)} 
+              stroke="#38bdf8" strokeWidth="1.8" strokeDasharray="3 3" className="drop-shadow-sm" 
+            />
+            <g transform={`translate(${padLeft - 6}, ${timeToY(hoverTime) + 3})`}>
+              <text textAnchor="end" className="text-[9px] font-mono font-black fill-sky-400">
+                {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
+              </text>
+            </g>
+          </g>
+        )}
+
         {/* Active Day Intersection Markers */}
         {activeRiseY !== null && (
           <g transform={`translate(${dayToX(activeDay)}, ${activeRiseY})`}>
@@ -256,3 +295,5 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     </div>
   );
 };
+
+export default LunarRibbonChart;

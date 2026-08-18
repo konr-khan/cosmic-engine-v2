@@ -429,7 +429,10 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
           <span className="text-slate-400 font-bold uppercase">Phase Elongation</span>
           <span className="text-amber-400 font-bold text-xs mt-0.5">{phaseDeg}° ({(phaseVal * 100).toFixed(0)}%)</span>
         </div>
-        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
+        <div 
+          className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center cursor-help"
+          title={`Geocentric Distance: ${(distKm / 6371).toFixed(1)} R_E (${distKm.toLocaleString()} km)`}
+        >
           <span className="text-slate-400 font-bold uppercase">Lunar Distance</span>
           <span className="text-indigo-400 font-bold text-xs mt-0.5">{distKm.toLocaleString()} km</span>
         </div>

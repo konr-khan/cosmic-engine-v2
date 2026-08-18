@@ -42,14 +42,20 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
     ? "Maximum Spring Tide (Syzygy)" 
     : (tides.rx <= 13 ? "Minimal Neap Tide (Quadrature)" : "Transitional Moderate Tide");
 
+  // Format deformation ratio from rx (e.g. 1.0x to 2.0x)
+  const deformationRatio = ((tides.rx / 12)).toFixed(2);
+
   return (
     <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex flex-col justify-between">
       <div className="flex justify-between items-center text-[10px] font-mono text-slate-300 mb-1">
         <span className="flex items-center gap-1 font-bold text-sky-300">
           <Waves className="w-3.5 h-3.5 text-sky-400" /> Harmonized Ocean Tidal Bulge
         </span>
-        <span className="text-[10px] text-slate-400">
-          Bulge Axis: <strong className="text-cyan-400">{tides.rx}x</strong>
+        <span 
+          className="text-[10px] text-slate-400 cursor-help"
+          title="Tidal Deformation Ratio: Quantifies Earth gravitational syzygy alignment (1.0x Neap Quadrature to 2.0x Spring Syzygy)"
+        >
+          Tidal Deformation Ratio: <strong className="text-cyan-400">{deformationRatio}x</strong>
         </span>
       </div>
 
@@ -95,3 +101,5 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
     </div>
   );
 };
+
+export default TidalWaveOscillator;

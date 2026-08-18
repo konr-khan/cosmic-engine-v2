@@ -3,8 +3,8 @@ import { useCosmicEngine } from './hooks/useCosmicEngine';
 import { useChronometerStore, cosmicActions } from './store/cosmicStore';
 import { useDashboardLayout, ICON_MAP, PRESET_LAYOUTS } from './hooks/useDashboardLayout';
 import { ObsNavbar } from './components/layout/ObsNavbar';
+import { TodayHorizonView } from './components/widgets/TodayHorizonView';
 import { TerminatorMap } from './components/widgets/TerminatorMap';
-import { SunClock } from './components/widgets/SunClock';
 import { SolarAlmanac } from './components/widgets/SolarAlmanac';
 import { MacroOrbitView } from './components/widgets/MacroOrbitView';
 import { MicroTideView } from './components/widgets/MicroTideView';
@@ -56,6 +56,20 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
   };
 
   switch (id) {
+    case 'today':
+      return (
+        <TodayHorizonView
+          solarData={solarData}
+          orbitalData={orbitalData}
+          currentTime={timeOfDay}
+          latitude={latitude}
+          longitude={longitude}
+          currentDate={date}
+          hoverTime={hoverTime}
+          onHoverTime={setHoverTime}
+          onSetTime={cosmicActions.setTimeOfDay}
+        />
+      );
     case 'almanac':
       return (
         <SolarAlmanac 
@@ -64,6 +78,8 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           currentDay={dayOfYear} 
           onDayChange={handleDateSlider} 
           year={date.getFullYear()} 
+          solarData={solarData}
+          currentTime={timeOfDay}
           hoverTime={hoverTime}
           onHoverTime={setHoverTime}
         />
@@ -80,6 +96,8 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           currentDate={date}
           hoverDate={hoverDate}
           onHoverDate={setHoverDate}
+          hoverTime={hoverTime}
+          onHoverTime={setHoverTime}
         />
       );
     case 'eclipse':
@@ -99,16 +117,6 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           solarData={solarData} 
           orbitalData={orbitalData} 
           timeOfDay={timeOfDay} 
-        />
-      );
-    case 'sunclock':
-      return (
-        <SunClock 
-          solarData={solarData} 
-          currentTime={timeOfDay} 
-          latitude={latitude} 
-          hoverTime={hoverTime}
-          onHoverTime={setHoverTime}
         />
       );
     case 'map':
@@ -138,6 +146,7 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           userRotation={orbitalData?.userRotation}
           localTideStatus={orbitalData?.localTideStatus}
           hoverDate={hoverDate}
+          phaseValue={orbitalData?.phase?.value}
         />
       );
     default:
@@ -162,7 +171,7 @@ const MemoizedChronometerDock = React.memo<MemoizedChronometerDockProps>(functio
     latitude,
     longitude,
     useAnalemma,
-    { sunclock: true }
+    { almanac: true }
   );
 
   return (

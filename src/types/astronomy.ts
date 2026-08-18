@@ -252,6 +252,7 @@ export interface CosmicEngineData {
 
 /** Active widget visibility filter map */
 export interface ActiveWidgetsFilter {
+  today?: boolean;
   solarAlmanac?: boolean;
   sunClock?: boolean;
   lunarAlmanac?: boolean;
