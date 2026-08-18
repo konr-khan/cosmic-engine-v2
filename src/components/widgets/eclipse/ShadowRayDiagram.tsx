@@ -55,13 +55,13 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
       
       {/* Top Bar: Mode Selector & Live Dynamic Offset Badge */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 text-xs font-mono">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-slate-400 font-bold">Geometry Focus:</span>
-          <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 gap-1">
+          <div className="flex bg-slate-950/80 p-1 rounded-lg border border-slate-800/80 gap-1">
             <button
               onClick={() => setDiagramMode && setDiagramMode('live')}
               className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                diagramMode === 'live' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                diagramMode === 'live' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               Live Orbit
@@ -69,7 +69,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
             <button
               onClick={() => setDiagramMode && setDiagramMode('solar')}
               className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                diagramMode === 'solar' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
+                diagramMode === 'solar' ? 'bg-amber-500 text-slate-950 shadow-sm ring-1 ring-amber-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               Solar Focus (2D Moon Orbit)
@@ -77,17 +77,17 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
             <button
               onClick={() => setDiagramMode && setDiagramMode('lunar')}
               className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                diagramMode === 'lunar' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                diagramMode === 'lunar' ? 'bg-rose-600 text-white shadow-sm ring-1 ring-rose-400' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Lunar Focus (Selenocentric POV)
+              Lunar Focus (POV)
             </button>
           </div>
         </div>
 
         {/* Sub-toggle if in Lunar Focus mode */}
         {diagramMode === 'lunar' && (
-          <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 gap-1 text-[10px]">
+          <div className="flex bg-slate-950/80 p-1 rounded-lg border border-slate-800/80 gap-1 text-[10px]">
             <button
               onClick={() => setLunarViewSubTab && setLunarViewSubTab('pov')}
               className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
@@ -109,7 +109,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
 
         {/* Live Shadow State Indicator */}
         {diagramMode !== 'lunar' && (
-          <div className={`px-2.5 py-1 rounded-lg border font-bold text-[10px] flex items-center gap-1.5 ${shadowStatus.bg}`}>
+          <div className={`px-2.5 py-1 rounded-lg border font-bold text-[10px] flex items-center gap-1.5 backdrop-blur-sm ${shadowStatus.bg}`}>
             <span>{shadowStatus.text}</span>
           </div>
         )}
@@ -415,23 +415,23 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
 
       {/* Dynamic Readout Badges */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1 font-mono text-[10px] text-slate-300">
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
-          <span className="text-slate-500 font-bold uppercase">Vertical Offset</span>
-          <span className={`font-bold text-xs ${verticalOffsetKm === 0 ? 'text-emerald-400' : (verticalOffsetKm > 0 ? 'text-amber-400' : 'text-indigo-400')}`}>
+        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
+          <span className="text-slate-400 font-bold uppercase">Vertical Offset</span>
+          <span className={`font-bold text-xs mt-0.5 ${verticalOffsetKm === 0 ? 'text-emerald-400' : (verticalOffsetKm > 0 ? 'text-amber-400' : 'text-indigo-400')}`}>
             {verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : `${verticalOffsetKm.toLocaleString()}`} km
           </span>
         </div>
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
-          <span className="text-slate-500 font-bold uppercase">Ecliptic Lat (β)</span>
-          <span className="text-emerald-400 font-bold text-xs">{beta}° {Math.abs(beta) < 1.5 ? '(In Corridor)' : '(Out Corridor)'}</span>
+        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
+          <span className="text-slate-400 font-bold uppercase">Ecliptic Lat (β)</span>
+          <span className="text-emerald-400 font-bold text-xs mt-0.5">{beta}° {Math.abs(beta) < 1.5 ? '(In Corridor)' : '(Out Corridor)'}</span>
         </div>
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
-          <span className="text-slate-500 font-bold uppercase">Phase Elongation</span>
-          <span className="text-amber-400 font-bold text-xs">{phaseDeg}° ({(phaseVal * 100).toFixed(0)}%)</span>
+        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
+          <span className="text-slate-400 font-bold uppercase">Phase Elongation</span>
+          <span className="text-amber-400 font-bold text-xs mt-0.5">{phaseDeg}° ({(phaseVal * 100).toFixed(0)}%)</span>
         </div>
-        <div className="bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex flex-col items-center">
-          <span className="text-slate-500 font-bold uppercase">Lunar Distance</span>
-          <span className="text-indigo-400 font-bold text-xs">{distKm.toLocaleString()} km</span>
+        <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex flex-col items-center">
+          <span className="text-slate-400 font-bold uppercase">Lunar Distance</span>
+          <span className="text-indigo-400 font-bold text-xs mt-0.5">{distKm.toLocaleString()} km</span>
         </div>
       </div>
 

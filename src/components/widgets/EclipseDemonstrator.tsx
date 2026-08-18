@@ -57,11 +57,11 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
           <EclipseStatusBadge eclipse={eclipse} />
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-bold font-mono">
             <button
               onClick={() => setActiveTab('geometry')}
               className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'geometry' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'geometry' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Layers className="w-3.5 h-3.5" /> Shadow Rays
@@ -69,7 +69,7 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
             <button
               onClick={() => setActiveTab('nodes')}
               className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'nodes' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'nodes' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Compass className="w-3.5 h-3.5" /> 5.14° Nodes
@@ -77,7 +77,7 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
             <button
               onClick={() => setActiveTab('sky')}
               className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'sky' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'sky' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Eye className="w-3.5 h-3.5 text-cyan-400" /> Sky View
@@ -85,7 +85,7 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
             <button
               onClick={() => setActiveTab('scanner')}
               className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'scanner' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                activeTab === 'scanner' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Calendar className="w-3.5 h-3.5 text-emerald-400" /> Scanner
@@ -95,7 +95,7 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
       </div>
 
       {/* Main Canvas Viewport */}
-      <div className="relative w-full flex-1 min-h-[280px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center p-3">
+      <div className="relative w-full flex-1 min-h-[280px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center p-3">
         {activeTab === 'geometry' && (
           <ShadowRayDiagram
             eclipse={eclipse}

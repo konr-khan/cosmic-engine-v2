@@ -135,51 +135,51 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
   return (
     <g>
       {/* Outer Celestial Vault Grid */}
-      <circle cx="200" cy="160" r="110" fill="none" stroke="#1e293b" strokeWidth="1" strokeDasharray="3 3" />
+      <circle cx="200" cy="160" r="110" fill="none" stroke="#334155" strokeWidth="0.75" strokeDasharray="3 3" strokeOpacity="0.4" />
 
       {/* 1. Celestial Equator Ring (0° Tilt) */}
-      {renderCircle3D(110, 0, 0, "#818cf8", 1.5, "4 2", 0.6)}
+      {renderCircle3D(110, 0, 0, "#818cf8", 1.2, "4 2", 0.6)}
 
       {/* 2. Ecliptic Ring (23.44° Tilt) */}
-      {renderCircle3D(110, 23.44, 0, "#f59e0b", 2.0, "", 0.85)}
+      {renderCircle3D(110, 23.44, 0, "#f59e0b", 1.8, "", 0.85)}
 
       {/* 3. Dynamic Moon Orbit Ring (5.14° Inclination pivoting at Ascending Node) */}
       <path 
         d={geocentricScene.moonOrbitPathD} 
         fill="none" 
         stroke="#34d399" 
-        strokeWidth="1.8" 
+        strokeWidth="1.5" 
         strokeOpacity="0.85" 
       />
 
       {/* 4. Center Earth Globe */}
-      <circle cx="200" cy="160" r="32" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" />
+      <circle cx="200" cy="160" r="32" fill="#020617" stroke="#3b82f6" strokeWidth="1.2" />
       {/* Earth Rotational Axis (23.44°) */}
       <line 
         x1={geocentricScene.pNorth.px} y1={geocentricScene.pNorth.py} 
         x2={geocentricScene.pSouth.px} y2={geocentricScene.pSouth.py} 
-        stroke="#60a5fa" strokeWidth="2" strokeDasharray="3 2" 
+        stroke="#60a5fa" strokeWidth="1.5" strokeDasharray="3 2" 
       />
 
       {/* 5. Observer Location & Zenith Laser Ray */}
       {/* Observer Surface Marker */}
       <circle 
         cx={geocentricScene.pObsEarth.px} cy={geocentricScene.pObsEarth.py} 
-        r="4" fill="#06b6d4" stroke="white" strokeWidth="1.5" className="drop-shadow" 
+        r="3.5" fill="#06b6d4" stroke="white" strokeWidth="1.5" className="drop-shadow" 
       />
       {/* Observer Zenith Laser Line extending to Celestial Sphere */}
       <line 
         x1={geocentricScene.pObsEarth.px} y1={geocentricScene.pObsEarth.py} 
         x2={geocentricScene.pZenithVault.px} y2={geocentricScene.pZenithVault.py} 
-        stroke="#06b6d4" strokeWidth="2" strokeDasharray="4 2" 
+        stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="4 2" 
       />
       <circle 
         cx={geocentricScene.pZenithVault.px} cy={geocentricScene.pZenithVault.py} 
-        r="5" fill="#06b6d4" stroke="white" strokeWidth="1.5" className="animate-pulse" 
+        r="4.5" fill="#06b6d4" stroke="white" strokeWidth="1.5" className="animate-pulse" 
       />
       <text 
         x={geocentricScene.pZenithVault.px + 8} y={geocentricScene.pZenithVault.py + 4} 
-        className="text-[9px] font-mono font-bold fill-cyan-300"
+        className="text-[9px] font-mono font-bold fill-cyan-300 drop-shadow-sm"
       >
         YOU (Zenith)
       </text>
@@ -187,11 +187,11 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       {/* 6. Sun Body on Ecliptic */}
       <circle 
         cx={geocentricScene.pSun.px} cy={geocentricScene.pSun.py} 
-        r="8" fill={CONFIG.THEME.SUN_FILL} stroke="white" strokeWidth="2" className="drop-shadow" 
+        r="7.5" fill="#fbbf24" stroke="white" strokeWidth="1.5" className="drop-shadow" 
       />
       <text 
         x={geocentricScene.pSun.px + 10} y={geocentricScene.pSun.py + 3} 
-        className="text-[9px] font-mono font-bold fill-amber-300"
+        className="text-[9px] font-mono font-bold fill-amber-300 drop-shadow-sm"
       >
         SUN
       </text>
@@ -199,27 +199,27 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       {/* 7. Moon Body on Inclined Orbit */}
       <circle 
         cx={geocentricScene.pMoon.px} cy={geocentricScene.pMoon.py} 
-        r="6" fill="#e2e8f0" stroke="#475569" strokeWidth="1.5" className="drop-shadow" 
+        r="5.5" fill="#f8fafc" stroke="#334155" strokeWidth="1.2" className="drop-shadow" 
       />
       <text 
         x={geocentricScene.pMoon.px + 8} y={geocentricScene.pMoon.py + 3} 
-        className="text-[9px] font-mono font-bold fill-emerald-300"
+        className="text-[9px] font-mono font-bold fill-emerald-300 drop-shadow-sm"
       >
         MOON
       </text>
 
       {/* 8. Eclipse Nodes Highlights (Ascending & Descending Node Markers) */}
       <g transform={`translate(${geocentricScene.pNodeAsc.px}, ${geocentricScene.pNodeAsc.py})`}>
-        <circle r="7" fill="none" stroke="#f43f5e" strokeWidth="2" className="animate-ping" />
-        <circle r="4" fill="#f43f5e" stroke="white" strokeWidth="1" />
+        <circle r="7" fill="none" stroke="#f43f5e" strokeWidth="1.5" className="animate-ping" />
+        <circle r="3.5" fill="#f43f5e" stroke="white" strokeWidth="1" />
         <text x="8" y="-4" className="text-[8px] font-mono font-bold fill-rose-400">
           Node ☊ (Ascending)
         </text>
       </g>
 
       <g transform={`translate(${geocentricScene.pNodeDesc.px}, ${geocentricScene.pNodeDesc.py})`}>
-        <circle r="7" fill="none" stroke="#f43f5e" strokeWidth="2" className="animate-ping" />
-        <circle r="4" fill="#f43f5e" stroke="white" strokeWidth="1" />
+        <circle r="7" fill="none" stroke="#f43f5e" strokeWidth="1.5" className="animate-ping" />
+        <circle r="3.5" fill="#f43f5e" stroke="white" strokeWidth="1" />
         <text x="-70" y="12" className="text-[8px] font-mono font-bold fill-rose-400">
           Node ☋ (Descending)
         </text>

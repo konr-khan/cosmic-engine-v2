@@ -52,20 +52,21 @@ export const HeliocentricOrbitView: React.FC<HeliocentricOrbitViewProps> = ({
   return (
     <g>
       {/* 1. Earth Orbit Ring around Sun */}
-      {renderCircle3D(120, 0, 0, "#f59e0b", 1.8, "4 2", 0.7)}
+      {renderCircle3D(120, 0, 0, "#f59e0b", 1.5, "4 2", 0.7)}
 
       {/* 2. Sun Corona at Center */}
-      <circle cx="200" cy="160" r="18" fill={CONFIG.THEME.SUN_FILL} stroke="white" strokeWidth="3" className="drop-shadow-lg" />
-      <text x="200" y="164" textAnchor="middle" className="text-[9px] font-black fill-amber-950 font-mono">
+      <circle cx="200" cy="160" r="22" fill={CONFIG.THEME.SUN_FILL} opacity="0.2" className="animate-pulse" />
+      <circle cx="200" cy="160" r="16" fill={CONFIG.THEME.SUN_FILL} stroke="white" strokeWidth="2" className="drop-shadow-lg" />
+      <text x="200" y="163" textAnchor="middle" className="text-[8px] font-black fill-amber-950 font-mono">
         SUN
       </text>
 
       {/* 3. Earth Globe on Orbit */}
       <g transform={`translate(${heliocentricScene.pEarthCenter.px}, ${heliocentricScene.pEarthCenter.py})`}>
-        <circle r="12" fill="#3b82f6" stroke="white" strokeWidth="1.5" />
+        <circle r="10" fill="#3b82f6" stroke="white" strokeWidth="1.5" className="drop-shadow" />
         {/* Tilted Earth Axis (23.44°) */}
-        <line x1="-5" y1="-14" x2="5" y2="14" stroke="#93c5fd" strokeWidth="2" />
-        <text x="16" y="4" className="text-[9px] font-mono font-bold fill-blue-300">
+        <line x1="-4" y1="-12" x2="4" y2="12" stroke="#93c5fd" strokeWidth="1.5" />
+        <text x="14" y="4" className="text-[9px] font-mono font-bold fill-blue-300 drop-shadow-sm">
           EARTH (23.44°)
         </text>
       </g>
@@ -73,7 +74,7 @@ export const HeliocentricOrbitView: React.FC<HeliocentricOrbitViewProps> = ({
       {/* 4. Moon Body orbiting Earth */}
       <circle 
         cx={heliocentricScene.pMoonHelioc.px} cy={heliocentricScene.pMoonHelioc.py} 
-        r="4" fill="#e2e8f0" stroke="#334155" strokeWidth="1" 
+        r="3.5" fill="#f8fafc" stroke="#334155" strokeWidth="1" 
       />
 
       {/* 5. Solstice & Equinox Markers along Earth's Orbit */}

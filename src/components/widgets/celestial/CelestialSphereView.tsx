@@ -44,12 +44,12 @@ export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({
         </p>
 
         {/* View Mode Selector Tabs */}
-        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
           <button
             onClick={() => setViewMode('geocentric')}
             className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'geocentric'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -59,7 +59,7 @@ export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({
             onClick={() => setViewMode('heliocentric')}
             className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'heliocentric'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -69,10 +69,10 @@ export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({
       </div>
 
       {/* Main 3D Canvas */}
-      <div className="relative w-full flex-1 min-h-[300px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+      <div className="relative w-full flex-1 min-h-[300px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center">
         
         {/* Legend Badge */}
-        <div className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur px-3 py-2 rounded-xl border border-slate-800 text-[10px] font-mono space-y-1 z-10">
+        <div className="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-sm px-3 py-2 rounded-xl border border-slate-800/80 text-[10px] font-mono space-y-1.5 z-10 shadow-md">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-0.5 bg-indigo-400 inline-block" /> Celestial Equator (0°)
           </div>
@@ -89,7 +89,7 @@ export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({
 
         {/* Eclipse Proximity Alert */}
         {viewMode === 'geocentric' && isNearEclipseNode && (
-          <div className="absolute top-3 right-3 bg-amber-950/90 border border-amber-600 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 animate-pulse z-10">
+          <div className="absolute top-3 right-3 bg-amber-950/90 border border-amber-600/80 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 animate-pulse z-10 backdrop-blur-sm shadow-md">
             <Sparkles className="w-4 h-4 text-amber-400" /> Near Eclipse Node Zone (Alignment!)
           </div>
         )}

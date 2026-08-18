@@ -32,7 +32,7 @@ export const EclipseScanner: React.FC<EclipseScannerProps> = ({
             <button
               key={idx}
               onClick={() => onSelectPreset && onSelectPreset(preset.date)}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500 p-2.5 rounded-xl text-left transition-all group flex items-start justify-between cursor-pointer"
+              className="bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 hover:border-indigo-500/50 p-2.5 rounded-xl text-left transition-all group flex items-start justify-between cursor-pointer"
             >
               <div>
                 <div className="text-xs font-bold font-mono text-indigo-300 group-hover:text-amber-400">
@@ -49,7 +49,7 @@ export const EclipseScanner: React.FC<EclipseScannerProps> = ({
       </div>
 
       {/* Nearest Discovered Eclipses Scanner */}
-      <div className="border-t border-slate-800 pt-2">
+      <div className="border-t border-slate-800/80 pt-2">
         <div className="text-xs font-mono font-bold text-emerald-400 mb-1.5">
           Discovered Eclipses from Current Date ({formatYMD(currentDate)}):
         </div>
@@ -59,7 +59,7 @@ export const EclipseScanner: React.FC<EclipseScannerProps> = ({
               <button
                 key={idx}
                 onClick={() => onSelectPreset && onSelectPreset(item.date)}
-                className="bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500 p-2 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer"
+                className="bg-slate-950/80 hover:bg-slate-900/90 border border-slate-800/80 hover:border-emerald-500/50 p-2 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer"
               >
                 <div>
                   <div className="text-xs font-bold font-mono text-slate-200">
@@ -69,7 +69,7 @@ export const EclipseScanner: React.FC<EclipseScannerProps> = ({
                     {item.label}
                   </div>
                 </div>
-                <span className="text-[10px] font-mono bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-700">
+                <span className="text-[10px] font-mono bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-700/60">
                   +{item.dayOffset} days
                 </span>
               </button>

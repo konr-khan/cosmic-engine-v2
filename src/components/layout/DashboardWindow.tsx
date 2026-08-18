@@ -65,8 +65,8 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
   };
 
   const containerClasses = isMaximized 
-    ? "fixed inset-4 z-50 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700 flex flex-col p-4 overflow-auto animate-in zoom-in-95 duration-200"
-    : `bg-slate-900 rounded-2xl shadow-sm border border-slate-800 flex flex-col transition-all relative ${
+    ? "fixed inset-4 z-50 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/90 flex flex-col p-4 overflow-auto animate-in zoom-in-95 duration-200"
+    : `bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-lg border border-slate-800/80 hover:border-slate-700/80 flex flex-col transition-all relative ${
         colSpan === 12 
           ? 'col-span-12 2xl:col-span-6 3xl:col-span-6' 
           : colSpan === 6 
@@ -91,7 +91,7 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
       onDrop={(e) => onDrop && onDrop(e, id)}
     >
       {/* WINDOW HEADER BAR */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/80 bg-slate-900/50 rounded-t-2xl select-none">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800/80 bg-slate-950/40 rounded-t-2xl select-none">
         <div className="flex items-center space-x-2.5">
           {!isLocked && (
             <div className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 p-1 -ml-1 rounded transition-colors" title="Drag to reorder card">
