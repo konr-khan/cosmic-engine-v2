@@ -83,7 +83,7 @@ export const ChronometerReadoutCards: React.FC<ChronometerReadoutCardsProps> = (
             type="number"
             value={latitude}
             onChange={handleDirectLat}
-            className="w-16 bg-slate-950/80 text-rose-400 font-mono font-bold text-sm text-center rounded-lg border border-slate-800 px-1 py-0.5 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40 shadow-inner"
+            className="w-20 bg-slate-950/80 text-rose-400 font-mono font-bold text-sm text-center rounded-lg border border-slate-800 px-1 py-0.5 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40 shadow-inner"
           />
           <span className="text-[10px] text-slate-400 font-mono">{latitude >= 0 ? '°N' : '°S'}</span>
         </div>
@@ -106,7 +106,7 @@ export const ChronometerReadoutCards: React.FC<ChronometerReadoutCardsProps> = (
             type="number"
             value={longitude}
             onChange={handleDirectLon}
-            className="w-16 bg-slate-950/80 text-amber-400 font-mono font-bold text-sm text-center rounded-lg border border-slate-800 px-1 py-0.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 shadow-inner"
+            className="w-20 bg-slate-950/80 text-amber-400 font-mono font-bold text-sm text-center rounded-lg border border-slate-800 px-1 py-0.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 shadow-inner"
           />
           <span className="text-[10px] text-slate-400 font-mono">{longitude >= 0 ? '°E' : '°W'}</span>
         </div>

@@ -11,7 +11,7 @@ export const BufferedInput: React.FC<BufferedInputProps> = ({
   value, 
   onChange, 
   type = "text", 
-  className, 
+  className = '', 
   ...props 
 }) => {
   const [localValue, setLocalValue] = useState<string | number>(value);
@@ -32,11 +32,15 @@ export const BufferedInput: React.FC<BufferedInputProps> = ({
     }
   };
 
+  const numberSpinStyles = type === 'number' 
+    ? '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none' 
+    : '';
+
   return (
     <input
       {...props}
       type={type}
-      className={className}
+      className={`${numberSpinStyles} ${className}`.trim()}
       value={localValue}
       onChange={(e) => setLocalValue(e.target.value)}
       onFocus={() => setActive(true)}

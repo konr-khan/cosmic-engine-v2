@@ -218,14 +218,14 @@ export const LivingMarble: React.FC<LivingMarbleProps> = ({
       </defs>
       
       {/* 1. Base Earth & Night Background */}
-      <circle r={radius} fill="#0b0f19" />
+      <circle r={radius} fill="#020617" />
 
       {/* 2. Layered Twilight & Daylight Bands (Clipped to Globe) */}
       <g clipPath="url(#earthClip)" fillRule="evenodd">
-        {astroPath && <path d={astroPath} fill={CONFIG.THEME.ASTRONOMICAL_FILL} fillRule="evenodd" />}
-        {nauticalPath && <path d={nauticalPath} fill={CONFIG.THEME.NAUTICAL_FILL} fillRule="evenodd" />}
-        {civilPath && <path d={civilPath} fill={CONFIG.THEME.CIVIL_FILL} fillRule="evenodd" />}
-        {dayPath && <path d={dayPath} fill={CONFIG.THEME.DAY_FILL} fillRule="evenodd" />}
+        {astroPath && <path d={astroPath} fill="#1e293b" fillRule="evenodd" />}
+        {nauticalPath && <path d={nauticalPath} fill="#475569" fillRule="evenodd" />}
+        {civilPath && <path d={civilPath} fill="#fbbf24" fillRule="evenodd" />}
+        {dayPath && <path d={dayPath} fill="#fde047" fillRule="evenodd" />}
       </g>
 
       {/* 3. Latitudinal Parallels on Globe */}

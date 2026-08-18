@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { CONFIG, toRadians, toDegrees } from '../../utils/cosmicMath';
+import { CONFIG, toRadians } from '../../utils/cosmicMath';
 
 export interface LatitudeSliderProps {
   latitude: number;
@@ -18,8 +18,7 @@ export const LatitudeSlider: React.FC<LatitudeSliderProps> = ({
   // Internal coordinate system
   const { size, radius, sliderX, labelsX } = { size: 200, radius: 65, sliderX: 135, labelsX: 148 };
   const centerY = size / 2, centerX = 65;
-  const latRad = toRadians(latitude);
-  const handleY = centerY + (-radius * Math.sin(latRad));
+  const handleY = centerY + (-radius * (latitude / 90));
 
   const updateLat = useCallback((clientY: number) => {
     if (!globeRef.current) return;
@@ -30,7 +29,8 @@ export const LatitudeSlider: React.FC<LatitudeSliderProps> = ({
     const internalY = relativeY * scaleFactor;
     
     const clampedY = Math.max(-radius, Math.min(radius, internalY));
-    onChange(Math.round(toDegrees(-Math.asin(clampedY / radius))));
+    const linearLat = Math.round(-90 * (clampedY / radius));
+    onChange(Math.max(-90, Math.min(90, linearLat)));
   }, [onChange, radius, size]);
 
   return (
@@ -51,17 +51,8 @@ export const LatitudeSlider: React.FC<LatitudeSliderProps> = ({
         }}
       >
         {CONFIG.LAT_PRESETS.map((preset) => {
-          const isNorthPole = preset.lat === 90;
-          const isSouthPole = preset.lat === -90;
-          let customTop: string | null = null;
-          
-          if (isNorthPole) customTop = '2%';
-          else if (isSouthPole) customTop = '98%';
-          else {
-            const internalY = centerY + (-radius * Math.sin(toRadians(preset.lat)));
-            customTop = `${(internalY / size) * 100}%`;
-          }
-
+          const internalY = centerY + (-radius * (preset.lat / 90));
+          const customTop = `${(internalY / size) * 100}%`;
           const isSelected = Math.abs(latitude - preset.lat) < 2;
 
           return (
@@ -95,10 +86,11 @@ export const LatitudeSlider: React.FC<LatitudeSliderProps> = ({
           {[-66.5, -23.5, 0, 23.5, 66.5].map((lat) => {
             const y = centerY + (-radius * Math.sin(toRadians(lat)));
             const rx = radius * Math.cos(toRadians(lat));
+            const tickY = centerY + (-radius * (lat / 90));
             return (
               <g key={lat}>
                 <ellipse cx={centerX} cy={y} rx={rx} ry={rx * 0.25} fill="none" stroke="#475569" strokeWidth="0.5" opacity="0.4" />
-                <line x1={sliderX - 4} y1={y} x2={sliderX + 4} y2={y} stroke="#64748b" strokeWidth="1" />
+                <line x1={sliderX - 4} y1={tickY} x2={sliderX + 4} y2={tickY} stroke="#64748b" strokeWidth="1" />
               </g>
             );
           })}
