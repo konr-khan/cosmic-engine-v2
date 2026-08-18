@@ -188,7 +188,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
 
         {hoveredPoint === 'moon' && (
           <div className="absolute top-3 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
-            <div className="text-xs font-bold text-cyan-400 flex items-center justify-between">
+            <div className="text-xs font-bold text-slate-200 flex items-center justify-between">
               <span>Sublunar Point (Moon at Zenith)</span>
               <span className="text-slate-400 text-[9px]">{moonIllum}% Illum</span>
             </div>
@@ -196,7 +196,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               Phase: <strong className="text-white">{moonPhase}</strong>
             </div>
             <div className="text-slate-300">
-              Declination (δ): <strong className="text-cyan-300">{lunarDec >= 0 ? `+${lunarDec.toFixed(1)}°` : `${lunarDec.toFixed(1)}°`}</strong>
+              Declination (δ): <strong className="text-slate-200">{lunarDec >= 0 ? `+${lunarDec.toFixed(1)}°` : `${lunarDec.toFixed(1)}°`}</strong>
             </div>
             <div className="text-slate-300">
               Distance: <strong className="text-indigo-300">{moonDistKm.toLocaleString()} km</strong> ({(moonDistKm / 6371).toFixed(1)} R_E)
@@ -271,6 +271,9 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             >
               <circle cx={relSunX} cy={sunCy} r="11" fill={CONFIG.THEME.SUN_FILL} opacity="0.25" className="animate-pulse" />
               <circle cx={relSunX} cy={sunCy} r="4.5" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
+              <text x={relSunX + 7} y={sunCy + 3} className="text-[7.5px] fill-amber-300 font-bold font-mono select-none pointer-events-none">
+                SUN
+              </text>
             </g>
             
             {/* Hover Subsolar Ray Guide when hover sync active */}
@@ -278,15 +281,15 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.85" />
             )}
 
-            {/* Sublunar Point Marker (Moon Zenith) with Glowing Cyan Ring */}
+            {/* Sublunar Point Marker (Moon Zenith) with Slate/Grey Styling */}
             <g 
               className="cursor-pointer"
               onPointerEnter={() => setHoveredPoint('moon')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
-              <circle cx={relMoonX} cy={moonCy} r="10" fill="#38bdf8" opacity="0.2" className="animate-pulse" />
-              <circle cx={relMoonX} cy={moonCy} r="4" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
-              <text x={relMoonX + 7} y={moonCy + 3} className="text-[7.5px] fill-cyan-300 font-bold font-mono select-none pointer-events-none">
+              <circle cx={relMoonX} cy={moonCy} r="10" fill="#94a3b8" opacity="0.25" className="animate-pulse" />
+              <circle cx={relMoonX} cy={moonCy} r="4" fill="#f8fafc" stroke="#475569" strokeWidth="1.5" className="drop-shadow" />
+              <text x={relMoonX + 7} y={moonCy + 3} className="text-[7.5px] fill-slate-300 font-bold font-mono select-none pointer-events-none">
                 MOON
               </text>
             </g>
@@ -308,7 +311,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
       <div className="mt-2.5 p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex justify-between items-center text-[10px] font-mono text-slate-400">
          <div className="flex items-center gap-3">
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 border border-amber-300 inline-block" /> Subsolar</span>
-           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400 border border-cyan-300 inline-block" /> Sublunar</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300 border border-slate-400 inline-block" /> Sublunar</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500 border border-indigo-400 inline-block" /> You</span>
          </div>
          <div className="flex items-center gap-2.5">

@@ -259,7 +259,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
             <line x1="50" y1="138" x2="310" y2="128" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
 
             {/* Moon Tilted Orbit Path Ellipse around Earth */}
-            <g className="cursor-help">
+            <g className="pointer-events-none">
               <ellipse cx={liveEarthX} cy={liveEarthY} rx={liveOrbitalRx} ry={liveOrbitalRy} fill="none" stroke="#475569" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
               <text x={liveEarthX + liveOrbitalRx - 20} y={liveEarthY - liveOrbitalRy - 4} className="text-[8px] font-mono fill-emerald-400">Moon Orbit (5.14° Tilt)</text>
             </g>
@@ -335,7 +335,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
               </g>
 
               {/* 2D Tilted Lunar Orbital Plane Ring around Earth */}
-              <g className="cursor-help">
+              <g className="pointer-events-none">
                 <ellipse cx={earthX} cy={earthY} rx={rx} ry={ry} fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
                 <text x={earthX - rx} y={earthY - ry - 4} className="text-[8px] font-mono fill-emerald-400 font-bold">
                   Moon 2D Orbit Plane (5.14° Inclination)
