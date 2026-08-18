@@ -11,12 +11,12 @@ Welcome to **Cosmic Engine V2.0**. This document provides essential architectura
 Key capabilities include:
 - **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling.
 - **Polar Sunlight Clock & Sun Elevation Arc**: 24-hour polar sector dial oriented with **00:00 UTC at the top** and **12:00 UTC at the bottom** with clockwise progression, paired with an instantaneous **$+90^\circ$ Sun Elevation Arc** horizon dome visualizer.
-- **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart (0000Z to 2400Z), moon phases, perigee/apogee distance metrics, astronomical parallactic angles, and harmonized ocean tidal bulge oscillator.
+- **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart (0000Z to 2400Z), instantaneous **$+90^\circ$ Moon Elevation Arc** dome visualizer with transit peak tracking, moon phases, perigee/apogee distance metrics, astronomical parallactic angles, and harmonized ocean tidal bulge oscillator.
 - **Eclipse Mechanics & Shadow Geometry**: Umbra/penumbra shadow geometry, $5.14^\circ$ lunar nodal plane corridor, smooth $C^1$-continuous syzygy obscuration predictions, and 5 historical/future presets (Apr 2024, Oct 2024, Mar 2025, Aug 2026, Aug 2027).
 - **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date, time, longitude, and latitude, with fast season jumps and direct military/time string parser.
 - **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes.
-- **Daylight Terminator Map**: Real-time Earth map with continental landmasses showing solar sub-point and illumination terminator.
-- **Macro & Micro Views**: Heliocentric Keplerian planetary orbit view with 1 AU orbital physics HUD and Earth gravitational tidal force micro-view.
+- **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing subsolar point, and unclosed horizon boundary curves dividing daylight from twilight shadows.
+- **Macro & Micro Views**: Heliocentric Keplerian planetary orbit view with high-visibility milestone nodes (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD, and Earth gravitational tidal force micro-view.
 - **LivingMarble Globe Visualizer**: Analytical spherical limb intersection and evenodd annular cutout eliminating backside terminator tearing and preserving deep-night contrast.
 - **Cross-Card Interactive Hover Sync**: Hovering over timestamps or calendar dates in any widget synchronizes time/elevation across all visible cards simultaneously.
 
