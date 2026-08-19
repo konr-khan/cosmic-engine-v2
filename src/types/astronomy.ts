@@ -43,6 +43,20 @@ export interface SolarAlmanacData {
   eclipticLongitude: Degrees | number;
   isPolarNight: boolean;
   isMidnightSun: boolean;
+  /** Earth-Sun orbital distance in Astronomical Units (AU) */
+  distanceAU?: number;
+  /** Earth-Sun distance in kilometers */
+  distanceKm?: number;
+  /** Orbital velocity in km/s */
+  orbitalSpeedKms?: number;
+  /** Solar irradiance percentage relative to 1 AU */
+  solarIrradiancePercent?: number;
+  /** Apparent solar angular diameter in arcminutes */
+  sunAngularDiameterArcmin?: number;
+  /** Whether Earth is near perihelion (<0.985 AU) */
+  isPerihelion?: boolean;
+  /** Whether Earth is near aphelion (>1.015 AU) */
+  isAphelion?: boolean;
 }
 
 /** Full instantaneous solar position & Earth orbital dynamics */

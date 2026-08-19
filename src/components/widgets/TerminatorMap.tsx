@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CONFIG, getTerminatorShadowPaths, getDayOfYear, clamp } from '../../utils/cosmicMath';
+import { CONFIG, getTerminatorShadowPaths, clamp, calculateEarthOrbitalPhysics, getJulianDate } from '../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../types';
 
 export interface TerminatorMapProps {
@@ -89,11 +89,13 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
 
   // --- 1. Earth-Sun Keplerian Distance & Dynamic Disc Scaling ---
-  const dayOfYear = currentDate ? getDayOfYear(currentDate) : 1;
-  const meanAnomaly = (2 * Math.PI * (dayOfYear - 4)) / 365.25;
-  const sunDistanceAU = 1.0 - 0.0167 * Math.cos(meanAnomaly);
-  const sunDistanceKm = Math.round(sunDistanceAU * 149597870.7);
-  const sunAngularDiamArcmin = 31.98 / sunDistanceAU;
+  const fallbackPhysics = useMemo(
+    () => calculateEarthOrbitalPhysics(getJulianDate(currentDate, activeTime)),
+    [currentDate, activeTime]
+  );
+  const sunDistanceAU = solarData?.distanceAU ?? fallbackPhysics.distanceAU;
+  const sunDistanceKm = solarData?.distanceKm ?? fallbackPhysics.distanceKm;
+  const sunAngularDiamArcmin = solarData?.sunAngularDiameterArcmin ?? fallbackPhysics.sunAngularDiameterArcmin;
 
   // Dynamic Sun Disc Radius (Base 4.5px, dynamically scaled with orbital distance)
   const sunScale = 1.0 + (1.0 / sunDistanceAU - 1.0) * 4.0;

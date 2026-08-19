@@ -100,14 +100,25 @@ Cosmic Engine V2.0/
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
-│       │   ├── TodayHorizonView.tsx # Instantaneous Sun & Moon +90° elevation arcs & moon phase
-│       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & 24h polar clock dial
-│       │   ├── LunarAlmanacCard.tsx # 365-day lunar ribbon chart & 3-box summary grid
+│       │   ├── TodayHorizonView.tsx # Barrel export for today horizon subsystem
+│       │   ├── SolarAlmanac.tsx # Barrel export for solar almanac subsystem
+│       │   ├── LunarAlmanacCard.tsx # Barrel export for lunar almanac subsystem
 │       │   ├── EclipseDemonstrator.tsx # Barrel export for eclipse subsystem
-│       │   ├── CelestialSphereView.tsx # 3D celestial sphere & heliocentric orbit view
+│       │   ├── CelestialSphereView.tsx # Barrel export for celestial sphere subsystem
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
+│       │   ├── solar/           # Decomposed solar almanac subsystem modules
+│       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
+│       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
+│       │   │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
+│       │   │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
+│       │   ├── today/           # Decomposed today's horizon subsystem modules
+│       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
+│       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
+│       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
 │       │   ├── celestial/       # Decomposed celestial sphere subsystem modules
 │       │   │   ├── projection3D.tsx        # Pure 3D projection & SVG ring builder
 │       │   │   ├── GeocentricSphereView.tsx # 3D equatorial sphere, zenith ray, ecliptic & lunar tilt

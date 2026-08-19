@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { EclipseData } from '../../../types';
-import { getDayOfYear, clamp } from '../../../utils/cosmicMath';
+import { clamp, calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
 
 export interface NodalPlaneVisualizerProps {
   eclipse?: EclipseData | null;
@@ -22,10 +22,11 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const isInsideUmbra = Math.abs(offsetKm) <= umbraRadKm;
 
   // --- Dynamic Distance & Apparent Angular Size Scaling ---
-  const dayOfYear = currentDate ? getDayOfYear(currentDate) : 1;
-  const meanAnomaly = (2 * Math.PI * (dayOfYear - 4)) / 365.25;
-  const sunDistanceAU = 1.0 - 0.0167 * Math.cos(meanAnomaly);
-  const sunAngularDiamArcmin = 31.98 / sunDistanceAU; // ~31.5' (Aphelion) to ~32.5' (Perihelion)
+  const solarPhysics = useMemo(
+    () => calculateEarthOrbitalPhysics(getJulianDate(currentDate, 12)),
+    [currentDate]
+  );
+  const sunAngularDiamArcmin = solarPhysics.sunAngularDiameterArcmin; // ~31.5' (Aphelion) to ~32.5' (Perihelion)
 
   const moonDistKm = eclipse.distanceKm || 384400;
   const moonAngularDiamArcmin = 31.13 * (384400 / moonDistKm); // ~29.4' (Apogee) to ~33.5' (Perigee)

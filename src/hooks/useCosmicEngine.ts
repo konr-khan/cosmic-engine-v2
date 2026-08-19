@@ -99,7 +99,14 @@ export const useCosmicEngine = (
       lambda: solarLambda,
       eclipticLongitude: solarLambda,
       isPolarNight: dayLen <= 0,
-      isMidnightSun: dayLen >= 24
+      isMidnightSun: dayLen >= 24,
+      distanceAU: solarPos.distanceAU,
+      distanceKm: solarPos.distanceKm,
+      orbitalSpeedKms: solarPos.orbitalSpeedKms,
+      solarIrradiancePercent: solarPos.solarIrradiancePercent,
+      sunAngularDiameterArcmin: solarPos.sunAngularDiameterArcmin,
+      isPerihelion: solarPos.isPerihelion,
+      isAphelion: solarPos.isAphelion
     };
 
     let orbitalData: OrbitalData | null = null;
