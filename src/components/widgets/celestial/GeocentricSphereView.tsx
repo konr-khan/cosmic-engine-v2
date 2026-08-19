@@ -156,12 +156,12 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       />
 
       {/* 4. Center Earth Globe */}
-      <circle cx="200" cy="160" r="32" fill="#020617" stroke="#3b82f6" strokeWidth="1.2" />
+      <circle cx="200" cy="160" r="32" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
       {/* Earth Rotational Axis */}
       <line 
         x1={geocentricScene.pNorth.px} y1={geocentricScene.pNorth.py} 
         x2={geocentricScene.pSouth.px} y2={geocentricScene.pSouth.py} 
-        stroke="#60a5fa" strokeWidth="1.5" strokeDasharray="3 2" 
+        stroke="#93c5fd" strokeWidth="1.5" strokeDasharray="3 2" 
       />
 
       {/* 5. Observer Location & Zenith Laser Ray */}
@@ -182,7 +182,7 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       />
       <text 
         x={geocentricScene.pZenithVault.px + 8} y={geocentricScene.pZenithVault.py + 4} 
-        className="text-[9px] font-mono font-bold fill-cyan-300 drop-shadow-sm"
+        className="text-[9px] font-mono font-bold fill-cyan-300 drop-shadow-sm select-none pointer-events-none"
       >
         YOU (Zenith)
       </text>
@@ -194,7 +194,7 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       />
       <text 
         x={geocentricScene.pSun.px + 10} y={geocentricScene.pSun.py + 3} 
-        className="text-[9px] font-mono font-bold fill-amber-300 drop-shadow-sm"
+        className="text-[9px] font-mono font-bold fill-amber-300 drop-shadow-sm select-none pointer-events-none"
       >
         SUN
       </text>
@@ -206,24 +206,24 @@ export const GeocentricSphereView: React.FC<GeocentricSphereViewProps> = ({
       />
       <text 
         x={geocentricScene.pMoon.px + 8} y={geocentricScene.pMoon.py + 3} 
-        className="text-[9px] font-mono font-bold fill-emerald-300 drop-shadow-sm"
+        className="text-[9px] font-mono font-bold fill-emerald-300 drop-shadow-sm select-none pointer-events-none"
       >
         MOON
       </text>
 
-      {/* 8. Eclipse Nodes Highlights (Ascending & Descending Node Markers) */}
+      {/* 8. Eclipse Nodes Highlights with Glowing Halos (Ascending & Descending Node Markers) */}
       <g transform={`translate(${geocentricScene.pNodeAsc.px}, ${geocentricScene.pNodeAsc.py})`}>
-        <circle r="7" fill="none" stroke="#f43f5e" strokeWidth="1.5" className="animate-ping" />
+        <circle r="9" fill="#f43f5e" opacity="0.25" className="animate-pulse" />
         <circle r="3.5" fill="#f43f5e" stroke="white" strokeWidth="1" />
-        <text x="8" y="-4" className="text-[8px] font-mono font-bold fill-rose-400">
+        <text x="8" y="-4" className="text-[8px] font-mono font-bold fill-rose-400 select-none pointer-events-none">
           Node ☊ (Ascending)
         </text>
       </g>
 
       <g transform={`translate(${geocentricScene.pNodeDesc.px}, ${geocentricScene.pNodeDesc.py})`}>
-        <circle r="7" fill="none" stroke="#f43f5e" strokeWidth="1.5" className="animate-ping" />
+        <circle r="9" fill="#f43f5e" opacity="0.25" className="animate-pulse" />
         <circle r="3.5" fill="#f43f5e" stroke="white" strokeWidth="1" />
-        <text x="-70" y="12" className="text-[8px] font-mono font-bold fill-rose-400">
+        <text x="-70" y="12" className="text-[8px] font-mono font-bold fill-rose-400 select-none pointer-events-none">
           Node ☋ (Descending)
         </text>
       </g>

@@ -331,21 +331,19 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
             const isHovered = hoveredId === m.id;
             return (
               <g key={m.id}>
-                {/* Visual Node Dot with Pulsating Hover Halo */}
-                {isHovered && (
-                  <circle 
-                    cx={mx} 
-                    cy={my} 
-                    r="14" 
-                    fill={m.color} 
-                    opacity="0.25" 
-                    className="animate-pulse pointer-events-none" 
-                  />
-                )}
+                {/* Persistent Translucent Glowing Halo Node (Expands on Hover) */}
                 <circle 
                   cx={mx} 
                   cy={my} 
-                  r={isHovered ? 8.5 : 5.5} 
+                  r={isHovered ? 18 : 11} 
+                  fill={m.color} 
+                  opacity={isHovered ? 0.45 : 0.20} 
+                  className={`pointer-events-none transition-all duration-200 ${isHovered ? 'animate-pulse' : ''}`} 
+                />
+                <circle 
+                  cx={mx} 
+                  cy={my} 
+                  r={isHovered ? 8 : 5.5} 
                   fill={m.color} 
                   stroke="#ffffff" 
                   strokeWidth="1.5" 

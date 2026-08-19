@@ -89,20 +89,39 @@ export const CelestialSphereView: React.FC<CelestialSphereViewProps> = ({
       {/* Main 3D Canvas */}
       <div className="relative w-full flex-1 min-h-[300px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center">
         
-        {/* Legend Badge */}
-        <div className="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-sm px-3 py-2 rounded-xl border border-slate-800/80 text-[10px] font-mono space-y-1.5 z-10 shadow-md">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-0.5 bg-indigo-400 inline-block" /> Celestial Equator (0°)
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-0.5 bg-amber-400 inline-block" /> {isExaggeratedScale && viewMode === 'geocentric' ? 'Ecliptic Plane (45° Exagg)' : 'Ecliptic Plane (23.44°)'}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-0.5 bg-emerald-400 inline-block" /> {isExaggeratedScale && viewMode === 'geocentric' ? 'Moon Orbit (15° Tilt Exagg)' : 'Moon Orbit (5.14° Tilt)'}
-          </div>
-          <div className="flex items-center gap-2 text-cyan-300">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" /> Observer Zenith Ray
-          </div>
+        {/* Contextual Dynamic Legend Badge */}
+        <div className="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800/80 text-[10px] font-mono space-y-1.5 z-10 shadow-md">
+          {viewMode === 'geocentric' ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-0.5 bg-indigo-400 inline-block" /> Celestial Equator (0°)
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-0.5 bg-amber-400 inline-block" /> {isExaggeratedScale ? 'Ecliptic Plane (45° Exagg)' : 'Ecliptic Plane (23.44°)'}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-0.5 bg-emerald-400 inline-block" /> {isExaggeratedScale ? 'Moon Orbit (15° Tilt Exagg)' : 'Moon Orbit (5.14° Tilt)'}
+              </div>
+              <div className="flex items-center gap-2 text-cyan-300">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" /> Observer Zenith Ray
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-0.5 bg-amber-400 inline-block" /> Earth Orbit (1.0 AU)
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Solstice Nodes (Jun/Dec)
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-400 inline-block" /> Equinox Nodes (Mar/Sep)
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Perihelion (Jan 3) / Aphelion (Jul 4)
+              </div>
+            </>
+          )}
         </div>
 
         {/* Eclipse Proximity Alert */}

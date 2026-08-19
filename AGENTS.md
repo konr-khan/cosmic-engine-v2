@@ -9,15 +9,19 @@ Welcome to **Cosmic Engine V2.0**. This document provides essential architectura
 **Cosmic Engine V2.0** is an interactive, browser-based astronomical simulation and ephemeris dashboard built with React 19, TypeScript (Strict Mode with Symbol-branded units), Vite, and Tailwind CSS v4. 
 
 Key capabilities include:
-- **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Sector Dial (00:00 UTC at Top, 12:00 UTC at Bottom).
-- **Today's Sky Horizon Dome**: Instantaneous dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
-- **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z), real-time hairline time guide scanning, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
+- **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Sector Dial featuring **Solar Noon vs. UTC Mode** segmented controls.
+- **Today's Sky Horizon Dome**: Symmetrical dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
+- **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
 - **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view harmonized with the dynamic ocean tidal wave oscillator, reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
-- **Eclipse Mechanics & Shadow Geometry**: Umbra/penumbra shadow geometry, $5.14^\circ$ lunar nodal plane corridor, smooth $C^1$-continuous syzygy obscuration predictions, explicit orbital elongation tracking ($0^\circ \to 360^\circ$), and 5 historical/future presets (Apr 2024, Oct 2024, Mar 2025, Aug 2026, Aug 2027).
+- **Side-by-Side Dual-Perspective Eclipse Demonstrator**: 
+  - **Left (Syzygy Profile & Shadow Rays)**: Strictly edge-on transverse profile with a stable $5.14^\circ$ tilted orbital plane track line ("Saturn's ring" plane) through Earth, tracking orbital elongation ($0^\circ \to 360^\circ$) and ray-traced Umbra/Penumbra shadow cones.
+  - **Right (Axial Sightline & 5.14° Nodes)**: Down-the-barrel view along the Sun-Earth sightline through Earth with partially eclipsed background Sun, flat vector Earth, and dashed (solar side) vs. solid (shadow side) Moon disc.
+  - **Real-Time Annual Nodal Seasons**: Annual dynamic modulation of the orbital plane tilt driven by the Sun-Earth-Node angle ($\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$) and dynamically gliding Ascending ($\Omega$) and Descending ($\mho$) nodes.
+  - **Exact Peak UTC Eclipse Presets**: Direct snapping to exact fractional UTC peak hours of greatest eclipse for 5 historical and future presets (Apr 2024, Oct 2024, Mar 2025 Blood Moon, Aug 2026, Aug 2027 Luxor).
 - **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date (with full year tooltip), time, longitude, and linear latitude slider, with fast season jumps and direct military/time string parser.
-- **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes, featuring a **3D Misalignment Scale Toggle** (True $23.4^\circ / 5.1^\circ$ vs Exaggerated $45^\circ / 15^\circ$).
-- **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing Subsolar Point (Sun Zenith) and Sublunar Point (Moon Zenith), and unclosed horizon boundary curves dividing daylight from twilight shadows with interactive glassmorphic HUD popovers.
-- **Macro & Micro Views**: Heliocentric Keplerian planetary orbit view with high-visibility milestone nodes (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD with collision-free diagonal arc labeling, and Earth gravitational tidal force micro-view.
+- **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes, featuring a **3D Misalignment Scale Toggle** (True $23.4^\circ / 5.1^\circ$ vs Exaggerated $45^\circ / 15^\circ$) and contextual dynamic legend HUDs.
+- **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing Subsolar Point (Sun Zenith) and Sublunar Point (Moon Zenith) with **dynamic orbital distance and apparent diameter scaling** ($0.983\text{ AU} \to 1.017\text{ AU}$, $356,400\text{ km} \to 406,700\text{ km}$), and unclosed horizon boundary curves dividing daylight from civil, nautical, and astronomical twilight shadows with interactive glassmorphic HUD popovers.
+- **Solar System Macro Orbit**: Heliocentric Keplerian planetary orbit view with **persistent glowing translucent halo nodes** (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD with collision-free diagonal arc labeling, and true vs exaggerated eccentricity modes.
 - **LivingMarble Globe Visualizer**: Analytical spherical limb intersection and evenodd annular cutout eliminating backside terminator tearing and preserving deep-night contrast.
 - **Cross-Card Interactive Hover Sync**: Hovering over timestamps or calendar dates in any widget synchronizes time/elevation across all visible cards simultaneously.
 
@@ -231,6 +235,30 @@ Standard coordinate conventions used throughout the engine:
 - Interactive widgets inside `src/components/widgets/` must be wrapped in React Error Boundaries within `DashboardWindow.tsx`.
 - An isolated calculation or SVG rendering failure in a single visualizer (e.g. 3D orthographic sphere or eclipse ray tracer) will display a local fallback state without unmounting or crashing the rest of the Observatory dashboard.
 - Layout management supports dragging, resizing, locking, and responsive column spanning (`colSpan={12}` spans full width on standard screens, collapsing to 6 columns on ultra-wide displays: `2xl:col-span-6 3xl:col-span-6`). Presets persist in `localStorage` under `cosmic_window_layout_v7`.
+
+### G. Side-by-Side Dual-Perspective Eclipse Geometry Contracts (`src/components/widgets/eclipse/`)
+The Eclipse demonstrator renders synchronized dual perspectives in `activeTab === 'geometry'`:
+1. **Transverse Syzygy Profile (`ShadowRayDiagram.tsx`)**:
+   - Strictly edge-on transverse profile ($R_y = 0$).
+   - The Moon's orbital plane line passes through Earth $(X=310, Y=110)$ with slope modulated by real-time annual nodal alignment: $\text{tiltSlope} = \sin(\Delta \Omega) \cdot \sin(5.14^\circ) \cdot 2.2$, where $\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$.
+   - Moon linear position along the plane: $s = -\cos(\text{phaseRad}) \in [-1, 1]$, placing New Moon at $s = -1$ (between Sun and Earth) and Full Moon at $s = +1$ (in Earth's shadow).
+2. **Axial Sightline Down-the-Barrel View (`NodalPlaneVisualizer.tsx`)**:
+   - View looking directly along the Sun-Earth axis with Earth centered at $(200, 90)$ and the Sun partially eclipsed behind Earth.
+   - Transverse cross-axis displacement: $s = \sin(\text{phaseRad}) \in [-1, 1]$, placing Syzygy (New/Full Moon) directly at center $X = 200$, and Quarters at extremities $X = 200 \pm 100$.
+   - Tilted orbital plane line slope across sightline: $\text{tiltSlope} = \cos(\Delta \Omega) \cdot \sin(5.14^\circ) \cdot 2.2$.
+   - Dynamic Ascending ($\Omega$) and Descending ($\mho$) nodes glide along the orbital line: $s_{\text{node}} = -\sin(\Delta \Omega)$, converging into the center target $(200, 90)$ during eclipse seasons and moving to outer extremities during off-seasons.
+3. **Exact UTC Preset Snapping**:
+   - `EclipsePresetItem` requires explicit `timeOfDay: number` (fractional UTC hour) to guarantee that clicking presets snaps directly to peak totality (e.g., $06:58\text{ UTC}$ for Mar 14, 2025 Blood Moon).
+
+### H. Orbital Milestones & Persistent Translucent Halo Nodes (`MacroOrbitView.tsx`, `HeliocentricOrbitView.tsx`)
+- Milestone orbital nodes (Perihelion, Aphelion, Jun/Dec Solstices, Mar/Sep Equinoxes) feature persistent translucent glowing halo rings (`fill={color}`, `opacity="0.20"`, `r="11px"`) that expand responsively on hover (`opacity="0.45"`, `r="18px"`).
+- Heliocentric 3D views feature matching glowing halo nodes along the 1 AU Earth orbit ring.
+
+### I. Dynamic Ephemeris Distance & Apparent Diameter Scaling (`TerminatorMap.tsx`)
+- Subsolar and Sublunar discs scale dynamically based on instantaneous orbital distance:
+  - Sun diameter: $31.98' / r_{\text{AU}}$ ($31.5' \to 32.5'$).
+  - Moon diameter: $31.13' \cdot (384,400 / d_{\text{km}})$ ($29.4' \to 33.5'$).
+- Glassmorphic HUD popovers report live distance in AU / km and apparent diameter in arcminutes.
 
 ---
 
