@@ -21,7 +21,7 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
   onTimeChange, 
   orbitalData 
 }) => {
-  const [activeTab, setActiveTab] = useState<'geometry' | 'nodes' | 'sky' | 'scanner'>('geometry');
+  const [activeTab, setActiveTab] = useState<'geometry' | 'sky' | 'scanner'>('geometry');
   const [diagramMode, setDiagramMode] = useState<'live' | 'solar' | 'lunar'>('live');
   const [lunarViewSubTab, setLunarViewSubTab] = useState<'pov' | 'orbit'>('pov');
 
@@ -34,11 +34,16 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
     return findUpcomingEclipses(currentDate || new Date(), 4);
   }, [currentDate]);
 
-  const handleSelectPreset = (presetDate: Date) => {
+  const handleSelectPreset = (preset: { date: Date; timeOfDay?: number } | Date) => {
     if (!onDateChange) return;
-    onDateChange(new Date(presetDate));
-    if (onTimeChange) {
-      onTimeChange(18); // standard eclipse peak time around mid-day/dusk UTC
+    const targetDate = preset instanceof Date ? preset : preset.date;
+    const timeOfDay = preset instanceof Date
+      ? (preset.getUTCHours() + preset.getUTCMinutes() / 60)
+      : (preset.timeOfDay ?? (preset.date.getUTCHours() + preset.date.getUTCMinutes() / 60));
+
+    onDateChange(new Date(targetDate));
+    if (onTimeChange && typeof timeOfDay === 'number') {
+      onTimeChange(timeOfDay);
     }
   };
 
@@ -61,16 +66,9 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
               className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'geometry' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
               }`}
+              title="Side-by-side Syzygy Shadow Rays and Edge-On 5.14° Nodal View"
             >
-              <Layers className="w-3.5 h-3.5" /> Shadow Rays
-            </button>
-            <button
-              onClick={() => setActiveTab('nodes')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
-                activeTab === 'nodes' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Compass className="w-3.5 h-3.5" /> 5.14° Nodes
+              <Layers className="w-3.5 h-3.5" /> Dual View (Rays &amp; Nodes)
             </button>
             <button
               onClick={() => setActiveTab('sky')}
@@ -93,17 +91,30 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
       </div>
 
       {/* Main Canvas Viewport */}
-      <div className="relative w-full flex-1 min-h-[280px] bg-slate-950/60 rounded-xl overflow-hidden border border-slate-800/60 flex items-center justify-center p-3">
+      <div className="relative w-full flex-1 min-h-[280px] bg-slate-950/60 rounded-xl overflow-hidden border border-slate-800/60 flex items-center justify-center p-2.5">
         {activeTab === 'geometry' && (
-          <ShadowRayDiagram
-            eclipse={eclipse}
-            diagramMode={diagramMode}
-            setDiagramMode={setDiagramMode}
-            lunarViewSubTab={lunarViewSubTab}
-            setLunarViewSubTab={setLunarViewSubTab}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch">
+            {/* Left Pane: Syzygy & Shadow Ray Diagram */}
+            <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm">
+              <ShadowRayDiagram
+                eclipse={eclipse}
+                diagramMode={diagramMode}
+                setDiagramMode={setDiagramMode}
+                lunarViewSubTab={lunarViewSubTab}
+                setLunarViewSubTab={setLunarViewSubTab}
+                currentDate={currentDate}
+              />
+            </div>
+
+            {/* Right Pane: Edge-On 5.14° Nodal Plane Corridor */}
+            <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm">
+              <NodalPlaneVisualizer 
+                eclipse={eclipse} 
+                currentDate={currentDate}
+              />
+            </div>
+          </div>
         )}
-        {activeTab === 'nodes' && <NodalPlaneVisualizer eclipse={eclipse} />}
         {activeTab === 'sky' && <SkyViewSimulator eclipse={eclipse} />}
         {activeTab === 'scanner' && (
           <EclipseScanner

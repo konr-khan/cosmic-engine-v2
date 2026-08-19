@@ -297,6 +297,7 @@ describe('cosmicMath utilities', () => {
       expect(ECLIPSE_PRESETS).toHaveLength(5);
       ECLIPSE_PRESETS.forEach(preset => {
         expect(preset.date).toBeInstanceOf(Date);
+        expect(preset.timeOfDay).toBeTypeOf('number');
         expect(preset.title).toBeTypeOf('string');
         expect(preset.type).toBeTypeOf('string');
         expect(preset.category).toMatch(/^(SOLAR|LUNAR)$/);
@@ -306,7 +307,7 @@ describe('cosmicMath utilities', () => {
 
     it('verifies Preset 1: Great American Eclipse (April 8, 2024 Total Solar)', () => {
       const preset = ECLIPSE_PRESETS[0];
-      const timeOfDay = preset.date.getHours() + (preset.date.getMinutes() / 60);
+      const timeOfDay = preset.timeOfDay;
       const jd = getJulianDate(preset.date, timeOfDay);
       const eclipse = calculateEclipseData(jd);
 
@@ -320,7 +321,7 @@ describe('cosmicMath utilities', () => {
 
     it('verifies Preset 2: Annular Solar Eclipse (October 2, 2024 Ring of Fire)', () => {
       const preset = ECLIPSE_PRESETS[1];
-      const timeOfDay = preset.date.getHours() + (preset.date.getMinutes() / 60);
+      const timeOfDay = preset.timeOfDay;
       const jd = getJulianDate(preset.date, timeOfDay);
       const eclipse = calculateEclipseData(jd);
 
@@ -335,7 +336,7 @@ describe('cosmicMath utilities', () => {
 
     it('verifies Preset 3: Deep Blood Moon Total Lunar Eclipse (March 14, 2025)', () => {
       const preset = ECLIPSE_PRESETS[2];
-      const timeOfDay = preset.date.getHours() + (preset.date.getMinutes() / 60);
+      const timeOfDay = preset.timeOfDay;
       const jd = getJulianDate(preset.date, timeOfDay);
       const eclipse = calculateEclipseData(jd);
 
@@ -349,7 +350,7 @@ describe('cosmicMath utilities', () => {
 
     it('verifies Preset 4: European Total Eclipse (August 12, 2026)', () => {
       const preset = ECLIPSE_PRESETS[3];
-      const timeOfDay = preset.date.getHours() + (preset.date.getMinutes() / 60);
+      const timeOfDay = preset.timeOfDay;
       const jd = getJulianDate(preset.date, timeOfDay);
       const eclipse = calculateEclipseData(jd);
 
@@ -362,7 +363,7 @@ describe('cosmicMath utilities', () => {
 
     it('verifies Preset 5: Luxor 6-Min Totality (August 2, 2027)', () => {
       const preset = ECLIPSE_PRESETS[4];
-      const timeOfDay = preset.date.getHours() + (preset.date.getMinutes() / 60);
+      const timeOfDay = preset.timeOfDay;
       const jd = getJulianDate(preset.date, timeOfDay);
       const eclipse = calculateEclipseData(jd);
 

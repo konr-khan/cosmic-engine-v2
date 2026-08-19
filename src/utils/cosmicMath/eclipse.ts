@@ -19,6 +19,7 @@ export interface EclipseCalculationResult {
   raDiff: number;
   elongation: number;
   phaseValue: number;
+  nodeAngleDeg?: number;
 }
 
 /**
@@ -141,12 +142,14 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
     penumbraRadiusKm: Math.round(penumbraRadiusKm),
     raDiff: parseFloat(raDiff.toFixed(2)),
     elongation: parseFloat(elongation.toFixed(2)),
-    phaseValue: parseFloat(phaseValue.toFixed(3))
+    phaseValue: parseFloat(phaseValue.toFixed(3)),
+    nodeAngleDeg: parseFloat((((sunLambda - (lunarPos.nodeLongitude ?? 0)) % 360 + 360) % 360).toFixed(2))
   };
 };
 
 export interface EclipsePresetItem {
   date: Date;
+  timeOfDay: number;
   title: string;
   type: string;
   category: 'SOLAR' | 'LUNAR';
@@ -158,35 +161,40 @@ export interface EclipsePresetItem {
  */
 export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
   {
-    date: new Date(2024, 3, 8, 18, 17), // April 8, 2024 Total Solar Eclipse
+    date: new Date(2024, 3, 8), // April 8, 2024 Total Solar Eclipse (18:17 UTC)
+    timeOfDay: 18.283,
     title: "Apr 8, 2024 - Great American Eclipse",
     type: "TOTAL_SOLAR",
     category: "SOLAR",
     description: "Total Solar Eclipse spanning North America from Mexico through Maine."
   },
   {
-    date: new Date(2024, 9, 2, 18, 45), // Oct 2, 2024 Annular Solar Eclipse
+    date: new Date(2024, 9, 2), // Oct 2, 2024 Annular Solar Eclipse (18:45 UTC)
+    timeOfDay: 18.75,
     title: "Oct 2, 2024 - Annular Solar Eclipse",
     type: "ANNULAR_SOLAR",
     category: "SOLAR",
     description: "Ring of Fire eclipse visible across South America and Easter Island."
   },
   {
-    date: new Date(2025, 2, 14, 6, 58), // March 14, 2025 Total Lunar Eclipse
+    date: new Date(2025, 2, 14), // March 14, 2025 Total Lunar Eclipse (06:58 UTC)
+    timeOfDay: 6.967,
     title: "Mar 14, 2025 - Total Lunar Eclipse",
     type: "TOTAL_LUNAR",
     category: "LUNAR",
     description: "Deep Blood Moon visible across North & South America, Europe, and Africa."
   },
   {
-    date: new Date(2026, 7, 12, 17, 47), // August 12, 2026 Total Solar Eclipse
+    date: new Date(2026, 7, 12), // August 12, 2026 European Total Eclipse (17:47 UTC)
+    timeOfDay: 17.783,
     title: "Aug 12, 2026 - European Total Eclipse",
     type: "TOTAL_SOLAR",
     category: "SOLAR",
     description: "First Total Solar Eclipse in mainland Europe in 27 years (Spain/Iceland)."
   },
   {
-    date: new Date(2027, 7, 2, 10, 7), // August 2, 2027 Great North African Eclipse
+    date: new Date(2027, 7, 2), // August 2, 2027 Great North African Eclipse (10:07 UTC)
+    timeOfDay: 10.117,
     title: "Aug 2, 2027 - Luxor 6-Min Totality",
     type: "TOTAL_SOLAR",
     category: "SOLAR",
@@ -196,6 +204,7 @@ export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
 
 export interface UpcomingEclipseEvent extends EclipseCalculationResult {
   date: Date;
+  timeOfDay: number;
   dayOffset: number;
   title: string;
 }
@@ -245,8 +254,10 @@ export const findUpcomingEclipses = (
         const isDuplicate = list.some(item => Math.abs(item.dayOffset - peakOffset) < 10);
         if (!isDuplicate && peakOffset >= 0) {
           const eventDate = new Date(startDate.getTime() + peakOffset * 86400000);
+          const peakHour = (((peakJD + 0.5) % 1) * 24 + 24) % 24;
           list.push({
             date: eventDate,
+            timeOfDay: parseFloat(peakHour.toFixed(3)),
             dayOffset: Math.round(peakOffset),
             title: `${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
             ...eclipse

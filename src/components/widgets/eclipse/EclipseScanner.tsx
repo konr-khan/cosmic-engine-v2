@@ -4,6 +4,7 @@ import { ECLIPSE_PRESETS, formatYMD } from '../../../utils/cosmicMath';
 
 export interface EclipseDiscoveryItem {
   date: Date;
+  timeOfDay?: number;
   title: string;
   label: string;
   dayOffset: number;
@@ -12,7 +13,7 @@ export interface EclipseDiscoveryItem {
 export interface EclipseScannerProps {
   currentDate?: Date;
   upcomingEclipses?: EclipseDiscoveryItem[];
-  onSelectPreset?: (date: Date) => void;
+  onSelectPreset?: (preset: { date: Date; timeOfDay?: number }) => void;
 }
 
 export const EclipseScanner: React.FC<EclipseScannerProps> = ({
@@ -31,7 +32,7 @@ export const EclipseScanner: React.FC<EclipseScannerProps> = ({
           {ECLIPSE_PRESETS.map((preset, idx) => (
             <button
               key={idx}
-              onClick={() => onSelectPreset && onSelectPreset(preset.date)}
+              onClick={() => onSelectPreset && onSelectPreset(preset)}
               className="bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 hover:border-indigo-500/50 p-2.5 rounded-xl text-left transition-all group flex items-start justify-between cursor-pointer"
             >
               <div>
@@ -58,7 +59,7 @@ export const EclipseScanner: React.FC<EclipseScannerProps> = ({
             upcomingEclipses.map((item, idx) => (
               <button
                 key={idx}
-                onClick={() => onSelectPreset && onSelectPreset(item.date)}
+                onClick={() => onSelectPreset && onSelectPreset(item)}
                 className="bg-slate-950/80 hover:bg-slate-900/90 border border-slate-800/80 hover:border-emerald-500/50 p-2 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer"
               >
                 <div>

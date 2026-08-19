@@ -8,6 +8,7 @@ export interface ShadowRayDiagramProps {
   setDiagramMode?: (mode: 'live' | 'solar' | 'lunar') => void;
   lunarViewSubTab?: 'pov' | 'orbit';
   setLunarViewSubTab?: (tab: 'pov' | 'orbit') => void;
+  currentDate?: Date;
 }
 
 export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
@@ -15,7 +16,8 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   diagramMode = 'live',
   setDiagramMode,
   lunarViewSubTab = 'pov',
-  setLunarViewSubTab
+  setLunarViewSubTab,
+  currentDate = new Date()
 }) => {
   const [hoveredEntity, setHoveredEntity] = useState<'sun' | 'earth' | 'moon' | 'umbra' | 'penumbra' | null>(null);
   if (!eclipse) return null;
@@ -29,17 +31,31 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   const phaseDeg = Math.round(phaseVal * 360);
   const phaseName = getPhaseName(phaseVal);
   const illumPercent = calculateLunarIllumination(phaseVal);
-
-  // Map -5.14° to +5.14° ecliptic latitude to SVG Y pixel displacement
   const scalePxPerDeg = 8.5;
 
-  // Calculate Live Orbit Moon Coordinates
+  // Calculate Strictly Edge-On 2D Live Orbit Moon Coordinates
   const liveEarthX = 310;
   const liveEarthY = 110;
   const liveOrbitalRx = 85;
-  const liveOrbitalRy = 38;
-  const liveMoonX = liveEarthX - (liveOrbitalRx * Math.cos(phaseRad));
-  const liveMoonY = liveEarthY + (liveOrbitalRy * Math.sin(phaseRad)) - (beta * 4);
+
+  // Real-Time Seasonal Nodal Alignment Tilt:
+  // Node alignment modulates the projected tilt: during Eclipse Seasons (April/Oct), the line flattens into the Ecliptic!
+  const nodeAngleRad = ((eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0)) * Math.PI) / 180;
+  const seasonalFactor = Math.sin(nodeAngleRad);
+  const maxTiltSlope = Math.sin((5.14 * Math.PI) / 180) * 2.2;
+  const tiltSlope = seasonalFactor * maxTiltSlope;
+
+  const planeExtentX = 95;
+  const planeX1 = liveEarthX - planeExtentX;
+  const planeY1 = liveEarthY + (tiltSlope * planeExtentX);
+  const planeX2 = liveEarthX + planeExtentX;
+  const planeY2 = liveEarthY - (tiltSlope * planeExtentX);
+
+  // Linear position along the seasonal 5.14° plane:
+  // s = -1 (New Moon / between Sun & Earth) to +1 (Full Moon / in Earth's shadow)
+  const s = -Math.cos(phaseRad);
+  const liveMoonX = liveEarthX + (s * liveOrbitalRx);
+  const liveMoonY = liveEarthY - (s * tiltSlope * liveOrbitalRx);
 
   // Calculate shadow miss margin in km
   const penumbraRad = eclipse.penumbraRadiusKm || 9500;
@@ -58,53 +74,56 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
     <div className="w-full h-full flex flex-col justify-between relative">
       
       {/* Top Bar: Streamlined Mode Selector & Live Dynamic Offset Badge */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 text-xs font-mono">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1.5 mb-1 text-xs font-mono">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="flex bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 gap-1">
+          <span className="font-semibold text-amber-400 font-sans text-xs flex items-center gap-1">
+            Syzygy &amp; Shadow Rays
+          </span>
+          <div className="flex bg-slate-950/80 p-0.5 rounded-lg border border-slate-800/80 gap-0.5 text-[10px]">
             <button
               onClick={() => setDiagramMode && setDiagramMode('live')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                diagramMode === 'live' ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400' : 'text-slate-400 hover:text-white'
+              className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                diagramMode === 'live' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Live Orbit
+              Orbit
             </button>
             <button
               onClick={() => setDiagramMode && setDiagramMode('solar')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                diagramMode === 'solar' ? 'bg-amber-500 text-slate-950 shadow-sm ring-1 ring-amber-400' : 'text-slate-400 hover:text-white'
+              className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                diagramMode === 'solar' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Solar Focus
+              Solar
             </button>
             <button
               onClick={() => setDiagramMode && setDiagramMode('lunar')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                diagramMode === 'lunar' ? 'bg-rose-600 text-white shadow-sm ring-1 ring-rose-400' : 'text-slate-400 hover:text-white'
+              className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                diagramMode === 'lunar' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Lunar Focus
+              Lunar
             </button>
           </div>
 
           {/* Integrated inline sub-toggle when in Lunar Focus mode */}
           {diagramMode === 'lunar' && (
-            <div className="flex bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 gap-1 text-[11px]">
+            <div className="flex bg-slate-950/80 p-0.5 rounded-lg border border-slate-800/80 gap-0.5 text-[10px]">
               <button
                 onClick={() => setLunarViewSubTab && setLunarViewSubTab('pov')}
-                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
                   lunarViewSubTab === 'pov' ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Surface POV
+                POV
               </button>
               <button
                 onClick={() => setLunarViewSubTab && setLunarViewSubTab('orbit')}
-                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
                   lunarViewSubTab === 'orbit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Selenocentric
+                Orbit
               </button>
             </div>
           )}
@@ -112,7 +131,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
 
         {/* Live Shadow State Indicator */}
         {diagramMode !== 'lunar' && (
-          <div className={`px-2.5 py-1 rounded-lg border font-bold text-[10px] flex items-center gap-1.5 backdrop-blur-sm ${shadowStatus.bg}`}>
+          <div className={`px-2 py-0.5 rounded-md border font-bold text-[9px] flex items-center gap-1 backdrop-blur-sm ${shadowStatus.bg}`}>
             <span>{shadowStatus.text}</span>
           </div>
         )}
@@ -258,10 +277,21 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
             <line x1="50" y1="82" x2="310" y2="92" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
             <line x1="50" y1="138" x2="310" y2="128" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
 
-            {/* Moon Tilted Orbit Path Ellipse around Earth */}
+            {/* 5.14° Tilted Moon Orbital Plane Line passing through Earth */}
             <g className="pointer-events-none">
-              <ellipse cx={liveEarthX} cy={liveEarthY} rx={liveOrbitalRx} ry={liveOrbitalRy} fill="none" stroke="#475569" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
-              <text x={liveEarthX + liveOrbitalRx - 20} y={liveEarthY - liveOrbitalRy - 4} className="text-[8px] font-mono fill-emerald-400">Moon Orbit (5.14° Tilt)</text>
+              <line 
+                x1={planeX1} 
+                y1={planeY1} 
+                x2={planeX2} 
+                y2={planeY2} 
+                stroke="#10b981" 
+                strokeWidth="1.2" 
+                strokeDasharray="4 2" 
+                opacity="0.85" 
+              />
+              <text x={planeX2} y={planeY2 < liveEarthY ? planeY2 - 4 : planeY2 + 10} textAnchor="end" className="text-[7.5px] font-mono fill-emerald-400 font-semibold">
+                Moon Orbital Plane (5.14° Tilt)
+              </text>
             </g>
 
             {/* 2. EARTH BODY (Middle) */}
@@ -310,11 +340,10 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
           const earthX = 380;
           const earthY = 110;
           const rx = 100;
-          const ry = 42;
-
-          // Moon 2D orbit position around Earth based on phase angle & 5.14° inclination
-          const moonOrbitalX = earthX - (rx * Math.cos(phaseRad));
-          const moonOrbitalY = earthY + (ry * Math.sin(phaseRad)) - (beta * 4);
+          const tiltSlopeB = Math.sin((5.14 * Math.PI) / 180) * 1.8;
+          const sB = -Math.cos(phaseRad);
+          const moonOrbitalX = earthX + (sB * rx);
+          const moonOrbitalY = earthY - (sB * tiltSlopeB * rx);
 
           return (
             <g>
@@ -334,11 +363,20 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                 </text>
               </g>
 
-              {/* 2D Tilted Lunar Orbital Plane Ring around Earth */}
+              {/* 5.14° Tilted Lunar Orbital Plane Line around Earth */}
               <g className="pointer-events-none">
-                <ellipse cx={earthX} cy={earthY} rx={rx} ry={ry} fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
-                <text x={earthX - rx} y={earthY - ry - 4} className="text-[8px] font-mono fill-emerald-400 font-bold">
-                  Moon 2D Orbit Plane (5.14° Inclination)
+                <line 
+                  x1={earthX - 110} 
+                  y1={earthY + 20} 
+                  x2={earthX + 110} 
+                  y2={earthY - 20} 
+                  stroke="#10b981" 
+                  strokeWidth="1.2" 
+                  strokeDasharray="4 2" 
+                  opacity="0.85" 
+                />
+                <text x={earthX + 110} y={earthY - 24} textAnchor="end" className="text-[7.5px] font-mono fill-emerald-400 font-bold">
+                  Moon Orbit Plane (5.14° Tilt)
                 </text>
               </g>
 
