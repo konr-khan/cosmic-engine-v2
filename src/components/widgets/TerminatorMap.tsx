@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CONFIG, getTerminatorShadowPaths } from '../../utils/cosmicMath';
+import { CONFIG, getTerminatorShadowPaths, getDayOfYear, clamp } from '../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../types';
 
 export interface TerminatorMapProps {
@@ -9,6 +9,7 @@ export interface TerminatorMapProps {
   longitude?: number;
   timeOfDay?: number;
   hoverTime?: number | null;
+  currentDate?: Date;
 }
 
 // Simplified World Continent Outlines (Geo coordinates: [Longitude, Latitude])
@@ -79,24 +80,45 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   latitude = 47.06, 
   longitude = -122.81, 
   timeOfDay = 12, 
-  hoverTime 
+  hoverTime,
+  currentDate = new Date()
 }) => {
   const [hoveredPoint, setHoveredPoint] = useState<'sun' | 'moon' | 'observer' | null>(null);
 
   const declination = (solarData?.declination ?? 0) as number;
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
 
+  // --- 1. Earth-Sun Keplerian Distance & Dynamic Disc Scaling ---
+  const dayOfYear = currentDate ? getDayOfYear(currentDate) : 1;
+  const meanAnomaly = (2 * Math.PI * (dayOfYear - 4)) / 365.25;
+  const sunDistanceAU = 1.0 - 0.0167 * Math.cos(meanAnomaly);
+  const sunDistanceKm = Math.round(sunDistanceAU * 149597870.7);
+  const sunAngularDiamArcmin = 31.98 / sunDistanceAU;
+
+  // Dynamic Sun Disc Radius (Base 4.5px, dynamically scaled with orbital distance)
+  const sunScale = 1.0 + (1.0 / sunDistanceAU - 1.0) * 4.0;
+  const sunRadius = clamp(4.5 * sunScale, 3.5, 6.0);
+  const sunGlowRadius = sunRadius * 2.4;
+
   const sunLong = (12 - activeTime) * 15;
   const normalizedSunLong = ((sunLong + 180) % 360 + 360) % 360 - 180;
   const sunCy = 90 - declination;
   const userCy = 90 - latitude;
 
-  // Sublunar Point (Moon) Coordinates & Ephemeris
+  // --- 2. Sublunar Point (Moon) Coordinates, Distance & Ephemeris ---
   const lunarDec = (orbitalData?.lunarEvents?.declination ?? orbitalData?.lunarPos?.declination ?? 0) as number;
   const transit = orbitalData?.lunarEvents?.transit ?? 12;
   const moonPhase = orbitalData?.phase?.name || 'Waxing Crescent';
   const moonIllum = ((orbitalData?.phase?.value ?? 0.34) * 100).toFixed(0);
-  const moonDistKm = orbitalData?.lunarEvents?.distanceKm || 384400;
+  const moonDistKm = orbitalData?.lunarEvents?.distanceKm || orbitalData?.lunarPos?.distanceKm || 384400;
+  const moonAngularDiamArcmin = 31.13 * (384400 / moonDistKm);
+  const isSupermoon = moonDistKm < 365000;
+  const isMicromoon = moonDistKm > 400000;
+
+  // Dynamic Moon Disc Radius (Base 4.0px, dynamically scaled with geocentric distance)
+  const moonScale = 1.0 + (384400 / moonDistKm - 1.0) * 2.5;
+  const moonRadius = clamp(4.0 * moonScale, 3.0, 5.5);
+  const moonGlowRadius = moonRadius * 2.5;
 
   // Map subsolar & sublunar positions relative to centered observer longitude
   const relSunX = (normalizedSunLong - longitude + 180 + 360) % 360;
@@ -180,6 +202,12 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             <div className="text-slate-300">
               Subsolar Longitude: <strong className="text-amber-300">{normalizedSunLong >= 0 ? `+${normalizedSunLong.toFixed(1)}°` : `${normalizedSunLong.toFixed(1)}°`}</strong>
             </div>
+            <div className="text-slate-300">
+              Distance: <strong className="text-amber-300">{sunDistanceAU.toFixed(3)} AU</strong> ({(sunDistanceKm / 1e6).toFixed(1)}M km)
+            </div>
+            <div className="text-slate-300">
+              Apparent Diam: <strong className="text-white">{sunAngularDiamArcmin.toFixed(1)}'</strong> <span className="text-slate-400 text-[9px]">({sunDistanceAU < 0.99 ? 'Perihelion' : sunDistanceAU > 1.01 ? 'Aphelion' : 'Mean Size'})</span>
+            </div>
             <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
               The Sun is at local zenith (+90° altitude) directly overhead at this surface location.
             </div>
@@ -200,6 +228,9 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             </div>
             <div className="text-slate-300">
               Distance: <strong className="text-indigo-300">{moonDistKm.toLocaleString()} km</strong> ({(moonDistKm / 6371).toFixed(1)} R_E)
+            </div>
+            <div className="text-slate-300">
+              Apparent Diam: <strong className="text-white">{moonAngularDiamArcmin.toFixed(1)}'</strong> <span className="text-slate-400 text-[9px]">({isSupermoon ? 'Supermoon' : isMicromoon ? 'Micromoon' : 'Mean Size'})</span>
             </div>
             <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
               The Moon is at local zenith (+90° altitude) directly overhead at this surface location.
@@ -263,15 +294,15 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               <path d={dayShadow.linePath} fill="none" stroke="#fbbf24" strokeWidth="1" strokeOpacity="0.8" strokeDasharray="3 2" />
             )}
 
-            {/* Subsolar Point Marker with Soft Glow */}
+            {/* Subsolar Point Marker with Soft Dynamic Distance-Scaled Glow */}
             <g 
               className="cursor-pointer"
               onPointerEnter={() => setHoveredPoint('sun')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
-              <circle cx={relSunX} cy={sunCy} r="11" fill={CONFIG.THEME.SUN_FILL} opacity="0.25" />
-              <circle cx={relSunX} cy={sunCy} r="4.5" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
-              <text x={relSunX + 7} y={sunCy + 3} className="text-[7.5px] fill-amber-300 font-bold font-mono select-none pointer-events-none">
+              <circle cx={relSunX} cy={sunCy} r={sunGlowRadius} fill={CONFIG.THEME.SUN_FILL} opacity="0.25" />
+              <circle cx={relSunX} cy={sunCy} r={sunRadius} fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
+              <text x={relSunX + sunRadius + 3} y={sunCy + 3} className="text-[7.5px] fill-amber-300 font-bold font-mono select-none pointer-events-none">
                 SUN
               </text>
             </g>
@@ -281,15 +312,15 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.85" />
             )}
 
-            {/* Sublunar Point Marker (Moon Zenith) with Slate/Grey Styling */}
+            {/* Sublunar Point Marker (Moon Zenith) with Soft Dynamic Distance-Scaled Glow */}
             <g 
               className="cursor-pointer"
               onPointerEnter={() => setHoveredPoint('moon')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
-              <circle cx={relMoonX} cy={moonCy} r="10" fill="#94a3b8" opacity="0.25" />
-              <circle cx={relMoonX} cy={moonCy} r="4" fill="#f8fafc" stroke="#475569" strokeWidth="1.5" className="drop-shadow" />
-              <text x={relMoonX + 7} y={moonCy + 3} className="text-[7.5px] fill-slate-300 font-bold font-mono select-none pointer-events-none">
+              <circle cx={relMoonX} cy={moonCy} r={moonGlowRadius} fill="#94a3b8" opacity="0.25" />
+              <circle cx={relMoonX} cy={moonCy} r={moonRadius} fill="#f8fafc" stroke="#475569" strokeWidth="1.5" className="drop-shadow" />
+              <text x={relMoonX + moonRadius + 3} y={moonCy + 3} className="text-[7.5px] fill-slate-300 font-bold font-mono select-none pointer-events-none">
                 MOON
               </text>
             </g>

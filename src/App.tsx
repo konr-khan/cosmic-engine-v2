@@ -128,6 +128,7 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           longitude={longitude} 
           timeOfDay={timeOfDay} 
           hoverTime={hoverTime}
+          currentDate={date}
         />
       );
     case 'macroOrbit':
