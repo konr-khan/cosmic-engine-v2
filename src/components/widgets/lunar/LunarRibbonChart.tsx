@@ -16,6 +16,9 @@ export interface LunarRibbonChartProps {
   getDayLabel: (dayNum: number) => string;
   hoverTime?: number | null;
   onHoverTime?: (time: number | null) => void;
+  longitude?: number;
+  timeMode?: 'utc' | 'local';
+  onTimeModeChange?: (mode: 'utc' | 'local') => void;
 }
 
 export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
@@ -28,11 +31,16 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
   onHoverDate,
   getDayLabel,
   hoverTime,
-  onHoverTime
+  onHoverTime,
+  longitude = -122.81,
+  timeMode = 'utc',
+  onTimeModeChange
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [, setHoverDay] = useState<number | null>(null);
+
+  const lonOffsetHours = longitude / 15;
 
   const ribbonWidth = 800;
   const ribbonHeight = 220;
@@ -48,6 +56,12 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     const clamped = clamp(timeHours, 0, 24);
     return padTop + chartH - (clamped / 24) * chartH;
   };
+
+  const transformTime = useCallback((time: number | null | undefined): number | null => {
+    if (time === null || time === undefined) return null;
+    if (timeMode === 'utc') return time;
+    return ((time + lonOffsetHours) % 24 + 24) % 24;
+  }, [timeMode, lonOffsetHours]);
 
   const xToDay = useCallback((x: number): number => {
     const rawDay = 1 + ((x - padLeft) / chartW) * (totalDays - 1);
@@ -72,8 +86,11 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     // Bidirectional time scanner: compute hoverTime from vertical pointer Y
     const relY = svgY - padTop;
     if (relY >= 0 && relY <= chartH && onHoverTime) {
-      const timeVal = ((chartH - relY) / chartH) * 24;
-      onHoverTime(parseFloat(timeVal.toFixed(3)));
+      const chartTime = ((chartH - relY) / chartH) * 24;
+      const utcTime = timeMode === 'utc' 
+        ? chartTime 
+        : ((chartTime - lonOffsetHours) % 24 + 24) % 24;
+      onHoverTime(parseFloat(utcTime.toFixed(3)));
     }
 
     if ((isDragging || e.type === 'pointerdown') && onDayChange) {
@@ -81,8 +98,10 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     }
   };
 
-  const activeRiseY = activeData.moonrise !== null && activeData.moonrise !== undefined ? timeToY(activeData.moonrise) : null;
-  const activeSetY = activeData.moonset !== null && activeData.moonset !== undefined ? timeToY(activeData.moonset) : null;
+  const activeMoonrise = transformTime(activeData.moonrise);
+  const activeMoonset = transformTime(activeData.moonset);
+  const activeRiseY = activeMoonrise !== null ? timeToY(activeMoonrise) : null;
+  const activeSetY = activeMoonset !== null ? timeToY(activeMoonset) : null;
 
   // Generate Braided Ribbon Curves for Moonrise and Moonset
   const moonrisePathD = useMemo(() => {
@@ -91,9 +110,10 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     let isDrawing = false;
     for (let i = 0; i < annualLunarData.length; i++) {
       const d = annualLunarData[i];
-      if (d.moonrise !== null && d.moonrise !== undefined) {
+      const t = transformTime(d.moonrise);
+      if (t !== null && t !== undefined) {
         const x = dayToX(d.day);
-        const y = timeToY(d.moonrise);
+        const y = timeToY(t);
         if (!isDrawing) {
           path += `M ${x.toFixed(1)} ${y.toFixed(1)}`;
           isDrawing = true;
@@ -105,7 +125,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
       }
     }
     return path;
-  }, [annualLunarData, chartW, chartH, totalDays]);
+  }, [annualLunarData, chartW, chartH, totalDays, transformTime]);
 
   const moonsetPathD = useMemo(() => {
     if (!annualLunarData.length) return '';
@@ -113,9 +133,10 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     let isDrawing = false;
     for (let i = 0; i < annualLunarData.length; i++) {
       const d = annualLunarData[i];
-      if (d.moonset !== null && d.moonset !== undefined) {
+      const t = transformTime(d.moonset);
+      if (t !== null && t !== undefined) {
         const x = dayToX(d.day);
-        const y = timeToY(d.moonset);
+        const y = timeToY(t);
         if (!isDrawing) {
           path += `M ${x.toFixed(1)} ${y.toFixed(1)}`;
           isDrawing = true;
@@ -127,25 +148,58 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
       }
     }
     return path;
-  }, [annualLunarData, chartW, chartH, totalDays]);
+  }, [annualLunarData, chartW, chartH, totalDays, transformTime]);
 
-  // Zulu tick label formatter
-  const getZuluLabel = (h: number): string => {
-    if (h === 0) return "0000Z";
-    if (h === 6) return "0600Z";
-    if (h === 12) return "1200Z";
-    if (h === 18) return "1800Z";
-    if (h === 24) return "2400Z";
-    return `${h.toString().padStart(2, '0')}00Z`;
+  // Tick label formatter
+  const getTimeLabel = (h: number): string => {
+    if (timeMode === 'utc') {
+      if (h === 0) return "0000Z";
+      if (h === 6) return "0600Z";
+      if (h === 12) return "1200Z";
+      if (h === 18) return "1800Z";
+      if (h === 24) return "2400Z";
+      return `${h.toString().padStart(2, '0')}00Z`;
+    } else {
+      if (h === 0 || h === 24) return "12 AM";
+      if (h === 6) return "6 AM";
+      if (h === 12) return "12 PM";
+      if (h === 18) return "6 PM";
+      return `${h}h`;
+    }
   };
 
   return (
     <div className="relative w-full bg-slate-950/60 rounded-xl border border-slate-800/60 p-3 my-1 touch-none">
       <div className="text-[10px] font-mono text-slate-400 mb-1.5 flex justify-between items-center">
         <span className="font-semibold text-slate-200 flex items-center gap-1.5 font-sans">
-          <Moon className="w-3 h-3 text-slate-300" /> 365-Day Moonrise &amp; Moonset Braided Ribbon (24h UTC)
+          <Moon className="w-3 h-3 text-slate-300" /> 365-Day Moonrise &amp; Moonset Ribbon ({timeMode === 'utc' ? '24h UTC' : 'Local Solar Time'})
         </span>
-        <span className="text-slate-500 text-[9px] font-sans">Scrub chart to scan date &amp; time</span>
+        
+        {/* Segmented Timeframe Mode Toggle */}
+        <div className="flex items-center bg-slate-900/80 p-0.5 rounded-lg border border-slate-800/80 text-[10px] font-mono">
+          <button
+            onClick={() => onTimeModeChange && onTimeModeChange('utc')}
+            className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+              timeMode === 'utc'
+                ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40 shadow-xs'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Coordinated Universal Time (0000Z to 2400Z)"
+          >
+            🌐 UTC (Zulu)
+          </button>
+          <button
+            onClick={() => onTimeModeChange && onTimeModeChange('local')}
+            className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+              timeMode === 'local'
+                ? 'bg-sky-500/20 text-sky-300 font-semibold border border-sky-500/40 shadow-xs'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Local Mean Time relative to Observer Meridian"
+          >
+            🌙 Local (LMT)
+          </button>
+        </div>
       </div>
 
       <svg
@@ -172,10 +226,10 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
           );
         })}
 
-        {/* 6-Hour Horizontal Time Guides (0000Z, 0600Z, 1200Z, 1800Z, 2400Z) */}
+        {/* 6-Hour Horizontal Time Guides */}
         {[0, 6, 12, 18, 24].map((h) => {
           const y = timeToY(h);
-          const label = getZuluLabel(h);
+          const label = getTimeLabel(h);
           const isKeyHour = h === 0 || h === 12 || h === 24;
           return (
             <g key={h}>
@@ -198,10 +252,12 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
 
         {/* Render 365 Daily Moonrise-to-Moonset Braided Lines */}
         {annualLunarData.map((d) => {
-          if (d.moonrise === null || d.moonset === null) return null;
+          const riseT = transformTime(d.moonrise);
+          const setT = transformTime(d.moonset);
+          if (riseT === null || setT === null) return null;
           const x = dayToX(d.day);
-          const yRise = timeToY(d.moonrise);
-          const ySet = timeToY(d.moonset);
+          const yRise = timeToY(riseT);
+          const ySet = timeToY(setT);
           
           const isFull = Math.abs(d.phaseValue - 0.5) < 0.08;
           const isSuper = d.isPerigee;
@@ -239,36 +295,54 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         />
 
         {/* Synced Hover Time Horizontal Guideline */}
-        {hoverTime !== null && hoverTime !== undefined && (
-          <g>
-            <line 
-              x1={padLeft} y1={timeToY(hoverTime)} 
-              x2={padLeft + chartW} y2={timeToY(hoverTime)} 
-              stroke="#38bdf8" strokeWidth="1.8" strokeDasharray="3 3" className="drop-shadow-sm" 
-            />
-            <g transform={`translate(${padLeft - 6}, ${timeToY(hoverTime) + 3})`}>
-              <text textAnchor="end" className="text-[9px] font-mono font-black fill-sky-400">
-                {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
-              </text>
+        {hoverTime !== null && hoverTime !== undefined && (() => {
+          const chartHTime = timeMode === 'utc'
+            ? hoverTime
+            : ((hoverTime + lonOffsetHours) % 24 + 24) % 24;
+          const hy = timeToY(chartHTime);
+          const badgeText = timeMode === 'utc'
+            ? `${formatTime(hoverTime).substring(0, 5)}Z`
+            : `${formatTime(chartHTime).substring(0, 5)} LMT (${formatTime(hoverTime).substring(0, 5)}Z)`;
+          const badgeWidth = timeMode === 'utc' ? 65 : 135;
+          return (
+            <g>
+              <line 
+                x1={padLeft} y1={hy} 
+                x2={padLeft + chartW} y2={hy} 
+                stroke="#38bdf8" strokeWidth="1.8" strokeDasharray="3 3" className="drop-shadow-sm" 
+              />
+              {/* Left Axis Tick Time */}
+              <g transform={`translate(${padLeft - 8}, ${hy + 3.5})`}>
+                <text textAnchor="end" className="text-[9px] font-mono font-bold fill-sky-400">
+                  {formatTime(chartHTime).substring(0, 5)}
+                </text>
+              </g>
+              {/* Floating Dual Time Readout Badge */}
+              <g transform={`translate(${padLeft + 8}, ${hy > padTop + 20 ? hy - 18 : hy + 6})`}>
+                <rect x="0" y="0" width={badgeWidth} height="16" rx="4" fill="#020617" fillOpacity="0.92" stroke="#0284c7" strokeWidth="0.8" className="drop-shadow-md" />
+                <text x={badgeWidth / 2} y="11.5" textAnchor="middle" className="text-[9px] font-mono font-semibold fill-sky-300">
+                  {badgeText}
+                </text>
+              </g>
             </g>
-          </g>
-        )}
+          );
+        })()}
 
         {/* Active Day Intersection Markers */}
-        {activeRiseY !== null && (
+        {activeRiseY !== null && activeMoonrise !== null && (
           <g transform={`translate(${dayToX(activeDay)}, ${activeRiseY})`}>
             <circle r="4" fill="#38bdf8" stroke="white" strokeWidth="1.5" />
             <text x="7" y="3" className="text-[9px] font-mono font-bold fill-sky-300">
-              Rise: {formatTime(activeData.moonrise).substring(0, 5)}
+              Rise: {formatTime(activeMoonrise).substring(0, 5)}
             </text>
           </g>
         )}
 
-        {activeSetY !== null && (
+        {activeSetY !== null && activeMoonset !== null && (
           <g transform={`translate(${dayToX(activeDay)}, ${activeSetY})`}>
             <circle r="4" fill="#818cf8" stroke="white" strokeWidth="1.5" />
             <text x="7" y="3" className="text-[9px] font-mono font-bold fill-indigo-300">
-              Set: {formatTime(activeData.moonset).substring(0, 5)}
+              Set: {formatTime(activeMoonset).substring(0, 5)}
             </text>
           </g>
         )}

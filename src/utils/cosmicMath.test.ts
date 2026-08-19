@@ -90,6 +90,9 @@ describe('cosmicMath utilities', () => {
 
       const longPath = getSectorPath(16, 100, 50);
       expect(longPath).toContain('A 50 50 0 1 1'); // largeArcFlag = 1
+
+      // Symmetrical 12h daylight sector spans 180° centered around 12 o'clock (-90° in SVG)
+      expect(standardPath).toContain('A 50 50 0 0 1');
     });
   });
 

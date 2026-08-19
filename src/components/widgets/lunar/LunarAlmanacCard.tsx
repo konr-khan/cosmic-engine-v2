@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Compass, Calendar } from 'lucide-react';
 import { 
   formatTime, 
@@ -98,6 +98,8 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
     phaseValue: phase.value ?? 0.5 
   };
 
+  const [timeMode, setTimeMode] = useState<'utc' | 'local'>('utc');
+
   const transitHour = activeData.transit ?? transit ?? 12;
   const decDeg = (orbitalData?.lunarPos?.declination ?? lunarEvents.declination ?? 0) as number;
 
@@ -134,6 +136,9 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         getDayLabel={getDayLabel}
         hoverTime={hoverTime}
         onHoverTime={onHoverTime}
+        longitude={longitude}
+        timeMode={timeMode}
+        onTimeModeChange={setTimeMode}
       />
 
       {/* Lower Area: Clean 3-Box Summary Grid */}

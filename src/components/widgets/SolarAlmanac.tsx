@@ -39,6 +39,10 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDay, setHoverDay] = useState<number | null>(null);
+  const [timeMode, setTimeMode] = useState<'solar' | 'utc'>('solar');
+
+  const lonOffsetHours = longitude / 15;
+  const eotOffsetHours = (solarData?.equationOfTime ?? 0) / 60;
 
   const totalDays = getDaysInYear(year);
   const activeDay = Math.min(totalDays, hoverDay !== null ? hoverDay : currentDay);
@@ -115,11 +119,12 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
     const day = xToDay(svgX);
     setHoverDay(day);
 
-    // Calculate time from vertical Y position and broadcast hover time
+    // Calculate time from vertical Y position in Local Solar Time, then bridge to UTC
     const relY = svgY - paddingTop;
     if (relY >= 0 && relY <= chartH && onHoverTime) {
-      const timeVal = ((chartH - relY) / chartH) * 24;
-      onHoverTime(parseFloat(timeVal.toFixed(3)));
+      const localChartTime = ((chartH - relY) / chartH) * 24;
+      const utcHoverTime = ((localChartTime - lonOffsetHours - eotOffsetHours) % 24 + 24) % 24;
+      onHoverTime(parseFloat(utcHoverTime.toFixed(3)));
     }
   };
 
@@ -204,9 +209,14 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
 
   const radius = 90;
   const center = 110;
-  const rotationAngle = solarNoon * 15;
   const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : currentTime;
-  const handAngle = displayTime * 15 - 90;
+
+  // Mode-dependent rotation & hand calculation
+  const rotationAngle = timeMode === 'solar' ? 0 : solarNoon * 15;
+  const localDisplayTime = ((displayTime + lonOffsetHours + eotOffsetHours) % 24 + 24) % 24;
+  const handAngle = timeMode === 'solar' 
+    ? (localDisplayTime - 12) * 15 - 90 
+    : displayTime * 15 - 90;
 
   let polarMainText: string, polarSubText: string, polarMainClass: string, polarSubClass: string;
   if (isMidnightSun) {
@@ -223,7 +233,7 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
     const hours = Math.floor(dayLength);
     const minutes = Math.round((dayLength - hours) * 60);
     polarMainText = `${hours}h ${minutes}m`;
-    polarSubText = "HOURS OF SUNLIGHT";
+    polarSubText = timeMode === 'solar' ? "SOLAR DAYLIGHT" : "UTC DAYLIGHT";
     polarMainClass = "text-xl font-bold fill-amber-400 font-mono tracking-tight";
     polarSubClass = "text-[7px] font-bold fill-amber-400/80 uppercase tracking-widest";
   }
@@ -235,10 +245,19 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
     const cy = rect.top + rect.height / 2;
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
-    let angle = toDegrees(Math.atan2(dy, dx)) + 90;
-    let t = ((angle / 15) % 24 + 24) % 24;
-    const quantized = Math.round(t * 20) / 20;
-    onHoverTime(quantized);
+    const angle = toDegrees(Math.atan2(dy, dx));
+
+    if (timeMode === 'solar') {
+      const localTime = (((angle + 90) / 15 + 12) % 24 + 24) % 24;
+      const utcHoverTime = ((localTime - lonOffsetHours - eotOffsetHours) % 24 + 24) % 24;
+      const quantized = Math.round(utcHoverTime * 20) / 20;
+      onHoverTime(quantized);
+    } else {
+      const utcAngle = angle + 90;
+      const utcTime = ((utcAngle / 15) % 24 + 24) % 24;
+      const quantized = Math.round(utcTime * 20) / 20;
+      onHoverTime(quantized);
+    }
   };
 
   return (
@@ -394,20 +413,33 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             />
 
             {/* Synced Hover Time Horizontal Guideline */}
-            {hoverTime !== null && hoverTime !== undefined && (
-              <g>
-                <line 
-                  x1={paddingLeft} y1={timeToY(hoverTime)} 
-                  x2={paddingLeft + chartW} y2={timeToY(hoverTime)} 
-                  stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3 3" className="drop-shadow-sm" 
-                />
-                <g transform={`translate(${paddingLeft - 6}, ${timeToY(hoverTime) + 4})`}>
-                  <text textAnchor="end" className="text-[10px] font-mono font-bold fill-sky-400">
-                    {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
-                  </text>
+            {hoverTime !== null && hoverTime !== undefined && (() => {
+              const chartHoverTime = ((hoverTime + lonOffsetHours + eotOffsetHours) % 24 + 24) % 24;
+              const hy = timeToY(chartHoverTime);
+              const textContent = `${formatTime(chartHoverTime).substring(0, 5)} LST (${formatTime(hoverTime).substring(0, 5)}Z)`;
+              return (
+                <g>
+                  <line 
+                    x1={paddingLeft} y1={hy} 
+                    x2={paddingLeft + chartW} y2={hy} 
+                    stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3 3" className="drop-shadow-sm" 
+                  />
+                  {/* Left Axis Tick Time */}
+                  <g transform={`translate(${paddingLeft - 8}, ${hy + 3.5})`}>
+                    <text textAnchor="end" className="text-[10px] font-mono font-bold fill-sky-400">
+                      {formatTime(chartHoverTime).substring(0, 5)}
+                    </text>
+                  </g>
+                  {/* Floating Dual Time Readout Badge */}
+                  <g transform={`translate(${paddingLeft + 8}, ${hy > paddingTop + 20 ? hy - 18 : hy + 6})`}>
+                    <rect x="0" y="0" width="135" height="16" rx="4" fill="#020617" fillOpacity="0.92" stroke="#0284c7" strokeWidth="0.8" className="drop-shadow-md" />
+                    <text x="67.5" y="11.5" textAnchor="middle" className="text-[9px] font-mono font-semibold fill-sky-300">
+                      {textContent}
+                    </text>
+                  </g>
                 </g>
-              </g>
-            )}
+              );
+            })()}
 
             {/* Dynamically Generated Sunrise & Sunset Labels */}
             <g transform={`translate(${paddingLeft + chartW + 6}, ${sunriseY + 4})`}>
@@ -461,6 +493,31 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             <span className="font-semibold text-amber-400 flex items-center gap-1 font-sans text-xs uppercase tracking-wider">
               <Sun className="w-3.5 h-3.5" /> 24h Polar Sunlight Clock
             </span>
+            {/* Segmented Time Mode Toggle */}
+            <div className="flex items-center bg-slate-900/80 p-0.5 rounded-lg border border-slate-800/80 text-[10px] font-mono">
+              <button
+                onClick={() => setTimeMode('solar')}
+                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                  timeMode === 'solar'
+                    ? 'bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40 shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Solar Noon Anchored at 12 o'clock Top (Local Solar Time)"
+              >
+                ☀️ Solar
+              </button>
+              <button
+                onClick={() => setTimeMode('utc')}
+                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                  timeMode === 'utc'
+                    ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40 shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="00:00 UTC Anchored at Top (Universal Time)"
+              >
+                🌐 UTC
+              </button>
+            </div>
           </div>
 
           <div 
@@ -529,8 +586,22 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
               />
               <circle cx={center} cy={center} r="3" fill={hoverTime !== null && hoverTime !== undefined ? "#38bdf8" : "#f8fafc"} />
               
-              <text x={center} y={center - radius - 8} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-medium">00:00 UTC</text>
-              <text x={center} y={center + radius + 12} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-medium">12:00 UTC</text>
+              {/* Dial Cardinal Labels */}
+              {timeMode === 'solar' ? (
+                <>
+                  <text x={center} y={center - radius - 6} textAnchor="middle" className="text-[9px] font-mono fill-amber-400 font-semibold">12:00 (Noon)</text>
+                  <text x={center} y={center + radius + 12} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-medium">00:00 (Midnight)</text>
+                  <text x={center - radius - 4} y={center + 3} textAnchor="end" className="text-[8px] font-mono fill-slate-500">06:00</text>
+                  <text x={center + radius + 4} y={center + 3} textAnchor="start" className="text-[8px] font-mono fill-slate-500">18:00</text>
+                </>
+              ) : (
+                <>
+                  <text x={center} y={center - radius - 6} textAnchor="middle" className="text-[9px] font-mono fill-indigo-400 font-semibold">00:00 UTC</text>
+                  <text x={center} y={center + radius + 12} textAnchor="middle" className="text-[9px] font-mono fill-slate-400 font-medium">12:00 UTC</text>
+                  <text x={center - radius - 4} y={center + 3} textAnchor="end" className="text-[8px] font-mono fill-slate-500">18:00</text>
+                  <text x={center + radius + 4} y={center + 3} textAnchor="start" className="text-[8px] font-mono fill-slate-500">06:00</text>
+                </>
+              )}
               
               {/* Center Hub Overlay */}
               <circle cx={center} cy={center} r="40" fill="#020617" stroke="#334155" strokeWidth="1" />
@@ -539,11 +610,17 @@ export const SolarAlmanac: React.FC<SolarAlmanacProps> = ({
             </svg>
 
             {/* Hover Pill Readout */}
-            {hoverTime !== null && hoverTime !== undefined && (
-              <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-sky-950/95 text-sky-300 border border-sky-500/80 px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-semibold shadow-xl pointer-events-none">
-                {Math.floor(hoverTime).toString().padStart(2, '0')}:{Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
-              </div>
-            )}
+            {hoverTime !== null && hoverTime !== undefined && (() => {
+              const localHover = ((hoverTime + lonOffsetHours + eotOffsetHours) % 24 + 24) % 24;
+              return (
+                <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-sky-950/95 text-sky-300 border border-sky-500/80 px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-semibold shadow-xl pointer-events-none whitespace-nowrap">
+                  {timeMode === 'solar'
+                    ? `${formatTime(localHover).substring(0, 5)} LST (${formatTime(hoverTime).substring(0, 5)}Z)`
+                    : `${formatTime(hoverTime).substring(0, 5)}Z (${formatTime(localHover).substring(0, 5)} LST)`
+                  }
+                </div>
+              );
+            })()}
           </div>
         </div>
 
