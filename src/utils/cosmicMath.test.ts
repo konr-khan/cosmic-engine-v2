@@ -7,6 +7,7 @@ import {
   formatYMD,
   getSectorPath,
   getJulianDate,
+  createUTCDate,
   getDayOfYear,
   isLeapYear,
   getDaysInYear,
@@ -75,8 +76,8 @@ describe('cosmicMath utilities', () => {
     });
 
     it('formats Date objects to YYYY-MM-DD format with formatYMD', () => {
-      expect(formatYMD(new Date(2026, 0, 15))).toBe('2026-01-15');
-      expect(formatYMD(new Date(2024, 11, 31))).toBe('2024-12-31');
+      expect(formatYMD(createUTCDate(2026, 1, 15))).toBe('2026-01-15');
+      expect(formatYMD(createUTCDate(2024, 12, 31))).toBe('2024-12-31');
       expect(formatYMD(new Date('invalid'))).toBe('');
       expect(formatYMD(null)).toBe('');
       expect(formatYMD(undefined)).toBe('');
@@ -101,14 +102,22 @@ describe('cosmicMath utilities', () => {
   });
 
   describe('Calendar & Julian Date Engine', () => {
+    it('creates deterministic UTC dates using createUTCDate', () => {
+      const utcDate = createUTCDate(2026, 3, 20);
+      expect(utcDate.getUTCFullYear()).toBe(2026);
+      expect(utcDate.getUTCMonth()).toBe(2); // March = 2 (0-indexed)
+      expect(utcDate.getUTCDate()).toBe(20);
+      expect(utcDate.getUTCHours()).toBe(0);
+    });
+
     it('calculates correct Julian Date for J2000 epoch (2000-01-01 at 12:00)', () => {
-      const j2000Date = new Date(2000, 0, 1);
+      const j2000Date = createUTCDate(2000, 1, 1);
       const jd = getJulianDate(j2000Date, 12);
       expect(jd).toBe(2451545.0);
     });
 
     it('calculates correct Julian Date at midnight (2000-01-01 at 00:00)', () => {
-      const j2000Date = new Date(2000, 0, 1);
+      const j2000Date = createUTCDate(2000, 1, 1);
       const jd = getJulianDate(j2000Date, 0);
       expect(jd).toBe(2451544.5);
     });
@@ -128,14 +137,25 @@ describe('cosmicMath utilities', () => {
     });
 
     it('calculates deterministic UTC-based day of year with getDayOfYear', () => {
-      expect(getDayOfYear(new Date(2025, 0, 1))).toBe(1); // Jan 1 = 1
-      expect(getDayOfYear(new Date(2025, 11, 31))).toBe(365); // Dec 31 standard = 365
-      expect(getDayOfYear(new Date(2024, 11, 31))).toBe(366); // Dec 31 leap = 366
-      expect(getDayOfYear(new Date(2024, 1, 29))).toBe(60); // Feb 29 leap = 60
-      expect(getDayOfYear(new Date(2025, 1, 28))).toBe(59); // Feb 28 standard = 59
+      expect(getDayOfYear(createUTCDate(2025, 1, 1))).toBe(1); // Jan 1 = 1
+      expect(getDayOfYear(createUTCDate(2025, 12, 31))).toBe(365); // Dec 31 standard = 365
+      expect(getDayOfYear(createUTCDate(2024, 12, 31))).toBe(366); // Dec 31 leap = 366
+      expect(getDayOfYear(createUTCDate(2024, 2, 29))).toBe(60); // Feb 29 leap = 60
+      expect(getDayOfYear(createUTCDate(2025, 2, 28))).toBe(59); // Feb 28 standard = 59
       expect(getDayOfYear(null)).toBe(1);
       expect(getDayOfYear(undefined)).toBe(1);
       expect(getDayOfYear(new Date('invalid'))).toBe(1);
+    });
+
+    it('ensures getJulianDate and getDayOfYear are invariant to machine timezone', () => {
+      const d1 = new Date(Date.UTC(2026, 0, 15, 0, 0, 0));
+      expect(getJulianDate(d1, 12)).toBe(2461056.0);
+      expect(getDayOfYear(d1)).toBe(15);
+      expect(formatYMD(d1)).toBe('2026-01-15');
+
+      const d2 = new Date(Date.UTC(2026, 11, 31, 23, 59, 59));
+      expect(getDayOfYear(d2)).toBe(365);
+      expect(formatYMD(d2)).toBe('2026-12-31');
     });
   });
 

@@ -14,8 +14,8 @@ export const SolsticeJumpControls: React.FC<SolsticeJumpControlsProps> = ({
 }) => {
   const handleJump = (month: number, day: number) => {
     if (onDateChange) {
-      const year = date ? date.getFullYear() : new Date().getFullYear();
-      onDateChange(new Date(year, month, day));
+      const year = date ? date.getUTCFullYear() : new Date().getUTCFullYear();
+      onDateChange(new Date(Date.UTC(year, month, day)));
     }
   };
 

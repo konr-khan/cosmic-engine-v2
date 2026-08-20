@@ -82,15 +82,28 @@ export const getSectorPath = (duration: number, center: number, radius: number):
 };
 
 /**
+ * Creates a UTC Date representing the specified year, month (1..12), and day (1..31).
+ * Avoids local timezone offsets when instantiating astronomical calendar dates.
+ * @param year - 4-digit year (e.g., 2026)
+ * @param month - 1-indexed month (1 = January, 12 = December)
+ * @param day - 1-indexed day of month (1..31)
+ * @returns Date instance anchored to UTC midnight
+ */
+export const createUTCDate = (year: number, month: number, day: number): Date => {
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+/**
  * Calculates the Astronomical Julian Date (JD) for a JavaScript Date and optional decimal hour.
- * @param date - Local calendar date
+ * Evaluates calendar components in UTC to ensure timezone invariance.
+ * @param date - Calendar date
  * @param timeOfDay - Time of day in decimal hours (0 to 24)
  * @returns Julian Date (JD)
  */
 export const getJulianDate = (date: Date, timeOfDay: number = 12): JulianDate => {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  const day = date.getUTCDate();
   
   let y = year;
   let m = month;
@@ -106,15 +119,15 @@ export const getJulianDate = (date: Date, timeOfDay: number = 12): JulianDate =>
 };
 
 /**
- * Formats a Date object as a YYYY-MM-DD string.
+ * Formats a Date object as a YYYY-MM-DD string using UTC calendar components.
  * @param date - JavaScript Date object
  * @returns Formatted YYYY-MM-DD date string
  */
 export const formatYMD = (date: Date | null | undefined): string => {
   if (!date || isNaN(date.getTime())) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 };
 
@@ -143,9 +156,9 @@ export const getDaysInYear = (year: number): number => {
  */
 export const getDayOfYear = (date: Date | null | undefined): DayOfYear => {
   if (!date || isNaN(date.getTime())) return 1;
-  const y = date.getFullYear();
-  const m = date.getMonth();
-  const d = date.getDate();
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth();
+  const d = date.getUTCDate();
   const startOfYear = Date.UTC(y, 0, 1);
   const currentDay = Date.UTC(y, m, d);
   return Math.floor((currentDay - startOfYear) / 86400000) + 1;

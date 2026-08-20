@@ -238,7 +238,7 @@ export const calculateAnnualLunarMatrix = (
   const totalDays = getDaysInYear(year);
   const list: AnnualLunarMatrixItem[] = [];
   for (let day = 1; day <= totalDays; day++) {
-    const d = new Date(year, 0, day);
+    const d = new Date(Date.UTC(year, 0, day));
     const jd0 = getJulianDate(d, 0);
     const jd = getJulianDate(d, 12);
     const events = calculateLunarEvents(latitude, longitude, jd0, 12);

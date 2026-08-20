@@ -19,14 +19,18 @@ Adopt a **pragmatic hybrid typing model**:
    - `JulianDate = number & { readonly [JulianDateBrand]: true }`
    - `JulianCenturies = number & { readonly [JulianCenturiesBrand]: true }`
 2. **Compile-Time Gatekeeper Functions**:
-   - Dedicated gatekeepers (`toRadians(deg: Degrees): Radians`, `toDegrees(rad: Radians): Degrees`, `julianDateToCenturies(jd: JulianDate): JulianCenturies`) serve as the verified bridges.
+   - Dedicated gatekeepers (`toRadians(deg: Degrees): Radians`, `toDegrees(rad: Radians): Degrees`, `julianDateToCenturies(jd: JulianDate): JulianCenturies`, `createUTCDate(year, month, day): Date`) serve as the verified bridges between unit spaces and calendar frames.
 3. **Ergonomic Aliases for UI**:
    - Presentation parameters (`Latitude`, `Longitude`, `HoursDecimal`, `DayOfYear`, `Pixels`) remain standard `number` aliases to eliminate casting friction across React inputs and SVG coordinates.
+4. **Deterministic UTC Calendar Invariance**:
+   - Astronomical Julian dates (`getJulianDate`) and day-of-year calculations (`getDayOfYear`) explicitly evaluate calendar fields via UTC accessors (`getUTCFullYear`, `getUTCMonth`, `getUTCDate`), preventing 1-day temporal skew across client machine timezones.
 
 ## Consequences
 
 * **Positive**:
   - Eliminates silent unit mismatch bugs at compile time with zero runtime performance overhead.
   - Trigonometric math in `src/utils/cosmicMath/` is guaranteed to receive correct units.
+  - Julian date and ephemeris calculations remain perfectly invariant regardless of local client timezones or daylight saving offsets.
 * **Invariants**:
   - Never bypass nominal types by force-casting unverified numbers (`val as any as Radians`); always route conversions through `toRadians()` or `asRadians()`.
+  - Always evaluate or construct astronomical calendar dates in UTC (`createUTCDate` or `Date.UTC`).

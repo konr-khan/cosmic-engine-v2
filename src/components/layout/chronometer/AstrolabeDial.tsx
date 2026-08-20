@@ -52,7 +52,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
   const prevTimeRef = useRef(timeOfDay);
   const prevDayRef = useRef(1);
 
-  const totalDays = getDaysInYear(date.getFullYear());
+  const totalDays = getDaysInYear(date.getUTCFullYear());
   const dayOfYear = getDayOfYear(date);
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
     if (activeRing === 'date' && onDateChange) {
       const newDay = Math.max(1, Math.min(totalDays, Math.round((angle / 360) * totalDays)));
       const prevDay = prevDayRef.current;
-      const currentYear = date.getFullYear();
+      const currentYear = date.getUTCFullYear();
 
       // Year rollover detection when dragging across Jan 1 / Dec 31 boundary
       if (prevDay >= totalDays - 15 && newDay <= 15) {
@@ -120,16 +120,16 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
         const nextTotalDays = getDaysInYear(nextYear);
         const adjustedDay = Math.min(newDay, nextTotalDays);
         prevDayRef.current = adjustedDay;
-        onDateChange(new Date(nextYear, 0, adjustedDay));
+        onDateChange(new Date(Date.UTC(nextYear, 0, adjustedDay)));
       } else if (prevDay <= 15 && newDay >= totalDays - 15) {
         const prevYear = currentYear - 1;
         const prevTotalDays = getDaysInYear(prevYear);
         const adjustedDay = Math.min(newDay, prevTotalDays);
         prevDayRef.current = adjustedDay;
-        onDateChange(new Date(prevYear, 0, adjustedDay));
+        onDateChange(new Date(Date.UTC(prevYear, 0, adjustedDay)));
       } else {
         prevDayRef.current = newDay;
-        onDateChange(new Date(currentYear, 0, newDay));
+        onDateChange(new Date(Date.UTC(currentYear, 0, newDay)));
       }
     } 
     else if (activeRing === 'time' && onTimeChange) {
@@ -139,12 +139,10 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
       // Day rollover detection when dragging across 00:00 / 24:00 boundary
       if (onDateChange) {
         if (prevTime >= 22 && newTime <= 2) {
-          const nextDate = new Date(date);
-          nextDate.setDate(nextDate.getDate() + 1);
+          const nextDate = new Date(date.getTime() + 86400000);
           onDateChange(nextDate);
         } else if (prevTime <= 2 && newTime >= 22) {
-          const prevDate = new Date(date);
-          prevDate.setDate(prevDate.getDate() - 1);
+          const prevDate = new Date(date.getTime() - 86400000);
           onDateChange(prevDate);
         }
       }
@@ -159,13 +157,13 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
       onLonChange(Math.round(lon));
     } 
     else if (activeRing === 'lat' && onLatChange) {
-      const scaleVal = rect.height / 270;
-      const scaledDy = dy / scaleVal;
-      const clampedY = Math.max(-54, Math.min(54, scaledDy));
-      const lat = Math.round(toDegrees(-Math.asin(clampedY / 54)));
-      onLatChange(lat);
+      // Latitude Armillary Rail on Left side (-90 to +90)
+      const latY = dy / scale;
+      const normalizedLat = -latY / 54;
+      const targetLat = Math.round(normalizedLat * 90);
+      onLatChange(Math.max(-90, Math.min(90, targetLat)));
     }
-  }, [activeRing, date, totalDays, onDateChange, onTimeChange, onLonChange, onLatChange]);
+  }, [activeRing, totalDays, date, onDateChange, onTimeChange, onLonChange, onLatChange]);
 
   const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
     setActiveRing(null);
@@ -181,8 +179,8 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
   };
 
   const formatDate = (d: number): string => {
-    const tempDate = new Date(date.getFullYear(), 0, d);
-    return tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const tempDate = new Date(Date.UTC(date.getUTCFullYear(), 0, d));
+    return tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   };
   const formatLat = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
   const formatLon = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;

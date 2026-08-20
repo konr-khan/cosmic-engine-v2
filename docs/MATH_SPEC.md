@@ -36,15 +36,24 @@ Given year $Y$, month $M \in [1, 12]$, day $D$, and UTC decimal hour $t \in [0, 
    \[
    \text{JD}_0 = \lfloor 365.25(Y' + 4716) \rfloor + \lfloor 30.6001(M' + 1) \rfloor + D + B - 1524.5
    \]
-4. Exact Julian Date:
-   \[
-   \text{JD} = \text{JD}_0 + \frac{t}{24.0}
-   \]
+### Exact Julian Date ($\text{JD}$)
+\[
+\text{JD} = \text{JD}_0 + \frac{t}{24.0}
+\]
 
 ### Julian Centuries ($T$)
 \[
 T = \frac{\text{JD} - 2451545.0}{36525.0}
 \]
+
+### Day of the Year ($\text{DOY}$) from Gregorian Date
+Given calendar year $Y$, month index $M \in [1, 12]$, and day $D$ evaluated in UTC:
+\[
+\text{DOY} = \left\lfloor \frac{\text{Date.UTC}(Y, M - 1, D) - \text{Date.UTC}(Y, 0, 1)}{86,400,000} \right\rfloor + 1
+\]
+
+> [!NOTE]
+> All Gregorian calendar inputs ($Y, M, D$) are strictly evaluated via UTC accessors (`getUTCFullYear`, `getUTCMonth`, `getUTCDate`, `Date.UTC`) to guarantee timezone invariance across client runtimes.
 
 ---
 

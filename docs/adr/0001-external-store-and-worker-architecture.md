@@ -22,6 +22,7 @@ In early iterations, two critical performance bottlenecks emerged:
    - Implements **in-flight request deduplication and coalescing**: identical calculation signatures share a single `postMessage` RPC dispatch and fan out results to all registered subscriber callbacks.
    - In-memory caching for 365-day annual matrices (`annualSolarCache`, `annualLunarCache`).
    - Lazy synchronous fallback execution when Workers are unavailable or pending bootstrap.
+   - **Proactive Lifecycle Teardown**: Auto-registers `beforeunload` and `pagehide` listeners in browser environments and exposes `terminate()` for root React component unmount cleanup to prevent thread leaks across SPA navigation and HMR dev reloads.
 
 ## Consequences
 
@@ -29,6 +30,7 @@ In early iterations, two critical performance bottlenecks emerged:
   - Stable 60 FPS animation ticking with zero garbage collection stutter.
   - No thread proliferation; worker memory consumption stays under $12\text{ MB}$.
   - Main thread remains responsive during rapid scrubs.
+  - Clean worker thread and memory reclamation upon window close, tab switch, or SPA teardown.
 * **Invariants**:
   - Never replace `useChronometerStore` with standard React component closures inside animation hot paths.
   - All messages passed across Web Worker boundaries must adhere to structured cloning contracts (discriminated union types in `src/types/worker.ts`).

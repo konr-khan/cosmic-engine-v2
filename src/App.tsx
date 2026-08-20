@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCosmicEngine } from './hooks/useCosmicEngine';
 import { useChronometerStore, cosmicActions } from './store/cosmicStore';
 import { useDashboardLayout, ICON_MAP, PRESET_LAYOUTS } from './hooks/useDashboardLayout';
+import { ephemerisWorkerManager } from './workers/ephemerisWorkerManager';
 import { ObsNavbar } from './components/layout/ObsNavbar';
 import { OrbitalChronometer } from './components/layout/OrbitalChronometer';
 import { DashboardWindow } from './components/layout/DashboardWindow';
@@ -53,7 +54,7 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
   const dayOfYear = getDayOfYear(date);
 
   const handleDateSlider = (val: number) => {
-    cosmicActions.setDate(new Date(date.getFullYear(), 0, val));
+    cosmicActions.setDate(new Date(Date.UTC(date.getUTCFullYear(), 0, val)));
   };
 
   switch (id) {
@@ -189,6 +190,13 @@ const MemoizedChronometerDock = React.memo<MemoizedChronometerDockProps>(functio
 
 export default function App() {
   const [isDockCollapsed, setIsDockCollapsed] = useState<boolean>(false);
+
+  // Terminate singleton Web Worker instance on root component unmount / page teardown
+  useEffect(() => {
+    return () => {
+      ephemerisWorkerManager.terminate();
+    };
+  }, []);
 
   // Shared Cross-Card Interactive Hover Sync
   const [hoverTime, setHoverTime] = useState<number | null>(null);

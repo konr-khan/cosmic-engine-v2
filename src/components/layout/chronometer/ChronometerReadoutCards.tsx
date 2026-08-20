@@ -60,7 +60,7 @@ export const ChronometerReadoutCards: React.FC<ChronometerReadoutCardsProps> = (
     if (!val || !onDateChange) return;
     const [y, m, d] = String(val).split('-').map(Number);
     if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-      onDateChange(new Date(y, m - 1, d));
+      onDateChange(new Date(Date.UTC(y, m - 1, d)));
     }
   };
 

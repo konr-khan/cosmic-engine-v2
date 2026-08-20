@@ -51,7 +51,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (137 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
+- **Testing**: `vitest` (140 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
 
 ---
 
@@ -67,11 +67,14 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (137 unit tests across 7 suites)
+# Run Vitest test suite (140 unit tests across 7 suites)
 npm test
 
 # Run full test suite in single-run CI mode
 npm test -- --run
+
+# Run test coverage report
+npm run test:coverage
 
 # Build production bundle to dist/
 npm run build
@@ -123,7 +126,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (77 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (79 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -134,7 +137,7 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (18 tests)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (19 tests)
 │   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
@@ -143,63 +146,63 @@ Cosmic Engine V2.0/
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
 │       │   ├── widgets.test.ts  # Vitest unit tests for 7 observatory widgets (9 tests)
-│       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
-│       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
-│       │   │   ├── OrbitHoverHud.tsx       # Floating glassmorphic hover popovers
-│       │   │   ├── OrbitPhysicsHud.tsx     # 4-column telemetry physics footer
-│       │   │   ├── OrbitHeaderControls.tsx # True scale vs. exaggerated scale toggle
-│       │   │   ├── milestones.ts           # Extracted seasonal orbital milestones
-│       │   │   ├── types.ts                # Macro-orbit domain interfaces & props
-│       │   │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   ├── solar/           # Decomposed solar almanac subsystem modules
-│       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
-│       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
-│       │   │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
-│       │   │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   ├── today/           # Decomposed today's horizon subsystem modules
-│       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
-│       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
-│       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
-│       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
-│       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
-│       │   │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
-│       │   │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
-│       │       ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
-│       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
-│       │       ├── ShadowRayDiagram.tsx        # Decomposed coordinator container
-│       │       ├── ShadowRayHoverHud.tsx       # Floating glassmorphic hover popovers
-│       │       ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
-│       │       ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
-│       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
-│       │       ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon & Lunar POV)
-│       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
-│       │       └── index.ts                    # Barrel export
-│       ├── controls/            # Interactive astrolabe inputs
-│       │   ├── ArmillaryRail.tsx          # Slider control rail
-│       │   ├── BufferedInput.tsx          # Blur/Enter commit input wrapper
-│       │   ├── ControlRing.tsx            # Concentric drag ring
-│       │   ├── LatitudeSlider.tsx         # Latitude coordinate slider
-│       │   └── PolarLongitudeSelector.tsx # Polar stereographic longitude selector
-│       ├── layout/              # Container layout modules
-│       │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
-│       │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
-│       │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
-│       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
-│       │       ├── AstrolabeDial.tsx           # 4-concentric interactive SVG astrolabe dial
-│       │       ├── ChronometerReadoutCards.tsx # Direct input cards & parseTimeString validator
-│       │       ├── SolsticeJumpControls.tsx    # Twilight phase pill & solstice fast jumps
-│       │       └── ChronometerModalPopovers.tsx # Accessible modal wrappers for Lat/Lon sliders
-│       └── common/              # Shared visual components
-│           ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
-│           ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
-│           ├── LivingMarble.tsx                # Non-tearing 3D Earth globe visualizer
-│           └── PhaseVisual.tsx                 # Lunar phase disc with parallactic tilt
+│       ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
+│       │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
+│       │   ├── OrbitHoverHud.tsx       # Floating glassmorphic hover popovers
+│       │   ├── OrbitPhysicsHud.tsx     # 4-column telemetry physics footer
+│       │   ├── OrbitHeaderControls.tsx # True scale vs. exaggerated scale toggle
+│       │   ├── milestones.ts           # Extracted seasonal orbital milestones
+│       │   ├── types.ts                # Macro-orbit domain interfaces & props
+│       │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
+│       │   └── index.ts                # Barrel export
+│       ├── solar/           # Decomposed solar almanac subsystem modules
+│       │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
+│       │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
+│       │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
+│       │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   └── index.ts                # Barrel export
+│       ├── today/           # Decomposed today's horizon subsystem modules
+│       │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
+│       │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
+│       │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
+│       │   └── index.ts                # Barrel export
+│       ├── lunar/           # Decomposed lunar almanac subsystem modules
+│       │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
+│       │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
+│       │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
+│       │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   └── index.ts                # Barrel export
+│       └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
+│           ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
+│           ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
+│           ├── ShadowRayDiagram.tsx        # Decomposed coordinator container
+│           ├── ShadowRayHoverHud.tsx       # Floating glassmorphic hover popovers
+│           ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
+│           ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
+│           ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
+│           ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon & Lunar POV)
+│           ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
+│           └── index.ts                    # Barrel export
+│   ├── controls/            # Interactive astrolabe inputs
+│   │   ├── ArmillaryRail.tsx          # Slider control rail
+│   │   ├── BufferedInput.tsx          # Blur/Enter commit input wrapper
+│   │   ├── ControlRing.tsx            # Concentric drag ring
+│   │   ├── LatitudeSlider.tsx         # Latitude coordinate slider
+│   │   └── PolarLongitudeSelector.tsx # Polar stereographic longitude selector
+│   ├── layout/              # Container layout modules
+│   │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
+│   │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
+│   │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
+│   │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
+│   │       ├── AstrolabeDial.tsx           # 4-concentric interactive SVG astrolabe dial
+│   │       ├── ChronometerReadoutCards.tsx # Direct input cards & parseTimeString validator
+│   │       ├── SolsticeJumpControls.tsx    # Twilight phase pill & solstice fast jumps
+│   │       └── ChronometerModalPopovers.tsx # Accessible modal wrappers for Lat/Lon sliders
+│   └── common/              # Shared visual components
+│       ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
+│       ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
+│       ├── LivingMarble.tsx                # Non-tearing 3D Earth globe visualizer
+│       └── PhaseVisual.tsx                 # Lunar phase disc with parallactic tilt
 ```
 
 ---
@@ -225,10 +228,10 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 
 | Test Suite | File | Tests | Focus Areas |
 | :--- | :--- | :--- | :--- |
-| **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 77 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry |
+| **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 79 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry |
 | **Observatory Widgets** | `src/components/widgets/widgets.test.ts` | 9 | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 7 observatory window subsystems |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
-| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 18 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
+| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 19 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` | 7 | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` | 6 | Fault isolation, derived state error capture, and in-place module reset recovery |
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` | 7 | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |

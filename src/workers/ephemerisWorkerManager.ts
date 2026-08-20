@@ -47,6 +47,11 @@ export class EphemerisWorkerManager {
     this.annualSolarCache = new Map();
     this.annualLunarCache = new Map();
     this._isAvailable = typeof Worker !== 'undefined';
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => this.terminate());
+      window.addEventListener('pagehide', () => this.terminate());
+    }
   }
 
   /**

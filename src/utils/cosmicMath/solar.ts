@@ -403,7 +403,7 @@ export const calculateAnnualSolarMatrix = (year: number, latitude: Latitude): An
   const totalDays = getDaysInYear(year);
   const days: AnnualSolarMatrixItem[] = [];
   for (let day = 1; day <= totalDays; day++) {
-    const d = new Date(year, 0, day);
+    const d = new Date(Date.UTC(year, 0, day));
     const jd = getJulianDate(d, 12);
     const { declination, equationOfTime } = calculateSolarPosition(jd);
     const localSolarNoon = 12 - (equationOfTime / 60);

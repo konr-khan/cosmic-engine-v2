@@ -182,7 +182,7 @@ export interface EclipsePresetItem {
  */
 export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
   {
-    date: new Date(2024, 3, 8), // April 8, 2024 Total Solar Eclipse (18:17 UTC)
+    date: new Date(Date.UTC(2024, 3, 8)), // April 8, 2024 Total Solar Eclipse (18:17 UTC)
     timeOfDay: 18.283,
     title: "Apr 8, 2024 - Great American Eclipse",
     type: "TOTAL_SOLAR",
@@ -190,7 +190,7 @@ export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
     description: "Total Solar Eclipse spanning North America from Mexico through Maine."
   },
   {
-    date: new Date(2024, 9, 2), // Oct 2, 2024 Annular Solar Eclipse (18:45 UTC)
+    date: new Date(Date.UTC(2024, 9, 2)), // Oct 2, 2024 Annular Solar Eclipse (18:45 UTC)
     timeOfDay: 18.75,
     title: "Oct 2, 2024 - Annular Solar Eclipse",
     type: "ANNULAR_SOLAR",
@@ -198,7 +198,7 @@ export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
     description: "Ring of Fire eclipse visible across South America and Easter Island."
   },
   {
-    date: new Date(2025, 2, 14), // March 14, 2025 Total Lunar Eclipse (06:58 UTC)
+    date: new Date(Date.UTC(2025, 2, 14)), // March 14, 2025 Total Lunar Eclipse (06:58 UTC)
     timeOfDay: 6.967,
     title: "Mar 14, 2025 - Total Lunar Eclipse",
     type: "TOTAL_LUNAR",
@@ -206,7 +206,7 @@ export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
     description: "Deep Blood Moon visible across North & South America, Europe, and Africa."
   },
   {
-    date: new Date(2026, 7, 12), // August 12, 2026 European Total Eclipse (17:47 UTC)
+    date: new Date(Date.UTC(2026, 7, 12)), // August 12, 2026 European Total Eclipse (17:47 UTC)
     timeOfDay: 17.783,
     title: "Aug 12, 2026 - European Total Eclipse",
     type: "TOTAL_SOLAR",
@@ -214,7 +214,7 @@ export const ECLIPSE_PRESETS: EclipsePresetItem[] = [
     description: "First Total Solar Eclipse in mainland Europe in 27 years (Spain/Iceland)."
   },
   {
-    date: new Date(2027, 7, 2), // August 2, 2027 Great North African Eclipse (10:07 UTC)
+    date: new Date(Date.UTC(2027, 7, 2)), // August 2, 2027 Great North African Eclipse (10:07 UTC)
     timeOfDay: 10.117,
     title: "Aug 2, 2027 - Luxor 6-Min Totality",
     type: "TOTAL_SOLAR",

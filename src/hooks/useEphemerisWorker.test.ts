@@ -562,4 +562,37 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     expect(manager.annualSolarCache.size).toBe(0);
     expect(manager.annualLunarCache.size).toBe(0);
   });
+
+  it('triggers terminate() on window beforeunload and pagehide events', () => {
+    class MockWorker {
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
+    }
+
+    globalThis.Worker = MockWorker as any;
+    const listeners: Record<string, Function[]> = {};
+    const originalWindow = globalThis.window;
+    (globalThis as any).window = {
+      addEventListener: (event: string, handler: Function) => {
+        listeners[event] = listeners[event] || [];
+        listeners[event].push(handler);
+      }
+    };
+
+    const manager = new EphemerisWorkerManager();
+    const terminateSpy = vi.spyOn(manager, 'terminate');
+
+    expect(listeners['beforeunload']).toBeDefined();
+    expect(listeners['pagehide']).toBeDefined();
+
+    listeners['beforeunload'][0]({} as any);
+    expect(terminateSpy).toHaveBeenCalledTimes(1);
+
+    listeners['pagehide'][0]({} as any);
+    expect(terminateSpy).toHaveBeenCalledTimes(2);
+
+    (globalThis as any).window = originalWindow;
+  });
 });
