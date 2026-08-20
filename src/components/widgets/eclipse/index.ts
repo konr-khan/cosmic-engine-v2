@@ -3,9 +3,7 @@ export { EclipseStatusBadge, type EclipseStatusBadgeProps } from './EclipseStatu
 export { ShadowRayDiagram, type ShadowRayDiagramProps } from './ShadowRayDiagram';
 export { ShadowRayHoverHud, type ShadowRayHoverHudProps } from './ShadowRayHoverHud';
 export { LiveSyzygyView, type LiveSyzygyViewProps } from './LiveSyzygyView';
-export { SolarFocusView, type SolarFocusViewProps } from './SolarFocusView';
 export { LunarSurfacePovView, type LunarSurfacePovViewProps } from './LunarSurfacePovView';
-export { SelenocentricOrbitView, type SelenocentricOrbitViewProps } from './SelenocentricOrbitView';
 export { NodalPlaneVisualizer, type NodalPlaneVisualizerProps } from './NodalPlaneVisualizer';
 export { SkyViewSimulator, type SkyViewSimulatorProps } from './SkyViewSimulator';
 export { EclipseScanner, type EclipseScannerProps, type EclipseDiscoveryItem } from './EclipseScanner';

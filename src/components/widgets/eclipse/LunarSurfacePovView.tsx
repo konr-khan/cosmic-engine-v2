@@ -17,13 +17,20 @@ export const LunarSurfacePovView: React.FC<LunarSurfacePovViewProps> = ({ eclips
   const isTerrestrialLunarEclipse = eclipse.category === 'LUNAR' && eclipse.isEclipseActive;
 
   return (
-    <g>
+    <svg viewBox="0 0 520 220" className="w-full h-full max-h-[220px]" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="lunarSunGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="60%" stopColor="#f59e0b" stopOpacity="1" />
+          <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
       {/* Lunar Sky Backdrop */}
       <rect x="0" y="0" width="520" height="220" fill="#020617" rx="8" />
 
       {/* Lunar Horizon Line */}
       <path d="M 0 190 Q 130 180, 260 185 T 520 190 L 520 220 L 0 220 Z" fill="#1e293b" stroke="#334155" strokeWidth="1" />
-      <text x="20" y="210" className="text-[9px] font-mono font-bold fill-slate-400">
+      <text x="20" y="210" className="text-[9px] font-mono font-bold fill-slate-400 select-none">
         🌕 Lunar Surface Perspective (View from Moon looking up at Earth)
       </text>
 
@@ -32,7 +39,7 @@ export const LunarSurfacePovView: React.FC<LunarSurfacePovViewProps> = ({ eclips
         {/* Sun in Lunar Sky */}
         <g className="cursor-help">
           <title>{`Sun in Lunar Sky\n• Angular Diameter: 32.0' arcmin\n• Distance: ~1.00 AU`}</title>
-          <circle cx="0" cy="0" r="32" fill="url(#sunGlow)" />
+          <circle cx="0" cy="0" r="32" fill="url(#lunarSunGlow)" />
           <circle cx="0" cy="0" r="26" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
         </g>
 
@@ -91,6 +98,6 @@ export const LunarSurfacePovView: React.FC<LunarSurfacePovViewProps> = ({ eclips
           Earth Diameter: 1.9° (114&apos; arcmin)
         </text>
       </g>
-    </g>
+    </svg>
   );
 };

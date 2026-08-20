@@ -28,8 +28,6 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
   timeOfDay = 12
 }) => {
   const [activeTab, setActiveTab] = useState<'geometry' | 'sky' | 'scanner'>('geometry');
-  const [diagramMode, setDiagramMode] = useState<'live' | 'solar' | 'lunar'>('live');
-  const [lunarViewSubTab, setLunarViewSubTab] = useState<'pov' | 'orbit'>('pov');
 
   const eclipse: EclipseData = (orbitalData && orbitalData.eclipse) 
     ? orbitalData.eclipse 
@@ -104,10 +102,6 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
             <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm">
               <ShadowRayDiagram
                 eclipse={eclipse}
-                diagramMode={diagramMode}
-                setDiagramMode={setDiagramMode}
-                lunarViewSubTab={lunarViewSubTab}
-                setLunarViewSubTab={setLunarViewSubTab}
                 currentDate={currentDate}
                 latitude={latitude}
                 longitude={longitude}

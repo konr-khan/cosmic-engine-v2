@@ -16,9 +16,7 @@ import {
   ShadowRayDiagram, 
   ShadowRayHoverHud,
   LiveSyzygyView,
-  SolarFocusView,
   LunarSurfacePovView,
-  SelenocentricOrbitView,
   NodalPlaneVisualizer, 
   SkyViewSimulator, 
   EclipseScanner,
@@ -87,9 +85,7 @@ describe('Observatory 7-Widget Architecture & Integration Tests', () => {
       expect(ShadowRayDiagram).toBeDefined();
       expect(ShadowRayHoverHud).toBeDefined();
       expect(LiveSyzygyView).toBeDefined();
-      expect(SolarFocusView).toBeDefined();
       expect(LunarSurfacePovView).toBeDefined();
-      expect(SelenocentricOrbitView).toBeDefined();
       expect(NodalPlaneVisualizer).toBeDefined();
       expect(SkyViewSimulator).toBeDefined();
       expect(EclipseScanner).toBeDefined();
