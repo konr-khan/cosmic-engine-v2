@@ -136,7 +136,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
               transform={`rotate(${safeAngles.moonDegrees || 0})`}
             />
 
-            {/* Earth Night Base */}
+            {/* Earth Night Base (Deep Space Slate) */}
             <circle
               r="12"
               fill="#020617"
@@ -144,33 +144,78 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
               strokeWidth="0.75"
             />
 
-            {/* Earth Lit Side (Facing Sun) */}
+            {/* Earth Lit Side & Layered Twilight Transitions (Rotated to Sun Vector) */}
             <g transform={`rotate(${safeAngles.sunDegrees || 0})`}>
+              {/* Astronomical Twilight Band (h: -18° to -12°, ±108° sector) */}
+              <path
+                d="M 0,0 L -3.71,-11.41 A 12,12 0 1,1 -3.71,11.41 Z"
+                fill="#1e293b"
+              />
+              {/* Nautical Twilight Band (h: -12° to -6°, ±102° sector) */}
+              <path
+                d="M 0,0 L -2.49,-11.74 A 12,12 0 1,1 -2.49,11.74 Z"
+                fill="#334155"
+              />
+              {/* Civil Twilight Band (h: -6° to -0.833°, ±96° sector - harmonized oceanic twilight) */}
+              <path
+                d="M 0,0 L -1.25,-11.93 A 12,12 0 1,1 -1.25,11.93 Z"
+                fill="#1e40af"
+              />
+              {/* Full Daylight Sunlit Hemisphere (180° Blue Oceanic Arc) */}
               <path
                 d="M 0,-12 A 12,12 0 0,1 0,12 Z"
-                fill="#fbbf24"
+                fill="#2563eb"
+              />
+              {/* Crisp Daylight Terminator Line */}
+              <line
+                x1="0"
+                y1="-12"
+                x2="0"
+                y2="12"
+                stroke="#60a5fa"
+                strokeWidth="0.5"
+                strokeOpacity="0.8"
               />
             </g>
 
-            {/* User Marker (Rotates by SunAngle + UserRotation) */}
-            <g transform={`rotate(${(safeAngles.sunDegrees || 0) + safeUserRotation})`}>
-              <circle
-                cx="12"
-                cy="0"
-                r="6"
-                fill="#fbbf24"
-                opacity="0.2"
-              />
-              <circle
-                cx="12"
-                cy="0"
-                r="2.5"
-                fill="#fbbf24"
-                stroke="white"
-                strokeWidth="1"
-                className="drop-shadow-sm"
-              />
-            </g>
+            {/* Globe Outer Hairline Rim */}
+            <circle
+              r="12"
+              fill="none"
+              stroke="#60a5fa"
+              strokeWidth="0.75"
+              strokeOpacity="0.3"
+            />
+
+            {/* User Location Pin (Conforms with Dual View pin formatting) */}
+            {(() => {
+              const normUserRot = ((safeUserRotation % 360) + 360) % 360;
+              const isUserDaylight = normUserRot <= 90 || normUserRot >= 270;
+              return (
+                <g transform={`rotate(${(safeAngles.sunDegrees || 0) + safeUserRotation})`}>
+                  {isUserDaylight && (
+                    <circle
+                      cx="12"
+                      cy="0"
+                      r="4"
+                      fill="#38bdf8"
+                      opacity="0.25"
+                      className="animate-pulse pointer-events-none"
+                    />
+                  )}
+                  <circle
+                    cx="12"
+                    cy="0"
+                    r="2"
+                    fill={isUserDaylight ? "#38bdf8" : "#64748b"}
+                    stroke="#ffffff"
+                    strokeWidth="0.75"
+                    opacity={isUserDaylight ? 1 : 0.45}
+                    className="cursor-pointer drop-shadow-sm"
+                  />
+                </g>
+              );
+            })()}
 
             {/* Moon Orbit */}
             <circle

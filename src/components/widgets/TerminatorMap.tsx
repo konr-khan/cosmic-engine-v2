@@ -187,7 +187,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
 
         {hoveredPoint === 'observer' && (
           <div className="absolute top-3 left-3 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-[10px]">
-            <div className="text-xs font-bold text-indigo-400">Observer Location</div>
+            <div className="text-xs font-bold text-sky-400">Observer Location</div>
             <div className="text-slate-300">
               Coordinates: <strong className="text-white">{Math.abs(latitude).toFixed(2)}°{latitude >= 0 ? 'N' : 'S'}, {Math.abs(longitude).toFixed(2)}°{longitude >= 0 ? 'E' : 'W'}</strong>
             </div>
@@ -223,8 +223,8 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             <line x1="0" y1={90} x2="360" y2="90" stroke="#475569" strokeWidth="0.5" strokeOpacity="0.6" />
             
             {/* User Latitude & Meridian Crosshairs */}
-            <line x1="0" y1={userCy} x2="360" y2={userCy} stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
-            <line x1={180} y1="0" x2={180} y2="180" stroke="#6366f1" strokeWidth="0.75" strokeDasharray="4 2" />
+            <line x1="0" y1={userCy} x2="360" y2={userCy} stroke="#38bdf8" strokeWidth="0.75" strokeDasharray="4 2" strokeOpacity="0.7" />
+            <line x1={180} y1="0" x2={180} y2="180" stroke="#38bdf8" strokeWidth="0.75" strokeDasharray="4 2" strokeOpacity="0.7" />
 
             {/* Layered Twilight & Night Shadows (Progressively darkening into deep space night) */}
             {/* 1. Base Shadow from Horizon (Day boundary / Civil Twilight transition: h < -0.833°) */}
@@ -272,15 +272,15 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               </text>
             </g>
 
-            {/* User Observer Position Marker with Glow */}
+            {/* User Observer Position Marker with Glow (Unified Sky Blue #38bdf8) */}
             <g 
               className="cursor-pointer"
               onPointerEnter={() => setHoveredPoint('observer')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
-              <circle cx={180} cy={userCy} r="8" fill="#6366f1" opacity="0.25" />
-              <circle cx={180} cy={userCy} r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="1.2" className="drop-shadow" />
-              <text x={186} y={userCy - 4} className="text-[8px] fill-indigo-300 font-bold font-mono">YOU</text>
+              <circle cx={180} cy={userCy} r="8" fill="#38bdf8" opacity="0.25" className="animate-pulse" />
+              <circle cx={180} cy={userCy} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.2" className="drop-shadow" />
+              <text x={186} y={userCy - 4} className="text-[8px] fill-sky-300 font-bold font-mono">YOU</text>
             </g>
           </g>
         </svg>
@@ -290,7 +290,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
          <div className="flex items-center gap-3">
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 border border-amber-300 inline-block" /> Subsolar</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300 border border-slate-400 inline-block" /> Sublunar</span>
-           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500 border border-indigo-400 inline-block" /> You</span>
+           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-400 border border-sky-300 inline-block" /> You</span>
          </div>
          <div className="flex items-center gap-2.5">
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400 inline-block" /> Day</span>

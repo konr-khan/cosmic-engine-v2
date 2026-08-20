@@ -34,7 +34,8 @@ export function calculateEarthSideGeometry(
   earthRadius: number,
   sunLambdaDeg: number,
   latitude: number,
-  timeOfDay: number
+  timeOfDay: number,
+  longitude: number = 0
 ): EarthSideGeometry {
   const epsRad = (23.439281 * Math.PI) / 180;
   const sunLambdaRad = (sunLambdaDeg * Math.PI) / 180;
@@ -48,9 +49,9 @@ export function calculateEarthSideGeometry(
   const ux = Math.cos(thetaSide);
   const uy = Math.sin(thetaSide);
 
-  // Polar axis endpoints:
-  const poleLineX = nx * (earthRadius + 3.5);
-  const poleLineY = ny * (earthRadius + 3.5);
+  // Polar axis endpoints (flush to planetary limb):
+  const poleLineX = nx * earthRadius;
+  const poleLineY = ny * earthRadius;
 
   // Front equator chord endpoints:
   const eqX1 = earthCenterX - earthRadius * ux;
@@ -58,9 +59,10 @@ export function calculateEarthSideGeometry(
   const eqX2 = earthCenterX + earthRadius * ux;
   const eqY2 = earthCenterY - earthRadius * uy;
 
-  // Observer Location Pin:
+  // Observer Location Pin (incorporating geographic longitude offset):
   const latRad = (latitude * Math.PI) / 180;
-  const hRad = ((timeOfDay - 12) * Math.PI) / 12;
+  const localHourAngleDeg = ((timeOfDay - 12) * 15) + longitude;
+  const hRad = (localHourAngleDeg * Math.PI) / 180;
 
   const xBody = -Math.cos(latRad) * Math.cos(hRad); // negative towards Sun on left
   const yBody = Math.sin(latRad);
@@ -112,7 +114,8 @@ export function calculateEarthAxialGeometry(
   earthRadius: number,
   sunLambdaDeg: number,
   latitude: number,
-  timeOfDay: number
+  timeOfDay: number,
+  longitude: number = 0
 ): EarthAxialGeometry {
   const earthR = earthRadius;
   const epsRad = (23.439281 * Math.PI) / 180; // Earth obliquity 23.44°
@@ -134,9 +137,9 @@ export function calculateEarthAxialGeometry(
   const vy = (ny * nz) / nScreenLen;
   const vz = -nScreenLen;
 
-  // Polar Axis line segment endpoints on screen:
-  const poleLineX = (nx / nScreenLen) * (earthR + 3.5);
-  const poleLineY = (ny / nScreenLen) * (earthR + 3.5);
+  // Polar Axis line segment endpoints on screen (flush to planetary limb):
+  const poleLineX = (nx / nScreenLen) * earthR;
+  const poleLineY = (ny / nScreenLen) * earthR;
 
   // Front equator chord curve (16 sample points along front hemisphere)
   const eqPts: string[] = [];
@@ -151,9 +154,10 @@ export function calculateEarthAxialGeometry(
   }
   const equatorPathD = eqPts.join(' ');
 
-  // Observer Location Pin
+  // Observer Location Pin (incorporating geographic longitude offset)
   const latRad = (latitude * Math.PI) / 180;
-  const hRad = ((timeOfDay - 12) * Math.PI) / 12;
+  const localHourAngleDeg = ((timeOfDay - 12) * 15) + longitude;
+  const hRad = (localHourAngleDeg * Math.PI) / 180;
 
   const xBody = Math.cos(latRad) * Math.sin(hRad);
   const yBody = Math.sin(latRad);

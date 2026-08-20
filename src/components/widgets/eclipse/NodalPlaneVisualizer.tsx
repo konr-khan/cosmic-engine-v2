@@ -72,9 +72,10 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
       20,
       sunLambdaDeg,
       latitude,
-      timeOfDay
+      timeOfDay,
+      longitude
     );
-  }, [sunLambdaDeg, latitude, timeOfDay, centerX, centerY]);
+  }, [sunLambdaDeg, latitude, timeOfDay, longitude, centerX, centerY]);
 
   // 3D Elliptical Orbital Loop: 4-Quadrant Paths (Waxing/Waning x Ascending/Descending)
   const { waxAsc, waxDesc, wanAsc, wanDesc } = generateOrbitalSegments(
@@ -201,7 +202,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
             {/* Earth Base Disc */}
             <circle cx={centerX} cy={centerY} r={earthGeometry.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
 
-            {/* Projected 23.44° Polar Axis with N/S Markers */}
+            {/* Projected 23.44° Polar Axis */}
             <line 
               x1={centerX - earthGeometry.poleLineX} 
               y1={centerY + earthGeometry.poleLineY} 
@@ -212,20 +213,6 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
               strokeDasharray="2.5 1.5" 
               opacity="0.65" 
             />
-            <text 
-              x={centerX + earthGeometry.poleLineX + 2} 
-              y={centerY - earthGeometry.poleLineY - 1} 
-              className="text-[6px] font-mono font-bold fill-sky-300 select-none pointer-events-none"
-            >
-              N
-            </text>
-            <text 
-              x={centerX - earthGeometry.poleLineX - 5} 
-              y={centerY + earthGeometry.poleLineY + 5} 
-              className="text-[6px] font-mono font-bold fill-sky-400 select-none pointer-events-none"
-            >
-              S
-            </text>
 
             {/* Dashed Blue Equator Chord */}
             <path 

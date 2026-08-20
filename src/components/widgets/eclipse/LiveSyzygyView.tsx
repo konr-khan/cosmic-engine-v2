@@ -58,7 +58,8 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
     18,
     sunLambdaDeg,
     latitude,
-    timeOfDay
+    timeOfDay,
+    longitude
   );
 
   return (
@@ -141,7 +142,7 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       >
         <circle cx={liveEarthX} cy={liveEarthY} r={liveEarthGeom.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
 
-        {/* Projected 23.44° Polar Axis with N/S Markers */}
+        {/* Projected 23.44° Polar Axis */}
         <line 
           x1={liveEarthX - liveEarthGeom.poleLineX} 
           y1={liveEarthY + liveEarthGeom.poleLineY} 
@@ -152,20 +153,6 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
           strokeDasharray="2.5 1.5" 
           opacity="0.65" 
         />
-        <text 
-          x={liveEarthX + liveEarthGeom.poleLineX + 2} 
-          y={liveEarthY - liveEarthGeom.poleLineY - 1} 
-          className="text-[6px] font-mono font-bold fill-sky-300 select-none pointer-events-none"
-        >
-          N
-        </text>
-        <text 
-          x={liveEarthX - liveEarthGeom.poleLineX - 5} 
-          y={liveEarthY + liveEarthGeom.poleLineY + 5} 
-          className="text-[6px] font-mono font-bold fill-sky-400 select-none pointer-events-none"
-        >
-          S
-        </text>
 
         {/* Dashed Blue Equator Line */}
         <line 
@@ -178,16 +165,6 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
           strokeDasharray="2 1.5" 
           opacity="0.65" 
         />
-
-        {/* Earth Label */}
-        <text 
-          x={liveEarthX} 
-          y={liveEarthY + (Math.abs(liveEarthGeom.obsPy - liveEarthY) < 5 ? 11 : 3)} 
-          textAnchor="middle" 
-          className="text-[7.5px] font-mono font-bold fill-blue-300/80 select-none pointer-events-none"
-        >
-          EARTH
-        </text>
 
         {/* Observer Location Pin */}
         <g transform={`translate(${liveEarthGeom.obsPx.toFixed(1)}, ${liveEarthGeom.obsPy.toFixed(1)})`}>

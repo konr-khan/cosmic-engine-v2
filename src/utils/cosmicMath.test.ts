@@ -897,41 +897,45 @@ describe('cosmicMath utilities', () => {
       it('calculates zero projected tilt at Equinoxes (lambda = 0° and 180°)', () => {
         const geomMar = calculateEarthSideGeometry(310, 110, 18, 0, 45, 12);
         expect(geomMar.poleLineX).toBeCloseTo(0, 4);
-        expect(geomMar.poleLineY).toBeCloseTo(18 + 3.5, 4);
+        expect(geomMar.poleLineY).toBeCloseTo(18, 4);
         expect(geomMar.eqY1).toBeCloseTo(110, 4);
         expect(geomMar.eqY2).toBeCloseTo(110, 4);
 
         const geomSep = calculateEarthSideGeometry(310, 110, 18, 180, 45, 12);
         expect(geomSep.poleLineX).toBeCloseTo(0, 4);
-        expect(geomSep.poleLineY).toBeCloseTo(18 + 3.5, 4);
+        expect(geomSep.poleLineY).toBeCloseTo(18, 4);
       });
 
       it('calculates maximum projected tilt at Solstices (lambda = 90° and 270°)', () => {
         const geomJun = calculateEarthSideGeometry(310, 110, 18, 90, 45, 12);
         const epsRad = (23.439281 * Math.PI) / 180;
         const expectedNx = -Math.sin(epsRad);
-        expect(geomJun.poleLineX).toBeCloseTo(expectedNx * (18 + 3.5), 3);
+        expect(geomJun.poleLineX).toBeCloseTo(expectedNx * 18, 3);
 
         const geomDec = calculateEarthSideGeometry(310, 110, 18, 270, 45, 12);
-        expect(geomDec.poleLineX).toBeCloseTo(-expectedNx * (18 + 3.5), 3);
+        expect(geomDec.poleLineX).toBeCloseTo(-expectedNx * 18, 3);
       });
 
       it('determines daylight vs night correctly for side-on observer pin', () => {
         // Observer at noon facing Sun (Sun is at -X on left)
-        const noonGeom = calculateEarthSideGeometry(310, 110, 18, 0, 45, 12);
+        const noonGeom = calculateEarthSideGeometry(310, 110, 18, 0, 45, 12, 0);
         expect(noonGeom.isDaylight).toBe(true);
         expect(noonGeom.obsPx).toBeLessThan(310); // on Sunlit left side
 
         // Observer at midnight facing away from Sun
-        const midnightGeom = calculateEarthSideGeometry(310, 110, 18, 0, 45, 0);
+        const midnightGeom = calculateEarthSideGeometry(310, 110, 18, 0, 45, 0, 0);
         expect(midnightGeom.isDaylight).toBe(false);
         expect(midnightGeom.obsPx).toBeGreaterThan(310); // on dark right side
+
+        // Observer at 09:44 UTC in Olympia, WA (-122.81°W -> 01:33 AM local solar time -> Night)
+        const olympiaNight = calculateEarthSideGeometry(310, 110, 18, 147, 47.06, 9.733, -122.81);
+        expect(olympiaNight.isDaylight).toBe(false);
       });
     });
 
     describe('calculateEarthAxialGeometry', () => {
       it('calculates screen-projected polar axis and 16-point equator curve', () => {
-        const axial = calculateEarthAxialGeometry(200, 90, 20, 0, 47.06, 12);
+        const axial = calculateEarthAxialGeometry(200, 90, 20, 0, 47.06, 12, 0);
         expect(axial.earthR).toBe(20);
         expect(axial.equatorPathD.startsWith('M')).toBe(true);
         expect(axial.equatorPathD.split('L')).toHaveLength(17); // M + 16 L segments
@@ -939,12 +943,16 @@ describe('cosmicMath utilities', () => {
         expect(Number.isNaN(axial.obsPy)).toBe(false);
       });
 
-      it('correctly reports daylight at noon along axial sightline', () => {
-        const noon = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 12);
+      it('correctly reports daylight at noon along axial sightline and accounts for longitude', () => {
+        const noon = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 12, 0);
         expect(noon.isDaylight).toBe(true);
 
-        const midnight = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 0);
+        const midnight = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 0, 0);
         expect(midnight.isDaylight).toBe(false);
+
+        // Observer at 09:44 UTC in Olympia, WA (-122.81°W -> 01:33 AM local solar time -> Night)
+        const olympiaAxialNight = calculateEarthAxialGeometry(200, 90, 20, 147, 47.06, 9.733, -122.81);
+        expect(olympiaAxialNight.isDaylight).toBe(false);
       });
     });
 

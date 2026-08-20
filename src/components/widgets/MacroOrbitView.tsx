@@ -229,18 +229,31 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
         </p>
 
         <div className="flex items-center gap-2">
-          {/* Mode Toggle: True Scale vs Exaggerated e=0.25 */}
-          <button
-            onClick={() => setExaggerateEccentricity(!exaggerateEccentricity)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all border cursor-pointer ${
-              exaggerateEccentricity 
-                ? 'bg-indigo-600 text-white border-indigo-400 shadow-sm' 
-                : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
-            }`}
-            title="Toggle between circular appearance (e=0.0167) and exaggerated elliptical view (e=0.25)"
-          >
-            {exaggerateEccentricity ? 'Exaggerated (e=0.25)' : 'True Scale (e=0.0167)'}
-          </button>
+          {/* Mode Toggle Switch: True Scale vs Exaggerated e=0.25 */}
+          <div className="flex items-center gap-0.5 bg-slate-950/90 p-0.5 rounded-lg border border-slate-800/90 text-xs font-mono">
+            <button
+              onClick={() => setExaggerateEccentricity(false)}
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                !exaggerateEccentricity 
+                  ? 'bg-indigo-600 text-white shadow-sm border border-indigo-500/60 font-semibold' 
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+              title="True Physical Scale (e = 0.0167, circular heliocentric appearance)"
+            >
+              True (e=0.017)
+            </button>
+            <button
+              onClick={() => setExaggerateEccentricity(true)}
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                exaggerateEccentricity 
+                  ? 'bg-indigo-600 text-white shadow-sm border border-indigo-500/60 font-semibold' 
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+              title="Exaggerated Elliptical Scale (e = 0.25, demonstrating dual focal points and orbital asymmetry)"
+            >
+              Exaggerated (e=0.25)
+            </button>
+          </div>
 
           {isEclipse && (
             <div className="flex items-center gap-1 bg-amber-950/90 text-amber-300 border border-amber-500/70 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold shadow-sm">
