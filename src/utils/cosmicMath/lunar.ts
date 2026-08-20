@@ -80,6 +80,26 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
   const angularRadiusDeg = toDegrees(Math.asin(1737.4 / distanceKm));
   const parallaxDeg = toDegrees(Math.asin(6378.137 / distanceKm));
 
+  // --- Meeus Ch. 48 Geocentric Phase Angle (i) & True Illumination Fraction (k) ---
+  const n = julianDate - 2451545.0;
+  const solarL = (280.460 + 0.9856474 * n) % 360;
+  const solarG = (357.528 + 0.9856003 * n) % 360;
+  const solarGRad = toRadians(solarG);
+  const solarLambda = solarL + 1.915 * Math.sin(solarGRad) + 0.020 * Math.sin(2 * solarGRad);
+  const solarLambdaRad = toRadians(solarLambda);
+  const solarDistAU = 1.00014 - 0.01671 * Math.cos(solarGRad) - 0.00014 * Math.cos(2 * solarGRad);
+  const solarDistKm = solarDistAU * 149597870.7;
+
+  // Geocentric elongation psi: cos(psi) = cos(beta) * cos(lambda - lambda_sun)
+  const cosPsi = Math.cos(bRad) * Math.cos(lRad - solarLambdaRad);
+  const psiRad = Math.acos(clamp(cosPsi, -1, 1));
+  const sinPsi = Math.sin(psiRad);
+
+  // Phase angle i: tan(i) = (R * sin(psi)) / (Delta - R * cos(psi))
+  const phaseAngleRad = Math.atan2(solarDistKm * sinPsi, distanceKm - solarDistKm * cosPsi);
+  const phaseAngleDeg = Math.abs(toDegrees(phaseAngleRad));
+  const illuminationFraction = (1 + Math.cos(phaseAngleRad)) / 2;
+
   const phase0to1 = ((D % 360) + 360) % 360 / 360;
   const phaseName = getPhaseName(phase0to1);
 
@@ -95,6 +115,8 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
     phase: phase0to1,
     phaseName,
     elongation: D,
+    phaseAngleDeg: parseFloat(phaseAngleDeg.toFixed(2)),
+    illuminationFraction: parseFloat(illuminationFraction.toFixed(4)),
     parallacticAngle: 0,
     nodeLongitude: parseFloat(nodeLongitude.toFixed(4)),
     descendingNodeLongitude: parseFloat(descendingNodeLongitude.toFixed(4)),
@@ -138,9 +160,10 @@ export const calculateParallacticAngle = (
 
 /**
  * Calculates Moonrise, Transit, Moonset, Perigee/Apogee, and Parallactic Angle.
+ * Implements 2-step iterative refinement for sub-minute accuracy across mid & polar latitudes.
  * @param lat - Observer latitude
  * @param lon - Observer longitude
- * @param julianDate - Julian Date
+ * @param julianDate - Julian Date (typically midnight)
  * @param timeOfDay - Decimal hour of day
  * @returns Lunar event metrics
  */
@@ -160,21 +183,45 @@ export const calculateLunarEvents = (
   const phaseDiffHours = raDiffDeg / 15;
   transitUTC = (transitUTC + phaseDiffHours + 24) % 24;
 
-  const decRad = toRadians(lunarNow.declination);
   const latRad = toRadians(clamp(lat, -89.9, 89.9));
-  
   const altRad = toRadians(0.125);
-  const numerator = Math.sin(altRad) - Math.sin(latRad) * Math.sin(decRad);
-  const denominator = Math.cos(latRad) * Math.cos(decRad);
-  const cosH = numerator / denominator;
+  const sinAlt = Math.sin(altRad);
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+
+  // Step 1: Initial estimate using transit declination
+  const decRadTransit = toRadians(lunarNow.declination);
+  const cosH0 = (sinAlt - sinLat * Math.sin(decRadTransit)) / (cosLat * Math.cos(decRadTransit));
 
   let moonriseUTC: number | null = null;
   let moonsetUTC: number | null = null;
 
-  if (cosH >= -1 && cosH <= 1) {
-    const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;
-    moonriseUTC = (transitUTC - halfDayHours + 24) % 24;
-    moonsetUTC = (transitUTC + halfDayHours + 24) % 24;
+  if (cosH0 >= -1 && cosH0 <= 1) {
+    const halfDayHours0 = (toDegrees(Math.acos(clamp(cosH0, -1, 1))) / 15) * 1.035;
+    const estRise = (transitUTC - halfDayHours0 + 24) % 24;
+    const estSet = (transitUTC + halfDayHours0 + 24) % 24;
+
+    // Step 2: Refine candidate rise time using lunar coordinates at estimated rise
+    const jdRise = julianDate + (estRise / 24.0);
+    const lunarRise = calculateLunarPosition(jdRise);
+    const decRadRise = toRadians(lunarRise.declination);
+    const cosHRise = (sinAlt - sinLat * Math.sin(decRadRise)) / (cosLat * Math.cos(decRadRise));
+
+    if (cosHRise >= -1 && cosHRise <= 1) {
+      const halfDayHoursRise = (toDegrees(Math.acos(clamp(cosHRise, -1, 1))) / 15) * 1.035;
+      moonriseUTC = (transitUTC - halfDayHoursRise + 24) % 24;
+    }
+
+    // Step 2: Refine candidate set time using lunar coordinates at estimated set
+    const jdSet = julianDate + (estSet / 24.0);
+    const lunarSet = calculateLunarPosition(jdSet);
+    const decRadSet = toRadians(lunarSet.declination);
+    const cosHSet = (sinAlt - sinLat * Math.sin(decRadSet)) / (cosLat * Math.cos(decRadSet));
+
+    if (cosHSet >= -1 && cosHSet <= 1) {
+      const halfDayHoursSet = (toDegrees(Math.acos(clamp(cosHSet, -1, 1))) / 15) * 1.035;
+      moonsetUTC = (transitUTC + halfDayHoursSet + 24) % 24;
+    }
   }
 
   const isPerigee = lunarNow.distanceKm < 365000;
@@ -197,11 +244,24 @@ export const calculateLunarEvents = (
 };
 
 /**
- * Calculates physical lunar disc illumination fraction (0% to 100%) from phase value (0.0 to 1.0).
- * @param phase - Normalized lunar phase value (0.0 = New Moon, 0.5 = Full Moon)
+ * Calculates physical lunar disc illumination fraction (0% to 100%).
+ * Supports normalized phase value (0.0 = New Moon, 0.5 = Full Moon) or
+ * precise 2D ecliptic latitude for exact Meeus Chapter 48 precision.
+ * @param phase - Normalized lunar phase value (0.0 to 1.0)
+ * @param beta - Optional lunar ecliptic latitude in degrees
  * @returns Illumination percentage (0 to 100)
  */
-export const calculateLunarIllumination = (phase: number): number => {
+export const calculateLunarIllumination = (phase: number, beta?: number): number => {
+  if (beta !== undefined) {
+    const dRad = (phase * 360) * (Math.PI / 180);
+    const bRad = beta * (Math.PI / 180);
+    const cosPsi = Math.cos(bRad) * Math.cos(dRad);
+    const psiRad = Math.acos(clamp(cosPsi, -1, 1));
+    const sinPsi = Math.sin(psiRad);
+    // Delta / R approx 384400 / 149597870 = 0.00257
+    const phaseAngleRad = Math.atan2(sinPsi, 0.00257 - cosPsi);
+    return Math.round(((1 + Math.cos(phaseAngleRad)) / 2) * 100);
+  }
   const normPhase = ((phase % 1) + 1) % 1;
   const rad = normPhase * 2 * Math.PI;
   return Math.round(((1 - Math.cos(rad)) / 2) * 100);

@@ -151,16 +151,30 @@ Given observer latitude $\phi$, solar declination $\delta$, and altitude thresho
   \Delta = 385001 - 20905 \cos M' - 3699 \cos(2D - M') - 2956 \cos 2D - 569 \cos 2M' \quad [\text{km}]
   \]
 
-### C. Disc Illumination ($k$) & Parallactic Angle ($\eta$)
-* **Physical Disc Illumination Fraction**:
+### C. Geocentric Phase Angle ($i$) & True Disc Illumination ($k$) (Meeus Ch. 48)
+Given lunar ecliptic coordinates $(\lambda, \beta, \Delta)$ and solar coordinates $(\lambda_\odot, R)$:
+* **Geocentric Elongation ($\psi$)**:
   \[
-  k = \frac{1 - \cos D}{2} \in [0.0, 1.0]
+  \cos \psi = \cos \beta \cos(\lambda - \lambda_\odot)
   \]
-* **Parallactic Angle ($\eta$)**:
+* **Geocentric Phase Angle ($i$)**:
+  \[
+  \tan i = \frac{R \sin \psi}{\Delta - R \cos \psi} \implies i = \operatorname{atan2}(R \sin \psi, \Delta - R \cos \psi) \quad [0^\circ..180^\circ]
+  \]
+* **True Physical Disc Illumination Fraction ($k$)**:
+  \[
+  k = \frac{1 + \cos i}{2} \in [0.0, 1.0]
+  \]
+
+### D. Topocentric Parallactic Angle ($\eta$) & 2-Step Rise/Set Solver
+* **Topocentric Parallactic Angle ($\eta$)**:
   \[
   \tan \eta = \frac{\sin H}{\tan \phi \cos \delta_{\text{moon}} - \sin \delta_{\text{moon}} \cos H}
   \]
   where $H = \text{LST} - \alpha_{\text{moon}}$ is the observer local hour angle.
+* **2-Step Lunar Rise/Set Iterative Solver**:
+  1. *Initial transit & half-day arc*: $\cos H_0 = \frac{\sin(0.125^\circ) - \sin\phi \sin\delta_{\text{transit}}}{\cos\phi \cos\delta_{\text{transit}}}$, $t^{(0)}_{\text{rise/set}} = t_{\text{transit}} \mp \frac{H_0}{15^\circ/\text{h}} \times 1.035$.
+  2. *Drift correction step*: Re-evaluate Moon declination $\delta_{\text{rise/set}}$ at candidate epoch $\text{JD}_0 + t^{(0)}/24$, recomputing $\cos H_{\text{refined}} = \frac{\sin(0.125^\circ) - \sin\phi \sin\delta_{\text{refined}}}{\cos\phi \cos\delta_{\text{refined}}}$ to account for the Moon's $\approx 0.55^\circ/\text{h}$ orbital motion. Circumpolar conditions ($\cos H < -1$ or $\cos H > 1$) return `null` rise/set events cleanly.
 
 ---
 

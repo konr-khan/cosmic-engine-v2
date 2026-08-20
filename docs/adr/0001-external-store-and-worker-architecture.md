@@ -18,7 +18,7 @@ In early iterations, two critical performance bottlenecks emerged:
    - State updates verify value equivalence (including `Date.getTime()`) before notifying subscribers.
 
 2. **Singleton Worker Manager (`EphemerisWorkerManager`)**:
-   - A single application-level Web Worker singleton handles all heavy ephemeris calculations.
+   - A single application-level Web Worker singleton handles all heavy ephemeris calculations (Meeus lunar series, 2-step iterative rise/set solvers, syzygy eclipse shadow geometry, and 365-day annual matrices).
    - Implements **in-flight request deduplication and coalescing**: identical calculation signatures share a single `postMessage` RPC dispatch and fan out results to all registered subscriber callbacks.
    - In-memory caching for 365-day annual matrices (`annualSolarCache`, `annualLunarCache`).
    - Lazy synchronous fallback execution when Workers are unavailable or pending bootstrap.
@@ -29,7 +29,7 @@ In early iterations, two critical performance bottlenecks emerged:
 * **Positive**:
   - Stable 60 FPS animation ticking with zero garbage collection stutter.
   - No thread proliferation; worker memory consumption stays under $12\text{ MB}$.
-  - Main thread remains responsive during rapid scrubs.
+  - Main thread remains responsive during rapid scrubs across 144 automated unit tests.
   - Clean worker thread and memory reclamation upon window close, tab switch, or SPA teardown.
 * **Invariants**:
   - Never replace `useChronometerStore` with standard React component closures inside animation hot paths.

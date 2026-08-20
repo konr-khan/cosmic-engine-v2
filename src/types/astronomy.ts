@@ -113,9 +113,19 @@ export interface LunarPosition {
   distance?: number;
   distanceKm: number;
   distanceEarthRadii?: number;
+  /** Normalized phase fraction [0.0..1.0] along mean elongation (0.0 = New Moon, 0.5 = Full Moon) */
   phase: number;
   phaseName: LunarPhaseName;
+  /** Mean elongation of the Moon from the Sun (D) in degrees [0..360) */
   elongation: Degrees | number;
+  /** Geocentric lunar phase angle i in degrees [0..180] (Meeus Ch. 48) */
+  phaseAngleDeg?: number;
+  /** Physical disc illuminated fraction k in [0.0..1.0] (Meeus Ch. 48) */
+  illuminationFraction?: number;
+  /** 
+   * Topocentric parallactic angle relative to observer zenith (0 in pure geocentric ephemeris;
+   * computed topocentrically in calculateLunarEvents with observer lat/lon).
+   */
   parallacticAngle: Degrees | number;
   nodeLongitude: Degrees | number;
   descendingNodeLongitude: Degrees | number;
@@ -134,6 +144,8 @@ export interface LunarPositionFull extends LunarPosition {
   angularRadiusDeg: number;
   parallaxDeg: number;
   argumentOfLatitude: number;
+  phaseAngleDeg: number;
+  illuminationFraction: number;
 }
 
 /** Lunar calendar events, transit timings & apsides metrics */

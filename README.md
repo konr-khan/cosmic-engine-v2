@@ -8,7 +8,7 @@
 
 - ☀️ **Solar Almanac & 24h Polar Sector Dial**: Solstice/equinox pathing, civil, nautical, and astronomical twilight durations, equation of time (analemma correction), solar noon, and daylight duration calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Clock dial featuring **Solar Noon vs. UTC Mode** segmented controls.
 - 👁️ **Today's Sky Horizon Dome**: Instantaneous symmetrical twin $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
-- 🌙 **Lunar Almanac & Ephemeris**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time indexing (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, perigee/apogee distance metrics in km and $R_E$, and astronomical parallactic angles.
+- 🌙 **Lunar Almanac & Ephemeris**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time indexing (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, Meeus Ch. 48 true geocentric phase angle ($i$) and disc illumination ($k$), 2-step iterative high-latitude rise/set solver, perigee/apogee distance metrics in km and $R_E$, and astronomical parallactic angles.
 - 🌊 **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view with an oceanic blue daylight hemisphere, harmonized multi-layered twilight boundary transitions (Astronomical, Nautical, Civil), and a dynamic ocean tidal wave oscillator reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
 - 🌒 **Side-by-Side Dual-Perspective Eclipse Demonstrator**: 
   - **Left Pane (Orbital Syzygy Profile & Shadow Rays)**: Strictly side-on ecliptic transverse profile with a 3D-projected inclined lunar orbital ring through Earth, tracking orbital elongation ($0^\circ \to 360^\circ$), ray-traced Umbra/Penumbra shadow cones, and a minimalist vector Earth with $23.44^\circ$ seasonal axial tilt, dashed blue equator chord, and longitude-synchronized day/night observer pin.
@@ -51,7 +51,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (140 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
+- **Testing**: `vitest` (144 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
 
 ---
 
@@ -67,13 +67,13 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (140 unit tests across 7 suites)
+# Run Vitest test suite (144 unit tests across 7 suites)
 npm test
 
 # Run full test suite in single-run CI mode
 npm test -- --run
 
-# Run test coverage report
+# Run test coverage report (requires @vitest/coverage-v8)
 npm run test:coverage
 
 # Build production bundle to dist/
@@ -126,7 +126,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (79 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (83 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)

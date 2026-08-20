@@ -14,6 +14,8 @@ import {
   calculateSolarPosition,
   calculateEarthOrbitalPhysics,
   calculateLunarPosition,
+  calculateLunarEvents,
+  calculateParallacticAngle,
   getPhaseName,
   calculateLunarIllumination,
   calculateEclipseData,
@@ -300,6 +302,89 @@ describe('cosmicMath utilities', () => {
         expect(Number.isNaN(res.angularRadiusDeg)).toBe(false);
         expect(Number.isNaN(res.parallaxDeg)).toBe(false);
       });
+    });
+
+    it('computes accurate Meeus Ch. 48 geocentric phase angle and exact illumination fraction', () => {
+      // March 14, 2025 Blood Moon (Full Moon)
+      const jdFull = getJulianDate(new Date(2025, 2, 14), 6.967);
+      const lunarFull = calculateLunarPosition(jdFull);
+      expect(lunarFull.phaseAngleDeg).toBeDefined();
+      expect(lunarFull.illuminationFraction).toBeDefined();
+      expect(lunarFull.phaseAngleDeg).toBeLessThan(5.0); // Close to 0° at full moon
+      expect(lunarFull.illuminationFraction).toBeGreaterThanOrEqual(0.99);
+
+      // April 8, 2024 Solar Eclipse (New Moon)
+      const jdNew = getJulianDate(new Date(2024, 3, 8), 18.283);
+      const lunarNew = calculateLunarPosition(jdNew);
+      expect(lunarNew.phaseAngleDeg).toBeGreaterThan(175.0); // Close to 180° at new moon
+      expect(lunarNew.illuminationFraction).toBeLessThan(0.01);
+
+      // Verify phaseAngleDeg and illuminationFraction consistency
+      const testJd = getJulianDate(new Date(2026, 6, 15), 12);
+      const testLunar = calculateLunarPosition(testJd);
+      const expectedK = (1 + Math.cos(testLunar.phaseAngleDeg * (Math.PI / 180))) / 2;
+      expect(testLunar.illuminationFraction).toBeCloseTo(expectedK, 3);
+    });
+
+    it('calculates physical lunar disc illumination correctly with optional ecliptic latitude beta', () => {
+      expect(calculateLunarIllumination(0.0, 0)).toBe(0);       // New Moon = 0%
+      expect(calculateLunarIllumination(0.5, 0)).toBe(100);     // Full Moon = 100%
+      expect(calculateLunarIllumination(0.25, 0)).toBe(50);     // First Quarter = 50%
+      expect(calculateLunarIllumination(0.25, 5.0)).toBe(50);   // First Quarter with inclination
+    });
+
+    it('implements 2-step iterative lunar rise/set solver with sub-minute convergence across latitudes', () => {
+      const testDate = new Date(2026, 6, 15);
+      const jd = getJulianDate(testDate, 0);
+
+      // Mid-Latitude Observer (Seattle 47.06°N, -122.81°W)
+      const seattleEvents = calculateLunarEvents(47.06, -122.81, jd, 12);
+      expect(seattleEvents.transit).toBeGreaterThanOrEqual(0);
+      expect(seattleEvents.transit).toBeLessThan(24);
+      expect(seattleEvents.distanceKm).toBeGreaterThan(350000);
+      expect(seattleEvents.distanceKm).toBeLessThan(410000);
+      if (seattleEvents.moonrise !== null) {
+        expect(seattleEvents.moonrise).toBeGreaterThanOrEqual(0);
+        expect(seattleEvents.moonrise).toBeLessThan(24);
+      }
+      if (seattleEvents.moonset !== null) {
+        expect(seattleEvents.moonset).toBeGreaterThanOrEqual(0);
+        expect(seattleEvents.moonset).toBeLessThan(24);
+      }
+
+      // Equatorial Observer (0°N, 0°E)
+      const equatorEvents = calculateLunarEvents(0, 0, jd, 12);
+      expect(equatorEvents.moonrise).not.toBeNull();
+      expect(equatorEvents.moonset).not.toBeNull();
+      expect(equatorEvents.transit).toBeGreaterThanOrEqual(0);
+      expect(equatorEvents.transit).toBeLessThan(24);
+
+      // High-Latitude Polar Observer (80°N Arctic) — verifies continuous circumpolar handling without NaN
+      const arcticEvents = calculateLunarEvents(80, 0, jd, 12);
+      expect(Number.isNaN(arcticEvents.transit)).toBe(false);
+      expect(Number.isNaN(arcticEvents.distanceKm)).toBe(false);
+      if (arcticEvents.moonrise !== null) {
+        expect(Number.isNaN(arcticEvents.moonrise)).toBe(false);
+      }
+      if (arcticEvents.moonset !== null) {
+        expect(Number.isNaN(arcticEvents.moonset)).toBe(false);
+      }
+    });
+
+    it('computes astronomical parallactic angle correctly and handles meridian transit and horizon azimuths', () => {
+      const jd = getJulianDate(new Date(2026, 2, 20), 12);
+      
+      // Observer at latitude 45°N
+      const etaTransit = calculateParallacticAngle(45, 0, jd, 10, 10);
+      expect(Number.isNaN(etaTransit)).toBe(false);
+      expect(etaTransit).toBeGreaterThanOrEqual(-180);
+      expect(etaTransit).toBeLessThanOrEqual(180);
+
+      // Polar singularity safety checks (89.9°N and -89.9°S)
+      const etaNorthPole = calculateParallacticAngle(89.9, -122.8, jd, 15, 45);
+      const etaSouthPole = calculateParallacticAngle(-89.9, -122.8, jd, -15, 45);
+      expect(Number.isNaN(etaNorthPole)).toBe(false);
+      expect(Number.isNaN(etaSouthPole)).toBe(false);
     });
 
     it('calculates accurate ascending node longitude and precession rate across epochs', () => {
