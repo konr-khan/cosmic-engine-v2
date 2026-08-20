@@ -51,7 +51,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (133 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
+- **Testing**: `vitest` (134 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
 
 ---
 
@@ -67,7 +67,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (133 unit tests across 7 suites)
+# Run Vitest test suite (134 unit tests across 7 suites)
 npm test
 
 # Run full test suite in single-run CI mode
@@ -135,9 +135,17 @@ Cosmic Engine V2.0/
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 7 observatory subsystems
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
-│       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
-│       │   ├── widgets.test.ts  # Vitest unit tests for 7 observatory widgets (8 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 7 observatory widgets (9 tests)
+│       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
+│       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
+│       │   │   ├── OrbitHoverHud.tsx       # Floating glassmorphic hover popovers
+│       │   │   ├── OrbitPhysicsHud.tsx     # 4-column telemetry physics footer
+│       │   │   ├── OrbitHeaderControls.tsx # True scale vs. exaggerated scale toggle
+│       │   │   ├── milestones.ts           # Extracted seasonal orbital milestones
+│       │   │   ├── types.ts                # Macro-orbit domain interfaces & props
+│       │   │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
 │       │   ├── solar/           # Decomposed solar almanac subsystem modules
 │       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
 │       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock

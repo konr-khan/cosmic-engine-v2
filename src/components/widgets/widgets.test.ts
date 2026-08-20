@@ -22,6 +22,12 @@ import {
   EclipseScanner,
   TerminatorMap,
   MacroOrbitView,
+  OrbitHeaderControls,
+  OrbitHoverHud,
+  OrbitSvgCanvas,
+  OrbitPhysicsHud,
+  MILESTONES,
+  EARTH_MILESTONES,
   MicroTideView
 } from './index';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData } from '../../utils/cosmicMath';
@@ -109,8 +115,25 @@ describe('Observatory 7-Widget Architecture & Integration Tests', () => {
   });
 
   describe('Macro Orbit Subsystem', () => {
-    it('exports MacroOrbitView component', () => {
+    it('exports MacroOrbitView and all decomposed sub-components cleanly', () => {
       expect(MacroOrbitView).toBeDefined();
+      expect(OrbitHeaderControls).toBeDefined();
+      expect(OrbitHoverHud).toBeDefined();
+      expect(OrbitSvgCanvas).toBeDefined();
+      expect(OrbitPhysicsHud).toBeDefined();
+      expect(MILESTONES).toBeDefined();
+      expect(EARTH_MILESTONES).toBeDefined();
+      expect(MILESTONES.length).toBe(6);
+    });
+
+    it('contains all 6 key orbital milestones with accurate astronomical properties', () => {
+      const ids = MILESTONES.map(m => m.id);
+      expect(ids).toContain('perihelion');
+      expect(ids).toContain('mar_equinox');
+      expect(ids).toContain('jun_solstice');
+      expect(ids).toContain('aphelion');
+      expect(ids).toContain('sep_equinox');
+      expect(ids).toContain('dec_solstice');
     });
   });
 

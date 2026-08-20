@@ -14,5 +14,20 @@ export {
   type EclipseDemonstratorProps 
 } from './eclipse';
 export { TerminatorMap, type TerminatorMapProps } from './TerminatorMap';
-export { MacroOrbitView, type MacroOrbitViewProps } from './MacroOrbitView';
+export { 
+  MacroOrbitView, 
+  OrbitHeaderControls, 
+  OrbitHoverHud, 
+  OrbitSvgCanvas, 
+  OrbitPhysicsHud, 
+  MILESTONES, 
+  EARTH_MILESTONES,
+  type MacroOrbitViewProps, 
+  type MilestoneItem,
+  type MacroOrbitHoverData,
+  type OrbitSvgCanvasProps,
+  type OrbitHeaderControlsProps,
+  type OrbitHoverHudProps,
+  type OrbitPhysicsHudProps
+} from './macro';
 export { MicroTideView, type MicroTideViewProps } from './MicroTideView';
