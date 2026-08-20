@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { CONFIG, getTerminatorShadowPaths, clamp, calculateEarthOrbitalPhysics, getJulianDate } from '../../utils/cosmicMath';
+import { 
+  CONFIG, 
+  getTerminatorShadowPaths, 
+  clamp, 
+  calculateEarthOrbitalPhysics, 
+  getJulianDate,
+  WORLD_LANDMASSES 
+} from '../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../types';
 
 export interface TerminatorMapProps {
@@ -11,68 +18,6 @@ export interface TerminatorMapProps {
   hoverTime?: number | null;
   currentDate?: Date;
 }
-
-// Simplified World Continent Outlines (Geo coordinates: [Longitude, Latitude])
-const WORLD_LANDMASSES: [number, number][][] = [
-  // North America
-  [
-    [-168, 65], [-150, 60], [-135, 57], [-124, 48], [-120, 34], [-105, 20], [-90, 16],
-    [-80, 8], [-77, 8], [-75, 10], [-80, 25], [-75, 35], [-65, 44], [-60, 47], [-64, 60],
-    [-85, 66], [-110, 68], [-140, 70], [-168, 65]
-  ],
-  // South America
-  [
-    [-77, 8], [-70, 12], [-60, 8], [-35, -5], [-35, -20], [-55, -40], [-68, -55],
-    [-75, -50], [-72, -30], [-80, -4], [-77, 8]
-  ],
-  // Eurasia (Europe + Asia)
-  [
-    [-10, 36], [0, 43], [10, 44], [15, 38], [25, 40], [30, 31], [35, 36], [45, 40],
-    [50, 30], [60, 25], [70, 20], [80, 10], [90, 22], [100, 15], [105, 10], [110, 20],
-    [120, 23], [122, 30], [120, 40], [140, 50], [160, 60], [170, 66], [180, 68],
-    [170, 72], [140, 72], [100, 75], [70, 70], [40, 68], [20, 70], [10, 60],
-    [5, 52], [-5, 48], [-10, 42], [-10, 36]
-  ],
-  // Africa
-  [
-    [-10, 36], [10, 37], [25, 31], [33, 28], [43, 12], [51, 12], [45, 0], [40, -10],
-    [35, -20], [33, -33], [20, -35], [12, -15], [8, 5], [-15, 12], [-17, 21], [-10, 36]
-  ],
-  // Australia
-  [
-    [114, -22], [120, -14], [130, -12], [136, -12], [142, -10], [150, -23], [153, -28],
-    [150, -37], [138, -35], [135, -33], [115, -34], [114, -22]
-  ],
-  // Greenland
-  [
-    [-55, 60], [-40, 60], [-20, 70], [-20, 80], [-50, 82], [-70, 78], [-55, 60]
-  ],
-  // Antarctica
-  [
-    [-180, -65], [-120, -70], [-60, -68], [0, -70], [60, -68], [120, -68], [180, -65],
-    [180, -90], [-180, -90], [-180, -65]
-  ],
-  // British Isles
-  [
-    [-10, 50], [-5, 50], [0, 53], [-3, 58], [-8, 58], [-10, 54], [-10, 50]
-  ],
-  // Japan
-  [
-    [130, 31], [135, 34], [140, 36], [142, 44], [140, 45], [135, 40], [130, 33], [130, 31]
-  ],
-  // Madagascar
-  [
-    [44, -12], [50, -15], [47, -25], [44, -25], [43, -16], [44, -12]
-  ],
-  // Indonesia / SE Asia Islands
-  [
-    [95, 5], [105, -6], [115, -8], [125, -8], [140, -3], [150, -8], [140, -2], [120, 1], [100, 1], [95, 5]
-  ],
-  // New Zealand
-  [
-    [166, -46], [174, -41], [178, -37], [174, -36], [170, -42], [166, -46]
-  ]
-];
 
 export const TerminatorMap: React.FC<TerminatorMapProps> = ({ 
   solarData, 

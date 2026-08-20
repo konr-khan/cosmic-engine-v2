@@ -50,7 +50,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (119 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, and worker fallback)
+- **Testing**: `vitest` (133 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
 
 ---
 
@@ -66,7 +66,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (119 unit tests across 7 suites)
+# Run Vitest test suite (133 unit tests across 7 suites)
 npm test
 
 # Run full test suite in single-run CI mode
@@ -113,8 +113,10 @@ Cosmic Engine V2.0/
 │   │   │   ├── core.ts          # Julian dates, hour formatting & trig helpers
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, nodal precession, parallactic angle & annual lunar matrix
-│   │   │   └── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (64 tests)
+│   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
+│   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
+│   │   │   └── geoData.ts       # World landmass continent outline polygons
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (72 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (5 tests)
@@ -130,13 +132,22 @@ Cosmic Engine V2.0/
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
-│       │   ├── TodayHorizonView.tsx # Instantaneous Sun & Moon +90° elevation arcs & moon phase
-│       │   ├── SolarAlmanac.tsx # 365-day solar twilight bands & 24h polar clock dial
-│       │   ├── LunarAlmanacCard.tsx # 365-day lunar ribbon chart & 3-box summary grid
-│       │   ├── EclipseDemonstrator.tsx # Barrel export for eclipse subsystem
+│       │   ├── index.ts         # Central barrel export for all 7 observatory subsystems
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
+│       │   ├── widgets.test.ts  # Vitest unit tests for 7 observatory widgets (8 tests)
+│       │   ├── solar/           # Decomposed solar almanac subsystem modules
+│       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
+│       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
+│       │   │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
+│       │   │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
+│       │   ├── today/           # Decomposed today's horizon subsystem modules
+│       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
+│       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
+│       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
 │       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
 │       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
 │       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
@@ -146,8 +157,16 @@ Cosmic Engine V2.0/
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
 │       │       ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
 │       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
-│       │       ├── ShadowRayDiagram.tsx        # SVG shadow ray tracing & geometry viewer
+│       │       ├── ShadowRayDiagram.tsx        # Decomposed coordinator container
+│       │       ├── ShadowRayHoverHud.tsx       # Floating glassmorphic hover popovers
+│       │       ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
+│       │       ├── SolarFocusView.tsx          # Solar eclipse focus & umbral contact spot
+│       │       ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
+│       │       ├── SelenocentricOrbitView.tsx  # Selenocentric frame relative Earth orbit
 │       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
+│       │       ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon)
+│       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
+│       │       └── index.ts                    # Barrel export
 │       │       ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon)
 │       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
 │       │       └── index.ts                    # Barrel export
@@ -196,7 +215,8 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 
 | Test Suite | File | Tests | Focus Areas |
 | :--- | :--- | :--- | :--- |
-| **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 65 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, smooth obscuration continuity |
+| **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 72 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry |
+| **Observatory Widgets** | `src/components/widgets/widgets.test.ts` | 8 | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 7 observatory window subsystems |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 17 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` | 7 | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |

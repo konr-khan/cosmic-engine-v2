@@ -3,15 +3,17 @@ import { useCosmicEngine } from './hooks/useCosmicEngine';
 import { useChronometerStore, cosmicActions } from './store/cosmicStore';
 import { useDashboardLayout, ICON_MAP, PRESET_LAYOUTS } from './hooks/useDashboardLayout';
 import { ObsNavbar } from './components/layout/ObsNavbar';
-import { TodayHorizonView } from './components/widgets/TodayHorizonView';
-import { TerminatorMap } from './components/widgets/TerminatorMap';
-import { SolarAlmanac } from './components/widgets/SolarAlmanac';
-import { MacroOrbitView } from './components/widgets/MacroOrbitView';
-import { MicroTideView } from './components/widgets/MicroTideView';
 import { OrbitalChronometer } from './components/layout/OrbitalChronometer';
-import { LunarAlmanacCard } from './components/widgets/LunarAlmanacCard';
-import { EclipseDemonstrator } from './components/widgets/EclipseDemonstrator';
 import { DashboardWindow } from './components/layout/DashboardWindow';
+import { 
+  TodayHorizonView, 
+  TerminatorMap, 
+  SolarAlmanac, 
+  MacroOrbitView, 
+  MicroTideView, 
+  LunarAlmanacCard, 
+  EclipseDemonstrator 
+} from './components/widgets';
 import { getDayOfYear } from './utils/cosmicMath';
 
 const selectObserverParams = (state: { date: Date; timeOfDay: number; latitude: number; longitude: number; useAnalemma: boolean }) => ({

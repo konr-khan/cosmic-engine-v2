@@ -36,7 +36,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 119 unit tests across 7 test suites)
+- **Testing**: `vitest` (`npm test` — 133 unit tests across 7 test suites)
 
 ### Essential Commands
 
@@ -44,7 +44,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (119 unit tests across 7 test suites) |
+| `npm test` | Runs Vitest unit test suite (133 unit tests across 7 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
@@ -83,8 +83,10 @@ Cosmic Engine V2.0/
 │   │   │   ├── core.ts          # Julian dates, hour formatting & trig helpers
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
-│   │   │   └── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (65 tests)
+│   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
+│   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
+│   │   │   └── geoData.ts       # World landmass continent outline polygons
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (72 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (5 tests)
@@ -100,13 +102,11 @@ Cosmic Engine V2.0/
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
-│       │   ├── TodayHorizonView.tsx # Barrel export for today horizon subsystem
-│       │   ├── SolarAlmanac.tsx # Barrel export for solar almanac subsystem
-│       │   ├── LunarAlmanacCard.tsx # Barrel export for lunar almanac subsystem
-│       │   ├── EclipseDemonstrator.tsx # Barrel export for eclipse subsystem
+│       │   ├── index.ts         # Central barrel export for all 7 observatory subsystems
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
+│       │   ├── widgets.test.ts  # Vitest unit tests for 7 observatory widgets (8 tests)
 │       │   ├── solar/           # Decomposed solar almanac subsystem modules
 │       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
 │       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
@@ -127,7 +127,12 @@ Cosmic Engine V2.0/
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
 │       │       ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
 │       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
-│       │       ├── ShadowRayDiagram.tsx        # SVG shadow ray tracing & geometry viewer
+│       │       ├── ShadowRayDiagram.tsx        # Decomposed coordinator container
+│       │       ├── ShadowRayHoverHud.tsx       # Floating glassmorphic hover popovers
+│       │       ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
+│       │       ├── SolarFocusView.tsx          # Solar eclipse focus & umbral contact spot
+│       │       ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
+│       │       ├── SelenocentricOrbitView.tsx  # Selenocentric frame relative Earth orbit
 │       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
 │       │       ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon)
 │       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list

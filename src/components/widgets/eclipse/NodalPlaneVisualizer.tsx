@@ -1,6 +1,12 @@
 import React, { useMemo } from 'react';
 import { EclipseData } from '../../../types';
-import { clamp, calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
+import { 
+  clamp, 
+  calculateEarthOrbitalPhysics, 
+  getJulianDate, 
+  calculateEarthAxialGeometry, 
+  generateOrbitalSegments 
+} from '../../../utils/cosmicMath';
 
 export interface NodalPlaneVisualizerProps {
   eclipse?: EclipseData | null;
@@ -33,6 +39,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
     [currentDate]
   );
   const sunAngularDiamArcmin = solarPhysics.sunAngularDiameterArcmin; // ~31.5' (Aphelion) to ~32.5' (Perihelion)
+  const sunLambdaDeg = ((solarPhysics?.lambda ?? solarPhysics?.eclipticLongitude ?? 0) as number);
 
   const moonDistKm = eclipse.distanceKm || 384400;
   const moonAngularDiamArcmin = 31.13 * (384400 / moonDistKm); // ~29.4' (Apogee) to ~33.5' (Perigee)
@@ -54,110 +61,31 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const isWaxing = phaseVal <= 0.5;
 
   // Transverse displacement perpendicular to the Sun-Earth sightline:
-  // At Syzygy (New/Full Moon), sin(phaseRad) = 0 -> Moon is centered at X=200 in front of the Sun/Earth!
-  // At Quarters (First/Last Quarter), sin(phaseRad) = +/-1 -> Moon is at the outer extremities (X=200 +/- 110)!
   const moonX = centerX + (Math.sin(phaseRad) * 110);
   const moonY = centerY - (beta * 8.5);
 
   // --- Earth Axial Geometry & Observer Location Pin ---
   const earthGeometry = useMemo(() => {
-    const earthR = 20;
-    const epsRad = (23.439281 * Math.PI) / 180; // Earth obliquity 23.44°
-    const sunLambdaDeg = ((solarPhysics?.lambda ?? solarPhysics?.eclipticLongitude ?? 0) as number);
-    const sunLambdaRad = (sunLambdaDeg * Math.PI) / 180;
-
-    // Unit vectors in screen projection (Z facing viewer along Sun->Earth sightline):
-    // North pole vector N:
-    const nx = -Math.sin(epsRad) * Math.cos(sunLambdaRad);
-    const ny = Math.cos(epsRad);
-    const nz = -Math.sin(epsRad) * Math.sin(sunLambdaRad);
-
-    // Length of projected axis on screen
-    const nScreenLen = Math.sqrt(nx * nx + ny * ny);
-    const ux = ny / nScreenLen;
-    const uy = -nx / nScreenLen;
-    const uz = 0;
-
-    // Orthogonal vector in equatorial plane
-    const vx = (nx * nz) / nScreenLen;
-    const vy = (ny * nz) / nScreenLen;
-    const vz = -nScreenLen;
-
-    // Polar Axis line segment endpoints on screen:
-    const poleLineX = (nx / nScreenLen) * (earthR + 3.5);
-    const poleLineY = (ny / nScreenLen) * (earthR + 3.5);
-
-    // Front equator chord curve (16 sample points along front hemisphere)
-    const eqPts: string[] = [];
-    const eqSteps = 16;
-    for (let i = 0; i <= eqSteps; i++) {
-      const theta = (i / eqSteps) * Math.PI; // 0 to PI along front equator
-      const ex = earthR * (Math.cos(theta) * ux - Math.sin(theta) * vx);
-      const ey = earthR * (Math.cos(theta) * uy - Math.sin(theta) * vy);
-      const ez = earthR * (Math.cos(theta) * uz - Math.sin(theta) * vz);
-      const px = centerX + ex;
-      const py = centerY - ey;
-      eqPts.push(`${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`);
-    }
-    const equatorPathD = eqPts.join(' ');
-
-    // Observer Location Pin
-    const latRad = (latitude * Math.PI) / 180;
-    const hRad = ((timeOfDay - 12) * Math.PI) / 12;
-
-    const xBody = Math.cos(latRad) * Math.sin(hRad);
-    const yBody = Math.sin(latRad);
-    const zBody = Math.cos(latRad) * Math.cos(hRad); // >0 = daylight facing Sun, <0 = night
-
-    // Transform body coordinates to screen:
-    const obsEx = earthR * (xBody * ux + yBody * nx + zBody * (-vx));
-    const obsEy = earthR * (xBody * uy + yBody * ny + zBody * (-vy));
-    const obsEz = earthR * (xBody * uz + yBody * nz + zBody * (-vz));
-
-    const obsPx = centerX + obsEx;
-    const obsPy = centerY - obsEy;
-    const isDaylight = obsEz >= 0;
-
-    return {
-      earthR,
-      poleLineX,
-      poleLineY,
-      equatorPathD,
-      obsPx,
-      obsPy,
-      isDaylight
-    };
-  }, [solarPhysics, latitude, longitude, timeOfDay, centerX, centerY]);
+    return calculateEarthAxialGeometry(
+      centerX,
+      centerY,
+      20,
+      sunLambdaDeg,
+      latitude,
+      timeOfDay
+    );
+  }, [sunLambdaDeg, latitude, timeOfDay, centerX, centerY]);
 
   // 3D Elliptical Orbital Loop: 4-Quadrant Paths (Waxing/Waning x Ascending/Descending)
-  const N = 72;
-  const waxAsc: string[] = [];
-  const waxDesc: string[] = [];
-  const wanAsc: string[] = [];
-  const wanDesc: string[] = [];
-
-  for (let i = 0; i < N; i++) {
-    const t1 = (i / N) * 2 * Math.PI;
-    const t2 = ((i + 1) / N) * 2 * Math.PI;
-    const x1 = centerX + Math.sin(t1) * 110;
-    const y1 = centerY - Math.sin(t1 + nodeAngleRad) * 5.145 * 8.5;
-    const x2 = centerX + Math.sin(t2) * 110;
-    const y2 = centerY - Math.sin(t2 + nodeAngleRad) * 5.145 * 8.5;
-
-    const midT = (t1 + t2) / 2;
-    const midBeta = Math.sin(midT + nodeAngleRad) * 5.145;
-    const isWax = midT <= Math.PI;
-    const isAsc = midBeta >= 0;
-
-    const seg = `M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}`;
-    if (isWax) {
-      if (isAsc) waxAsc.push(seg);
-      else waxDesc.push(seg);
-    } else {
-      if (isAsc) wanAsc.push(seg);
-      else wanDesc.push(seg);
-    }
-  }
+  const { waxAsc, waxDesc, wanAsc, wanDesc } = generateOrbitalSegments(
+    centerX,
+    centerY,
+    110,
+    8.5,
+    nodeAngleRad,
+    'axial',
+    72
+  );
 
   // Node Positions where orbital loop crosses horizontal ecliptic plane (Y = 90)
   const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);

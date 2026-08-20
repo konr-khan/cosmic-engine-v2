@@ -27,7 +27,11 @@ import {
   parseTimeString,
   formatTimeHHMM,
   calculateAnnualSolarMatrix,
-  calculateAnnualLunarMatrix
+  calculateAnnualLunarMatrix,
+  calculateEarthSideGeometry,
+  calculateEarthAxialGeometry,
+  generateOrbitalSegments,
+  WORLD_LANDMASSES
 } from './cosmicMath';
 
 describe('cosmicMath utilities', () => {
@@ -884,6 +888,94 @@ describe('cosmicMath utilities', () => {
 
         expect(perigeeCount).toBeGreaterThan(0);
         expect(apogeeCount).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  describe('3D Projection & Obliquity Geometry Engine', () => {
+    describe('calculateEarthSideGeometry', () => {
+      it('calculates zero projected tilt at Equinoxes (lambda = 0° and 180°)', () => {
+        const geomMar = calculateEarthSideGeometry(310, 110, 18, 0, 45, 12);
+        expect(geomMar.poleLineX).toBeCloseTo(0, 4);
+        expect(geomMar.poleLineY).toBeCloseTo(18 + 3.5, 4);
+        expect(geomMar.eqY1).toBeCloseTo(110, 4);
+        expect(geomMar.eqY2).toBeCloseTo(110, 4);
+
+        const geomSep = calculateEarthSideGeometry(310, 110, 18, 180, 45, 12);
+        expect(geomSep.poleLineX).toBeCloseTo(0, 4);
+        expect(geomSep.poleLineY).toBeCloseTo(18 + 3.5, 4);
+      });
+
+      it('calculates maximum projected tilt at Solstices (lambda = 90° and 270°)', () => {
+        const geomJun = calculateEarthSideGeometry(310, 110, 18, 90, 45, 12);
+        const epsRad = (23.439281 * Math.PI) / 180;
+        const expectedNx = -Math.sin(epsRad);
+        expect(geomJun.poleLineX).toBeCloseTo(expectedNx * (18 + 3.5), 3);
+
+        const geomDec = calculateEarthSideGeometry(310, 110, 18, 270, 45, 12);
+        expect(geomDec.poleLineX).toBeCloseTo(-expectedNx * (18 + 3.5), 3);
+      });
+
+      it('determines daylight vs night correctly for side-on observer pin', () => {
+        // Observer at noon facing Sun (Sun is at -X on left)
+        const noonGeom = calculateEarthSideGeometry(310, 110, 18, 0, 45, 12);
+        expect(noonGeom.isDaylight).toBe(true);
+        expect(noonGeom.obsPx).toBeLessThan(310); // on Sunlit left side
+
+        // Observer at midnight facing away from Sun
+        const midnightGeom = calculateEarthSideGeometry(310, 110, 18, 0, 45, 0);
+        expect(midnightGeom.isDaylight).toBe(false);
+        expect(midnightGeom.obsPx).toBeGreaterThan(310); // on dark right side
+      });
+    });
+
+    describe('calculateEarthAxialGeometry', () => {
+      it('calculates screen-projected polar axis and 16-point equator curve', () => {
+        const axial = calculateEarthAxialGeometry(200, 90, 20, 0, 47.06, 12);
+        expect(axial.earthR).toBe(20);
+        expect(axial.equatorPathD.startsWith('M')).toBe(true);
+        expect(axial.equatorPathD.split('L')).toHaveLength(17); // M + 16 L segments
+        expect(Number.isNaN(axial.obsPx)).toBe(false);
+        expect(Number.isNaN(axial.obsPy)).toBe(false);
+      });
+
+      it('correctly reports daylight at noon along axial sightline', () => {
+        const noon = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 12);
+        expect(noon.isDaylight).toBe(true);
+
+        const midnight = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 0);
+        expect(midnight.isDaylight).toBe(false);
+      });
+    });
+
+    describe('generateOrbitalSegments', () => {
+      it('generates quadrant path arrays for side-on and axial projections', () => {
+        const sideSegs = generateOrbitalSegments(310, 110, 85, 8.5, Math.PI / 4, 'side', 72);
+        expect(sideSegs.waxAsc.length).toBeGreaterThan(0);
+        expect(sideSegs.waxDesc.length).toBeGreaterThan(0);
+        expect(sideSegs.wanAsc.length).toBeGreaterThan(0);
+        expect(sideSegs.wanDesc.length).toBeGreaterThan(0);
+        const totalSide = sideSegs.waxAsc.length + sideSegs.waxDesc.length + sideSegs.wanAsc.length + sideSegs.wanDesc.length;
+        expect(totalSide).toBe(72);
+
+        const axialSegs = generateOrbitalSegments(200, 90, 110, 8.5, Math.PI / 4, 'axial', 72);
+        const totalAxial = axialSegs.waxAsc.length + axialSegs.waxDesc.length + axialSegs.wanAsc.length + axialSegs.wanDesc.length;
+        expect(totalAxial).toBe(72);
+      });
+    });
+
+    describe('WORLD_LANDMASSES', () => {
+      it('contains valid polygon coordinates for world landmasses', () => {
+        expect(WORLD_LANDMASSES.length).toBeGreaterThan(5);
+        WORLD_LANDMASSES.forEach((polygon) => {
+          expect(polygon.length).toBeGreaterThan(3);
+          polygon.forEach(([lon, lat]) => {
+            expect(lon).toBeGreaterThanOrEqual(-180);
+            expect(lon).toBeLessThanOrEqual(180);
+            expect(lat).toBeGreaterThanOrEqual(-90);
+            expect(lat).toBeLessThanOrEqual(90);
+          });
+        });
       });
     });
   });
