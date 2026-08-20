@@ -49,6 +49,34 @@ describe('Cosmic Store & State Isolation Suite', () => {
     expect(updatedState.date.getDate()).toBe(22);
   });
 
+  it('handles multi-day forward wrapping across year boundary', () => {
+    cosmicActions.setTimeOfDay(22.0);
+    cosmicActions.setDate(new Date(Date.UTC(2026, 11, 31)));
+
+    // Fast-forward 50 hours (22h + 50h = 72h = 3 full days => Jan 3)
+    cosmicActions.tickTime(50 * 3600);
+
+    const updatedState = cosmicStore.getState();
+    expect(updatedState.timeOfDay).toBeCloseTo(0.0, 3);
+    expect(updatedState.date.getUTCFullYear()).toBe(2027);
+    expect(updatedState.date.getUTCMonth()).toBe(0); // January
+    expect(updatedState.date.getUTCDate()).toBe(3);
+  });
+
+  it('handles reverse-time ticking across day boundary', () => {
+    cosmicActions.setTimeOfDay(0.5);
+    cosmicActions.setDate(new Date(Date.UTC(2026, 0, 1)));
+
+    // Tick backward by 2 hours (-7200 seconds)
+    cosmicActions.tickTime(-7200);
+
+    const updatedState = cosmicStore.getState();
+    expect(updatedState.timeOfDay).toBeCloseTo(22.5, 3);
+    expect(updatedState.date.getUTCFullYear()).toBe(2025);
+    expect(updatedState.date.getUTCMonth()).toBe(11); // December
+    expect(updatedState.date.getUTCDate()).toBe(31);
+  });
+
   it('evaluates shallowEqual correctly for objects and primitives', () => {
     expect(shallowEqual({ a: 1, b: 'x' }, { a: 1, b: 'x' })).toBe(true);
     expect(shallowEqual({ a: 1, b: 'x' }, { a: 1, b: 'y' })).toBe(false);

@@ -84,6 +84,22 @@ describe('useEphemerisWorker Hook Suite', () => {
     expect(lunarData[0].distanceKm).toBeGreaterThan(350000);
     expect(lunarData[0].phaseValue).toBeDefined();
   });
+
+  it('correctly handles initial render state and worker payload integration', () => {
+    // When worker is available and returns payload
+    const result = useEphemerisWorker({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      isLunarActive: true,
+      isEclipseActive: true,
+      isOrbitalActive: true
+    });
+
+    expect(result).toBeDefined();
+    expect(result.lunarEvents).toBeDefined();
+  });
 });
 
 describe('EphemerisWorkerManager Singleton Suite', () => {

@@ -110,13 +110,11 @@ export class CosmicStore {
     if (newTime >= 24) {
       const daysToAdd = Math.floor(newTime / 24);
       newTime = newTime % 24;
-      newDate = new Date(date);
-      newDate.setDate(newDate.getDate() + daysToAdd);
+      newDate = new Date(date.getTime() + daysToAdd * 86_400_000);
     } else if (newTime < 0) {
       const daysToSub = Math.ceil(Math.abs(newTime) / 24);
       newTime = (newTime % 24 + 24) % 24;
-      newDate = new Date(date);
-      newDate.setDate(newDate.getDate() - daysToSub);
+      newDate = new Date(date.getTime() - daysToSub * 86_400_000);
     }
 
     this.setState({

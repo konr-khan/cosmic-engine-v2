@@ -51,7 +51,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (134 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
+- **Testing**: `vitest` (137 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, and worker fallback)
 
 ---
 
@@ -67,7 +67,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (134 unit tests across 7 suites)
+# Run Vitest test suite (137 unit tests across 7 suites)
 npm test
 
 # Run full test suite in single-run CI mode
@@ -222,10 +222,10 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 77 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry |
 | **Observatory Widgets** | `src/components/widgets/widgets.test.ts` | 8 | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 7 observatory window subsystems |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
-| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 17 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
+| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 18 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` | 7 | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` | 6 | Fault isolation, derived state error capture, and in-place module reset recovery |
-| **Cosmic State Store** | `src/store/cosmicStore.test.ts` | 5 | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping |
+| **Cosmic State Store** | `src/store/cosmicStore.test.ts` | 7 | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 
 Run the full suite with:
 ```bash

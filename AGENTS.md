@@ -37,7 +37,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 134 unit tests across 7 test suites)
+- **Testing**: `vitest` (`npm test` — 137 unit tests across 7 test suites)
 
 ### Essential Commands
 
@@ -45,7 +45,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (134 unit tests across 7 test suites) |
+| `npm test` | Runs Vitest unit test suite (137 unit tests across 7 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run build` | Builds production distribution to `dist/` |
 | `npm run preview` | Previews built production bundle locally |
@@ -90,7 +90,7 @@ Cosmic Engine V2.0/
 │   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (77 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
-│   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (5 tests)
+│   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
 │   ├── workers/                 # Web Worker offload scripts
 │   │   ├── ephemerisWorker.ts   # Dedicated worker for Meeus ephemeris, eclipse geometry & 365-day matrices
 │   │   └── ephemerisWorkerManager.ts # Application singleton worker manager, deduplication & matrix cache
@@ -98,7 +98,7 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests: state transitions & polar edge cases)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (17 tests: worker integration, coalescing, matrix caching & fallback)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (18 tests: worker integration, coalescing, matrix caching & fallback)
 │   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture

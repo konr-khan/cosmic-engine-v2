@@ -75,9 +75,10 @@ export const useEphemerisWorker = ({
     };
   }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive]);
 
-  // Synchronous calculation fallback (used when worker is unavailable or pending initial result)
+  // Synchronous calculation fallback (used only when worker is unavailable or pending initial result)
   const syncResult = useMemo(() => {
     if (!isOrbitalActive) return { lunarEvents: null, eclipse: null };
+    if (isWorkerActive && workerResult !== null) return null;
 
     const JD_midnight = julianDate - (timeOfDay / 24);
     const lunarEvents = isLunarActive 
@@ -88,21 +89,21 @@ export const useEphemerisWorker = ({
       : null;
 
     return { lunarEvents, eclipse };
-  }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive]);
+  }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, isWorkerActive, workerResult !== null]);
 
   // If worker is unavailable, return synchronous fallback immediately.
   // If worker is available, prefer workerResult if available, fallback to syncResult.
   if (!isWorkerActive) {
     return {
-      lunarEvents: syncResult.lunarEvents,
-      eclipse: syncResult.eclipse,
+      lunarEvents: syncResult ? syncResult.lunarEvents : null,
+      eclipse: syncResult ? syncResult.eclipse : null,
       isWorkerActive: false
     };
   }
 
   return {
-    lunarEvents: workerResult ? workerResult.lunarEvents : syncResult.lunarEvents,
-    eclipse: workerResult ? workerResult.eclipse : syncResult.eclipse,
+    lunarEvents: workerResult ? workerResult.lunarEvents : (syncResult ? syncResult.lunarEvents : null),
+    eclipse: workerResult ? workerResult.eclipse : (syncResult ? syncResult.eclipse : null),
     isWorkerActive: true
   };
 };
@@ -138,14 +139,15 @@ export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitud
   }, [year, latitude]);
 
   const syncSolar = useMemo(() => {
+    if (isWorkerActive && workerSolar !== null) return null;
     return calculateAnnualSolarMatrix(year, latitude);
-  }, [year, latitude]);
+  }, [year, latitude, isWorkerActive, workerSolar !== null]);
 
   if (!isWorkerActive) {
-    return syncSolar;
+    return syncSolar || [];
   }
 
-  return workerSolar || syncSolar;
+  return workerSolar || syncSolar || [];
 };
 
 /**
@@ -187,12 +189,13 @@ export const useAnnualLunarWorker = ({
   }, [year, latitude, longitude]);
 
   const syncLunar = useMemo(() => {
+    if (isWorkerActive && workerLunar !== null) return null;
     return calculateAnnualLunarMatrix(year, latitude, longitude);
-  }, [year, latitude, longitude]);
+  }, [year, latitude, longitude, isWorkerActive, workerLunar !== null]);
 
   if (!isWorkerActive) {
-    return syncLunar;
+    return syncLunar || [];
   }
 
-  return workerLunar || syncLunar;
+  return workerLunar || syncLunar || [];
 };
