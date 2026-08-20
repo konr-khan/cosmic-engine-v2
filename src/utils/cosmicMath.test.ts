@@ -493,6 +493,44 @@ describe('cosmicMath utilities', () => {
       expect(eclipse.penumbraRadiusKm).toBeGreaterThan(eclipse.umbraRadiusKm);
       expect(eclipse.penumbraRadiusKm).toBeGreaterThan(3474);
     });
+
+    it('extracts argumentOfLatitude, isAscendingHemisphere, and node coordinates accurately in calculateEclipseData', () => {
+      // J2000 Epoch
+      const jd = 2451545.0;
+      const eclipse = calculateEclipseData(jd);
+
+      expect(eclipse.argumentOfLatitude).toBeDefined();
+      expect(typeof eclipse.argumentOfLatitude).toBe('number');
+      expect(eclipse.argumentOfLatitude).toBeGreaterThanOrEqual(0);
+      expect(eclipse.argumentOfLatitude).toBeLessThan(360);
+
+      expect(eclipse.isAscendingHemisphere).toBeDefined();
+      expect(typeof eclipse.isAscendingHemisphere).toBe('boolean');
+      expect(eclipse.isAscendingHemisphere).toBe(eclipse.argumentOfLatitude! % 360 < 180);
+
+      expect(eclipse.nodeLongitude).toBeDefined();
+      expect(eclipse.descendingNodeLongitude).toBeDefined();
+      expect(eclipse.nodeLongitude).toBeCloseTo(125.04, 1);
+      expect(eclipse.descendingNodeLongitude).toBeCloseTo((125.04 + 180) % 360, 1);
+    });
+
+    it('verifies hemisphere classification for known northern and southern lunar positions', () => {
+      // April 8, 2024 Total Solar Eclipse (JD ~ 2460409.26)
+      const jdApr2024 = 2460409.26;
+      const eclipseApr2024 = calculateEclipseData(jdApr2024);
+      expect(typeof eclipseApr2024.isAscendingHemisphere).toBe('boolean');
+      if (eclipseApr2024.beta >= 0) {
+        expect(eclipseApr2024.isAscendingHemisphere).toBe(true);
+      } else {
+        expect(eclipseApr2024.isAscendingHemisphere).toBe(false);
+      }
+
+      // March 14, 2025 Total Lunar Eclipse (Blood Moon)
+      const jdMar2025 = getJulianDate(new Date(2025, 2, 14), 6.967);
+      const eclipseMar2025 = calculateEclipseData(jdMar2025);
+      expect(typeof eclipseMar2025.isAscendingHemisphere).toBe('boolean');
+      expect(eclipseMar2025.argumentOfLatitude).toBeDefined();
+    });
   });
 
   describe('Eclipse Scanner & Multi-Year Recurrence (findUpcomingEclipses)', () => {

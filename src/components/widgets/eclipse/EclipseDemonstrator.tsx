@@ -131,10 +131,15 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
         const verticalMissKm = Math.round(distKm * Math.sin((eclipse.beta * Math.PI) / 180));
         const verticalMissStr = `${verticalMissKm > 0 ? '+' : ''}${verticalMissKm.toLocaleString()} km`;
         const nodeGapStr = `${(eclipse.nodeProximityDeg ?? Math.abs(eclipse.beta)).toFixed(1)}°`;
+        const isAscending = eclipse.isAscendingHemisphere ?? (eclipse.beta >= 0);
+        const arcLabel = isAscending ? 'Ascending (North ☊)' : 'Descending (South ☋)';
+        const arcColor = isAscending ? 'text-sky-400' : 'text-rose-400';
 
         return (
           <div className="mt-2 bg-slate-950/60 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800/50 flex flex-wrap justify-between items-center text-xs font-mono text-slate-400 gap-2 shadow-sm">
             <span>Obscuration: <strong className={`font-semibold ${eclipse.obscuration > 0 ? "text-amber-400" : "text-slate-300"}`}>{eclipse.obscuration}%</strong></span>
+            <span className="text-slate-700 hidden sm:inline">|</span>
+            <span>Orbital Arc: <strong className={`font-semibold ${arcColor}`}>{arcLabel}</strong></span>
             <span className="text-slate-700 hidden sm:inline">|</span>
             <span>Node Gap: <strong className="text-rose-400 font-semibold">{nodeGapStr}</strong></span>
             <span className="text-slate-700 hidden sm:inline">|</span>

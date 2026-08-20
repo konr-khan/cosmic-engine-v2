@@ -222,6 +222,10 @@ export interface EclipseData {
   isWithinNodeCorridor?: boolean;
   gamma?: number;
   pathWidthKm?: number;
+  argumentOfLatitude?: number;
+  isAscendingHemisphere?: boolean;
+  nodeLongitude?: number;
+  descendingNodeLongitude?: number;
 }
 
 /** Historical or future eclipse scanner preset */

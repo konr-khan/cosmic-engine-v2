@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { EclipseData } from '../../../types';
-import { getPhaseName, calculateLunarIllumination } from '../../../utils/cosmicMath';
+import { getPhaseName, calculateLunarIllumination, toRadians } from '../../../utils/cosmicMath';
 
 export interface ShadowRayDiagramProps {
   eclipse?: EclipseData | null;
@@ -32,30 +32,58 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   const phaseName = getPhaseName(phaseVal);
   const illumPercent = calculateLunarIllumination(phaseVal);
   const scalePxPerDeg = 8.5;
+  const isAscending = eclipse.isAscendingHemisphere ?? (beta >= 0);
+  const isWaxing = phaseVal <= 0.5;
 
-  // Calculate Strictly Edge-On 2D Live Orbit Moon Coordinates
+  // Calculate Strict Side-On Orbit Coordinates (Ecliptic X-Z Projection)
   const liveEarthX = 310;
   const liveEarthY = 110;
   const liveOrbitalRx = 85;
 
-  // Real-Time Seasonal Nodal Alignment Tilt:
-  // Node alignment modulates the projected tilt: during Eclipse Seasons (April/Oct), the line flattens into the Ecliptic!
+  // Real-Time Seasonal Nodal Alignment Angle (Sun - Node):
   const nodeAngleRad = ((eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0)) * Math.PI) / 180;
-  const seasonalFactor = Math.sin(nodeAngleRad);
-  const maxTiltSlope = Math.sin((5.14 * Math.PI) / 180) * 2.2;
-  const tiltSlope = seasonalFactor * maxTiltSlope;
 
-  const planeExtentX = 95;
-  const planeX1 = liveEarthX - planeExtentX;
-  const planeY1 = liveEarthY + (tiltSlope * planeExtentX);
-  const planeX2 = liveEarthX + planeExtentX;
-  const planeY2 = liveEarthY - (tiltSlope * planeExtentX);
+  // Moon position on the strict side-on projected orbit:
+  const liveMoonX = liveEarthX - (Math.cos(phaseRad) * liveOrbitalRx);
+  const liveMoonY = liveEarthY - (beta * scalePxPerDeg);
 
-  // Linear position along the seasonal 5.14° plane:
-  // s = -1 (New Moon / between Sun & Earth) to +1 (Full Moon / in Earth's shadow)
-  const s = -Math.cos(phaseRad);
-  const liveMoonX = liveEarthX + (s * liveOrbitalRx);
-  const liveMoonY = liveEarthY - (s * tiltSlope * liveOrbitalRx);
+  // Generate 4-quadrant orbit paths: Waxing (Solid) vs Waning (Dashed), Ascending (Blue) vs Descending (Red)
+  const N = 72;
+  const liveWaxAsc: string[] = [];
+  const liveWaxDesc: string[] = [];
+  const liveWanAsc: string[] = [];
+  const liveWanDesc: string[] = [];
+
+  for (let i = 0; i < N; i++) {
+    const t1 = (i / N) * 2 * Math.PI;
+    const t2 = ((i + 1) / N) * 2 * Math.PI;
+    const x1 = liveEarthX - Math.cos(t1) * liveOrbitalRx;
+    const y1 = liveEarthY - Math.sin(t1 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+    const x2 = liveEarthX - Math.cos(t2) * liveOrbitalRx;
+    const y2 = liveEarthY - Math.sin(t2 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+
+    const midT = (t1 + t2) / 2;
+    const midBeta = Math.sin(midT + nodeAngleRad) * 5.145;
+    const isWax = midT <= Math.PI;
+    const isAsc = midBeta >= 0;
+
+    const seg = `M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    if (isWax) {
+      if (isAsc) liveWaxAsc.push(seg);
+      else liveWaxDesc.push(seg);
+    } else {
+      if (isAsc) liveWanAsc.push(seg);
+      else liveWanDesc.push(seg);
+    }
+  }
+
+  // Node positions where orbit crosses the horizontal ecliptic plane (Y = 110)
+  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const ascNodeX = liveEarthX - (Math.cos(tAsc) * liveOrbitalRx);
+  const ascNodeY = liveEarthY;
+  const descNodeX = liveEarthX - (Math.cos(tDesc) * liveOrbitalRx);
+  const descNodeY = liveEarthY;
 
   // Calculate shadow miss margin in km
   const penumbraRad = eclipse.penumbraRadiusKm || 9500;
@@ -277,20 +305,45 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
             <line x1="50" y1="82" x2="310" y2="92" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
             <line x1="50" y1="138" x2="310" y2="128" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
 
-            {/* 5.14° Tilted Moon Orbital Plane Line passing through Earth */}
+            {/* Strict Side-On Projected Lunar Orbital Ring */}
             <g className="pointer-events-none">
-              <line 
-                x1={planeX1} 
-                y1={planeY1} 
-                x2={planeX2} 
-                y2={planeY2} 
-                stroke="#10b981" 
-                strokeWidth="1.2" 
-                strokeDasharray="4 2" 
-                opacity="0.85" 
-              />
-              <text x={planeX2} y={planeY2 < liveEarthY ? planeY2 - 4 : planeY2 + 10} textAnchor="end" className="text-[7.5px] font-mono fill-emerald-400 font-semibold">
-                Moon Orbital Plane (5.14° Tilt)
+              {/* Waxing Ascending: Solid Sky Blue */}
+              {liveWaxAsc.length > 0 && (
+                <path d={liveWaxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" opacity="0.9" />
+              )}
+              {/* Waxing Descending: Solid Crimson Red */}
+              {liveWaxDesc.length > 0 && (
+                <path d={liveWaxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" opacity="0.9" />
+              )}
+              {/* Waning Ascending: Dashed Sky Blue */}
+              {liveWanAsc.length > 0 && (
+                <path d={liveWanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
+              )}
+              {/* Waning Descending: Dashed Crimson Red */}
+              {liveWanDesc.length > 0 && (
+                <path d={liveWanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
+              )}
+
+              {/* Ascending Node Marker (☊) */}
+              <circle cx={ascNodeX} cy={ascNodeY} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
+              <text
+                x={ascNodeX < liveEarthX ? ascNodeX - 6 : ascNodeX + 6}
+                y={ascNodeY - 5}
+                textAnchor={ascNodeX < liveEarthX ? "end" : "start"}
+                className="text-[7.5px] font-mono fill-sky-400 font-semibold select-none"
+              >
+                ☊ Node
+              </text>
+
+              {/* Descending Node Marker (☋) */}
+              <circle cx={descNodeX} cy={descNodeY} r="3.5" fill="#f43f5e" stroke="#ffffff" strokeWidth="1" />
+              <text
+                x={descNodeX > liveEarthX ? descNodeX + 6 : descNodeX - 6}
+                y={descNodeY + 12}
+                textAnchor={descNodeX > liveEarthX ? "start" : "end"}
+                className="text-[7.5px] font-mono fill-rose-400 font-semibold select-none"
+              >
+                ☋ Node
               </text>
             </g>
 
@@ -318,9 +371,11 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
             >
               <circle
                 r="8"
-                fill={eclipse.isEclipseActive ? '#f43f5e' : '#94a3b8'}
-                stroke={eclipse.isEclipseActive ? '#fbbf24' : '#ffffff'}
+                fill={eclipse.isEclipseActive ? '#f43f5e' : (isWaxing ? '#94a3b8' : '#475569')}
+                fillOpacity={!eclipse.isEclipseActive && !isWaxing ? 0.75 : 1}
+                stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')}
                 strokeWidth="2"
+                strokeDasharray={!eclipse.isEclipseActive && !isWaxing ? "3 2" : undefined}
                 className="drop-shadow"
               />
               <text
@@ -340,10 +395,41 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
           const earthX = 380;
           const earthY = 110;
           const rx = 100;
-          const tiltSlopeB = Math.sin((5.14 * Math.PI) / 180) * 1.8;
-          const sB = -Math.cos(phaseRad);
-          const moonOrbitalX = earthX + (sB * rx);
-          const moonOrbitalY = earthY - (sB * tiltSlopeB * rx);
+          const moonOrbitalX = earthX - (Math.cos(phaseRad) * rx);
+          const moonOrbitalY = earthY - (beta * scalePxPerDeg);
+
+          const sWaxAsc: string[] = [];
+          const sWaxDesc: string[] = [];
+          const sWanAsc: string[] = [];
+          const sWanDesc: string[] = [];
+
+          for (let i = 0; i < N; i++) {
+            const t1 = (i / N) * 2 * Math.PI;
+            const t2 = ((i + 1) / N) * 2 * Math.PI;
+            const x1 = earthX - Math.cos(t1) * rx;
+            const y1 = earthY - Math.sin(t1 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+            const x2 = earthX - Math.cos(t2) * rx;
+            const y2 = earthY - Math.sin(t2 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+
+            const midT = (t1 + t2) / 2;
+            const midBeta = Math.sin(midT + nodeAngleRad) * 5.145;
+            const isWax = midT <= Math.PI;
+            const isAsc = midBeta >= 0;
+
+            const seg = `M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+            if (isWax) {
+              if (isAsc) sWaxAsc.push(seg);
+              else sWaxDesc.push(seg);
+            } else {
+              if (isAsc) sWanAsc.push(seg);
+              else sWanDesc.push(seg);
+            }
+          }
+
+          const sAscNodeX = earthX - (Math.cos(tAsc) * rx);
+          const sAscNodeY = earthY;
+          const sDescNodeX = earthX - (Math.cos(tDesc) * rx);
+          const sDescNodeY = earthY;
 
           return (
             <g>
@@ -363,20 +449,20 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                 </text>
               </g>
 
-              {/* 5.14° Tilted Lunar Orbital Plane Line around Earth */}
+              {/* Strict Side-On Lunar Orbital Ring */}
               <g className="pointer-events-none">
-                <line 
-                  x1={earthX - 110} 
-                  y1={earthY + 20} 
-                  x2={earthX + 110} 
-                  y2={earthY - 20} 
-                  stroke="#10b981" 
-                  strokeWidth="1.2" 
-                  strokeDasharray="4 2" 
-                  opacity="0.85" 
-                />
-                <text x={earthX + 110} y={earthY - 24} textAnchor="end" className="text-[7.5px] font-mono fill-emerald-400 font-bold">
-                  Moon Orbit Plane (5.14° Tilt)
+                {sWaxAsc.length > 0 && <path d={sWaxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" opacity="0.9" />}
+                {sWaxDesc.length > 0 && <path d={sWaxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" opacity="0.9" />}
+                {sWanAsc.length > 0 && <path d={sWanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
+                {sWanDesc.length > 0 && <path d={sWanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
+
+                <circle cx={sAscNodeX} cy={sAscNodeY} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
+                <text x={sAscNodeX < earthX ? sAscNodeX - 6 : sAscNodeX + 6} y={sAscNodeY - 5} textAnchor={sAscNodeX < earthX ? "end" : "start"} className="text-[7.5px] font-mono fill-sky-400 font-semibold select-none">
+                  ☊ Node
+                </text>
+                <circle cx={sDescNodeX} cy={sDescNodeY} r="3.5" fill="#f43f5e" stroke="#ffffff" strokeWidth="1" />
+                <text x={sDescNodeX > earthX ? sDescNodeX + 6 : sDescNodeX - 6} y={sDescNodeY + 12} textAnchor={sDescNodeX > earthX ? "start" : "end"} className="text-[7.5px] font-mono fill-rose-400 font-semibold select-none">
+                  ☋ Node
                 </text>
               </g>
 
@@ -395,18 +481,22 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                 />
               )}
 
-              {/* MOON BODY orbiting Earth in 2D */}
+              {/* MOON BODY orbiting Earth */}
               <g 
                 transform={`translate(${moonOrbitalX}, ${moonOrbitalY})`} 
                 className="cursor-pointer"
                 onPointerEnter={() => setHoveredEntity('moon')}
                 onPointerLeave={() => setHoveredEntity(null)}
               >
-                {Math.abs(beta) > 0.3 && (
-                  <line x1="0" y1="0" x2="0" y2={earthY - moonOrbitalY} stroke="#10b981" strokeWidth="1.5" strokeDasharray="2 2" />
-                )}
-                <circle r="14" fill="none" stroke="#38bdf8" strokeWidth="1" strokeDasharray="2 2" className="animate-spin" />
-                <circle r="9" fill={eclipse.type.includes('SOLAR') ? '#fbbf24' : '#94a3b8'} stroke="#ffffff" strokeWidth="2" className="drop-shadow" />
+                <circle
+                  r="9"
+                  fill={eclipse.type.includes('SOLAR') ? '#fbbf24' : (isWaxing ? '#94a3b8' : '#475569')}
+                  fillOpacity={!eclipse.isEclipseActive && !isWaxing ? 0.75 : 1}
+                  stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')}
+                  strokeWidth="2"
+                  strokeDasharray={!eclipse.isEclipseActive && !isWaxing ? "3 2" : undefined}
+                  className="drop-shadow"
+                />
                 <text x={moonOrbitalX > earthX - 40 ? -12 : 14} y="4" textAnchor={moonOrbitalX > earthX - 40 ? 'end' : 'start'} className="text-[9px] font-mono font-bold fill-emerald-400 select-none pointer-events-none">
                   MOON ({phaseDeg}° Elong, β={beta}°)
                 </text>

@@ -20,6 +20,10 @@ export interface EclipseCalculationResult {
   elongation: number;
   phaseValue: number;
   nodeAngleDeg?: number;
+  argumentOfLatitude?: number;
+  isAscendingHemisphere?: boolean;
+  nodeLongitude?: number;
+  descendingNodeLongitude?: number;
 }
 
 /**
@@ -128,6 +132,19 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
   const umbraRadiusKm = Math.max(0, 3474 - (distanceKm * 0.009));
   const penumbraRadiusKm = 3474 + (distanceKm * 0.015);
 
+  const argumentOfLatitude = lunarPos.argumentOfLatitude !== undefined
+    ? parseFloat((((lunarPos.argumentOfLatitude % 360) + 360) % 360).toFixed(4))
+    : undefined;
+  const isAscendingHemisphere = lunarPos.argumentOfLatitude !== undefined
+    ? (lunarPos.argumentOfLatitude % 360 < 180)
+    : beta >= 0;
+  const nodeLongitude = lunarPos.nodeLongitude !== undefined
+    ? parseFloat(lunarPos.nodeLongitude.toFixed(4))
+    : undefined;
+  const descendingNodeLongitude = lunarPos.descendingNodeLongitude !== undefined
+    ? parseFloat(lunarPos.descendingNodeLongitude.toFixed(4))
+    : undefined;
+
   return {
     type,
     category,
@@ -143,7 +160,11 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
     raDiff: parseFloat(raDiff.toFixed(2)),
     elongation: parseFloat(elongation.toFixed(2)),
     phaseValue: parseFloat(phaseValue.toFixed(3)),
-    nodeAngleDeg: parseFloat((((sunLambda - (lunarPos.nodeLongitude ?? 0)) % 360 + 360) % 360).toFixed(2))
+    nodeAngleDeg: parseFloat((((sunLambda - (lunarPos.nodeLongitude ?? 0)) % 360 + 360) % 360).toFixed(2)),
+    argumentOfLatitude,
+    isAscendingHemisphere,
+    nodeLongitude,
+    descendingNodeLongitude
   };
 };
 

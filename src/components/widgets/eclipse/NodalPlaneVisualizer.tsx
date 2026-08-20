@@ -35,41 +35,61 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const axialSunRadius = 38;
   const axialMoonRadius = clamp(8.5 * (moonAngularDiamArcmin / 31.13), 7.0, 10.0);
   const isTotalCapable = moonAngularDiamArcmin >= sunAngularDiamArcmin;
-
-  // --- Orbital Geometry in Axial Projection (Seasonal 5.14° Tilted Plane) ---
+  // --- Orbital Geometry in Axial Projection (3D Elliptical Orbital Loop) ---
   const centerX = 200;
   const centerY = 90;
-  const planeExtentX = 120;
   
   // Real-time seasonal nodal orientation across the sightline:
   const nodeAngleRad = ((eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0)) * Math.PI) / 180;
-  const seasonalTransverseFactor = Math.cos(nodeAngleRad);
-  const maxTransverseSlope = Math.sin((5.14 * Math.PI) / 180) * 2.2;
-  const tiltSlope = seasonalTransverseFactor * maxTransverseSlope;
+  const isAscending = eclipse.isAscendingHemisphere ?? (beta >= 0);
 
   const phaseVal = eclipse.phaseValue || 0; // 0.0 (New Moon) to 0.5 (Full Moon) to 1.0
   const phaseRad = phaseVal * 2 * Math.PI;
+  const isWaxing = phaseVal <= 0.5;
 
   // Transverse displacement perpendicular to the Sun-Earth sightline:
   // At Syzygy (New/Full Moon), sin(phaseRad) = 0 -> Moon is centered at X=200 in front of the Sun/Earth!
-  // At Quarters (First/Last Quarter), sin(phaseRad) = +/-1 -> Moon is at the outer extremities (X=200 +/- 100)!
-  const s = Math.sin(phaseRad);
-  const moonX = centerX + (s * 100);
-  const moonY = centerY - (s * tiltSlope * 100);
-  
-  // Background (Solar Side / New Moon) vs Foreground (Shadow Side / Full Moon):
-  // When cos(phaseRad) >= 0 (New Moon / Crescent): Moon is between Earth & Sun (dashed outline in front of Sun)
-  // When cos(phaseRad) < 0 (Full Moon / Gibbous): Moon is behind Earth (solid disc in Earth's shadow)
-  const isBetweenEarthAndSun = Math.cos(phaseRad) >= 0;
+  // At Quarters (First/Last Quarter), sin(phaseRad) = +/-1 -> Moon is at the outer extremities (X=200 +/- 110)!
+  const moonX = centerX + (Math.sin(phaseRad) * 110);
+  const moonY = centerY - (beta * 8.5);
 
-  // Real-Time Seasonal Nodal Positions along the green orbital plane line:
-  // During Eclipse Seasons (April/Oct), nodeAngleRad ~ 0° or 180° -> Nodes glide into the center (200, 90)!
-  // In Non-Eclipse months (July/Jan), nodeAngleRad ~ 90° or 270° -> Nodes move to the outer ends (+/- 115px).
-  const sNode = -Math.sin(nodeAngleRad);
-  const ascNodeX = centerX + (sNode * 110);
-  const ascNodeY = centerY - (sNode * tiltSlope * 110);
-  const descNodeX = centerX - (sNode * 110);
-  const descNodeY = centerY + (sNode * tiltSlope * 110);
+  // 3D Elliptical Orbital Loop: 4-Quadrant Paths (Waxing/Waning x Ascending/Descending)
+  const N = 72;
+  const waxAsc: string[] = [];
+  const waxDesc: string[] = [];
+  const wanAsc: string[] = [];
+  const wanDesc: string[] = [];
+
+  for (let i = 0; i < N; i++) {
+    const t1 = (i / N) * 2 * Math.PI;
+    const t2 = ((i + 1) / N) * 2 * Math.PI;
+    const x1 = centerX + Math.sin(t1) * 110;
+    const y1 = centerY - Math.sin(t1 + nodeAngleRad) * 5.145 * 8.5;
+    const x2 = centerX + Math.sin(t2) * 110;
+    const y2 = centerY - Math.sin(t2 + nodeAngleRad) * 5.145 * 8.5;
+
+    const midT = (t1 + t2) / 2;
+    const midBeta = Math.sin(midT + nodeAngleRad) * 5.145;
+    const isWax = midT <= Math.PI;
+    const isAsc = midBeta >= 0;
+
+    const seg = `M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    if (isWax) {
+      if (isAsc) waxAsc.push(seg);
+      else waxDesc.push(seg);
+    } else {
+      if (isAsc) wanAsc.push(seg);
+      else wanDesc.push(seg);
+    }
+  }
+
+  // Node Positions where orbital loop crosses horizontal ecliptic plane (Y = 90)
+  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const ascNodeX = centerX + (Math.sin(tAsc) * 110);
+  const ascNodeY = centerY;
+  const descNodeX = centerX + (Math.sin(tDesc) * 110);
+  const descNodeY = centerY;
 
   return (
     <div className="w-full h-full flex flex-col justify-between select-none">
@@ -130,46 +150,43 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
           {/* Umbra Shadow Core */}
           <circle cx={centerX} cy={centerY} r="15" fill="#020617" stroke="#f43f5e" strokeWidth="1" />
           
-          {/* 3. 5.14° STRAIGHT TILTED LUNAR ORBIT PLANE */}
-          <g>
-            {/* Background Half (Between Earth & Sun - Dashed) */}
-            <line
-              x1={centerX - planeExtentX}
-              y1={centerY + (tiltSlope * planeExtentX)}
-              x2={centerX}
-              y2={centerY}
-              stroke="#10b981"
-              strokeWidth="1.4"
-              strokeDasharray="4 3"
-              opacity="0.7"
-            />
-            {/* Foreground Half (Earth Shadow Side - Solid) */}
-            <line
-              x1={centerX}
-              y1={centerY}
-              x2={centerX + planeExtentX}
-              y2={centerY - (tiltSlope * planeExtentX)}
-              stroke="#10b981"
-              strokeWidth="1.4"
-              opacity="0.9"
-            />
+          {/* 3. 3D OPEN ELLIPTICAL LUNAR ORBITAL LOOP AROUND EARTH */}
+          <g className="pointer-events-none">
+            {/* Waxing Ascending: Solid Sky Blue */}
+            {waxAsc.length > 0 && (
+              <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" opacity="0.9" />
+            )}
+            {/* Waxing Descending: Solid Crimson Red */}
+            {waxDesc.length > 0 && (
+              <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" opacity="0.9" />
+            )}
+            {/* Waning Ascending: Dashed Sky Blue */}
+            {wanAsc.length > 0 && (
+              <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
+            )}
+            {/* Waning Descending: Dashed Crimson Red */}
+            {wanDesc.length > 0 && (
+              <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
+            )}
 
-            {/* Dynamic Real-Time Ascending Node (☊) and Descending Node (☋) gliding along the Orbital Plane line */}
-            <circle cx={ascNodeX} cy={ascNodeY} r="3" fill="#10b981" stroke="#ffffff" strokeWidth="1" />
+            {/* Ascending Node Marker (☊) */}
+            <circle cx={ascNodeX} cy={ascNodeY} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
             <text 
-              x={ascNodeX < centerX ? ascNodeX - 5 : ascNodeX + 5} 
+              x={ascNodeX < centerX ? ascNodeX - 6 : ascNodeX + 6} 
               y={ascNodeY - 5} 
               textAnchor={ascNodeX < centerX ? "end" : "start"} 
-              className="text-[7.5px] font-mono fill-emerald-400 font-semibold"
+              className="text-[7.5px] font-mono fill-sky-400 font-semibold select-none"
             >
               ☊ Node
             </text>
-            <circle cx={descNodeX} cy={descNodeY} r="3" fill="#10b981" stroke="#ffffff" strokeWidth="1" />
+
+            {/* Descending Node Marker (☋) */}
+            <circle cx={descNodeX} cy={descNodeY} r="3.5" fill="#f43f5e" stroke="#ffffff" strokeWidth="1" />
             <text 
-              x={descNodeX > centerX ? descNodeX + 5 : descNodeX - 5} 
+              x={descNodeX > centerX ? descNodeX + 6 : descNodeX - 6} 
               y={descNodeY + 12} 
               textAnchor={descNodeX > centerX ? "start" : "end"} 
-              className="text-[7.5px] font-mono fill-emerald-400 font-semibold"
+              className="text-[7.5px] font-mono fill-rose-400 font-semibold select-none"
             >
               ☋ Node
             </text>
@@ -183,65 +200,37 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
             </text>
           </g>
 
-          {/* 5. DYNAMIC MOON DISC IN REAL-TIME ORBIT (Locked on the green orbital line) */}
-          {isBetweenEarthAndSun ? (
-            /* BACKGROUND / SOLAR SIDE MOON (Dashed Outline between Earth & Sun) */
-            <g transform={`translate(${moonX}, ${moonY})`}>
-              <circle 
-                r={axialMoonRadius} 
-                fill="#020617" 
-                fillOpacity="0.75" 
-                stroke={eclipse.isEclipseActive ? '#fbbf24' : '#38bdf8'} 
-                strokeWidth="1.8" 
-                strokeDasharray="3 2" 
-              />
-              <circle r="1.5" fill="#38bdf8" />
-              <text 
-                x={moonX > centerX ? 10 : -10} 
-                y="-3" 
-                textAnchor={moonX > centerX ? 'start' : 'end'} 
-                className="text-[8px] font-mono font-bold fill-sky-300"
-              >
-                MOON ({moonAngularDiamArcmin.toFixed(1)}')
-              </text>
-              <text 
-                x={moonX > centerX ? 10 : -10} 
-                y="7" 
-                textAnchor={moonX > centerX ? 'start' : 'end'} 
-                className="text-[7px] font-mono fill-slate-400"
-              >
-                [Solar Side / Dashed]
-              </text>
-            </g>
-          ) : (
-            /* FOREGROUND / LUNAR SHADOW SIDE MOON (Solid Disc in Earth Shadow) */
-            <g transform={`translate(${moonX}, ${moonY})`}>
-              <circle 
-                r={axialMoonRadius} 
-                fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#94a3b8'} 
-                stroke={eclipse.isEclipseActive ? '#fbbf24' : '#ffffff'} 
-                strokeWidth="2" 
-              />
-              <text 
-                x={moonX > centerX ? 10 : -10} 
-                y="-3" 
-                textAnchor={moonX > centerX ? 'start' : 'end'} 
-                className={`text-[8px] font-mono font-bold ${
-                  eclipse.isEclipseActive ? 'fill-rose-300' : 'fill-slate-200'
-                }`}
-              >
-                MOON ({moonAngularDiamArcmin.toFixed(1)}')
-              </text>
-              <text 
-                x={moonX > centerX ? 10 : -10} 
-                y="7" 
-                textAnchor={moonX > centerX ? 'start' : 'end'} 
-                className="text-[7px] font-mono fill-slate-400"
-              >
-                [Shadow Side / Solid]
-              </text>
-            </g>
-          )}
+          {/* 5. DYNAMIC MOON DISC IN REAL-TIME ORBIT */}
+          <g transform={`translate(${moonX}, ${moonY})`}>
+            <circle 
+              r={axialMoonRadius} 
+              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : (isWaxing ? '#0f172a' : '#475569')} 
+              fillOpacity={!eclipse.isEclipseActive && !isWaxing ? 0.75 : 0.9} 
+              stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
+              strokeWidth="2" 
+              strokeDasharray={!eclipse.isEclipseActive && !isWaxing ? "3 2" : undefined}
+              className="drop-shadow"
+            />
+            <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
+            <text 
+              x={moonX > centerX ? 10 : -10} 
+              y="-3" 
+              textAnchor={moonX > centerX ? 'start' : 'end'} 
+              className={`text-[8px] font-mono font-bold ${
+                eclipse.isEclipseActive ? 'fill-rose-300' : (isAscending ? 'fill-sky-300' : 'fill-rose-300')
+              }`}
+            >
+              MOON ({moonAngularDiamArcmin.toFixed(1)}')
+            </text>
+            <text 
+              x={moonX > centerX ? 10 : -10} 
+              y="7" 
+              textAnchor={moonX > centerX ? 'start' : 'end'} 
+              className="text-[7px] font-mono fill-slate-400 select-none"
+            >
+              [{isWaxing ? 'Waxing / Solid' : 'Waning / Dashed'}]
+            </text>
+          </g>
         </svg>
       </div>
 
