@@ -95,6 +95,12 @@ Cosmic Engine V2.0/
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & quick start
 ├── AGENTS.md                    # Agent guidelines & architecture map
+├── docs/                        # Persistent technical specifications & ADRs
+│   ├── MATH_SPEC.md             # Astronomical math specification & coordinate formulas
+│   ├── DESIGN_SYSTEM.md         # Visual tokens, color semantics & vector stroke encodings
+│   └── adr/                     # Architecture Decision Records (ADRs)
+│       ├── 0001-external-store-and-worker-architecture.md
+│       └── 0002-branded-nominal-unit-typing.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -117,10 +123,10 @@ Cosmic Engine V2.0/
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (72 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (77 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
-│   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (5 tests)
+│   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
 │   ├── workers/                 # Web Worker offload scripts
 │   │   ├── ephemerisWorker.ts   # Dedicated worker for Meeus ephemeris, eclipse geometry & 365-day matrices
 │   │   └── ephemerisWorkerManager.ts # Application singleton worker manager, deduplication & matrix cache
@@ -128,7 +134,7 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (17 tests)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (18 tests)
 │   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
@@ -220,7 +226,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | Test Suite | File | Tests | Focus Areas |
 | :--- | :--- | :--- | :--- |
 | **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 77 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry |
-| **Observatory Widgets** | `src/components/widgets/widgets.test.ts` | 8 | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 7 observatory window subsystems |
+| **Observatory Widgets** | `src/components/widgets/widgets.test.ts` | 9 | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 7 observatory window subsystems |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 18 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` | 7 | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |

@@ -65,6 +65,12 @@ Cosmic Engine V2.0/
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & getting started
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
+├── docs/                        # Persistent technical specifications & ADRs
+│   ├── MATH_SPEC.md             # Astronomical math specification & coordinate formulas
+│   ├── DESIGN_SYSTEM.md         # Visual tokens, color semantics & vector stroke encodings
+│   └── adr/                     # Architecture Decision Records (ADRs)
+│       ├── 0001-external-store-and-worker-architecture.md
+│       └── 0002-branded-nominal-unit-typing.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -186,6 +192,13 @@ Cosmic Engine V2.0/
 - **Terminal Execution**:
   - Run linters, type checks, and test suites inside the worker subagent sandbox to maintain a clean parent conversation thread.
 
+### C. Mandatory Persistent Documentation Verification
+Before implementing or modifying code, all agents must proactively consult and verify alignment with the persistent specifications in `docs/`:
+1. **Mathematical Models & Ephemerides**: When touching calculations, coordinate frames, twilight thresholds, polar bound piecewise logic, or eclipse shadow geometries, inspect and conform strictly to [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
+2. **Visual Tokens, Colors & Stroke Encodings**: When modifying UI styling, color tokens, SVG vector stroke encodings (solid vs. dashed, sky blue vs. rose nodes), or glassmorphic telemetry HUDs, inspect and conform strictly to [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
+3. **Architecture Decisions & Invariants**: When modifying store subscription models (`CosmicStore` / `useSyncExternalStore`), Web Worker RPC multiprocessing (`EphemerisWorkerManager`), or nominal branded units (`src/types/units.ts`), inspect the records in [`docs/adr/`](docs/adr/) and update/author ADRs as architectural decisions evolve.
+4. **Documentation Synchronization**: When adding new features or adjusting contracts, keep [`README.md`](README.md), [`AGENTS.md`](AGENTS.md), and relevant `docs/` specifications updated in tandem.
+
 ---
 
 ## 5. Phased Execution & Human Gates
@@ -285,7 +298,7 @@ The Eclipse demonstrator renders synchronized dual perspectives in `activeTab ==
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval. Run `npm run typecheck` (`tsc --noEmit`) to verify.
 4. **Preserve Math Accuracy**: Cite standard astronomical references for formula changes and verify polar/solstice edge cases.
-5. **No Regressions**: All 114 unit tests across the 6 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, or `cosmicStore.test.ts`.
+5. **No Regressions**: All 137 unit tests across the 7 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, `widgets.test.ts`, or `cosmicStore.test.ts`.
 
 ### B. Testing & Mocking Standards for Agents
 - **Vitest Mocking Guidelines**:
