@@ -66,8 +66,8 @@ describe('WindowErrorBoundary Component Suite', () => {
 
   it('renders observatory fallback UI when hasError is true', () => {
     const boundary = new WindowErrorBoundary({ 
-      windowTitle: 'Celestial Sphere', 
-      windowId: 'celestialSphere',
+      windowTitle: 'Eclipse Mechanics', 
+      windowId: 'eclipse',
       children: <div>Child Content</div> 
     });
 

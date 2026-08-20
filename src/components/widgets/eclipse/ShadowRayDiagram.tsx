@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { EclipseData } from '../../../types';
-import { getPhaseName, calculateLunarIllumination, toRadians } from '../../../utils/cosmicMath';
+import { getPhaseName, calculateLunarIllumination, toRadians, calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
 
 export interface ShadowRayDiagramProps {
   eclipse?: EclipseData | null;
@@ -9,6 +9,9 @@ export interface ShadowRayDiagramProps {
   lunarViewSubTab?: 'pov' | 'orbit';
   setLunarViewSubTab?: (tab: 'pov' | 'orbit') => void;
   currentDate?: Date;
+  latitude?: number;
+  longitude?: number;
+  timeOfDay?: number;
 }
 
 export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
@@ -17,10 +20,68 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   setDiagramMode,
   lunarViewSubTab = 'pov',
   setLunarViewSubTab,
-  currentDate = new Date()
+  currentDate = new Date(),
+  latitude = 47.06,
+  longitude = -122.81,
+  timeOfDay = 12
 }) => {
   const [hoveredEntity, setHoveredEntity] = useState<'sun' | 'earth' | 'moon' | 'umbra' | 'penumbra' | null>(null);
   if (!eclipse) return null;
+
+  const solarPhysics = calculateEarthOrbitalPhysics(getJulianDate(currentDate, 12));
+  const sunLambdaDeg = ((solarPhysics?.lambda ?? solarPhysics?.eclipticLongitude ?? 0) as number);
+
+  // Helper to compute Earth's projected axial tilt, dashed equator line, and observer pin in side-on ecliptic profile
+  const getEarthSideGeometry = (earthCenterX: number, earthCenterY: number, earthRadius: number) => {
+    const epsRad = (23.439281 * Math.PI) / 180;
+    const sunLambdaRad = (sunLambdaDeg * Math.PI) / 180;
+
+    // Projected tilt in side-on view (Sun on left at -X, Earth at center):
+    const thetaSide = epsRad * Math.sin(sunLambdaRad); // rad
+
+    // Unit vectors:
+    const nx = -Math.sin(thetaSide);
+    const ny = Math.cos(thetaSide);
+    const ux = Math.cos(thetaSide);
+    const uy = Math.sin(thetaSide);
+
+    // Polar axis endpoints:
+    const poleLineX = nx * (earthRadius + 3.5);
+    const poleLineY = ny * (earthRadius + 3.5);
+
+    // Front equator chord endpoints:
+    const eqX1 = earthCenterX - earthRadius * ux;
+    const eqY1 = earthCenterY + earthRadius * uy;
+    const eqX2 = earthCenterX + earthRadius * ux;
+    const eqY2 = earthCenterY - earthRadius * uy;
+
+    // Observer Location Pin:
+    const latRad = (latitude * Math.PI) / 180;
+    const hRad = ((timeOfDay - 12) * Math.PI) / 12;
+
+    const xBody = -Math.cos(latRad) * Math.cos(hRad); // negative towards Sun on left
+    const yBody = Math.sin(latRad);
+
+    const xProj = xBody * Math.cos(thetaSide) - yBody * Math.sin(thetaSide);
+    const yProj = xBody * Math.sin(thetaSide) + yBody * Math.cos(thetaSide);
+
+    const obsPx = earthCenterX + earthRadius * xProj;
+    const obsPy = earthCenterY - earthRadius * yProj;
+    const isDaylight = xBody < 0; // facing Sun on left
+
+    return {
+      earthR: earthRadius,
+      poleLineX,
+      poleLineY,
+      eqX1,
+      eqY1,
+      eqX2,
+      eqY2,
+      obsPx,
+      obsPy,
+      isDaylight
+    };
+  };
 
   // Physical vertical offset calculation in km and scaled SVG pixels
   const beta = eclipse.beta; // -5.14° to +5.14°
@@ -347,17 +408,85 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
               </text>
             </g>
 
-            {/* 2. EARTH BODY (Middle) */}
-            <g 
-              className="cursor-pointer"
-              onPointerEnter={() => setHoveredEntity('earth')}
-              onPointerLeave={() => setHoveredEntity(null)}
-            >
-              <circle cx={liveEarthX} cy={liveEarthY} r="18" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
-              <text x={liveEarthX} y={liveEarthY + 4} textAnchor="middle" className="text-[9px] font-mono font-bold fill-blue-300 select-none pointer-events-none">
-                EARTH
-              </text>
-            </g>
+            {/* 2. EARTH BODY (Middle) WITH 23.44° AXIAL TILT, DASHED EQUATOR & OBSERVER PIN */}
+            {(() => {
+              const liveEarthGeom = getEarthSideGeometry(liveEarthX, liveEarthY, 18);
+              return (
+                <g 
+                  className="cursor-pointer"
+                  onPointerEnter={() => setHoveredEntity('earth')}
+                  onPointerLeave={() => setHoveredEntity(null)}
+                >
+                  {/* Earth Disc */}
+                  <circle cx={liveEarthX} cy={liveEarthY} r={liveEarthGeom.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
+
+                  {/* Projected 23.44° Polar Axis with N/S Markers */}
+                  <line 
+                    x1={liveEarthX - liveEarthGeom.poleLineX} 
+                    y1={liveEarthY + liveEarthGeom.poleLineY} 
+                    x2={liveEarthX + liveEarthGeom.poleLineX} 
+                    y2={liveEarthY - liveEarthGeom.poleLineY} 
+                    stroke="#93c5fd" 
+                    strokeWidth="0.85" 
+                    strokeDasharray="2.5 1.5" 
+                    opacity="0.65" 
+                  />
+                  <text 
+                    x={liveEarthX + liveEarthGeom.poleLineX + 2} 
+                    y={liveEarthY - liveEarthGeom.poleLineY - 1} 
+                    className="text-[6px] font-mono font-bold fill-sky-300 select-none pointer-events-none"
+                  >
+                    N
+                  </text>
+                  <text 
+                    x={liveEarthX - liveEarthGeom.poleLineX - 5} 
+                    y={liveEarthY + liveEarthGeom.poleLineY + 5} 
+                    className="text-[6px] font-mono font-bold fill-sky-400 select-none pointer-events-none"
+                  >
+                    S
+                  </text>
+
+                  {/* Dashed Blue Equator Line */}
+                  <line 
+                    x1={liveEarthGeom.eqX1} 
+                    y1={liveEarthGeom.eqY1} 
+                    x2={liveEarthGeom.eqX2} 
+                    y2={liveEarthGeom.eqY2} 
+                    stroke="#38bdf8" 
+                    strokeWidth="0.85" 
+                    strokeDasharray="2 1.5" 
+                    opacity="0.65" 
+                  />
+
+                  {/* Earth Label */}
+                  <text 
+                    x={liveEarthX} 
+                    y={liveEarthY + (Math.abs(liveEarthGeom.obsPy - liveEarthY) < 5 ? 11 : 3)} 
+                    textAnchor="middle" 
+                    className="text-[7.5px] font-mono font-bold fill-blue-300/80 select-none pointer-events-none"
+                  >
+                    EARTH
+                  </text>
+
+                  {/* Observer Location Pin */}
+                  <g transform={`translate(${liveEarthGeom.obsPx.toFixed(1)}, ${liveEarthGeom.obsPy.toFixed(1)})`}>
+                    {liveEarthGeom.isDaylight && (
+                      <circle r="4" fill="#38bdf8" opacity="0.25" className="animate-pulse pointer-events-none" />
+                    )}
+                    <circle 
+                      r="2" 
+                      fill={liveEarthGeom.isDaylight ? "#38bdf8" : "#64748b"} 
+                      stroke="#ffffff" 
+                      strokeWidth="0.75" 
+                      opacity={liveEarthGeom.isDaylight ? 1 : 0.4}
+                      className="cursor-pointer drop-shadow-sm"
+                    >
+                      <title>{`Observer (${Math.abs(latitude).toFixed(1)}°${latitude >= 0 ? 'N' : 'S'}, ${Math.abs(longitude).toFixed(1)}°${longitude >= 0 ? 'E' : 'W'}) — ${liveEarthGeom.isDaylight ? 'Daylight (Sunlit Face)' : 'Night (Earth Shadow/Night Face)'}`}</title>
+                    </circle>
+                  </g>
+                </g>
+              );
+            })()}
 
             {/* Line connecting Earth and Moon */}
             <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
@@ -502,17 +631,85 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                 </text>
               </g>
 
-              {/* EARTH BODY (Right) */}
-              <g 
-                className="cursor-pointer"
-                onPointerEnter={() => setHoveredEntity('earth')}
-                onPointerLeave={() => setHoveredEntity(null)}
-              >
-                <circle cx={earthX} cy={earthY} r="20" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
-                <text x={earthX} y={earthY + 4} textAnchor="middle" className="text-[9px] font-mono font-bold fill-blue-300 select-none pointer-events-none">
-                  EARTH
-                </text>
-              </g>
+              {/* EARTH BODY (Right) WITH 23.44° AXIAL TILT, DASHED EQUATOR & OBSERVER PIN */}
+              {(() => {
+                const solarEarthGeom = getEarthSideGeometry(earthX, earthY, 20);
+                return (
+                  <g 
+                    className="cursor-pointer"
+                    onPointerEnter={() => setHoveredEntity('earth')}
+                    onPointerLeave={() => setHoveredEntity(null)}
+                  >
+                    {/* Earth Base Disc */}
+                    <circle cx={earthX} cy={earthY} r={solarEarthGeom.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
+
+                    {/* Projected 23.44° Polar Axis with N/S Markers */}
+                    <line 
+                      x1={earthX - solarEarthGeom.poleLineX} 
+                      y1={earthY + solarEarthGeom.poleLineY} 
+                      x2={earthX + solarEarthGeom.poleLineX} 
+                      y2={earthY - solarEarthGeom.poleLineY} 
+                      stroke="#93c5fd" 
+                      strokeWidth="0.85" 
+                      strokeDasharray="2.5 1.5" 
+                      opacity="0.65" 
+                    />
+                    <text 
+                      x={earthX + solarEarthGeom.poleLineX + 2} 
+                      y={earthY - solarEarthGeom.poleLineY - 1} 
+                      className="text-[6px] font-mono font-bold fill-sky-300 select-none pointer-events-none"
+                    >
+                      N
+                    </text>
+                    <text 
+                      x={earthX - solarEarthGeom.poleLineX - 5} 
+                      y={earthY + solarEarthGeom.poleLineY + 5} 
+                      className="text-[6px] font-mono font-bold fill-sky-400 select-none pointer-events-none"
+                    >
+                      S
+                    </text>
+
+                    {/* Dashed Blue Equator Line */}
+                    <line 
+                      x1={solarEarthGeom.eqX1} 
+                      y1={solarEarthGeom.eqY1} 
+                      x2={solarEarthGeom.eqX2} 
+                      y2={solarEarthGeom.eqY2} 
+                      stroke="#38bdf8" 
+                      strokeWidth="0.85" 
+                      strokeDasharray="2 1.5" 
+                      opacity="0.65" 
+                    />
+
+                    {/* Earth Label */}
+                    <text 
+                      x={earthX} 
+                      y={earthY + (Math.abs(solarEarthGeom.obsPy - earthY) < 5 ? 11 : 3)} 
+                      textAnchor="middle" 
+                      className="text-[7.5px] font-mono font-bold fill-blue-300/80 select-none pointer-events-none"
+                    >
+                      EARTH
+                    </text>
+
+                    {/* Observer Location Pin */}
+                    <g transform={`translate(${solarEarthGeom.obsPx.toFixed(1)}, ${solarEarthGeom.obsPy.toFixed(1)})`}>
+                      {solarEarthGeom.isDaylight && (
+                        <circle r="4" fill="#38bdf8" opacity="0.25" className="animate-pulse pointer-events-none" />
+                      )}
+                      <circle 
+                        r="2" 
+                        fill={solarEarthGeom.isDaylight ? "#38bdf8" : "#64748b"} 
+                        stroke="#ffffff" 
+                        strokeWidth="0.75" 
+                        opacity={solarEarthGeom.isDaylight ? 1 : 0.4}
+                        className="cursor-pointer drop-shadow-sm"
+                      >
+                        <title>{`Observer (${Math.abs(latitude).toFixed(1)}°${latitude >= 0 ? 'N' : 'S'}, ${Math.abs(longitude).toFixed(1)}°${longitude >= 0 ? 'E' : 'W'}) — ${solarEarthGeom.isDaylight ? 'Daylight (Sunlit Face)' : 'Night (Earth Shadow/Night Face)'}`}</title>
+                      </circle>
+                    </g>
+                  </g>
+                );
+              })()}
 
               {/* Umbra Spot on Earth Surface when solar eclipse active */}
               {eclipse.category === 'SOLAR' && eclipse.isEclipseActive ? (
@@ -673,16 +870,77 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
                     </polygon>
 
                     {/* EARTH BODY revolving relative to Moon */}
-                    <g transform={`translate(${selenocentricEarthX}, ${selenocentricEarthY})`} className="cursor-help">
-                      <title>{`Earth (Relative Orbit Frame)\n• Apparent Separation: ${distKm.toLocaleString()} km\n• Ecliptic Latitude β: ${beta}°\n• Vertical Miss: ${verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : verticalOffsetKm.toLocaleString()} km`}</title>
-                      <circle r="18" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
-                      <text x="0" y="4" textAnchor="middle" className="text-[8px] font-mono font-bold fill-blue-200 select-none pointer-events-none">
-                        EARTH
-                      </text>
-                      <text x="0" y="-22" textAnchor="middle" className="text-[8px] font-mono fill-indigo-300 font-bold select-none pointer-events-none">
-                        Relative Earth Orbit
-                      </text>
-                    </g>
+                    {(() => {
+                      const lunarEarthGeom = getEarthSideGeometry(selenocentricEarthX, selenocentricEarthY, 18);
+                      return (
+                        <g className="cursor-help">
+                          <title>{`Earth (Relative Orbit Frame)\n• Apparent Separation: ${distKm.toLocaleString()} km\n• Ecliptic Latitude β: ${beta}°\n• Vertical Miss: ${verticalOffsetKm > 0 ? `+${verticalOffsetKm.toLocaleString()}` : verticalOffsetKm.toLocaleString()} km\n• Observer (${Math.abs(latitude).toFixed(1)}°${latitude >= 0 ? 'N' : 'S'}, ${Math.abs(longitude).toFixed(1)}°${longitude >= 0 ? 'E' : 'W'}) — ${lunarEarthGeom.isDaylight ? 'Daylight' : 'Night'}`}</title>
+                          
+                          {/* Earth Disc */}
+                          <circle cx={selenocentricEarthX} cy={selenocentricEarthY} r={lunarEarthGeom.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
+
+                          {/* Projected 23.44° Polar Axis with N/S Markers */}
+                          <line 
+                            x1={selenocentricEarthX - lunarEarthGeom.poleLineX} 
+                            y1={selenocentricEarthY + lunarEarthGeom.poleLineY} 
+                            x2={selenocentricEarthX + lunarEarthGeom.poleLineX} 
+                            y2={selenocentricEarthY - lunarEarthGeom.poleLineY} 
+                            stroke="#93c5fd" 
+                            strokeWidth="0.85" 
+                            strokeDasharray="2.5 1.5" 
+                            opacity="0.65" 
+                          />
+                          <text 
+                            x={selenocentricEarthX + lunarEarthGeom.poleLineX + 2} 
+                            y={selenocentricEarthY - lunarEarthGeom.poleLineY - 1} 
+                            className="text-[6px] font-mono font-bold fill-sky-300 select-none pointer-events-none"
+                          >
+                            N
+                          </text>
+                          <text 
+                            x={selenocentricEarthX - lunarEarthGeom.poleLineX - 5} 
+                            y={selenocentricEarthY + lunarEarthGeom.poleLineY + 5} 
+                            className="text-[6px] font-mono font-bold fill-sky-400 select-none pointer-events-none"
+                          >
+                            S
+                          </text>
+
+                          {/* Dashed Blue Equator Line */}
+                          <line 
+                            x1={lunarEarthGeom.eqX1} 
+                            y1={lunarEarthGeom.eqY1} 
+                            x2={lunarEarthGeom.eqX2} 
+                            y2={lunarEarthGeom.eqY2} 
+                            stroke="#38bdf8" 
+                            strokeWidth="0.85" 
+                            strokeDasharray="2 1.5" 
+                            opacity="0.65" 
+                          />
+
+                          <text x={selenocentricEarthX} y={selenocentricEarthY + (Math.abs(lunarEarthGeom.obsPy - selenocentricEarthY) < 5 ? 11 : 3)} textAnchor="middle" className="text-[7.5px] font-mono font-bold fill-blue-200 select-none pointer-events-none">
+                            EARTH
+                          </text>
+                          <text x={selenocentricEarthX} y={selenocentricEarthY - 22} textAnchor="middle" className="text-[8px] font-mono fill-indigo-300 font-bold select-none pointer-events-none">
+                            Relative Earth Orbit
+                          </text>
+
+                          {/* Observer Location Pin */}
+                          <g transform={`translate(${lunarEarthGeom.obsPx.toFixed(1)}, ${lunarEarthGeom.obsPy.toFixed(1)})`}>
+                            {lunarEarthGeom.isDaylight && (
+                              <circle r="4" fill="#38bdf8" opacity="0.25" className="animate-pulse pointer-events-none" />
+                            )}
+                            <circle 
+                              r="2" 
+                              fill={lunarEarthGeom.isDaylight ? "#38bdf8" : "#64748b"} 
+                              stroke="#ffffff" 
+                              strokeWidth="0.75" 
+                              opacity={lunarEarthGeom.isDaylight ? 1 : 0.4}
+                              className="drop-shadow-sm"
+                            />
+                          </g>
+                        </g>
+                      );
+                    })()}
                   </g>
                 );
               })()}

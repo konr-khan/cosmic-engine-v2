@@ -14,13 +14,12 @@ Key capabilities include:
 - **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
 - **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view harmonized with the dynamic ocean tidal wave oscillator, reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
 - **Side-by-Side Dual-Perspective Eclipse Demonstrator**: 
-  - **Left (Syzygy Profile & Shadow Rays)**: Strictly side-on ecliptic transverse profile with a 3D-projected inclined lunar orbital ring through Earth, tracking orbital elongation ($0^\circ \to 360^\circ$) and ray-traced Umbra/Penumbra shadow cones.
-  - **Right (Axial Sightline & 5.14° Nodes)**: Down-the-barrel view along the Sun-Earth sightline through Earth with partially eclipsed background Sun, flat vector Earth, and an open 3D elliptical orbital loop with physical 2D positioning on $X$ (transverse elongation) and $Y$ (ecliptic latitude $\beta$) showing true above/below miss geometry.
+  - **Left (Syzygy Profile & Shadow Rays)**: Strictly side-on ecliptic transverse profile with a 3D-projected inclined lunar orbital ring through Earth, tracking orbital elongation ($0^\circ \to 360^\circ$), ray-traced Umbra/Penumbra shadow cones, and vector Earth with $23.44^\circ$ seasonal axial tilt, dashed blue equator chord, and dynamic observer pin.
+  - **Right (Axial Sightline & 5.14° Nodes)**: Down-the-barrel view along the Sun-Earth sightline through Earth with partially eclipsed background Sun, vector Earth with $23.44^\circ$ projected axial tilt, dashed blue equator chord, dynamic rotating observer pin, and an open 3D elliptical orbital loop with physical 2D positioning on $X$ (transverse elongation) and $Y$ (ecliptic latitude $\beta$) showing true above/below miss geometry.
   - **Color-Coded Nodes & 2D Stroke Encoding**: Subtle **Sky Blue** (`#38bdf8`) for Ascending ($\beta \ge 0$, North of ecliptic) vs. **Crimson Red** (`#f43f5e`) for Descending ($\beta < 0$, South of ecliptic), and **Solid stroke** for Waxing ($0^\circ \to 180^\circ$) vs. **Dashed stroke** for Waning ($180^\circ \to 360^\circ$).
   - **Real-Time Annual Nodal Seasons**: Annual dynamic modulation of the orbital plane tilt driven by the Sun-Earth-Node angle ($\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$) and dynamically gliding Ascending ($\Omega$) and Descending ($\mho$) nodes.
   - **Exact Peak UTC Eclipse Presets**: Direct snapping to exact fractional UTC peak hours of greatest eclipse for 5 historical and future presets (Apr 2024, Oct 2024, Mar 2025 Blood Moon, Aug 2026, Aug 2027 Luxor).
 - **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date (with full year tooltip), time, longitude, and linear latitude slider, with fast season jumps and direct military/time string parser.
-- **Celestial Sphere & Horizon View**: Equatorial/ecliptic coordinate mapping, declination, right ascension, and 3D orthographic projection visualizer with geocentric and heliocentric modes, featuring a **3D Misalignment Scale Toggle** (True $23.4^\circ / 5.1^\circ$ vs Exaggerated $45^\circ / 15^\circ$) and contextual dynamic legend HUDs.
 - **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, glowing Subsolar Point (Sun Zenith) and Sublunar Point (Moon Zenith) with **dynamic orbital distance and apparent diameter scaling** ($0.983\text{ AU} \to 1.017\text{ AU}$, $356,400\text{ km} \to 406,700\text{ km}$), and unclosed horizon boundary curves dividing daylight from civil, nautical, and astronomical twilight shadows with interactive glassmorphic HUD popovers.
 - **Solar System Macro Orbit**: Heliocentric Keplerian planetary orbit view with **persistent glowing translucent halo nodes** (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD with collision-free diagonal arc labeling, and true vs exaggerated eccentricity modes.
 - **LivingMarble Globe Visualizer**: Analytical spherical limb intersection and evenodd annular cutout eliminating backside terminator tearing and preserving deep-night contrast.
@@ -105,7 +104,6 @@ Cosmic Engine V2.0/
 │       │   ├── SolarAlmanac.tsx # Barrel export for solar almanac subsystem
 │       │   ├── LunarAlmanacCard.tsx # Barrel export for lunar almanac subsystem
 │       │   ├── EclipseDemonstrator.tsx # Barrel export for eclipse subsystem
-│       │   ├── CelestialSphereView.tsx # Barrel export for celestial sphere subsystem
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MacroOrbitView.tsx # Keplerian orbital physics HUD & seasonal milestones
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
@@ -120,12 +118,6 @@ Cosmic Engine V2.0/
 │       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
 │       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
 │       │   │   └── index.ts                # Barrel export
-│       │   ├── celestial/       # Decomposed celestial sphere subsystem modules
-│       │   │   ├── projection3D.tsx        # Pure 3D projection & SVG ring builder
-│       │   │   ├── GeocentricSphereView.tsx # 3D equatorial sphere, zenith ray, ecliptic & lunar tilt
-│       │   │   ├── HeliocentricOrbitView.tsx # 1 AU Keplerian Earth orbit ring & seasonal nodes
-│       │   │   ├── CelestialSphereView.tsx  # Subsystem coordinator container
-│       │   │   └── index.ts                 # Barrel export
 │       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
 │       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
 │       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator

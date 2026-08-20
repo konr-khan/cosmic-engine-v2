@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Layers, Eye, Compass, Calendar } from 'lucide-react';
+import { Layers, Eye, Calendar } from 'lucide-react';
 import { calculateEclipseData, findUpcomingEclipses, getJulianDate } from '../../../utils/cosmicMath';
 import { EclipseStatusBadge } from './EclipseStatusBadge';
 import { ShadowRayDiagram } from './ShadowRayDiagram';
@@ -13,13 +13,19 @@ export interface EclipseDemonstratorProps {
   onDateChange?: (date: Date) => void;
   onTimeChange?: (time: number) => void;
   orbitalData?: OrbitalData | null;
+  latitude?: number;
+  longitude?: number;
+  timeOfDay?: number;
 }
 
 export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({ 
   currentDate = new Date(), 
   onDateChange, 
   onTimeChange, 
-  orbitalData 
+  orbitalData,
+  latitude = 47.06,
+  longitude = -122.81,
+  timeOfDay = 12
 }) => {
   const [activeTab, setActiveTab] = useState<'geometry' | 'sky' | 'scanner'>('geometry');
   const [diagramMode, setDiagramMode] = useState<'live' | 'solar' | 'lunar'>('live');
@@ -103,6 +109,9 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
                 lunarViewSubTab={lunarViewSubTab}
                 setLunarViewSubTab={setLunarViewSubTab}
                 currentDate={currentDate}
+                latitude={latitude}
+                longitude={longitude}
+                timeOfDay={timeOfDay}
               />
             </div>
 
@@ -111,6 +120,9 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
               <NodalPlaneVisualizer 
                 eclipse={eclipse} 
                 currentDate={currentDate}
+                latitude={latitude}
+                longitude={longitude}
+                timeOfDay={timeOfDay}
               />
             </div>
           </div>

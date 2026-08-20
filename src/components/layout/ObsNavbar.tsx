@@ -11,7 +11,6 @@ import {
   Sun, 
   Moon, 
   Sparkles, 
-  Compass, 
   MapPin, 
   RotateCw,
   Eye
@@ -34,7 +33,6 @@ const SIMULATION_LAYERS = [
   { key: 'almanac', label: 'Solar Almanac & 24h Polar Clock', icon: Sun },
   { key: 'lunarAlmanac', label: 'Lunar & Tidal Almanac', icon: Moon },
   { key: 'eclipse', label: 'Eclipse Mechanics & Shadow Geometry', icon: Sparkles },
-  { key: 'celestialSphere', label: 'Celestial Sphere & Ecliptic View', icon: Compass },
   { key: 'map', label: 'Centered Daylight Terminator Map', icon: MapPin },
   { key: 'macroOrbit', label: 'Solar System Macro Orbit', icon: Globe },
   { key: 'microTides', label: 'Earth & Tidal Gravity Micro View', icon: RotateCw }

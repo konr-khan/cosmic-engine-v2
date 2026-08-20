@@ -10,7 +10,6 @@ import { MacroOrbitView } from './components/widgets/MacroOrbitView';
 import { MicroTideView } from './components/widgets/MicroTideView';
 import { OrbitalChronometer } from './components/layout/OrbitalChronometer';
 import { LunarAlmanacCard } from './components/widgets/LunarAlmanacCard';
-import { CelestialSphereView } from './components/widgets/CelestialSphereView';
 import { EclipseDemonstrator } from './components/widgets/EclipseDemonstrator';
 import { DashboardWindow } from './components/layout/DashboardWindow';
 import { getDayOfYear } from './utils/cosmicMath';
@@ -107,16 +106,9 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           onDateChange={cosmicActions.setDate} 
           onTimeChange={cosmicActions.setTimeOfDay} 
           orbitalData={orbitalData} 
-        />
-      );
-    case 'celestialSphere':
-      return (
-        <CelestialSphereView 
-          latitude={latitude} 
-          longitude={longitude} 
-          solarData={solarData} 
-          orbitalData={orbitalData} 
-          timeOfDay={timeOfDay} 
+          latitude={latitude}
+          longitude={longitude}
+          timeOfDay={timeOfDay}
         />
       );
     case 'map':

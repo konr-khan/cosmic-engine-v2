@@ -269,7 +269,6 @@ export interface ActiveWidgetsFilter {
   sunClock?: boolean;
   lunarAlmanac?: boolean;
   eclipse?: boolean;
-  celestialSphere?: boolean;
   terminator?: boolean;
   macroOrbit?: boolean;
   microTides?: boolean;

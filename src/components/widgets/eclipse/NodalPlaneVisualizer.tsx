@@ -5,11 +5,17 @@ import { clamp, calculateEarthOrbitalPhysics, getJulianDate } from '../../../uti
 export interface NodalPlaneVisualizerProps {
   eclipse?: EclipseData | null;
   currentDate?: Date;
+  latitude?: number;
+  longitude?: number;
+  timeOfDay?: number;
 }
 
 export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({ 
   eclipse,
-  currentDate = new Date()
+  currentDate = new Date(),
+  latitude = 47.06,
+  longitude = -122.81,
+  timeOfDay = 12
 }) => {
   if (!eclipse) return null;
 
@@ -52,6 +58,76 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   // At Quarters (First/Last Quarter), sin(phaseRad) = +/-1 -> Moon is at the outer extremities (X=200 +/- 110)!
   const moonX = centerX + (Math.sin(phaseRad) * 110);
   const moonY = centerY - (beta * 8.5);
+
+  // --- Earth Axial Geometry & Observer Location Pin ---
+  const earthGeometry = useMemo(() => {
+    const earthR = 20;
+    const epsRad = (23.439281 * Math.PI) / 180; // Earth obliquity 23.44°
+    const sunLambdaDeg = ((solarPhysics?.lambda ?? solarPhysics?.eclipticLongitude ?? 0) as number);
+    const sunLambdaRad = (sunLambdaDeg * Math.PI) / 180;
+
+    // Unit vectors in screen projection (Z facing viewer along Sun->Earth sightline):
+    // North pole vector N:
+    const nx = -Math.sin(epsRad) * Math.cos(sunLambdaRad);
+    const ny = Math.cos(epsRad);
+    const nz = -Math.sin(epsRad) * Math.sin(sunLambdaRad);
+
+    // Length of projected axis on screen
+    const nScreenLen = Math.sqrt(nx * nx + ny * ny);
+    const ux = ny / nScreenLen;
+    const uy = -nx / nScreenLen;
+    const uz = 0;
+
+    // Orthogonal vector in equatorial plane
+    const vx = (nx * nz) / nScreenLen;
+    const vy = (ny * nz) / nScreenLen;
+    const vz = -nScreenLen;
+
+    // Polar Axis line segment endpoints on screen:
+    const poleLineX = (nx / nScreenLen) * (earthR + 3.5);
+    const poleLineY = (ny / nScreenLen) * (earthR + 3.5);
+
+    // Front equator chord curve (16 sample points along front hemisphere)
+    const eqPts: string[] = [];
+    const eqSteps = 16;
+    for (let i = 0; i <= eqSteps; i++) {
+      const theta = (i / eqSteps) * Math.PI; // 0 to PI along front equator
+      const ex = earthR * (Math.cos(theta) * ux - Math.sin(theta) * vx);
+      const ey = earthR * (Math.cos(theta) * uy - Math.sin(theta) * vy);
+      const ez = earthR * (Math.cos(theta) * uz - Math.sin(theta) * vz);
+      const px = centerX + ex;
+      const py = centerY - ey;
+      eqPts.push(`${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`);
+    }
+    const equatorPathD = eqPts.join(' ');
+
+    // Observer Location Pin
+    const latRad = (latitude * Math.PI) / 180;
+    const hRad = ((timeOfDay - 12) * Math.PI) / 12;
+
+    const xBody = Math.cos(latRad) * Math.sin(hRad);
+    const yBody = Math.sin(latRad);
+    const zBody = Math.cos(latRad) * Math.cos(hRad); // >0 = daylight facing Sun, <0 = night
+
+    // Transform body coordinates to screen:
+    const obsEx = earthR * (xBody * ux + yBody * nx + zBody * (-vx));
+    const obsEy = earthR * (xBody * uy + yBody * ny + zBody * (-vy));
+    const obsEz = earthR * (xBody * uz + yBody * nz + zBody * (-vz));
+
+    const obsPx = centerX + obsEx;
+    const obsPy = centerY - obsEy;
+    const isDaylight = obsEz >= 0;
+
+    return {
+      earthR,
+      poleLineX,
+      poleLineY,
+      equatorPathD,
+      obsPx,
+      obsPy,
+      isDaylight
+    };
+  }, [solarPhysics, latitude, longitude, timeOfDay, centerX, centerY]);
 
   // 3D Elliptical Orbital Loop: 4-Quadrant Paths (Waxing/Waning x Ascending/Descending)
   const N = 72;
@@ -192,12 +268,73 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
             </text>
           </g>
 
-          {/* 4. CLEAN VECTOR EARTH BODY (Matching Syzygy window styling) */}
+          {/* 4. VECTOR EARTH BODY WITH 23.44° AXIAL TILT, DASHED EQUATOR & OBSERVER PIN */}
           <g>
-            <circle cx={centerX} cy={centerY} r="20" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="2" />
-            <text x={centerX} y={centerY + 4} textAnchor="middle" className="text-[9px] font-mono font-bold fill-blue-300 select-none pointer-events-none">
+            {/* Earth Base Disc */}
+            <circle cx={centerX} cy={centerY} r={earthGeometry.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
+
+            {/* Projected 23.44° Polar Axis with N/S Markers */}
+            <line 
+              x1={centerX - earthGeometry.poleLineX} 
+              y1={centerY + earthGeometry.poleLineY} 
+              x2={centerX + earthGeometry.poleLineX} 
+              y2={centerY - earthGeometry.poleLineY} 
+              stroke="#93c5fd" 
+              strokeWidth="0.85" 
+              strokeDasharray="2.5 1.5" 
+              opacity="0.65" 
+            />
+            <text 
+              x={centerX + earthGeometry.poleLineX + 2} 
+              y={centerY - earthGeometry.poleLineY - 1} 
+              className="text-[6px] font-mono font-bold fill-sky-300 select-none pointer-events-none"
+            >
+              N
+            </text>
+            <text 
+              x={centerX - earthGeometry.poleLineX - 5} 
+              y={centerY + earthGeometry.poleLineY + 5} 
+              className="text-[6px] font-mono font-bold fill-sky-400 select-none pointer-events-none"
+            >
+              S
+            </text>
+
+            {/* Dashed Blue Equator Chord */}
+            <path 
+              d={earthGeometry.equatorPathD} 
+              fill="none" 
+              stroke="#38bdf8" 
+              strokeWidth="0.85" 
+              strokeDasharray="2 1.5" 
+              opacity="0.65" 
+            />
+
+            {/* Earth Label (Offset if observer pin is near center) */}
+            <text 
+              x={centerX} 
+              y={centerY + (Math.abs(earthGeometry.obsPy - centerY) < 5 ? 12 : 3)} 
+              textAnchor="middle" 
+              className="text-[7.5px] font-mono font-bold fill-blue-300/80 select-none pointer-events-none"
+            >
               EARTH
             </text>
+
+            {/* Observer Location Pin */}
+            <g transform={`translate(${earthGeometry.obsPx.toFixed(1)}, ${earthGeometry.obsPy.toFixed(1)})`}>
+              {earthGeometry.isDaylight && (
+                <circle r="4" fill="#38bdf8" opacity="0.25" className="animate-pulse pointer-events-none" />
+              )}
+              <circle 
+                r="2" 
+                fill={earthGeometry.isDaylight ? "#38bdf8" : "#64748b"} 
+                stroke="#ffffff" 
+                strokeWidth="0.75" 
+                opacity={earthGeometry.isDaylight ? 1 : 0.4}
+                className="cursor-pointer drop-shadow-sm"
+              >
+                <title>{`Observer (${Math.abs(latitude).toFixed(1)}°${latitude >= 0 ? 'N' : 'S'}, ${Math.abs(longitude).toFixed(1)}°${longitude >= 0 ? 'E' : 'W'}) — ${earthGeometry.isDaylight ? 'Daylight (Sunlit Face)' : 'Night (Backside)'}`}</title>
+              </circle>
+            </g>
           </g>
 
           {/* 5. DYNAMIC MOON DISC IN REAL-TIME ORBIT */}

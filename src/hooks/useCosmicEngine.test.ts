@@ -66,7 +66,7 @@ describe('useCosmicEngine Hook Suite', () => {
       const activeWidgets = { 
         almanac: true, 
         map: false,
-        lunarAlmanac: false, eclipse: false, macroOrbit: false, microTides: false, celestialSphere: false 
+        lunarAlmanac: false, eclipse: false, macroOrbit: false, microTides: false 
       };
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);
 

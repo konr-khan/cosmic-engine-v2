@@ -5,7 +5,6 @@ import {
   RotateCw, 
   MapPin, 
   Globe, 
-  Compass, 
   LayoutTemplate, 
   Sparkles,
   Eye
@@ -17,7 +16,6 @@ export const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   almanac: Sun,
   lunarAlmanac: Moon,
   eclipse: Sparkles,
-  celestialSphere: Compass,
   map: MapPin,
   macroOrbit: Globe,
   microTides: RotateCw
@@ -36,31 +34,30 @@ export const PRESET_LAYOUTS: Record<string, PresetLayout> = {
   master: {
     id: 'master',
     name: 'Master Observatory',
-    desc: 'Complete 8-module astronomical dashboard with instantaneous local horizon',
+    desc: 'Complete 7-module astronomical dashboard with instantaneous local horizon',
     icon: LayoutTemplate,
-    widgets: { today: true, almanac: true, lunarAlmanac: true, eclipse: true, celestialSphere: true, map: true, macroOrbit: true, microTides: true },
+    widgets: { today: true, almanac: true, lunarAlmanac: true, eclipse: true, map: true, macroOrbit: true, microTides: true },
     windows: [
       { id: 'today', title: "Today's Sky Horizon (Sun & Moon Dome)", colSpan: 12, height: '440px' },
       { id: 'almanac', title: 'Solar Almanac & 24h Polar Clock', colSpan: 12, height: '480px' },
       { id: 'lunarAlmanac', title: 'Lunar Almanac (365-Day Ribbon & Ephemeris)', colSpan: 12, height: '400px' },
       { id: 'eclipse', title: 'Eclipse Mechanics & Shadow Geometry', colSpan: 12, height: '460px' },
-      { id: 'celestialSphere', title: 'Celestial Sphere & Ecliptic Orbital View', colSpan: 6, height: '420px' },
       { id: 'map', title: 'Centered Daylight Terminator Map', colSpan: 6, height: '420px' },
-      { id: 'macroOrbit', title: 'Solar System Macro Orbit', colSpan: 6, height: '360px' },
-      { id: 'microTides', title: 'Earth & Tidal Gravity Micro View', colSpan: 6, height: '360px' }
+      { id: 'macroOrbit', title: 'Solar System Macro Orbit', colSpan: 6, height: '420px' },
+      { id: 'microTides', title: 'Earth & Tidal Gravity Micro View', colSpan: 12, height: '360px' }
     ]
   },
   solar: {
     id: 'solar',
     name: 'Solar Observation Suite',
-    desc: 'Solar Almanac paired with Instantaneous Horizon & Terminator Map',
+    desc: 'Solar Almanac paired with Instantaneous Horizon, Terminator Map & Macro Orbit',
     icon: Sun,
-    widgets: { today: true, almanac: true, map: true, celestialSphere: true, lunarAlmanac: false, eclipse: false, macroOrbit: false, microTides: false },
+    widgets: { today: true, almanac: true, map: true, macroOrbit: true, lunarAlmanac: false, eclipse: false, microTides: false },
     windows: [
       { id: 'today', title: "Today's Sky Horizon (Sun & Moon Dome)", colSpan: 12, height: '440px' },
       { id: 'almanac', title: 'Solar Almanac & 24h Polar Clock', colSpan: 12, height: '480px' },
       { id: 'map', title: 'Centered Daylight Terminator Map', colSpan: 6, height: '420px' },
-      { id: 'celestialSphere', title: 'Celestial Sphere & Ecliptic Orbital View', colSpan: 6, height: '420px' }
+      { id: 'macroOrbit', title: 'Solar System Macro Orbit', colSpan: 6, height: '420px' }
     ]
   },
   lunar: {
@@ -68,7 +65,7 @@ export const PRESET_LAYOUTS: Record<string, PresetLayout> = {
     name: 'Lunar & Tidal Suite',
     desc: 'Lunar Almanac paired with Instantaneous Horizon, Micro Tides & Macro Orbit',
     icon: Moon,
-    widgets: { today: true, lunarAlmanac: true, microTides: true, macroOrbit: true, almanac: false, map: false, celestialSphere: false, eclipse: false },
+    widgets: { today: true, lunarAlmanac: true, microTides: true, macroOrbit: true, almanac: false, map: false, eclipse: false },
     windows: [
       { id: 'today', title: "Today's Sky Horizon (Sun & Moon Dome)", colSpan: 12, height: '440px' },
       { id: 'lunarAlmanac', title: 'Lunar Almanac (365-Day Ribbon & Ephemeris)', colSpan: 12, height: '400px' },
@@ -79,14 +76,14 @@ export const PRESET_LAYOUTS: Record<string, PresetLayout> = {
   eclipse: {
     id: 'eclipse',
     name: 'Eclipse Mechanics Suite',
-    desc: 'Eclipse Optics paired with Celestial Nodes, Horizon & Lunar Corridor',
+    desc: 'Eclipse Optics paired with Lunar Nodal Corridor, Horizon & Tidal Gravity',
     icon: Sparkles,
-    widgets: { eclipse: true, today: true, celestialSphere: true, lunarAlmanac: true, almanac: false, map: false, macroOrbit: false, microTides: false },
+    widgets: { eclipse: true, today: true, lunarAlmanac: true, microTides: true, almanac: false, map: false, macroOrbit: false },
     windows: [
       { id: 'eclipse', title: 'Eclipse Mechanics & Shadow Geometry', colSpan: 12, height: '480px' },
       { id: 'today', title: "Today's Sky Horizon (Sun & Moon Dome)", colSpan: 12, height: '440px' },
-      { id: 'celestialSphere', title: 'Celestial Sphere & Node Corridor Alignment', colSpan: 6, height: '440px' },
-      { id: 'lunarAlmanac', title: 'Lunar Phase & Node Corridor', colSpan: 6, height: '400px' }
+      { id: 'lunarAlmanac', title: 'Lunar Phase & Node Corridor', colSpan: 6, height: '420px' },
+      { id: 'microTides', title: 'Earth & Tidal Gravity Micro View', colSpan: 6, height: '420px' }
     ]
   },
   ultrawide: {
@@ -94,21 +91,20 @@ export const PRESET_LAYOUTS: Record<string, PresetLayout> = {
     name: 'Ultrawide 21:9 Observatory',
     desc: 'Panoramic multi-column layout optimized for 21:9 & 32:9 monitors',
     icon: Globe,
-    widgets: { today: true, almanac: true, lunarAlmanac: true, eclipse: true, celestialSphere: true, map: true, macroOrbit: true, microTides: true },
+    widgets: { today: true, almanac: true, lunarAlmanac: true, eclipse: true, map: true, macroOrbit: true, microTides: true },
     windows: [
       { id: 'today', title: "Today's Sky Horizon (Sun & Moon Dome)", colSpan: 6, height: '440px' },
       { id: 'almanac', title: 'Solar Almanac & 24h Polar Clock', colSpan: 6, height: '480px' },
       { id: 'lunarAlmanac', title: 'Lunar Almanac (365-Day Matrix)', colSpan: 6, height: '400px' },
       { id: 'eclipse', title: 'Eclipse Mechanics & Shadow Geometry', colSpan: 6, height: '460px' },
-      { id: 'map', title: 'Centered Daylight Terminator Map', colSpan: 6, height: '460px' },
-      { id: 'celestialSphere', title: 'Celestial Sphere & Ecliptic View', colSpan: 6, height: '400px' },
-      { id: 'macroOrbit', title: 'Solar System Macro Orbit', colSpan: 3, height: '400px' },
-      { id: 'microTides', title: 'Earth & Tidal Gravity Micro View', colSpan: 3, height: '400px' }
+      { id: 'map', title: 'Centered Daylight Terminator Map', colSpan: 4, height: '420px' },
+      { id: 'macroOrbit', title: 'Solar System Macro Orbit', colSpan: 4, height: '420px' },
+      { id: 'microTides', title: 'Earth & Tidal Gravity Micro View', colSpan: 4, height: '420px' }
     ]
   }
 };
 
-const STORAGE_KEY = 'cosmic_window_layout_v7';
+const STORAGE_KEY = 'cosmic_window_layout_v8';
 
 export interface UseDashboardLayoutReturn {
   activePresetKey: string;
