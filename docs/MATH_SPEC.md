@@ -205,3 +205,43 @@ Given lunar ecliptic coordinates $(\lambda, \beta, \Delta)$ and solar coordinate
   \[
   \gamma_{\text{solar}} = \sqrt{(\Delta\lambda_{\text{conj}} \cos \beta)^2 + \beta^2}
   \]
+
+---
+
+## 7. Gyro-Morph Armillary & Astrolabe Projections
+
+### A. 3D Celestial Coordinate Space
+Given radius $R_0 = 100\text{ px}$, equatorial Right Ascension $\alpha \in [0^\circ, 360^\circ)$ and Declination $\delta \in [-90^\circ, +90^\circ]$:
+\[
+x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delta \cos\alpha
+\]
+
+### B. 2D Astrolabe Historical Projections
+1. **Stereographic Conformal Projection (Equatorial Plane)**:
+   Projected from South Celestial Pole $(0, -R_0, 0)$ onto $y = 0$:
+   \[
+   x_{\text{stereo}} = R_0 \frac{x}{R_0 + y}, \quad z_{\text{stereo}} = R_0 \frac{z}{R_0 + y}
+   \]
+   * *Almucantar (Altitude $a$) Circles*: Center $y_c = R_0 \frac{\cos\phi}{\sin\phi + \sin a}$, Radius $r_a = R_0 \frac{\cos a}{\sin\phi + \sin a}$.
+   * *Equator Circle*: Radius $R_0$.
+   * *Tropic of Cancer*: $R_{\text{Can}} = R_0 \tan\left(\frac{90^\circ - 23.44^\circ}{2}\right)$.
+   * *Tropic of Capricorn*: $R_{\text{Cap}} = R_0 \tan\left(\frac{90^\circ + 23.44^\circ}{2}\right)$.
+
+2. **Universal Rojas Orthographic Projection (Solstitial Colure Plane)**:
+   Projected orthographically onto $z = 0$:
+   \[
+   x_{\text{rojas}} = x = R_0 \sin\alpha \cos\delta, \quad y_{\text{rojas}} = y = R_0 \sin\delta
+   \]
+   * Declinations map to parallel horizontal chords $y = R_0 \sin\delta$.
+   * Hour circles map to nested semi-ellipses with vertical semi-major axis $R_0$ and horizontal semi-minor axis $R_0 \sin\alpha$.
+
+3. **Topocentric Horizon Stereonet**:
+   Projected from Nadir ($a = -90^\circ$) onto horizontal plane ($a = 0^\circ$):
+   \[
+   r_{\text{horiz}} = R_0 \tan\left(\frac{90^\circ - a}{2}\right), \quad x_{\text{horiz}} = r_{\text{horiz}} \sin A, \quad y_{\text{horiz}} = -r_{\text{horiz}} \cos A
+   \]
+
+### C. Continuous 60 FPS Morph Interpolation
+\[
+\vec{P}(\lambda) = (1 - \lambda) \mathbf{\Pi}_{\text{ortho}}(\mathbf{R}_{\text{cam}} \vec{P}_{3D}) + \lambda \vec{P}_{\text{proj}}, \quad \lambda \in [0.0, 1.0]
+\]

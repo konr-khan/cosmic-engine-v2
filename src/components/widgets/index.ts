@@ -31,3 +31,16 @@ export {
   type OrbitPhysicsHudProps
 } from './macro';
 export { MicroTideView, type MicroTideViewProps } from './MicroTideView';
+export { 
+  GyroArmillaryView, 
+  ArmillaryHeaderControls, 
+  ArmillarySvgCanvas, 
+  ArmillaryTelemetryHud, 
+  type GyroArmillaryViewProps,
+  type ArmillaryHeaderControlsProps,
+  type ArmillarySvgCanvasProps,
+  type ArmillaryTelemetryHudProps,
+  type ArmillaryProjectionMode,
+  type ArmillaryCameraState,
+  type HoveredStarInfo
+} from './armillary';

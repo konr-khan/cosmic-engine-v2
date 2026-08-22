@@ -1,0 +1,572 @@
+import React, { useState, useRef, useCallback } from 'react';
+import { 
+  ArmillaryModelOutput, 
+  ArmillaryProjectionMode, 
+  HoveredStarInfo,
+  ArmillaryCameraState 
+} from './types';
+import { ZODIAC_SIGNS } from '../../../utils/cosmicMath';
+
+export interface ArmillarySvgCanvasProps {
+  model: ArmillaryModelOutput;
+  projectionMode: ArmillaryProjectionMode;
+  morphLambda: number;
+  showRays: boolean;
+  showStars: boolean;
+  showTympan: boolean;
+  showRule: boolean;
+  camera: ArmillaryCameraState;
+  onCameraChange: (cam: ArmillaryCameraState) => void;
+  r0?: number;
+}
+
+export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
+  model,
+  projectionMode,
+  morphLambda,
+  showRays,
+  showStars,
+  showTympan,
+  showRule,
+  camera,
+  onCameraChange,
+  r0 = 100
+}) => {
+  const [hoveredStar, setHoveredStar] = useState<HoveredStarInfo | null>(null);
+  const [hoveredBead, setHoveredBead] = useState<'sun' | 'moon' | null>(null);
+  const [ruleAngleDeg, setRuleAngleDeg] = useState<number>(0);
+  const [isDraggingRule, setIsDraggingRule] = useState<boolean>(false);
+  const [isDraggingCamera, setIsDraggingCamera] = useState<boolean>(false);
+
+  const dragStartRef = useRef<{ x: number; y: number; pitch: number; yaw: number }>({ x: 0, y: 0, pitch: 0, yaw: 0 });
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  const { rings, almucantars, stars, sun, moon, localSiderealTimeDeg } = model;
+  const is3D = morphLambda <= 0.05;
+  const isStereo2D = morphLambda >= 0.95 && projectionMode === 'stereographic';
+
+  // --- Mouse / Pointer Drag for 3D Camera ---
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (isDraggingRule) return;
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    setIsDraggingCamera(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      pitch: camera.pitch,
+      yaw: camera.yaw
+    };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (isDraggingRule && svgRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = svgRef.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+      setRuleAngleDeg(angle);
+      return;
+    }
+
+    if (!isDraggingCamera) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+
+    const newYaw = (dragStartRef.current.yaw + dx * 0.6 + 360) % 360;
+    const newPitch = Math.max(-85, Math.min(85, dragStartRef.current.pitch + dy * 0.6));
+
+    onCameraChange({
+      pitch: newPitch,
+      yaw: newYaw,
+      roll: 0
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+    setIsDraggingCamera(false);
+    setIsDraggingRule(false);
+  };
+
+  return (
+    <div 
+      className="relative w-full h-full flex items-center justify-center select-none overflow-hidden min-h-[360px]"
+      draggable={false}
+      onDragStart={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
+      {/* SVG Canvas Container */}
+      <svg
+        ref={svgRef}
+        viewBox="-150 -150 300 300"
+        onDragStart={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        className={`w-full h-full max-h-[560px] drop-shadow-2xl ${
+          isDraggingRule ? 'cursor-grab active:cursor-grabbing' : (is3D ? 'cursor-move' : 'cursor-default')
+        }`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={() => {
+          setIsDraggingCamera(false);
+          setIsDraggingRule(false);
+          setHoveredStar(null);
+          setHoveredBead(null);
+        }}
+      >
+        <defs>
+          {/* Radial Gradient for Outer Brass Mater Rim */}
+          <radialGradient id="brassRim" cx="50%" cy="50%" r="50%">
+            <stop offset="85%" stopColor="#1e293b" stopOpacity="0.8" />
+            <stop offset="96%" stopColor="#451a03" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#d97706" stopOpacity="1" />
+          </radialGradient>
+
+          {/* Glow Filters */}
+          <filter id="sunGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter id="starGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* 1. Outer Brass Mater Plate (Limb with Degrees & Hour Ticks) */}
+        <circle cx="0" cy="0" r="140" fill="url(#brassRim)" stroke="#b45309" strokeWidth="2.5" />
+        <circle cx="0" cy="0" r="133" fill="#020617" fillOpacity="0.9" stroke="#78350f" strokeWidth="1" />
+
+        {/* 360-degree Limb Ticks & 24-hour Roman Numeral Markings */}
+        {Array.from({ length: 72 }).map((_, i) => {
+          const deg = i * 5;
+          const rad = (deg * Math.PI) / 180;
+          const isMajor = deg % 30 === 0;
+          const isMid = deg % 15 === 0;
+          const rInner = isMajor ? 133 : (isMid ? 135 : 137);
+          const rOuter = 140;
+
+          const x1 = rInner * Math.sin(rad);
+          const y1 = -rInner * Math.cos(rad);
+          const x2 = rOuter * Math.sin(rad);
+          const y2 = -rOuter * Math.cos(rad);
+
+          return (
+            <line
+              key={`tick-${deg}`}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={isMajor ? '#f59e0b' : '#78350f'}
+              strokeWidth={isMajor ? 1.5 : 0.75}
+              opacity={0.8}
+            />
+          );
+        })}
+
+        {/* 24-Hour Markers on Outer Limb */}
+        {Array.from({ length: 24 }).map((_, i) => {
+          const hour = i;
+          const deg = hour * 15;
+          const rad = (deg * Math.PI) / 180;
+          const rText = 127;
+          const x = rText * Math.sin(rad);
+          const y = -rText * Math.cos(rad);
+
+          const romanHours = [
+            'XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI',
+            'XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'
+          ];
+
+          return (
+            <text
+              key={`hour-${i}`}
+              x={x}
+              y={y}
+              fontSize="4.5"
+              fill="#fbbf24"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              dominantBaseline="central"
+              opacity="0.85"
+            >
+              {romanHours[i]}
+            </text>
+          );
+        })}
+
+        {/* 2. Tympan Grid (Almucantar Altitude Circles) when enabled */}
+        {showTympan && (
+          <g className="transition-opacity duration-300 opacity-60">
+            {almucantars.map((circle, idx) => {
+              if (circle.radius > 260) return null;
+              return (
+                <g key={`almucantar-${idx}`}>
+                  <circle
+                    cx="0"
+                    cy={-circle.centerY}
+                    r={circle.radius}
+                    fill="none"
+                    stroke={circle.isHorizon ? '#06b6d4' : '#64748b'}
+                    strokeWidth={circle.isHorizon ? 1.5 : 0.75}
+                    strokeDasharray={circle.isHorizon ? 'none' : '2,2'}
+                  />
+                  {circle.altitude > 0 && circle.altitude % 30 === 0 && (
+                    <text
+                      x="0"
+                      y={-circle.centerY + circle.radius - 2}
+                      fontSize="3.5"
+                      fill="#94a3b8"
+                      fontFamily="monospace"
+                      textAnchor="middle"
+                    >
+                      {circle.altitude}°
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+        {/* 3. Projection Rays (when enabled) */}
+        {showRays && !is3D && (
+          <g className="opacity-40 pointer-events-none">
+            {rings.flatMap((r) =>
+              r.vertices.filter((_, idx) => idx % 6 === 0).map((v, vIdx) => (
+                <line
+                  key={`ray-${r.id}-${vIdx}`}
+                  x1={v.pCam.x}
+                  y1={-v.pCam.y}
+                  x2={v.screenPos.x}
+                  y2={v.screenPos.y}
+                  stroke={r.color}
+                  strokeWidth="0.5"
+                  strokeDasharray="1.5,1.5"
+                />
+              ))
+            )}
+          </g>
+        )}
+
+        {/* 4. Rear Ring Segments (Depth Sorted: zCam < 0) */}
+        <g opacity={is3D ? 0.35 : 0.85}>
+          {rings.map((ring) => (
+            <path
+              key={`back-${ring.id}`}
+              d={ring.backPathD}
+              fill="none"
+              stroke={ring.color}
+              strokeWidth={ring.backStrokeWidth}
+              strokeDasharray={is3D ? '3,2' : 'none'}
+            />
+          ))}
+        </g>
+
+        {/* 5. Front Ring Segments (Depth Sorted: zCam >= 0) */}
+        <g filter="url(#ringGlow)">
+          {rings.map((ring) => (
+            <path
+              key={`front-${ring.id}`}
+              d={ring.frontPathD}
+              fill="none"
+              stroke={ring.color}
+              strokeWidth={ring.frontStrokeWidth}
+            />
+          ))}
+        </g>
+
+        {/* 6. Zodiac Ecliptic Rete Segments & Glyphs */}
+        {ZODIAC_SIGNS.map((sign, idx) => {
+          const eclRing = rings.find((r) => r.id === 'ecliptic');
+          if (!eclRing || eclRing.vertices.length === 0) return null;
+
+          const midIndex = Math.floor(((idx * 30 + 15) / 360) * (eclRing.vertices.length - 1));
+          const v = eclRing.vertices[midIndex];
+          if (!v) return null;
+
+          return (
+            <g key={`zodiac-${sign.name}`}>
+              <circle
+                cx={v.screenPos.x}
+                cy={v.screenPos.y}
+                r="1.2"
+                fill={sign.color}
+              />
+              <text
+                x={v.screenPos.x}
+                y={v.screenPos.y - 3}
+                fontSize="5"
+                fill={sign.color}
+                fontFamily="sans-serif"
+                fontWeight="bold"
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="pointer-events-none drop-shadow"
+              >
+                {sign.symbol}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* 7. Navigational Astrolabe Stars with Gothic Flammes */}
+        {showStars && (
+          <g filter="url(#starGlow)">
+            {stars.map((star) => {
+              const starRadius = Math.max(1.5, 3.8 - (star.magnitude + 1.5) * 0.7);
+              const isHovered = hoveredStar?.id === star.id;
+
+              return (
+                <g 
+                  key={star.id}
+                  className="cursor-pointer transition-all"
+                  onPointerEnter={(e) => {
+                    e.stopPropagation();
+                    setHoveredStar({
+                      ...star,
+                      screenX: star.screenPos.x,
+                      screenY: star.screenPos.y
+                    });
+                  }}
+                  onPointerLeave={() => setHoveredStar(null)}
+                >
+                  {/* Gothic Flamme / Star Pointer */}
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={star.screenPos.x}
+                    y2={star.screenPos.y}
+                    stroke="#f59e0b"
+                    strokeWidth="0.5"
+                    strokeDasharray="2,2"
+                    opacity={isHovered ? 0.9 : 0.3}
+                  />
+
+                  {/* Star Pointer Diamond Core */}
+                  <circle
+                    cx={star.screenPos.x}
+                    cy={star.screenPos.y}
+                    r={starRadius}
+                    fill={isHovered ? '#fbbf24' : '#e0f2fe'}
+                    stroke="#0284c7"
+                    strokeWidth={isHovered ? 1.5 : 0.8}
+                  />
+
+                  {/* Star Label */}
+                  <text
+                    x={star.screenPos.x + 3}
+                    y={star.screenPos.y - 3}
+                    fontSize="3.8"
+                    fill={isHovered ? '#fbbf24' : '#94a3b8'}
+                    fontFamily="monospace"
+                    fontWeight={isHovered ? 'bold' : 'normal'}
+                  >
+                    {star.name}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+        {/* 8. Sun Bead (Golden Orb with Radial Corona) */}
+        <g 
+          filter="url(#sunGlow)"
+          className="cursor-pointer"
+          onPointerEnter={() => setHoveredBead('sun')}
+          onPointerLeave={() => setHoveredBead(null)}
+        >
+          {/* Ray to Origin */}
+          <line
+            x1="0"
+            y1="0"
+            x2={sun.screenPos.x}
+            y2={sun.screenPos.y}
+            stroke="#f59e0b"
+            strokeWidth="0.8"
+            opacity="0.6"
+          />
+          {/* Outer Sun Corona */}
+          <circle
+            cx={sun.screenPos.x}
+            cy={sun.screenPos.y}
+            r="6"
+            fill="#f59e0b"
+            fillOpacity="0.25"
+          />
+          {/* Core Sun Bead */}
+          <circle
+            cx={sun.screenPos.x}
+            cy={sun.screenPos.y}
+            r="3.5"
+            fill="#fbbf24"
+            stroke="#ffffff"
+            strokeWidth="1.2"
+          />
+          <text
+            x={sun.screenPos.x}
+            y={sun.screenPos.y + 7.5}
+            fontSize="4"
+            fill="#fbbf24"
+            fontFamily="monospace"
+            fontWeight="bold"
+            textAnchor="middle"
+          >
+            ☉ SUN
+          </text>
+        </g>
+
+        {/* 9. Moon Bead (Cyan/Silver Phase Disc) */}
+        <g 
+          filter="url(#starGlow)"
+          className="cursor-pointer"
+          onPointerEnter={() => setHoveredBead('moon')}
+          onPointerLeave={() => setHoveredBead(null)}
+        >
+          {/* Ray to Origin */}
+          <line
+            x1="0"
+            y1="0"
+            x2={moon.screenPos.x}
+            y2={moon.screenPos.y}
+            stroke="#38bdf8"
+            strokeWidth="0.8"
+            opacity="0.6"
+          />
+          {/* Moon Core */}
+          <circle
+            cx={moon.screenPos.x}
+            cy={moon.screenPos.y}
+            r="3.2"
+            fill="#0284c7"
+            stroke="#e0f2fe"
+            strokeWidth="1.2"
+          />
+          <text
+            x={moon.screenPos.x}
+            y={moon.screenPos.y + 7.5}
+            fontSize="4"
+            fill="#38bdf8"
+            fontFamily="monospace"
+            fontWeight="bold"
+            textAnchor="middle"
+          >
+            ☽ MOON
+          </text>
+        </g>
+
+        {/* 10. Interactive Astrolabe Rule (Alidade Sighting Arm) */}
+        {showRule && (
+          <g 
+            className="cursor-grab active:cursor-grabbing"
+            onDragStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+              setIsDraggingRule(true);
+            }}
+          >
+            {/* Sighting Arm Chords */}
+            <line
+              x1={-135 * Math.sin((ruleAngleDeg * Math.PI) / 180)}
+              y1={135 * Math.cos((ruleAngleDeg * Math.PI) / 180)}
+              x2={135 * Math.sin((ruleAngleDeg * Math.PI) / 180)}
+              y2={-135 * Math.cos((ruleAngleDeg * Math.PI) / 180)}
+              stroke="#fbbf24"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              opacity="0.85"
+            />
+            {/* Center Pivot Pin */}
+            <circle cx="0" cy="0" r="4.5" fill="#78350f" stroke="#fbbf24" strokeWidth="1.5" />
+            <circle cx="0" cy="0" r="1.5" fill="#ffffff" />
+          </g>
+        )}
+
+        {/* Center Origin Pivot Pin */}
+        <circle cx="0" cy="0" r="2.5" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
+      </svg>
+
+      {/* Floating Glassmorphic Star Hover HUD Popover */}
+      {hoveredStar && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
+            <strong className="text-amber-400 font-bold">{hoveredStar.name}</strong>
+            <span className="text-[10px] text-slate-400 font-normal">{hoveredStar.bayer}</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Constellation: <strong className="text-white">{hoveredStar.constellation}</strong></div>
+            <div>Visual Mag: <strong className="text-amber-300">{hoveredStar.magnitude}</strong></div>
+            <div>RA (α): <strong className="text-white">{hoveredStar.raDeg.toFixed(1)}°</strong> | Dec (δ): <strong className="text-white">{hoveredStar.decDeg >= 0 ? `+${hoveredStar.decDeg.toFixed(1)}°` : `${hoveredStar.decDeg.toFixed(1)}°`}</strong></div>
+            <div>Local Alt: <strong className={hoveredStar.altDeg >= 0 ? 'text-emerald-400' : 'text-slate-500'}>{hoveredStar.altDeg >= 0 ? `+${hoveredStar.altDeg}°` : `${hoveredStar.altDeg}°`}</strong> | Az: <strong className="text-slate-300">{hoveredStar.azDeg}°</strong></div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Sun / Moon Hover Popover */}
+      {hoveredBead === 'sun' && (
+        <div className="absolute top-4 right-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-amber-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-amber-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span>☉ Celestial Sun (Sol)</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Ecliptic Longitude (λ): <strong className="text-white">{sun.lambdaDeg.toFixed(1)}°</strong></div>
+            <div>Right Ascension (α): <strong className="text-white">{sun.raDeg.toFixed(1)}°</strong></div>
+            <div>Declination (δ): <strong className="text-amber-400">{sun.decDeg >= 0 ? `+${sun.decDeg.toFixed(1)}°` : `${sun.decDeg.toFixed(1)}°`}</strong></div>
+            <div>Local Elevation: <strong className={sun.altDeg >= 0 ? 'text-amber-400' : 'text-slate-500'}>{sun.altDeg >= 0 ? `+${sun.altDeg}°` : `${sun.altDeg}°`}</strong></div>
+          </div>
+        </div>
+      )}
+
+      {hoveredBead === 'moon' && (
+        <div className="absolute top-4 right-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-cyan-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-cyan-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span>☽ Celestial Moon (Luna)</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Right Ascension (α): <strong className="text-white">{moon.raDeg.toFixed(1)}°</strong></div>
+            <div>Declination (δ): <strong className="text-cyan-400">{moon.decDeg >= 0 ? `+${moon.decDeg.toFixed(1)}°` : `${moon.decDeg.toFixed(1)}°`}</strong></div>
+            <div>Local Elevation: <strong className={moon.altDeg >= 0 ? 'text-cyan-400' : 'text-slate-500'}>{moon.altDeg >= 0 ? `+${moon.altDeg}°` : `${moon.altDeg}°`}</strong></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

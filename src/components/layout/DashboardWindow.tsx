@@ -86,12 +86,19 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
         minHeight: isMinimized ? 'auto' : '280px'
       }}
       draggable={!isLocked && !isMaximized}
-      onDragStart={(e) => onDragStart && onDragStart(e, id)}
+      onDragStart={(e) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.window-header-bar') || target.closest('button') || target.closest('input') || target.closest('.window-body-content')) {
+          e.preventDefault();
+          return;
+        }
+        if (onDragStart) onDragStart(e, id);
+      }}
       onDragOver={(e) => onDragOver && onDragOver(e)}
       onDrop={(e) => onDrop && onDrop(e, id)}
     >
       {/* WINDOW HEADER BAR */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800/80 bg-slate-950/40 rounded-t-2xl select-none">
+      <div className="window-header-bar flex items-center justify-between px-4 py-2.5 border-b border-slate-800/80 bg-slate-950/40 rounded-t-2xl select-none">
         <div className="flex items-center space-x-2.5">
           {!isLocked && (
             <div className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 p-1 -ml-1 rounded transition-colors" title="Drag to reorder card">
@@ -153,7 +160,14 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
 
       {/* WINDOW BODY */}
       {!isMinimized && (
-        <div className="flex-1 p-3 overflow-hidden relative flex flex-col">
+        <div 
+          className="window-body-content flex-1 p-3 overflow-hidden relative flex flex-col"
+          draggable={false}
+          onDragStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
           <WindowErrorBoundary windowTitle={title} windowId={id}>
             {children}
           </WindowErrorBoundary>

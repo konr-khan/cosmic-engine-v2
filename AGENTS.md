@@ -9,6 +9,11 @@ Welcome to **Cosmic Engine V2.0**. This document provides essential architectura
 **Cosmic Engine V2.0** is an interactive, browser-based astronomical simulation and ephemeris dashboard built with React 19, TypeScript (Strict Mode with Symbol-branded units), Vite, and Tailwind CSS v4. 
 
 Key capabilities include:
+- **Gyro-Morph Dynamic Armillary & Astrolabe**: 
+  - **3D Celestial Armillary Sphere**: Parametric 3D generation of Celestial Equator, Ecliptic Rete (with 12 zodiac houses), Tropics of Cancer & Capricorn, Solstitial Colure, and Local Horizon with interactive 3D drag-to-rotate pitch/yaw controls.
+  - **Continuous 60 FPS Morph Interpolation ($\lambda \in [0.0, 1.0]$)**: Topological vector morphing between 3D spherical space and classical historical 2D astrolabe projections (*Stereographic Conformal Rete & Tympan*, *Universal Rojas Orthographic Colure*, and *Topocentric Horizon Stereonet*).
+  - **Direct 2D \(\leftrightarrow\) 2D Cross-Projection Transitioning**: Dynamic liquid morphing directly between 2D historical plates via animated ease-out cubic spring physics.
+  - **Historical Horology & Instruments**: 12 classical navigational astrolabe stars (*Sirius*, *Vega*, *Arcturus*, *Rigel*), Roman/Medieval 12 Unequal Planetary Hours with Chaldean planetary rulers, and interactive Astrolabe Rule (Alidade sighting arm).
 - **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Sector Dial featuring **Solar Noon vs. UTC Mode** segmented controls.
 - **Today's Sky Horizon Dome**: Symmetrical dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
 - **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, Meeus Ch. 48 true geocentric phase angle ($i$) and disc illumination ($k$), 2-step iterative high-latitude rise/set solver, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
@@ -37,7 +42,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 144 unit tests across 7 test suites)
+- **Testing**: `vitest` (`npm test` — 155 unit tests across 7 test suites)
 
 ### Essential Commands
 
@@ -45,7 +50,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (144 unit tests across 7 test suites) |
+| `npm test` | Runs Vitest unit test suite (155 unit tests across 7 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run test:coverage` | Runs Vitest with v8 code coverage reporting |
 | `npm run build` | Builds production distribution to `dist/` |
@@ -92,9 +97,10 @@ Cosmic Engine V2.0/
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
+│   │   │   ├── armillary.ts     # 3D Armillary & 2D Astrolabe projections (Stereo, Rojas, Horizon, Stars)
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (83 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (93 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -110,10 +116,17 @@ Cosmic Engine V2.0/
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
-│       │   ├── index.ts         # Central barrel export for all 7 observatory subsystems
+│       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
 │       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
 │       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
-│       │   ├── widgets.test.ts  # Vitest unit tests for 7 observatory widgets (9 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (10 tests)
+│       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
+│       │   │   ├── ArmillarySvgCanvas.tsx      # Interactive 3D Euler SVG viewport & Rete/Tympan
+│       │   │   ├── ArmillaryHeaderControls.tsx # Mode pills, morph slider & spring-snap triggers
+│       │   │   ├── ArmillaryTelemetryHud.tsx  # 4-column horological telemetry footer
+│       │   │   ├── types.ts                    # Armillary domain interfaces & props
+│       │   │   ├── GyroArmillaryView.tsx      # Subsystem coordinator container
+│       │   │   └── index.ts                    # Barrel export
 │       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
 │       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
 │       │   │   ├── OrbitHoverHud.tsx       # Floating glassmorphic hover popovers

@@ -280,6 +280,7 @@ export interface ActiveWidgetsFilter {
   solarAlmanac?: boolean;
   sunClock?: boolean;
   lunarAlmanac?: boolean;
+  armillary?: boolean;
   eclipse?: boolean;
   terminator?: boolean;
   macroOrbit?: boolean;

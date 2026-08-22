@@ -28,14 +28,18 @@ import {
   OrbitPhysicsHud,
   MILESTONES,
   EARTH_MILESTONES,
-  MicroTideView
+  MicroTideView,
+  GyroArmillaryView,
+  ArmillaryHeaderControls,
+  ArmillarySvgCanvas,
+  ArmillaryTelemetryHud
 } from './index';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData } from '../../utils/cosmicMath';
 
-describe('Observatory 7-Widget Architecture & Integration Tests', () => {
+describe('Observatory 8-Widget Architecture & Integration Tests', () => {
   
   describe('Central Barrel Exports', () => {
-    it('exports all 7 primary dashboard window visualizers', () => {
+    it('exports all 8 primary dashboard window visualizers', () => {
       expect(TodayHorizonView).toBeDefined();
       expect(SolarAlmanac).toBeDefined();
       expect(LunarAlmanacCard).toBeDefined();
@@ -43,6 +47,16 @@ describe('Observatory 7-Widget Architecture & Integration Tests', () => {
       expect(TerminatorMap).toBeDefined();
       expect(MacroOrbitView).toBeDefined();
       expect(MicroTideView).toBeDefined();
+      expect(GyroArmillaryView).toBeDefined();
+    });
+  });
+
+  describe('Gyro-Morph Armillary Subsystem', () => {
+    it('exports all decomposed armillary sub-components cleanly', () => {
+      expect(GyroArmillaryView).toBeDefined();
+      expect(ArmillaryHeaderControls).toBeDefined();
+      expect(ArmillarySvgCanvas).toBeDefined();
+      expect(ArmillaryTelemetryHud).toBeDefined();
     });
   });
 

@@ -13,7 +13,8 @@ import {
   MacroOrbitView, 
   MicroTideView, 
   LunarAlmanacCard, 
-  EclipseDemonstrator 
+  EclipseDemonstrator,
+  GyroArmillaryView 
 } from './components/widgets';
 import { getDayOfYear } from './utils/cosmicMath';
 
@@ -133,6 +134,21 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           eclipse={orbitalData?.eclipse} 
           solarData={solarData}
           currentDate={date}
+        />
+      );
+    case 'armillary':
+      return (
+        <GyroArmillaryView
+          solarData={solarData}
+          orbitalData={orbitalData}
+          latitude={latitude}
+          longitude={longitude}
+          timeOfDay={timeOfDay}
+          currentDate={date}
+          onSetTime={cosmicActions.setTimeOfDay}
+          onSetDate={cosmicActions.setDate}
+          hoverTime={hoverTime}
+          onHoverTime={setHoverTime}
         />
       );
     case 'microTides':

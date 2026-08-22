@@ -15,21 +15,29 @@ Cosmic Engine uses a strict semantic color palette to represent physical astrono
 | **Amber / Gold** | `#fbbf24` | `text-amber-400`, `fill-amber-400`, `border-amber-400` | **Subsolar Point**, **Sun Ray Vectors**, **Daylight Terminator Rim**, **Solar Noon Action** |
 | **Indigo / Cyan** | `#6366f1` / `#06b6d4` | `text-indigo-400`, `text-cyan-400` | **Lunar Transit Action**, **Lunar Ray Vectors**, **Gravitational Syzygy / Spring Tide Potential** |
 | **Deep Space Slate** | `#020617` / `#0b0f19` | `bg-slate-950`, `bg-slate-900` | **Deep Astronomical Night**, **Ocean Baseline**, **Card Backgrounds** |
-| **Emerald** | `#10b981` | `text-emerald-400`, `bg-emerald-500` | **Date Ring / Selector**, **Orbital Alignment (100%)**, **Perigee Status** |
+| **Emerald** | `#10b981` | `text-emerald-400`, `bg-emerald-500` | **Celestial Equator Ring**, **Date Ring / Selector**, **Orbital Alignment (100%)**, **Perigee Status** |
+| **Antique Brass / Gold** | `#b45309` / `#f59e0b` | `text-amber-500`, `stroke-amber-600` | **Outer Mater Rim**, **Ecliptic Rete**, **12 Zodiac Arcs**, **Astrolabe Sighting Rule (Alidade)** |
+| **Cyan / Steel** | `#06b6d4` | `stroke-cyan-500`, `text-cyan-400` | **Local Horizon Ring**, **Almucantar Elevation Plate (Tympan)** |
 
 ---
 
-## 2. 2D Vector Stroke & Path Encodings
+## 2. 2D & 3D Vector Stroke & Path Encodings
 
-To maximize information density without adding text clutter, orbital loops and curves adhere to standard 2D vector stroke encodings:
+To maximize information density without adding text clutter, orbital loops and curves adhere to standard vector stroke encodings:
 
-### A. Lunar Orbit Segmentation (Dual Eclipse Demonstrator & Macro Orbit)
+### A. Gyro-Morph Armillary 3D Z-Depth Sorting & Historical Rete
+* **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: **Solid Stroke** with full opacity (`opacity="0.9"`) representing the celestial sphere facing the viewer.
+* **Back Hemisphere ($z_{\text{cam}} < 0$)**: **Dashed Stroke** (`stroke-dasharray="3 3"`, `opacity="0.4"`) representing the far side of the celestial sphere.
+* **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$).
+* **Navigational Astrolabe Stars**: Rendered as 4-point diamond florets with radial flame pointers and glowing magnitude-scaled halos.
+
+### B. Lunar Orbit Segmentation (Dual Eclipse Demonstrator & Macro Orbit)
 * **Solid Stroke (`stroke-width="1.5"`)**: **Waxing Moon** ($0^\circ \to 180^\circ$ elongation).
 * **Dashed Stroke (`stroke-dasharray="4 3"`)**: **Waning Moon** ($180^\circ \to 360^\circ$ elongation).
 * **Sky Blue Stroke (`#38bdf8`)**: Orbital segment is **North of Ecliptic** ($\beta \ge 0$, Ascending hemisphere).
 * **Rose Stroke (`#f43f5e`)**: Orbital segment is **South of Ecliptic** ($\beta < 0$, Descending hemisphere).
 
-### B. Map & Horizon Curves
+### C. Map & Horizon Curves
 * **Dashed Amber Line (`stroke="#fbbf24" strokeDasharray="3 2"`)**: Exact daylight terminator boundary curve ($h = -0.833^\circ$).
 * **Dashed Sky Blue Crosshair (`stroke="#38bdf8" strokeDasharray="4 2"`)**: User geographic latitude and centered prime meridian.
 

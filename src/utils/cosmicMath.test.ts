@@ -34,7 +34,23 @@ import {
   calculateEarthSideGeometry,
   calculateEarthAxialGeometry,
   generateOrbitalSegments,
-  WORLD_LANDMASSES
+  WORLD_LANDMASSES,
+  calculateGMST,
+  calculateLST,
+  equatorialToCartesian3D,
+  cartesian3DToEquatorial,
+  horizontalToCartesian3D,
+  equatorialToHorizontal,
+  projectStereographicConformal,
+  projectRojasOrthographic,
+  projectTopocentricHorizon,
+  calculateAlmucantarCircle,
+  generateAlmucantars,
+  calculatePlanetaryHour,
+  generateArmillaryModel,
+  computeProjection2D,
+  ASTROLABE_STARS,
+  ZODIAC_SIGNS
 } from './cosmicMath';
 
 describe('cosmicMath utilities', () => {
@@ -1090,6 +1106,200 @@ describe('cosmicMath utilities', () => {
           });
         });
       });
+    });
+  });
+
+  describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
+    it('calculates accurate GMST and Local Sidereal Time (LST)', () => {
+      const gmstEpoch = calculateGMST(2451545.0); // Epoch J2000.0 (Jan 1, 2000 12h TT)
+      expect(gmstEpoch).toBeCloseTo(280.46, 1);
+
+      const lstOlympia = calculateLST(2451545.0, -122.81);
+      expect(lstOlympia).toBeGreaterThanOrEqual(0);
+      expect(lstOlympia).toBeLessThan(360);
+      expect(lstOlympia).toBeCloseTo((280.4606 - 122.81 + 360) % 360, 1);
+    });
+
+    it('transforms equatorial coordinates to 3D Cartesian coordinates and back', () => {
+      const pNorthPole = equatorialToCartesian3D(0, 90, 100);
+      expect(pNorthPole.x).toBeCloseTo(0);
+      expect(pNorthPole.y).toBeCloseTo(100);
+      expect(pNorthPole.z).toBeCloseTo(0);
+
+      const eqBack = cartesian3DToEquatorial(pNorthPole);
+      expect(eqBack.decDeg).toBeCloseTo(90);
+
+      const pEquinox = equatorialToCartesian3D(0, 0, 100);
+      expect(pEquinox.x).toBeCloseTo(0);
+      expect(pEquinox.y).toBeCloseTo(0);
+      expect(pEquinox.z).toBeCloseTo(100);
+
+      const eqBack2 = cartesian3DToEquatorial(pEquinox);
+      expect(eqBack2.raDeg).toBeCloseTo(0);
+      expect(eqBack2.decDeg).toBeCloseTo(0);
+    });
+
+    it('projects stereographic conformal coordinates preserving equator and circles', () => {
+      // Equator point (0, 0, 100) -> (0, 100)
+      const pEq = { x: 0, y: 0, z: 100 };
+      const projEq = projectStereographicConformal(pEq, 100);
+      expect(projEq.x).toBeCloseTo(0);
+      expect(projEq.y).toBeCloseTo(100);
+
+      // North Pole (0, 100, 0) -> (0, 0)
+      const pNP = { x: 0, y: 100, z: 0 };
+      const projNP = projectStereographicConformal(pNP, 100);
+      expect(projNP.x).toBeCloseTo(0);
+      expect(projNP.y).toBeCloseTo(0);
+    });
+
+    it('projects universal Rojas orthographic coordinates', () => {
+      const p = { x: 50, y: 80, z: 30 };
+      const rojas = projectRojasOrthographic(p, 100);
+      expect(rojas.x).toBe(50);
+      expect(rojas.y).toBe(80);
+    });
+
+    it('projects topocentric horizon stereonet coordinates', () => {
+      // Zenith (Alt = 90) -> (0, 0)
+      const zen = projectTopocentricHorizon(90, 0, 100);
+      expect(zen.x).toBeCloseTo(0);
+      expect(zen.y).toBeCloseTo(0);
+
+      // Horizon North (Alt = 0, Az = 0) -> (0, -100)
+      const horizN = projectTopocentricHorizon(0, 0, 100);
+      expect(horizN.x).toBeCloseTo(0);
+      expect(horizN.y).toBeCloseTo(-100);
+
+      // Horizon East (Alt = 0, Az = 90) -> (100, 0)
+      const horizE = projectTopocentricHorizon(0, 90, 100);
+      expect(horizE.x).toBeCloseTo(100);
+      expect(horizE.y).toBeCloseTo(0);
+    });
+
+    it('calculates analytical Almucantar elevation circles for astrolabe tympan', () => {
+      const horizon = calculateAlmucantarCircle(0, 45, 100);
+      expect(horizon.isHorizon).toBe(true);
+      expect(horizon.centerY).toBeCloseTo(100); // 100 * cot(45) = 100
+      expect(horizon.radius).toBeCloseTo(141.42, 1); // 100 * csc(45) = 141.42
+
+      const almucantars = generateAlmucantars(47.06, 15, 100);
+      expect(almucantars.length).toBeGreaterThanOrEqual(6);
+      expect(almucantars[0].altitude).toBe(0);
+    });
+
+    it('calculates historical unequal planetary hours and Chaldean ruler', () => {
+      const midMorningHour = calculatePlanetaryHour(11.5, 6, 18, 0); // 11:30 AM (6th hour of day)
+      expect(midMorningHour.isDay).toBe(true);
+      expect(midMorningHour.hourNumber).toBe(6);
+      expect(midMorningHour.rulingPlanet).toBeDefined();
+
+      const noonHour = calculatePlanetaryHour(12, 6, 18, 0); // 12:00 PM (starts 7th hour of day)
+      expect(noonHour.isDay).toBe(true);
+      expect(noonHour.hourNumber).toBe(7);
+
+      const midnightHour = calculatePlanetaryHour(0, 6, 18, 0); // Midnight (starts 7th hour of night)
+      expect(midnightHour.isDay).toBe(false);
+      expect(midnightHour.hourNumber).toBe(7);
+    });
+
+    it('contains all 12 classical astrolabe navigational stars and 12 zodiac signs', () => {
+      expect(ASTROLABE_STARS.length).toBe(12);
+      expect(ASTROLABE_STARS.some(s => s.name === 'Sirius')).toBe(true);
+      expect(ASTROLABE_STARS.some(s => s.name === 'Vega')).toBe(true);
+      expect(ASTROLABE_STARS.some(s => s.name === 'Arcturus')).toBe(true);
+
+      expect(ZODIAC_SIGNS.length).toBe(12);
+      expect(ZODIAC_SIGNS[0].name).toBe('Aries');
+      expect(ZODIAC_SIGNS[11].name).toBe('Pisces');
+    });
+
+    it('generates full dynamic Gyro-Morph Armillary Model across 3D and 2D morph factors', () => {
+      const jd = 2451545.0;
+      const model3D = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0, // 3D Armillary
+        projectionMode: 'stereographic',
+        cameraPitch: 25,
+        cameraYaw: 45,
+        r0: 100
+      });
+
+      expect(model3D.rings.length).toBe(6);
+      expect(model3D.stars.length).toBe(12);
+      expect(model3D.sun.screenPos).toBeDefined();
+      expect(model3D.moon.screenPos).toBeDefined();
+      expect(model3D.planetaryHour.label).toBeDefined();
+
+      const model2D = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0, // 2D Stereographic Plate
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(model2D.rings.length).toBe(6);
+      expect(model2D.stars.length).toBe(12);
+      // In 2D stereographic, equator is a 100px radius circle
+      const eqRing = model2D.rings.find(r => r.id === 'equator');
+      expect(eqRing).toBeDefined();
+    });
+
+    it('interpolates dynamically between two 2D projections during cross-morph transitions', () => {
+      const jd = 2451545.0;
+      const p3d = { x: 50, y: 30, z: 80 };
+      const stereo2D = computeProjection2D(p3d, 'stereographic', 100, 47.06, 0);
+      const rojas2D = computeProjection2D(p3d, 'rojas', 100, 47.06, 0);
+
+      // Halfway transition between stereographic and rojas
+      const modelCross = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0, // Full 2D
+        projectionMode: 'rojas',
+        fromProjectionMode: 'stereographic',
+        projectionTransitionT: 0.5, // 50% transition
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(modelCross.rings.length).toBe(6);
+      const eqVertex = modelCross.rings[0].vertices[0];
+      expect(eqVertex.screenPos).toBeDefined();
+      expect(typeof eqVertex.screenPos.x).toBe('number');
+      expect(typeof eqVertex.screenPos.y).toBe('number');
     });
   });
 
