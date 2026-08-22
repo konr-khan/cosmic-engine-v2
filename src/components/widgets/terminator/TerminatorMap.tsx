@@ -6,8 +6,8 @@ import {
   calculateEarthOrbitalPhysics, 
   getJulianDate,
   WORLD_LANDMASSES 
-} from '../../utils/cosmicMath';
-import { SolarAlmanacData, OrbitalData } from '../../types';
+} from '../../../utils/cosmicMath';
+import { SolarAlmanacData, OrbitalData } from '../../../types';
 
 export interface TerminatorMapProps {
   solarData?: SolarAlmanacData | null;
@@ -220,7 +220,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             {/* Tropics & Equator Lines */}
             <line x1="0" y1={90 - 23.5} x2="360" y2={90 - 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
             <line x1="0" y1={90 + 23.5} x2="360" y2={90 + 23.5} stroke="#475569" strokeWidth="0.5" strokeDasharray="2 2" />
-            <line x1="0" y1={90} x2="360" y2="90" stroke="#475569" strokeWidth="0.5" strokeOpacity="0.6" />
+            <line x1="0" y1={90} x2="360" y2={90} stroke="#475569" strokeWidth="0.5" strokeOpacity="0.6" />
             
             {/* User Latitude & Meridian Crosshairs */}
             <line x1="0" y1={userCy} x2="360" y2={userCy} stroke="#38bdf8" strokeWidth="0.75" strokeDasharray="4 2" strokeOpacity="0.7" />

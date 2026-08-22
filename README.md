@@ -144,53 +144,58 @@ Cosmic Engine V2.0/
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
-│       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
 │       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (10 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
 │       │   │   ├── ArmillarySvgCanvas.tsx      # Interactive 3D Euler SVG viewport & Rete/Tympan
 │       │   │   ├── ArmillaryHeaderControls.tsx # Mode pills, morph slider & spring-snap triggers
+│       │   │   ├── ArmillaryHoverHud.tsx       # Floating star, sun/moon & Alidade telemetry HUD
 │       │   │   ├── ArmillaryTelemetryHud.tsx  # 4-column horological telemetry footer
 │       │   │   ├── types.ts                    # Armillary domain interfaces & props
 │       │   │   ├── GyroArmillaryView.tsx      # Subsystem coordinator container
 │       │   │   └── index.ts                    # Barrel export
-│       ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
-│       │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
-│       │   ├── OrbitHoverHud.tsx       # Floating glassmorphic hover popovers
-│       │   ├── OrbitPhysicsHud.tsx     # 4-column telemetry physics footer
-│       │   ├── OrbitHeaderControls.tsx # True scale vs. exaggerated scale toggle
-│       │   ├── milestones.ts           # Extracted seasonal orbital milestones
-│       │   ├── types.ts                # Macro-orbit domain interfaces & props
-│       │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
-│       │   └── index.ts                # Barrel export
-│       ├── solar/           # Decomposed solar almanac subsystem modules
-│       │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
-│       │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
-│       │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
-│       │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
-│       │   └── index.ts                # Barrel export
-│       ├── today/           # Decomposed today's horizon subsystem modules
-│       │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
-│       │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
-│       │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
-│       │   └── index.ts                # Barrel export
-│       ├── lunar/           # Decomposed lunar almanac subsystem modules
-│       │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
-│       │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
-│       │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
-│       │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
-│       │   └── index.ts                # Barrel export
-│       └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
-│           ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
-│           ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
-│           ├── ShadowRayDiagram.tsx        # Decomposed coordinator container
-│           ├── ShadowRayHoverHud.tsx       # Floating glassmorphic hover popovers
-│           ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
-│           ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
-│           ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
-│           ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon & Lunar POV)
-│           ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
-│           └── index.ts                    # Barrel export
+│       │   ├── terminator/      # Decomposed daylight terminator map subsystem modules
+│       │   │   ├── TerminatorMap.tsx           # Centered daylight terminator map with subsolar & sublunar points
+│       │   │   └── index.ts                    # Barrel export
+│       │   ├── tides/           # Decomposed gravitational tidal force subsystem modules
+│       │   │   ├── MicroTideView.tsx           # Earth gravitational tidal force micro-view & ocean wave oscillator
+│       │   │   └── index.ts                    # Barrel export
+│       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
+│       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
+│       │   │   ├── OrbitHoverHud.tsx       # Floating glassmorphic hover popovers
+│       │   │   ├── OrbitPhysicsHud.tsx     # 4-column telemetry physics footer
+│       │   │   ├── OrbitHeaderControls.tsx # True scale vs. exaggerated scale toggle
+│       │   │   ├── milestones.ts           # Extracted seasonal orbital milestones
+│       │   │   ├── types.ts                # Macro-orbit domain interfaces & props
+│       │   │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
+│       │   ├── solar/           # Decomposed solar almanac subsystem modules
+│       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
+│       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
+│       │   │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
+│       │   │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
+│       │   ├── today/           # Decomposed today's horizon subsystem modules
+│       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
+│       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
+│       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
+│       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
+│       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
+│       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
+│       │   │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
+│       │   │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   └── index.ts                # Barrel export
+│       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
+│       │       ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
+│       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
+│       │       ├── ShadowRayDiagram.tsx        # Decomposed coordinator container
+│       │       ├── ShadowRayHoverHud.tsx       # Floating glassmorphic hover popovers
+│       │       ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
+│       │       ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
+│       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
+│       │       ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon & Lunar POV)
+│       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
+│       │       └── index.ts                    # Barrel export
 │   ├── controls/            # Interactive astrolabe inputs
 │   │   ├── ArmillaryRail.tsx          # Slider control rail
 │   │   ├── BufferedInput.tsx          # Blur/Enter commit input wrapper

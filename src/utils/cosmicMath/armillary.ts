@@ -1,18 +1,10 @@
 import { toRadians, toDegrees, clamp } from './core';
 import { Degrees, Radians, Latitude, Longitude, HoursDecimal, JulianDate, asDegrees } from '../../types/units';
+import { Vector2D, Vector3D } from '../../types/coordinates';
+
+export type { Vector2D, Vector3D };
 
 export type ArmillaryProjectionMode = 'stereographic' | 'rojas' | 'horizon';
-
-export interface Vector3D {
-  x: number;
-  y: number;
-  z: number;
-}
-
-export interface Vector2D {
-  x: number;
-  y: number;
-}
 
 export interface ArmillaryStarData {
   id: string;

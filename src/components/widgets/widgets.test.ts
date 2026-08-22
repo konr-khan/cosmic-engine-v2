@@ -32,6 +32,7 @@ import {
   GyroArmillaryView,
   ArmillaryHeaderControls,
   ArmillarySvgCanvas,
+  ArmillaryHoverHud,
   ArmillaryTelemetryHud
 } from './index';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData } from '../../utils/cosmicMath';
@@ -56,6 +57,7 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(GyroArmillaryView).toBeDefined();
       expect(ArmillaryHeaderControls).toBeDefined();
       expect(ArmillarySvgCanvas).toBeDefined();
+      expect(ArmillaryHoverHud).toBeDefined();
       expect(ArmillaryTelemetryHud).toBeDefined();
     });
   });

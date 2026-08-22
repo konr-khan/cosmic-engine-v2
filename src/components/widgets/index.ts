@@ -13,7 +13,7 @@ export {
   EclipseScanner, 
   type EclipseDemonstratorProps 
 } from './eclipse';
-export { TerminatorMap, type TerminatorMapProps } from './TerminatorMap';
+export { TerminatorMap, type TerminatorMapProps } from './terminator';
 export { 
   MacroOrbitView, 
   OrbitHeaderControls, 
@@ -30,15 +30,17 @@ export {
   type OrbitHoverHudProps,
   type OrbitPhysicsHudProps
 } from './macro';
-export { MicroTideView, type MicroTideViewProps } from './MicroTideView';
+export { MicroTideView, type MicroTideViewProps } from './tides';
 export { 
   GyroArmillaryView, 
   ArmillaryHeaderControls, 
   ArmillarySvgCanvas, 
+  ArmillaryHoverHud,
   ArmillaryTelemetryHud, 
   type GyroArmillaryViewProps,
   type ArmillaryHeaderControlsProps,
   type ArmillarySvgCanvasProps,
+  type ArmillaryHoverHudProps,
   type ArmillaryTelemetryHudProps,
   type ArmillaryProjectionMode,
   type ArmillaryCameraState,

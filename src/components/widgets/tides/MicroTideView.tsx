@@ -1,7 +1,7 @@
 import React from "react";
-import { toRadians } from "../../utils/cosmicMath";
-import { TidalVectors } from "../../types";
-import { TidalWaveOscillator } from "./lunar/TidalWaveOscillator";
+import { toRadians } from "../../../utils/cosmicMath";
+import { TidalVectors } from "../../../types";
+import { TidalWaveOscillator } from "../lunar/TidalWaveOscillator";
 
 export interface MicroTideViewProps {
   tides?: TidalVectors | null;

@@ -121,15 +121,20 @@ Cosmic Engine V2.0/
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── TerminatorMap.tsx # Centered daylight terminator map with subsolar & sublunar points
-│       │   ├── MicroTideView.tsx # Earth gravitational tidal force micro-view & ocean wave oscillator
 │       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (10 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
 │       │   │   ├── ArmillarySvgCanvas.tsx      # Interactive 3D Euler SVG viewport & Rete/Tympan
 │       │   │   ├── ArmillaryHeaderControls.tsx # Mode pills, morph slider & spring-snap triggers
+│       │   │   ├── ArmillaryHoverHud.tsx       # Floating star, sun/moon & Alidade telemetry HUD
 │       │   │   ├── ArmillaryTelemetryHud.tsx  # 4-column horological telemetry footer
 │       │   │   ├── types.ts                    # Armillary domain interfaces & props
 │       │   │   ├── GyroArmillaryView.tsx      # Subsystem coordinator container
+│       │   │   └── index.ts                    # Barrel export
+│       │   ├── terminator/      # Decomposed daylight terminator map subsystem modules
+│       │   │   ├── TerminatorMap.tsx           # Centered daylight terminator map with subsolar & sublunar points
+│       │   │   └── index.ts                    # Barrel export
+│       │   ├── tides/           # Decomposed gravitational tidal force subsystem modules
+│       │   │   ├── MicroTideView.tsx           # Earth gravitational tidal force micro-view & ocean wave oscillator
 │       │   │   └── index.ts                    # Barrel export
 │       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
 │       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
