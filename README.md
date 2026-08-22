@@ -59,7 +59,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (159 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, armillary projections, and worker fallback)
+- **Testing**: `vitest` (160 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, armillary projections, and worker fallback)
 
 ---
 
@@ -75,7 +75,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (159 unit tests across 7 suites)
+# Run Vitest test suite (160 unit tests across 7 suites)
 npm test
 
 # Run full test suite in single-run CI mode
@@ -127,7 +127,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── armillary.ts     # 3D Armillary & 2D Astrolabe projections (Stereo, Rojas, Horizon, Stars, Rete solver, Laser cones, Sighting alidade)
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (97 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (98 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)

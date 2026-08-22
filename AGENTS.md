@@ -45,7 +45,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 159 unit tests across 7 test suites)
+- **Testing**: `vitest` (`npm test` — 160 unit tests across 7 test suites)
 
 ### Essential Commands
 
@@ -53,7 +53,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (159 unit tests across 7 test suites) |
+| `npm test` | Runs Vitest unit test suite (160 unit tests across 7 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run test:coverage` | Runs Vitest with v8 code coverage reporting |
 | `npm run build` | Builds production distribution to `dist/` |
@@ -104,7 +104,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── armillary.ts     # 3D Armillary & 2D Astrolabe projections (Stereo, Rojas, Horizon, Stars, Rete solver, Laser cones, Sighting alidade)
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (97 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (98 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)

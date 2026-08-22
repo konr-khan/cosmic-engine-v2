@@ -152,25 +152,43 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
           </span>
         </div>
 
-        {/* Rete Clock Sync vs Free Solver Mode */}
-        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
-          <button
-            onClick={onToggleFreeRete}
-            className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              isFreeReteMode 
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20 animate-pulse' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-            title={isFreeReteMode ? "Free Astrolabe Solver Mode active: Drag Rete to calculate time" : "Rete locked to Live Sidereal Clock. Click to unlock free solver."}
-          >
-            {isFreeReteMode ? <Unlock className="w-3 h-3 text-slate-950" /> : <Lock className="w-3 h-3" />}
-            <span className="text-[11px]">{isFreeReteMode ? 'Free Solver' : 'Clock Sync'}</span>
-          </button>
+        {/* Rete Clock Sync vs Free Solver Segmented Toggle */}
+        <div className="flex items-center gap-1.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
+          <div className="flex items-center bg-slate-900/80 p-0.5 rounded-lg border border-slate-800">
+            {/* Clock Sync Option */}
+            <button
+              onClick={() => isFreeReteMode && onToggleFreeRete?.()}
+              className={`px-2 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+                !isFreeReteMode
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Lock Rete to Live Astronomical Sidereal Clock"
+            >
+              <Lock className="w-3 h-3" />
+              <span className="text-[11px]">Clock Sync</span>
+            </button>
 
+            {/* Free Solver Option */}
+            <button
+              onClick={() => !isFreeReteMode && onToggleFreeRete?.()}
+              className={`px-2 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+                isFreeReteMode
+                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/25'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Unlock Rete to freely drag and solve Apparent Solar Time"
+            >
+              <Unlock className="w-3 h-3" />
+              <span className="text-[11px]">Free Solver</span>
+            </button>
+          </div>
+
+          {/* Snap to Now Button when in Free Solver Mode */}
           {isFreeReteMode && onSnapToNow && (
             <button
               onClick={onSnapToNow}
-              className="px-2 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+              className="px-2 py-1 rounded-lg bg-indigo-600/90 hover:bg-indigo-500 text-white text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
               title="Snap Rete back to current live astronomical time"
             >
               <Clock className="w-2.5 h-2.5" />
@@ -178,8 +196,9 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             </button>
           )}
 
+          {/* Solved Apparent Solar Time Badge */}
           {isFreeReteMode && apparentSolarHours !== undefined && (
-            <span className="text-[10px] font-bold text-amber-400 px-1.5" title="Solved Local Solar Time">
+            <span className="text-[10px] font-bold text-amber-300 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-md" title="Solved Local Apparent Solar Time">
               ☉ {Math.floor(apparentSolarHours).toString().padStart(2, '0')}:{Math.floor((apparentSolarHours % 1) * 60).toString().padStart(2, '0')}
             </span>
           )}

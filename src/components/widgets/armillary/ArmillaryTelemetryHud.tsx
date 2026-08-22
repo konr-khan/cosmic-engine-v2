@@ -56,8 +56,8 @@ export const ArmillaryTelemetryHud: React.FC<ArmillaryTelemetryHudProps> = ({
         <div className="text-amber-300 truncate">
           ☉ Sun: <strong className="text-white">RA {formatTimeDeg(sun.raDeg)}</strong> | <strong className="text-amber-400">Dec {formatDeg(sun.decDeg)}</strong>
         </div>
-        <div className="text-cyan-300 truncate mt-0.5">
-          ☽ Moon: <strong className="text-white">RA {formatTimeDeg(moon.raDeg)}</strong> | <strong className="text-cyan-400">Dec {formatDeg(moon.decDeg)}</strong>
+        <div className="text-slate-300 truncate mt-0.5">
+          ☽ Moon: <strong className="text-white">RA {formatTimeDeg(moon.raDeg)}</strong> | <strong className="text-slate-300">Dec {formatDeg(moon.decDeg)}</strong>
         </div>
         <div className="text-[10px] text-slate-400 truncate">
           Sun Alt: <strong className={sun.altDeg >= 0 ? 'text-amber-400' : 'text-slate-500'}>{formatDeg(sun.altDeg)}</strong> | Az: <strong className="text-slate-300">{sun.azDeg.toFixed(1)}°</strong>

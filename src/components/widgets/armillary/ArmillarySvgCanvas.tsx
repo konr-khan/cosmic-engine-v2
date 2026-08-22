@@ -93,8 +93,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
       const distFromCenter = Math.sqrt(dx * dx + dy * dy);
       const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
 
-      // In Free Rete mode on 2D plate or near outer rim, grab and spin the Rete
-      if (isFreeReteMode && distFromCenter > 40) {
+      // In Free Rete mode on 2D plate or 3D sphere, grab and spin the Rete
+      if (isFreeReteMode && distFromCenter > 15) {
         setIsDraggingRete(true);
         dragStartRef.current = {
           x: e.clientX,
@@ -193,6 +193,14 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         e.stopPropagation();
       }}
     >
+      {/* Free Rete Interactive Guidance Badge */}
+      {isFreeReteMode && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none bg-slate-950/90 backdrop-blur-md border border-amber-500/40 px-3 py-1 rounded-full text-[11px] font-mono text-amber-300 shadow-xl flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <span>Free Solver: Drag golden Rete to calculate local time</span>
+        </div>
+      )}
+
       {/* SVG Canvas Container */}
       <svg
         ref={svgRef}
@@ -201,8 +209,12 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           e.preventDefault();
           e.stopPropagation();
         }}
-        className={`w-full h-full max-h-[560px] drop-shadow-2xl ${
-          isDraggingRule ? 'cursor-grab active:cursor-grabbing' : (is3D ? 'cursor-move' : 'cursor-default')
+        className={`w-full h-full max-h-[560px] drop-shadow-2xl transition-cursor ${
+          isDraggingRule 
+            ? 'cursor-grab active:cursor-grabbing' 
+            : isFreeReteMode 
+              ? 'cursor-grab active:cursor-grabbing' 
+              : (is3D ? 'cursor-move' : 'cursor-default')
         }`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -574,7 +586,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           </text>
         </g>
 
-        {/* 9. Moon Bead (Cyan/Silver Phase Disc - Click to Snap) */}
+        {/* 9. Moon Bead (Gray/Silver Phase Disc - Click to Snap) */}
         <g 
           filter="url(#starGlow)"
           className="cursor-pointer"
@@ -588,24 +600,32 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
             y1="0"
             x2={moon.screenPos.x}
             y2={moon.screenPos.y}
-            stroke="#38bdf8"
+            stroke="#94a3b8"
             strokeWidth="0.8"
-            opacity="0.6"
+            opacity="0.5"
+          />
+          {/* Moon Corona Glow */}
+          <circle
+            cx={moon.screenPos.x}
+            cy={moon.screenPos.y}
+            r="5.5"
+            fill="#94a3b8"
+            fillOpacity="0.2"
           />
           {/* Moon Core */}
           <circle
             cx={moon.screenPos.x}
             cy={moon.screenPos.y}
             r="3.2"
-            fill="#0284c7"
-            stroke="#e0f2fe"
+            fill="#e2e8f0"
+            stroke="#475569"
             strokeWidth="1.2"
           />
           <text
             x={moon.screenPos.x}
             y={moon.screenPos.y + 7.5}
             fontSize="4"
-            fill="#38bdf8"
+            fill="#cbd5e1"
             fontFamily="monospace"
             fontWeight="bold"
             textAnchor="middle"

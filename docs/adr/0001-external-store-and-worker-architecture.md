@@ -29,7 +29,7 @@ In early iterations, two critical performance bottlenecks emerged:
 * **Positive**:
   - Stable 60 FPS animation ticking with zero garbage collection stutter.
   - No thread proliferation; worker memory consumption stays under $12\text{ MB}$.
-  - Main thread remains responsive during rapid scrubs across 159 automated unit tests.
+  - Main thread remains responsive during rapid scrubs across 160 automated unit tests.
   - Clean worker thread and memory reclamation upon window close, tab switch, or SPA teardown.
 * **Invariants**:
   - Never replace `useChronometerStore` with standard React component closures inside animation hot paths.

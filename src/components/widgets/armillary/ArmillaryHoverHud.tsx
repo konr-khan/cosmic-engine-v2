@@ -80,16 +80,16 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
 
       {/* Floating Moon Hover Popover */}
       {hoveredBead === 'moon' && (
-        <div className="absolute top-4 right-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-cyan-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-          <div className="text-cyan-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+        <div className="absolute top-4 right-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-slate-200 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
             <span>☽ Celestial Moon (Luna)</span>
           </div>
           <div className="space-y-0.5 text-[11px]">
             <div>Right Ascension (α): <strong className="text-white">{moon.raDeg.toFixed(1)}°</strong></div>
-            <div>Declination (δ): <strong className="text-cyan-400">{moon.decDeg >= 0 ? `+${moon.decDeg.toFixed(1)}°` : `${moon.decDeg.toFixed(1)}°`}</strong></div>
-            <div>Local Elevation: <strong className={moon.altDeg >= 0 ? 'text-cyan-400' : 'text-slate-500'}>{moon.altDeg >= 0 ? `+${moon.altDeg}°` : `${moon.altDeg}°`}</strong></div>
+            <div>Declination (δ): <strong className="text-slate-300">{moon.decDeg >= 0 ? `+${moon.decDeg.toFixed(1)}°` : `${moon.decDeg.toFixed(1)}°`}</strong></div>
+            <div>Local Elevation: <strong className={moon.altDeg >= 0 ? 'text-slate-200' : 'text-slate-500'}>{moon.altDeg >= 0 ? `+${moon.altDeg}°` : `${moon.altDeg}°`}</strong></div>
           </div>
-          <div className="mt-1 pt-1 border-t border-slate-800 text-[10px] text-cyan-400/80">
+          <div className="mt-1 pt-1 border-t border-slate-800 text-[10px] text-slate-400">
             Click Moon to snap Alidade sighting arm
           </div>
         </div>

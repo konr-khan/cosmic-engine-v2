@@ -1377,6 +1377,56 @@ describe('cosmicMath utilities', () => {
       expect(typeof model.apparentSolarHours).toBe('number');
       expect(model.focalBeacon).toBeDefined();
       expect(model.focalBeacon?.laserRays.length).toBe(8);
+      // Continuous 360° closed cone polygon
+      expect(model.focalBeacon?.conePathD).toMatch(/^M\s.+Z$/);
+    });
+
+    it('rotates Ecliptic Rete and Stars when freeReteOffsetDeg is applied', () => {
+      const baseModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        isFreeReteMode: false
+      });
+
+      const rotatedModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        isFreeReteMode: true,
+        freeReteOffsetDeg: 90
+      });
+
+      // Sun bead was rotated 90 degrees around center
+      expect(rotatedModel.sun.p3d.x).not.toBeCloseTo(baseModel.sun.p3d.x, 1);
+      // Star positions rotated
+      expect(rotatedModel.stars[0].p3d.x).not.toBeCloseTo(baseModel.stars[0].p3d.x, 1);
     });
   });
 

@@ -57,7 +57,7 @@ The visualizer must satisfy three conflicting constraints:
 * **Positive**:
   - Delivers fluid, liquid topological transformations at a steady 60 FPS without GPU/WebGL overhead.
   - Mathematically authentic across all historical projections and Renaissance horology.
-  - Decoupled from React render bottlenecks; verified by 159 unit tests.
+  - Decoupled from React render bottlenecks; verified by 160 unit tests.
 * **Invariants**:
   - Keep domain projection math pure and deterministic in `src/utils/cosmicMath/armillary.ts`.
   - Isolate pointer and drag events on SVG canvases and sliders to prevent triggering dashboard window drag-and-drop.

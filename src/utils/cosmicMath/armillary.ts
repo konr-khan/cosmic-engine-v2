@@ -563,6 +563,8 @@ export function generateArmillaryModel(params: {
   const { apparentSolarHours } = calculateReteAngleToLST(lstDeg, sunRaDeg);
   const focalBeacon = generateProjectionFocalBeacon(projectionMode, r0, cameraPitch, cameraYaw, lambdaClamp);
 
+  const reteOffset = isFreeReteMode ? freeReteOffsetDeg : 0;
+
   // Helper to project a single 3D vector
   const transformVertex = (p3d: Vector3D): ArmillaryRingVertex => {
     // 1. 3D Camera view
@@ -615,16 +617,17 @@ export function generateArmillaryModel(params: {
     ...eqPaths
   });
 
-  // 2. Ecliptic Rete Ring (Inclined at 23.44°, Rotates with LST or Anomaly)
+  // 2. Ecliptic Rete Ring (Inclined at 23.44°, Rotates with LST or Free Rete Offset)
   const eclipticVertices: ArmillaryRingVertex[] = [];
   const epsRad = toRadians(obliquity);
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const lDeg = (i / NUM_SAMPLES) * 360;
     const lRad = toRadians(lDeg);
-    const x = r0 * Math.cos(lRad);
-    const y = r0 * Math.sin(lRad) * Math.sin(epsRad);
-    const z = r0 * Math.sin(lRad) * Math.cos(epsRad);
-    eclipticVertices.push(transformVertex({ x, y, z }));
+    const xBase = r0 * Math.cos(lRad);
+    const yBase = r0 * Math.sin(lRad) * Math.sin(epsRad);
+    const zBase = r0 * Math.sin(lRad) * Math.cos(epsRad);
+    const p3dRotated = rotateEuler3D({ x: xBase, y: yBase, z: zBase }, 0, reteOffset, 0);
+    eclipticVertices.push(transformVertex(p3dRotated));
   }
   const eclPaths = buildSegmentedSvgPaths(eclipticVertices);
   rings.push({
@@ -713,14 +716,15 @@ export function generateArmillaryModel(params: {
     ...colurePaths
   });
 
-  // 7. Celestial Navigational Stars
+  // 7. Celestial Navigational Stars (Rotates with Rete)
   const stars = ASTROLABE_STARS.map((s) => {
-    const p3d = equatorialToCartesian3D(s.raDeg, s.decDeg, r0);
-    const v = transformVertex(p3d);
+    const p3dBase = equatorialToCartesian3D(s.raDeg, s.decDeg, r0);
+    const p3dRotated = rotateEuler3D(p3dBase, 0, reteOffset, 0);
+    const v = transformVertex(p3dRotated);
     const horiz = equatorialToHorizontal(s.raDeg, s.decDeg, latitude, lstDeg);
     return {
       ...s,
-      p3d,
+      p3d: p3dRotated,
       pCam: v.pCam,
       pProj: v.pProj,
       screenPos: v.screenPos,
@@ -730,14 +734,16 @@ export function generateArmillaryModel(params: {
     };
   });
 
-  // 8. Sun Bead
-  const sunP3D = equatorialToCartesian3D(sunRaDeg, sunDecDeg, r0);
-  const sunV = transformVertex(sunP3D);
+  // 8. Sun Bead (Rotates with Rete)
+  const sunP3DBase = equatorialToCartesian3D(sunRaDeg, sunDecDeg, r0);
+  const sunP3DRotated = rotateEuler3D(sunP3DBase, 0, reteOffset, 0);
+  const sunV = transformVertex(sunP3DRotated);
   const sunHoriz = equatorialToHorizontal(sunRaDeg, sunDecDeg, latitude, lstDeg);
 
-  // 9. Moon Bead
-  const moonP3D = equatorialToCartesian3D(moonRaDeg, moonDecDeg, r0);
-  const moonV = transformVertex(moonP3D);
+  // 9. Moon Bead (Rotates with Rete)
+  const moonP3DBase = equatorialToCartesian3D(moonRaDeg, moonDecDeg, r0);
+  const moonP3DRotated = rotateEuler3D(moonP3DBase, 0, reteOffset, 0);
+  const moonV = transformVertex(moonP3DRotated);
   const moonHoriz = equatorialToHorizontal(moonRaDeg, moonDecDeg, latitude, lstDeg);
 
   // 10. Almucantars and Planetary Hours
@@ -753,7 +759,7 @@ export function generateArmillaryModel(params: {
       raDeg: asDegrees(sunRaDeg),
       decDeg: asDegrees(sunDecDeg),
       lambdaDeg: asDegrees(sunLambdaDeg),
-      p3d: sunP3D,
+      p3d: sunP3DRotated,
       pCam: sunV.pCam,
       pProj: sunV.pProj,
       screenPos: sunV.screenPos,
@@ -766,7 +772,7 @@ export function generateArmillaryModel(params: {
       decDeg: asDegrees(moonDecDeg),
       lambdaDeg: asDegrees(moonLambdaDeg),
       phase: moonPhase,
-      p3d: moonP3D,
+      p3d: moonP3DRotated,
       pCam: moonV.pCam,
       pProj: moonV.pProj,
       screenPos: moonV.screenPos,
@@ -847,8 +853,8 @@ export function generateProjectionFocalBeacon(
   };
 
   const laserRays: LaserRay[] = [];
-  const conePoints: Vector2D[] = [];
 
+  // 1. Generate 8 discrete cardinal/intercardinal laser rays
   const RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
   for (const angleDeg of RAY_ANGLES) {
     const rad = toRadians(angleDeg);
@@ -869,7 +875,23 @@ export function generateProjectionFocalBeacon(
       color: angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24',
       opacity: 0.6
     });
+  }
 
+  // 2. Generate smooth 360-degree closed conic envelope (72 samples, 0° to 360°)
+  const NUM_CONE_SAMPLES = 72;
+  const conePoints: Vector2D[] = [];
+  for (let i = 0; i <= NUM_CONE_SAMPLES; i++) {
+    const rad = (i / NUM_CONE_SAMPLES) * 2 * Math.PI;
+    const ringPoint3D: Vector3D = {
+      x: r0 * Math.sin(rad),
+      y: 0,
+      z: r0 * Math.cos(rad)
+    };
+    const ringCam = rotateEuler3D(ringPoint3D, cameraPitch, cameraYaw, 0);
+    const ringProj = projectStereographicConformal(ringPoint3D, r0);
+
+    const endX = (1 - morphLambda) * ringCam.x + morphLambda * ringProj.x;
+    const endY = (1 - morphLambda) * (-ringCam.y) + morphLambda * (-ringProj.y);
     conePoints.push({ x: endX, y: endY });
   }
 
