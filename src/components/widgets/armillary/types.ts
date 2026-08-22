@@ -1,7 +1,23 @@
-import { ArmillaryProjectionMode, ArmillaryStarData, AlmucantarCircleData, ArmillaryModelOutput } from '../../../utils/cosmicMath';
+import { 
+  ArmillaryProjectionMode, 
+  ArmillaryStarData, 
+  AlmucantarCircleData, 
+  ArmillaryModelOutput,
+  AlidadeSightingInfo,
+  ProjectionFocalBeaconOutput,
+  LaserRay
+} from '../../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
 
-export type { ArmillaryProjectionMode, ArmillaryStarData, AlmucantarCircleData, ArmillaryModelOutput };
+export type { 
+  ArmillaryProjectionMode, 
+  ArmillaryStarData, 
+  AlmucantarCircleData, 
+  ArmillaryModelOutput,
+  AlidadeSightingInfo,
+  ProjectionFocalBeaconOutput,
+  LaserRay
+};
 
 export interface ArmillaryCameraState {
   pitch: number;

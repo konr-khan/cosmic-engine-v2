@@ -245,3 +245,52 @@ x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delt
 \[
 \vec{P}(\lambda) = (1 - \lambda) \mathbf{\Pi}_{\text{ortho}}(\mathbf{R}_{\text{cam}} \vec{P}_{3D}) + \lambda \vec{P}_{\text{proj}}, \quad \lambda \in [0.0, 1.0]
 \]
+
+### D. Free Rete Spinning & Analog Solar Time Solver
+When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{free}}$:
+1. **Apparent Local Sidereal Time**:
+   \[
+   \theta_{\text{apparent}} = (\theta_{\text{LST}} + \Delta\theta_{\text{free}} + 360^\circ) \bmod 360^\circ
+   \]
+2. **Apparent Solar Hour Angle & Local Solar Time**:
+   \[
+   H_\odot = (\theta_{\text{apparent}} - \alpha_\odot + 360^\circ) \bmod 360^\circ
+   \]
+   \[
+   T_{\text{solar}} = \left(\frac{H_\odot}{15^\circ} + 12\right) \bmod 24
+   \]
+
+### E. Volumetric Laser Projection Beacons & Conic Light Envelope
+1. **Center of Projection (Focal Pole)**:
+   * Stereographic: $\vec{F}_{3D} = (0, -R_0, 0)$ (South Celestial Pole).
+   * Rojas: $\vec{F}_{3D} = (0, 0, +1.5 R_0)$ (Orthogonal sightline).
+   * Horizon Net: $\vec{F}_{3D} = (0, -R_0, 0)$ (Nadir).
+2. **Camera Rotation Transformation**:
+   \[
+   \vec{F}_{\text{cam}} = \mathbf{R}_{\text{pitch}}(\psi) \mathbf{R}_{\text{yaw}}(\theta) \vec{F}_{3D}
+   \]
+3. **Screen Projection**:
+   \[
+   \vec{F}_{\text{screen}} = (1 - \lambda) \begin{pmatrix} F_{\text{cam}, x} \\ -F_{\text{cam}, y} \end{pmatrix} + \lambda \begin{pmatrix} F_{\text{proj}, x} \\ -F_{\text{proj}, y} \end{pmatrix}
+   \]
+4. **Laser Conic Rays**:
+   8 radial rays connecting $\vec{F}_{\text{screen}}$ through circle vertices $\vec{P}_i(\lambda)$ down to the planar projective rim at radius $1.4 R_0$.
+
+### F. Astrolabe Alidade Sighting Arm Mathematics
+Given sighting rule angle $\theta_{\text{rule}} \in [0^\circ, 360^\circ)$:
+1. **Sighted Right Ascension**:
+   \[
+   \alpha_{\text{sighted}} = (\theta_{\text{rule}} + 360^\circ) \bmod 360^\circ, \quad \alpha_{\text{hours}} = \frac{\alpha_{\text{sighted}}}{15^\circ}
+   \]
+2. **Sighted Hour Angle & Horizontal Coordinates**:
+   \[
+   H_{\text{sighted}} = (\theta_{\text{LST}} - \alpha_{\text{sighted}}) \times \frac{\pi}{180^\circ}
+   \]
+   \[
+   \sin a_{\text{sighted}} = \sin\phi \sin\delta + \cos\phi \cos\delta \cos H_{\text{sighted}}
+   \]
+   \[
+   \cos A_{\text{sighted}} = \frac{\sin\delta - \sin\phi \sin a_{\text{sighted}}}{\cos\phi \cos a_{\text{sighted}}}
+   \]
+3. **Nearest Target Sighting Lock**:
+   Target angle $\theta_{\text{target}} = (\operatorname{atan2}(y_{\text{screen}}, x_{\text{screen}}) \times \frac{180^\circ}{\pi} + 90^\circ + 360^\circ) \bmod 360^\circ$. Sighting locks when $|\Delta\theta| \le 10.0^\circ$.

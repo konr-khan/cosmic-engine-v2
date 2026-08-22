@@ -34,6 +34,9 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   const [showStars, setShowStars] = useState<boolean>(true);
   const [showTympan, setShowTympan] = useState<boolean>(true);
   const [showRule, setShowRule] = useState<boolean>(false);
+  const [isFreeReteMode, setIsFreeReteMode] = useState<boolean>(false);
+  const [freeReteOffsetDeg, setFreeReteOffsetDeg] = useState<number>(0);
+  const [ruleAngleDeg, setRuleAngleDeg] = useState<number>(0);
   const [camera, setCamera] = useState<ArmillaryCameraState>({
     pitch: 25,
     yaw: 35,
@@ -87,7 +90,9 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       r0: 100,
       dayOfWeek,
       sunrise,
-      sunset
+      sunset,
+      isFreeReteMode,
+      freeReteOffsetDeg
     });
   }, [
     julianDate,
@@ -109,11 +114,14 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     camera.yaw,
     dayOfWeek,
     sunrise,
-    sunset
+    sunset,
+    isFreeReteMode,
+    freeReteOffsetDeg
   ]);
 
   // --- Smooth Animated Morph Transition (Supports 3D <-> 2D and 2D <-> 2D Cross-Morph) ---
   const animRef = useRef<number | null>(null);
+  const snapRuleAnimRef = useRef<number | null>(null);
 
   const handleSnapToPreset = useCallback((targetMode: ArmillaryProjectionMode, targetLambda: number) => {
     if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -162,9 +170,52 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     animRef.current = requestAnimationFrame(step);
   }, [morphLambda, projectionMode]);
 
+  // --- Snap Alidade Rule to Celestial Target ---
+  const handleSnapToTarget = useCallback((_targetName: string, targetAngleDeg: number) => {
+    setShowRule(true);
+    if (snapRuleAnimRef.current) cancelAnimationFrame(snapRuleAnimRef.current);
+
+    const startAngle = ruleAngleDeg;
+    // Compute shortest angular delta (-180 to +180)
+    let delta = (targetAngleDeg - startAngle + 540) % 360 - 180;
+    const startTime = performance.now();
+    const duration = 400; // ms
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = (startAngle + delta * ease + 360) % 360;
+      setRuleAngleDeg(parseFloat(current.toFixed(1)));
+
+      if (progress < 1) {
+        snapRuleAnimRef.current = requestAnimationFrame(step);
+      } else {
+        setRuleAngleDeg(targetAngleDeg);
+        snapRuleAnimRef.current = null;
+      }
+    };
+
+    snapRuleAnimRef.current = requestAnimationFrame(step);
+  }, [ruleAngleDeg]);
+
+  const handleToggleFreeRete = useCallback(() => {
+    setIsFreeReteMode((prev) => !prev);
+  }, []);
+
+  const handleSnapToNow = useCallback(() => {
+    setFreeReteOffsetDeg(0);
+    setIsFreeReteMode(false);
+  }, []);
+
+  const handleFreeReteRotate = useCallback((deltaDeg: number) => {
+    setFreeReteOffsetDeg((prev) => (prev + deltaDeg) % 360);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
+      if (snapRuleAnimRef.current) cancelAnimationFrame(snapRuleAnimRef.current);
     };
   }, []);
 
@@ -190,6 +241,10 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         onToggleRule={() => setShowRule(!showRule)}
         onResetCamera={handleResetCamera}
         onSnapToPreset={handleSnapToPreset}
+        isFreeReteMode={isFreeReteMode}
+        onToggleFreeRete={handleToggleFreeRete}
+        onSnapToNow={handleSnapToNow}
+        apparentSolarHours={model.apparentSolarHours}
       />
 
       {/* Main Armillary SVG Canvas */}
@@ -205,6 +260,12 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
           camera={camera}
           onCameraChange={setCamera}
           r0={100}
+          latitude={latitude}
+          isFreeReteMode={isFreeReteMode}
+          onFreeReteRotate={handleFreeReteRotate}
+          ruleAngleDeg={ruleAngleDeg}
+          onRuleAngleChange={setRuleAngleDeg}
+          onSnapToTarget={handleSnapToTarget}
         />
       </div>
 

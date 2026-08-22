@@ -105,6 +105,9 @@ export interface ArmillaryModelOutput {
   };
   siderealTimeDeg: Degrees;
   localSiderealTimeDeg: Degrees;
+  apparentSolarHours?: number;
+  isFreeRete?: boolean;
+  focalBeacon?: ProjectionFocalBeaconOutput;
   planetaryHour: {
     hourNumber: number;
     isDay: boolean;
@@ -527,6 +530,8 @@ export function generateArmillaryModel(params: {
   dayOfWeek?: number;
   sunrise?: HoursDecimal;
   sunset?: HoursDecimal;
+  isFreeReteMode?: boolean;
+  freeReteOffsetDeg?: number;
 }): ArmillaryModelOutput {
   const {
     julianDate,
@@ -549,14 +554,22 @@ export function generateArmillaryModel(params: {
     r0 = 100,
     dayOfWeek = 0,
     sunrise = 6,
-    sunset = 18
+    sunset = 18,
+    isFreeReteMode = false,
+    freeReteOffsetDeg = 0
   } = params;
 
   const lambdaClamp = clamp(morphLambda, 0, 1);
   const transT = clamp(projectionTransitionT, 0, 1);
   const obliquity = 23.439;
-  const lstDeg = calculateLST(julianDate, longitude);
+  const baseLstDeg = calculateLST(julianDate, longitude);
+  const lstDeg = isFreeReteMode 
+    ? asDegrees(((baseLstDeg + freeReteOffsetDeg) % 360 + 360) % 360)
+    : baseLstDeg;
   const gmstDeg = calculateGMST(julianDate);
+
+  const { apparentSolarHours } = calculateReteAngleToLST(lstDeg, sunRaDeg);
+  const focalBeacon = generateProjectionFocalBeacon(projectionMode, r0, cameraPitch, cameraYaw, lambdaClamp);
 
   // Helper to project a single 3D vector
   const transformVertex = (p3d: Vector3D): ArmillaryRingVertex => {
@@ -771,6 +784,192 @@ export function generateArmillaryModel(params: {
     },
     siderealTimeDeg: gmstDeg,
     localSiderealTimeDeg: lstDeg,
+    apparentSolarHours,
+    isFreeRete: isFreeReteMode,
+    focalBeacon,
     planetaryHour
+  };
+}
+
+/**
+ * Solves the Apparent Local Sidereal Time and Solar Time when the user manually spins the Rete.
+ * In classical astrolabes, matching a star's pointer to its current altitude solves the local time.
+ */
+export function calculateReteAngleToLST(
+  reteAngleDeg: number,
+  sunRaDeg: number
+): { apparentLSTDeg: number; apparentSolarHours: number } {
+  const apparentLSTDeg = ((reteAngleDeg % 360) + 360) % 360;
+  // Hour angle of the Sun: H = LST - RA_sun
+  const sunHourAngleDeg = ((apparentLSTDeg - sunRaDeg + 540) % 360) - 180;
+  // Solar time: T = (H / 15) + 12
+  const apparentSolarHours = ((((sunHourAngleDeg / 15) + 12) % 24) + 24) % 24;
+
+  return {
+    apparentLSTDeg: parseFloat(apparentLSTDeg.toFixed(1)),
+    apparentSolarHours: parseFloat(apparentSolarHours.toFixed(2))
+  };
+}
+
+export interface LaserRay {
+  start: Vector2D;
+  end: Vector2D;
+  color: string;
+  opacity: number;
+}
+
+export interface ProjectionFocalBeaconOutput {
+  focal3D: Vector3D;
+  focalScreenPos: Vector2D;
+  focalZCam: number;
+  laserRays: LaserRay[];
+  conePathD: string;
+}
+
+/**
+ * Generates the 3D position and 2D projected laser rays for the Center of Projection (Focal Pole).
+ * For Stereographic: South Celestial Pole (0, -R0, 0)
+ * For Universal Rojas: +Z orthogonal beam
+ * For Horizon Stereonet: Nadir (0, -R0, 0 in horizon frame)
+ */
+export function generateProjectionFocalBeacon(
+  projectionMode: ArmillaryProjectionMode,
+  r0: number = 100,
+  cameraPitch: number = 25,
+  cameraYaw: number = 35,
+  morphLambda: number = 0.0
+): ProjectionFocalBeaconOutput {
+  let focal3D: Vector3D;
+  if (projectionMode === 'stereographic') {
+    focal3D = { x: 0, y: -r0, z: 0 };
+  } else if (projectionMode === 'rojas') {
+    focal3D = { x: 0, y: 0, z: r0 * 1.5 };
+  } else {
+    focal3D = { x: 0, y: -r0, z: 0 };
+  }
+
+  const pCam = rotateEuler3D(focal3D, cameraPitch, cameraYaw, 0);
+  const focalScreenPos: Vector2D = {
+    x: (1 - morphLambda) * pCam.x,
+    y: (1 - morphLambda) * (-pCam.y) + morphLambda * (r0 * 1.2)
+  };
+
+  const laserRays: LaserRay[] = [];
+  const conePoints: Vector2D[] = [];
+
+  const RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+  for (const angleDeg of RAY_ANGLES) {
+    const rad = toRadians(angleDeg);
+    const ringPoint3D: Vector3D = {
+      x: r0 * Math.sin(rad),
+      y: 0,
+      z: r0 * Math.cos(rad)
+    };
+    const ringCam = rotateEuler3D(ringPoint3D, cameraPitch, cameraYaw, 0);
+    const ringProj = projectStereographicConformal(ringPoint3D, r0);
+
+    const endX = (1 - morphLambda) * ringCam.x + morphLambda * ringProj.x;
+    const endY = (1 - morphLambda) * (-ringCam.y) + morphLambda * (-ringProj.y);
+
+    laserRays.push({
+      start: focalScreenPos,
+      end: { x: endX, y: endY },
+      color: angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24',
+      opacity: 0.6
+    });
+
+    conePoints.push({ x: endX, y: endY });
+  }
+
+  let conePathD = '';
+  if (conePoints.length > 0) {
+    conePathD = `M ${focalScreenPos.x.toFixed(1)} ${focalScreenPos.y.toFixed(1)} `;
+    for (const pt of conePoints) {
+      conePathD += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
+    }
+    conePathD += 'Z';
+  }
+
+  return {
+    focal3D,
+    focalScreenPos,
+    focalZCam: pCam.z,
+    laserRays,
+    conePathD
+  };
+}
+
+export interface AlidadeSightingInfo {
+  ruleAngleDeg: number;
+  rightAscensionDeg: number;
+  rightAscensionHours: number;
+  localAltitudeDeg: number;
+  localAzimuthDeg: number;
+  nearestTarget?: {
+    name: string;
+    type: 'star' | 'sun' | 'moon';
+    angularDiffDeg: number;
+    magnitude?: number;
+  };
+}
+
+/**
+ * Calculates real-time astronomical sighting telemetry for the brass Astrolabe Rule (Alidade).
+ */
+export function calculateAlidadeSighting(
+  ruleAngleDeg: number,
+  latitude: Latitude,
+  lstDeg: number,
+  stars: Array<{ name: string; screenPos: Vector2D; altDeg: number; azDeg: number; magnitude: number; raDeg: number; decDeg: number }>,
+  sun: { screenPos: Vector2D; altDeg: number; azDeg: number; raDeg: number; decDeg: number },
+  moon: { screenPos: Vector2D; altDeg: number; azDeg: number; raDeg: number; decDeg: number }
+): AlidadeSightingInfo {
+  const normAngle = ((ruleAngleDeg % 360) + 360) % 360;
+  const raDeg = (normAngle * 360 / 360) % 360;
+  const raHours = raDeg / 15;
+
+  const sightingHoriz = equatorialToHorizontal(raDeg, 0, latitude, lstDeg);
+
+  let nearestTarget: AlidadeSightingInfo['nearestTarget'] | undefined = undefined;
+  let minDiff = 360;
+
+  // Check Sun
+  const sunAngle = (Math.atan2(sun.screenPos.y, sun.screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
+  const diffSun = Math.min(Math.abs(normAngle - sunAngle), 360 - Math.abs(normAngle - sunAngle));
+  if (diffSun < minDiff && diffSun < 10) {
+    minDiff = diffSun;
+    nearestTarget = { name: 'Sun (Sol)', type: 'sun', angularDiffDeg: parseFloat(diffSun.toFixed(1)) };
+  }
+
+  // Check Moon
+  const moonAngle = (Math.atan2(moon.screenPos.y, moon.screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
+  const diffMoon = Math.min(Math.abs(normAngle - moonAngle), 360 - Math.abs(normAngle - moonAngle));
+  if (diffMoon < minDiff && diffMoon < 10) {
+    minDiff = diffMoon;
+    nearestTarget = { name: 'Moon (Luna)', type: 'moon', angularDiffDeg: parseFloat(diffMoon.toFixed(1)) };
+  }
+
+  // Check Stars
+  for (const s of stars) {
+    const sAngle = (Math.atan2(s.screenPos.y, s.screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
+    const diff = Math.min(Math.abs(normAngle - sAngle), 360 - Math.abs(normAngle - sAngle));
+    if (diff < minDiff && diff < 10) {
+      minDiff = diff;
+      nearestTarget = {
+        name: s.name,
+        type: 'star',
+        angularDiffDeg: parseFloat(diff.toFixed(1)),
+        magnitude: s.magnitude
+      };
+    }
+  }
+
+  return {
+    ruleAngleDeg: parseFloat(normAngle.toFixed(1)),
+    rightAscensionDeg: parseFloat(raDeg.toFixed(1)),
+    rightAscensionHours: parseFloat(raHours.toFixed(2)),
+    localAltitudeDeg: parseFloat(sightingHoriz.altDeg.toFixed(1)),
+    localAzimuthDeg: parseFloat(sightingHoriz.azDeg.toFixed(1)),
+    nearestTarget
   };
 }

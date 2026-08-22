@@ -49,6 +49,9 @@ import {
   calculatePlanetaryHour,
   generateArmillaryModel,
   computeProjection2D,
+  calculateReteAngleToLST,
+  generateProjectionFocalBeacon,
+  calculateAlidadeSighting,
   ASTROLABE_STARS,
   ZODIAC_SIGNS
 } from './cosmicMath';
@@ -1300,6 +1303,80 @@ describe('cosmicMath utilities', () => {
       expect(eqVertex.screenPos).toBeDefined();
       expect(typeof eqVertex.screenPos.x).toBe('number');
       expect(typeof eqVertex.screenPos.y).toBe('number');
+    });
+
+    it('solves apparent local sidereal and solar time from free Rete angles', () => {
+      // Sun at RA 180°
+      const noon = calculateReteAngleToLST(180, 180);
+      expect(noon.apparentLSTDeg).toBe(180);
+      expect(noon.apparentSolarHours).toBe(12);
+
+      // Sun at RA 180°, Rete rotated to 270° (6 hours later -> 18:00)
+      const dusk = calculateReteAngleToLST(270, 180);
+      expect(dusk.apparentLSTDeg).toBe(270);
+      expect(dusk.apparentSolarHours).toBe(18);
+    });
+
+    it('generates volumetric projection focal beacons and laser ray paths', () => {
+      const beaconStereo = generateProjectionFocalBeacon('stereographic', 100, 25, 35, 0.0);
+      expect(beaconStereo.focal3D.y).toBe(-100);
+      expect(beaconStereo.laserRays.length).toBe(8);
+      expect(beaconStereo.conePathD).toContain('M ');
+      expect(beaconStereo.laserRays[0].start).toBeDefined();
+      expect(beaconStereo.laserRays[0].end).toBeDefined();
+
+      const beaconRojas = generateProjectionFocalBeacon('rojas', 100, 0, 0, 1.0);
+      expect(beaconRojas.focal3D.z).toBe(150);
+      expect(beaconRojas.laserRays.length).toBe(8);
+    });
+
+    it('calculates Alidade sighting coordinates and target detection', () => {
+      const testStars = [
+        { name: 'Sirius', screenPos: { x: 0, y: -80 }, altDeg: 35, azDeg: 180, magnitude: -1.46, raDeg: 101, decDeg: -16.7 }
+      ];
+      const testSun = { screenPos: { x: 80, y: 0 }, altDeg: 45, azDeg: 90, raDeg: 0, decDeg: 0 };
+      const testMoon = { screenPos: { x: -80, y: 0 }, altDeg: 10, azDeg: 270, raDeg: 180, decDeg: 0 };
+
+      // Sighting arm pointing North (0°)
+      const sighting = calculateAlidadeSighting(0, 47.06, 100, testStars, testSun, testMoon);
+      expect(sighting.ruleAngleDeg).toBe(0);
+      expect(sighting.rightAscensionDeg).toBe(0);
+      expect(sighting.rightAscensionHours).toBe(0);
+      expect(typeof sighting.localAltitudeDeg).toBe('number');
+      expect(typeof sighting.localAzimuthDeg).toBe('number');
+
+      // Sighting arm aligned with Sirius at (0, -80) -> angle 0°
+      const sightingSirius = calculateAlidadeSighting(0, 47.06, 100, testStars, testSun, testMoon);
+      expect(sightingSirius.nearestTarget).toBeDefined();
+      expect(sightingSirius.nearestTarget?.name).toBe('Sirius');
+    });
+
+    it('supports Free Rete mode in generateArmillaryModel with apparent solar time solver', () => {
+      const model = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        isFreeReteMode: true,
+        freeReteOffsetDeg: 45
+      });
+
+      expect(model.isFreeRete).toBe(true);
+      expect(typeof model.apparentSolarHours).toBe('number');
+      expect(model.focalBeacon).toBeDefined();
+      expect(model.focalBeacon?.laserRays.length).toBe(8);
     });
   });
 

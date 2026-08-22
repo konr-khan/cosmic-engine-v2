@@ -6,7 +6,10 @@ import {
   Grid, 
   Eye, 
   Compass,
-  Zap
+  Zap,
+  Lock,
+  Unlock,
+  Clock
 } from 'lucide-react';
 import { ArmillaryProjectionMode } from './types';
 
@@ -25,6 +28,10 @@ export interface ArmillaryHeaderControlsProps {
   onToggleRule: () => void;
   onResetCamera: () => void;
   onSnapToPreset: (mode: ArmillaryProjectionMode, targetLambda: number) => void;
+  isFreeReteMode?: boolean;
+  onToggleFreeRete?: () => void;
+  onSnapToNow?: () => void;
+  apparentSolarHours?: number;
 }
 
 export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = ({
@@ -39,7 +46,11 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
   showRule,
   onToggleRule,
   onResetCamera,
-  onSnapToPreset
+  onSnapToPreset,
+  isFreeReteMode = false,
+  onToggleFreeRete,
+  onSnapToNow,
+  apparentSolarHours
 }) => {
   const is3D = morphLambda <= 0.05;
 
@@ -141,6 +152,39 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
           </span>
         </div>
 
+        {/* Rete Clock Sync vs Free Solver Mode */}
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
+          <button
+            onClick={onToggleFreeRete}
+            className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              isFreeReteMode 
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20 animate-pulse' 
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title={isFreeReteMode ? "Free Astrolabe Solver Mode active: Drag Rete to calculate time" : "Rete locked to Live Sidereal Clock. Click to unlock free solver."}
+          >
+            {isFreeReteMode ? <Unlock className="w-3 h-3 text-slate-950" /> : <Lock className="w-3 h-3" />}
+            <span className="text-[11px]">{isFreeReteMode ? 'Free Solver' : 'Clock Sync'}</span>
+          </button>
+
+          {isFreeReteMode && onSnapToNow && (
+            <button
+              onClick={onSnapToNow}
+              className="px-2 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+              title="Snap Rete back to current live astronomical time"
+            >
+              <Clock className="w-2.5 h-2.5" />
+              <span>Snap Now</span>
+            </button>
+          )}
+
+          {isFreeReteMode && apparentSolarHours !== undefined && (
+            <span className="text-[10px] font-bold text-amber-400 px-1.5" title="Solved Local Solar Time">
+              ☉ {Math.floor(apparentSolarHours).toString().padStart(2, '0')}:{Math.floor((apparentSolarHours % 1) * 60).toString().padStart(2, '0')}
+            </span>
+          )}
+        </div>
+
         {/* Feature Toggles */}
         <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs">
           <button
@@ -148,7 +192,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               showRays ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Toggle Projection Rays"
+            title="Toggle Volumetric Laser Projection Rays &amp; Cones"
           >
             <Zap className="w-3.5 h-3.5" />
           </button>

@@ -41,12 +41,23 @@ The visualizer must satisfy three conflicting constraints:
 4. **Spring Physics Transition Loop**:
    - Animate $\lambda$ and $t$ using `requestAnimationFrame` with ease-out cubic deceleration ($1 - (1 - p)^3$) over 500–550ms.
 
+5. **Analog Astrolabe Free Rete Solver Mode**:
+   - Allow user to uncouple the Rete from the live astronomical clock and rotate it manually.
+   - Calculate Apparent Local Sidereal Time ($\theta_{\text{apparent}}$) and Apparent Solar Time ($T_{\text{solar}}$) instantaneously as an interactive analog computer.
+
+6. **Volumetric Optical Laser Cones & Center of Projection Beacon**:
+   - Render the physical projection center $(0, -R_0, 0)$ as a glowing focal beacon with 8 radiating laser rays and a translucent conic envelope linking the 3D sphere to the 2D projective plate.
+
+7. **Historical Alidade Sighting Arm & Star Snapping**:
+   - Equip the astrolabe rule with dual pinnule sighting vanes (pinhole slits) and an extended laser sightline.
+   - Smoothly animate the sighting arm to lock onto stars (*Sirius*, *Vega*, *Arcturus*, *Rigel*), Sun, or Moon upon user click.
+
 ## Consequences
 
 * **Positive**:
   - Delivers fluid, liquid topological transformations at a steady 60 FPS without GPU/WebGL overhead.
-  - Mathematically authentic across all historical projections.
-  - Decoupled from React render bottlenecks; verified by 155 unit tests.
+  - Mathematically authentic across all historical projections and Renaissance horology.
+  - Decoupled from React render bottlenecks; verified by 159 unit tests.
 * **Invariants**:
   - Keep domain projection math pure and deterministic in `src/utils/cosmicMath/armillary.ts`.
   - Isolate pointer and drag events on SVG canvases and sliders to prevent triggering dashboard window drag-and-drop.

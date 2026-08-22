@@ -28,8 +28,10 @@ To maximize information density without adding text clutter, orbital loops and c
 ### A. Gyro-Morph Armillary 3D Z-Depth Sorting & Historical Rete
 * **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: **Solid Stroke** with full opacity (`opacity="0.9"`) representing the celestial sphere facing the viewer.
 * **Back Hemisphere ($z_{\text{cam}} < 0$)**: **Dashed Stroke** (`stroke-dasharray="3 3"`, `opacity="0.4"`) representing the far side of the celestial sphere.
-* **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$).
-* **Navigational Astrolabe Stars**: Rendered as 4-point diamond florets with radial flame pointers and glowing magnitude-scaled halos.
+* **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$) or freely in Astrolabe Solver Mode.
+* **Navigational Astrolabe Stars**: Rendered as 4-point diamond florets with radial flame pointers and glowing magnitude-scaled halos. Clicking any star snaps the Alidade sighting arm directly to it.
+* **Volumetric Laser Projection Cones**: Rendered with `#38bdf8` cyan-to-gold linear gradient wash (`fill-opacity="0.35"`), radiating dashed laser rays (`stroke-dasharray="2 3"`), and a glowing focal beacon circle at the optical center of projection $(0, -R_0, 0)$.
+* **Interactive Alidade Sighting Arm**: Brass body (`#fbbf24`, `stroke-width="3.5"`) with dark wood inlay (`#78350f`), dual historical pinnule sighting vanes (`#d97706`) with cyan pinhole slits (`#38bdf8`), and an extended laser sightline (`#38bdf8`, `stroke-dasharray="3 2"`).
 
 ### B. Lunar Orbit Segmentation (Dual Eclipse Demonstrator & Macro Orbit)
 * **Solid Stroke (`stroke-width="1.5"`)**: **Waxing Moon** ($0^\circ \to 180^\circ$ elongation).
@@ -75,6 +77,7 @@ The dashboard layout utilizes a flexible 12-column responsive CSS grid:
 
 ## 5. Interaction Patterns
 
-1. **Click-to-Snap**: Primary temporal milestones (Solar Noon, Lunar Transit) feature prominent action buttons with a compass icon that immediately set the chronometer time.
-2. **Cross-Card Hover Synchronization**: Hovering over timestamps or calendar dates in any widget propagates `hoverTime` and `hoverDate` across all mounted visualizers simultaneously.
-3. **Fluid Card Resizing**: Bottom-right resize thumbs allow non-destructive card expansion with a minimum height floor ($220\text{px}$).
+1. **Click-to-Snap**: Primary temporal milestones (Solar Noon, Lunar Transit) and astrolabe sighting targets (Stars, Sun, Moon) feature instant or spring-animated snapping.
+2. **Free Astrolabe Solver Mode**: Dragging the golden Rete bypasses clock lock to calculate apparent solar and sidereal time dynamically.
+3. **Cross-Card Hover Synchronization**: Hovering over timestamps or calendar dates in any widget propagates `hoverTime` and `hoverDate` across all mounted visualizers simultaneously.
+4. **Fluid Card Resizing**: Bottom-right resize thumbs allow non-destructive card expansion with a minimum height floor ($220\text{px}$).
