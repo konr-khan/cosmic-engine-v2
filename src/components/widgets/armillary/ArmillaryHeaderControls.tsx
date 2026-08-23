@@ -9,7 +9,9 @@ import {
   Zap,
   Lock,
   Unlock,
-  Clock
+  Clock,
+  Orbit,
+  Globe
 } from 'lucide-react';
 import { ArmillaryProjectionMode } from './types';
 
@@ -32,6 +34,8 @@ export interface ArmillaryHeaderControlsProps {
   onToggleFreeRete?: () => void;
   onSnapToNow?: () => void;
   apparentSolarHours?: number;
+  exaggerateEccentricity?: boolean;
+  onToggleEccentricity?: (val: boolean) => void;
 }
 
 export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = ({
@@ -50,9 +54,12 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
   isFreeReteMode = false,
   onToggleFreeRete,
   onSnapToNow,
-  apparentSolarHours
+  apparentSolarHours,
+  exaggerateEccentricity = false,
+  onToggleEccentricity
 }) => {
-  const is3D = morphLambda <= 0.05;
+  const isOrbital = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
+  const is3D = projectionMode === '3D' || (morphLambda <= 0.05 && !isOrbital);
 
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-2 w-full select-none">
@@ -64,67 +71,122 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             Gyro-Morph Armillary &amp; Astrolabe
           </span>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-500/30">
-            {is3D ? '3D Spherical Frame' : `${projectionMode.toUpperCase()} Plate`}
+            {projectionMode === 'heliocentric' 
+              ? '☉ Heliocentric Orbit'
+              : projectionMode === 'geocentric'
+              ? '⊕ Geocentric Apparent'
+              : is3D 
+              ? '🌐 3D Spherical Lattice' 
+              : `${projectionMode.toUpperCase()} Plate`}
           </span>
         </div>
         <p className="text-[11px] text-slate-400 hidden sm:block mt-0.5">
-          Continuous 60 FPS topological morph from 3D Celestial Armillary into Renaissance Astrolabe Projections
+          Universal multi-model continuum: Keplerian Solar System ↔ 3D Celestial Armillary ↔ Historical Astrolabe Plates
         </p>
       </div>
 
       {/* Control Actions & Segmented Toggles */}
       <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto justify-start xl:justify-end">
-        {/* Projection Mode Segmented Pill */}
-        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
+        {/* 6-Mode Segmented Pill Bar */}
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-mono overflow-x-auto">
+          {/* 1. Heliocentric Orbit */}
           <button
-            onClick={() => onSnapToPreset('stereographic', 0.0)}
-            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer ${
-              is3D
+            onClick={() => onSnapToPreset('heliocentric', 0.0)}
+            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+              projectionMode === 'heliocentric'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Copernican Heliocentric Keplerian Orbit (Sun centered)"
+          >
+            <Orbit className="w-3 h-3" />
+            <span>☉ Orbit</span>
+          </button>
+
+          {/* 2. Geocentric Apparent Orbit */}
+          <button
+            onClick={() => onSnapToPreset('geocentric', 0.0)}
+            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+              projectionMode === 'geocentric'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Ptolemaic Geocentric Apparent Ecliptic Motion (Earth centered)"
+          >
+            <Globe className="w-3 h-3" />
+            <span>⊕ Apparent</span>
+          </button>
+
+          {/* 3. 3D Armillary Sphere */}
+          <button
+            onClick={() => onSnapToPreset('3D', 0.0)}
+            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+              is3D && projectionMode === '3D'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
             title="3D Spherical Celestial Armillary Sphere"
           >
             <Layers className="w-3 h-3" />
-            <span>3D Sphere</span>
+            <span>🌐 Sphere</span>
           </button>
 
+          {/* 4. Stereographic Conformal Rete */}
           <button
             onClick={() => onSnapToPreset('stereographic', 1.0)}
-            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
               !is3D && projectionMode === 'stereographic'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
             title="Conformal Planispheric Astrolabe (Stereographic Rete &amp; Tympan)"
           >
-            <span>Stereographic Rete</span>
+            <span>🧭 Rete</span>
           </button>
 
+          {/* 5. Universal Rojas Orthographic */}
           <button
             onClick={() => onSnapToPreset('rojas', 1.0)}
-            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
               !is3D && projectionMode === 'rojas'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
             title="Universal Rojas Orthographic Projection on Solstitial Colure"
           >
-            <span>Universal Rojas</span>
+            <span>📐 Rojas</span>
           </button>
 
+          {/* 6. Topocentric Horizon Stereonet */}
           <button
             onClick={() => onSnapToPreset('horizon', 1.0)}
-            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
               !is3D && projectionMode === 'horizon'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
             title="Topocentric Horizon Stereonet (Zenith centered)"
           >
-            <span>Horizon Net</span>
+            <span>🔭 Horizon</span>
           </button>
         </div>
+
+        {/* Exaggerated vs True Scale toggle when in orbital modes */}
+        {isOrbital && onToggleEccentricity && (
+          <div className="flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
+            <button
+              onClick={() => onToggleEccentricity(!exaggerateEccentricity)}
+              className={`px-2 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${
+                exaggerateEccentricity 
+                  ? 'bg-indigo-600 text-white font-bold' 
+                  : 'bg-slate-900 text-slate-400 hover:text-slate-200'
+              }`}
+              title="Toggle True Scale (e=0.0167) vs Exaggerated Eccentricity (e=0.25)"
+            >
+              {exaggerateEccentricity ? 'Exaggerated (e=0.25)' : 'True Scale (1x)'}
+            </button>
+          </div>
+        )}
 
         {/* Morph Slider Bar */}
         <div className="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800/80 text-xs font-mono">

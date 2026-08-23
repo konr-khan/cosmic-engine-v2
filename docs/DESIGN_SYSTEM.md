@@ -25,13 +25,16 @@ Cosmic Engine uses a strict semantic color palette to represent physical astrono
 
 To maximize information density without adding text clutter, orbital loops and curves adhere to standard vector stroke encodings:
 
-### A. Gyro-Morph Armillary 3D Z-Depth Sorting & Historical Rete
+### A. Gyro-Morph Armillary Multi-Model Continuum & SED Astrolabe Styling
+* **6 Unified Framework Modes**: `[☉ Orbit | ⊕ Apparent | 🌐 Sphere | 🧭 Rete | 📐 Rojas | 🔭 Horizon]`.
+* **SED Hairline Double-Grooved Bezel**: Precision concentric outer rings (`stroke="#b45309"` outer, `stroke="#78350f"` inner, `strokeWidth="0.75"`), $0.5\text{px}-0.75\text{px}$ micro-ticks, and delicate monospace Roman numeral micro-labels (`text-[8px] font-mono fill-amber-300/80`).
 * **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: **Solid Stroke** with full opacity (`opacity="0.9"`) representing the celestial sphere facing the viewer.
-* **Back Hemisphere ($z_{\text{cam}} < 0$)**: **Dashed Stroke** (`stroke-dasharray="3 3"`, `opacity="0.4"`) representing the far side of the celestial sphere.
+* **Back Hemisphere ($z_{\text{cam}} < 0$)**: **Dashed Stroke** (`stroke-dasharray="3 2"`, `opacity="0.35"`) representing the far side of the celestial sphere.
+* **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 glowing milestone halo nodes (Perihelion `#a855f7`, Solstices `#38bdf8`/`#f43f5e`, Equinoxes `#34d399`/`#fbbf24`, Aphelion `#818cf8`) featuring interactive hover popovers.
+* **Earth Bead**: Sky blue core (`#0284c7`, `#38bdf8`) with atmospheric glow and $23.44^\circ$ axial tilt vector.
 * **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$) or freely in Astrolabe Solver Mode.
-* **Navigational Astrolabe Stars**: Rendered as 4-point diamond florets with radial flame pointers and glowing magnitude-scaled halos. Clicking any star snaps the Alidade sighting arm directly to it.
-* **Volumetric Laser Projection Cones**: Rendered with `#38bdf8` cyan-to-gold linear gradient wash (`fill-opacity="0.35"`), radiating dashed laser rays (`stroke-dasharray="2 3"`), and a glowing focal beacon circle at the optical center of projection $(0, -R_0, 0)$.
-* **Interactive Alidade Sighting Arm**: Brass body (`#fbbf24`, `stroke-width="3.5"`) with dark wood inlay (`#78350f`), dual historical pinnule sighting vanes (`#d97706`) with cyan pinhole slits (`#38bdf8`), and an extended laser sightline (`#38bdf8`, `stroke-dasharray="3 2"`).
+* **Navigational Astrolabe Stars**: Rendered as delicate diamond florets (`strokeWidth="0.6"`, `r="1.2-3.2px"`) with hairline dashed flame pointers and glowing magnitude halos.
+* **SED Hairline Alidade Sighting Arm**: Slim $1.6\text{px}$ brass ruler body with dark wood inlay (`#78350f`, $0.75\text{px}$), cyan laser sightline (`#38bdf8`, $0.75\text{px}$ dashed), and central reticle pin.
 
 ### B. Lunar Orbit Segmentation (Dual Eclipse Demonstrator & Macro Orbit)
 * **Solid Stroke (`stroke-width="1.5"`)**: **Waxing Moon** ($0^\circ \to 180^\circ$ elongation).
@@ -65,12 +68,13 @@ box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-2xl */
 
 ---
 
-## 4. 12-Column Responsive Panoramic Grid
+## 4. 12-Column Responsive Panoramic Grid & 1-Col / 2-Col Controls
 
-The dashboard layout utilizes a flexible 12-column responsive CSS grid:
+The dashboard layout utilizes a flexible 12-column responsive CSS grid with dynamic per-card width toggle controls:
 
-* **Full-Width Observatory Windows**: `col-span-12 2xl:col-span-6` (e.g. Dual Eclipse Demonstrator, Daylight Terminator Map, Macro Orbit View).
-* **Compact Instruments**: `col-span-12 lg:col-span-6 3xl:col-span-3` (e.g. Micro Tide View).
+* **2-Column Panoramic Windows (`col-span-12`)**: Full-width panoramic cards for high-detail instruments (Gyro-Morph Armillary, Today Horizon, Eclipse Demonstrator).
+* **1-Column Standard Cards (`col-span-12 2xl:col-span-6`)**: Half-width compact instruments (Solar Almanac, Lunar Almanac, Daylight Terminator Map, Macro Orbit).
+* **Interactive `1-Col / 2-Col` Header Toggle**: Every dashboard window includes a direct header toggle allowing users to dynamically expand any card to 2 columns or collapse to 1 column.
 * **Bottom Astrolabe Dock**: Fixed to the bottom viewport (`fixed bottom-0 left-0 right-0 z-50`) with an accessible expand/collapse tab.
 
 ---

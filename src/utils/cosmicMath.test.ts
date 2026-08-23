@@ -1238,7 +1238,7 @@ describe('cosmicMath utilities', () => {
         r0: 100
       });
 
-      expect(model3D.rings.length).toBe(6);
+      expect(model3D.rings.length).toBe(7);
       expect(model3D.stars.length).toBe(12);
       expect(model3D.sun.screenPos).toBeDefined();
       expect(model3D.moon.screenPos).toBeDefined();
@@ -1263,7 +1263,7 @@ describe('cosmicMath utilities', () => {
         r0: 100
       });
 
-      expect(model2D.rings.length).toBe(6);
+      expect(model2D.rings.length).toBe(7);
       expect(model2D.stars.length).toBe(12);
       // In 2D stereographic, equator is a 100px radius circle
       const eqRing = model2D.rings.find(r => r.id === 'equator');
@@ -1298,7 +1298,7 @@ describe('cosmicMath utilities', () => {
         r0: 100
       });
 
-      expect(modelCross.rings.length).toBe(6);
+      expect(modelCross.rings.length).toBe(7);
       const eqVertex = modelCross.rings[0].vertices[0];
       expect(eqVertex.screenPos).toBeDefined();
       expect(typeof eqVertex.screenPos.x).toBe('number');
@@ -1428,6 +1428,143 @@ describe('cosmicMath utilities', () => {
       // Star positions rotated
       expect(rotatedModel.stars[0].p3d.x).not.toBeCloseTo(baseModel.stars[0].p3d.x, 1);
     });
+
+    it('generates Heliocentric model with Sun at origin, Earth at Keplerian orbit, and milestone nodes', () => {
+      const helioModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Sun at origin (0, 0, 0)
+      expect(helioModel.sun.p3d.x).toBeCloseTo(0, 2);
+      expect(helioModel.sun.p3d.y).toBeCloseTo(0, 2);
+      expect(helioModel.sun.p3d.z).toBeCloseTo(0, 2);
+
+      // Earth at non-zero orbital radius
+      const earthDist = Math.hypot(helioModel.earth.p3d.x, helioModel.earth.p3d.z);
+      expect(earthDist).toBeGreaterThan(90);
+
+      // Orbital path ring present
+      const orbitRing = helioModel.rings.find(r => r.id === 'orbit_path');
+      expect(orbitRing).toBeDefined();
+
+      // 6 Seasonal milestone nodes present
+      expect(helioModel.milestones.length).toBe(6);
+      expect(helioModel.milestones[0].label).toBe('Perihelion');
+      expect(helioModel.milestones[3].label).toBe('Aphelion');
+
+      // Physics telemetry populated
+      expect(helioModel.physics).toBeDefined();
+      expect(helioModel.physics?.distanceAU).toBeGreaterThan(0.95);
+      expect(helioModel.physics?.orbitalSpeedKms).toBeGreaterThan(28);
+
+      // Opacity contracts
+      expect(helioModel.celestialRingsOpacity).toBe(0.0);
+      expect(helioModel.orbitRingOpacity).toBe(1.0);
+      expect(helioModel.milestonesOpacity).toBe(1.0);
+    });
+
+    it('generates Geocentric model with Earth at origin and Sun revolving along apparent Ecliptic loop', () => {
+      const geoModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Earth at origin (0, 0, 0)
+      expect(geoModel.earth.p3d.x).toBeCloseTo(0, 2);
+      expect(geoModel.earth.p3d.y).toBeCloseTo(0, 2);
+      expect(geoModel.earth.p3d.z).toBeCloseTo(0, 2);
+
+      // Sun revolving around Earth at radius ~ 110px
+      const sunDist = Math.hypot(geoModel.sun.p3d.x, geoModel.sun.p3d.y, geoModel.sun.p3d.z);
+      expect(sunDist).toBeGreaterThan(90);
+
+      // Opacity contracts
+      expect(geoModel.celestialRingsOpacity).toBeCloseTo(0.35, 2);
+      expect(geoModel.orbitRingOpacity).toBe(1.0);
+    });
+
+    it('smoothly interpolates any-to-any transitions between Heliocentric and Stereographic modes', () => {
+      const midModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.5,
+        fromProjectionMode: 'heliocentric',
+        projectionMode: 'stereographic',
+        projectionTransitionT: 0.5,
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Opacities are smoothly blended at T = 0.5
+      expect(midModel.celestialRingsOpacity).toBeCloseTo(0.5, 2);
+      expect(midModel.orbitRingOpacity).toBeCloseTo(0.5, 2);
+      expect(midModel.milestonesOpacity).toBeCloseTo(0.5, 2);
+    });
+
+    it('handles exaggerated eccentricity in Heliocentric mode with Sun displaced to focal point', () => {
+      const exagModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        exaggerateEccentricity: true
+      });
+
+      // Sun is displaced by focal distance c = a * e = 110 * 0.25 = 27.5
+      expect(exagModel.sun.p3d.x).toBeLessThan(-20);
+    });
   });
 
 });
+

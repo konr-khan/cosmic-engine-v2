@@ -232,6 +232,7 @@ export default function App() {
     handleDrop,
     handleResize,
     handleToggleLock,
+    handleToggleColSpan,
     handleResetLayout
   } = useDashboardLayout();
 
@@ -271,6 +272,7 @@ export default function App() {
                   onDrop={handleDrop}
                   onResize={handleResize}
                   onToggleLock={handleToggleLock}
+                  onToggleColSpan={handleToggleColSpan}
                   onResetSize={() => handleResize(win.id, 0, defaultHeight)}
                 >
                   <MemoizedWidgetContent 

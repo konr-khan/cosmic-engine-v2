@@ -1,10 +1,118 @@
 import { toRadians, toDegrees, clamp } from './core';
 import { Degrees, Radians, Latitude, Longitude, HoursDecimal, JulianDate, asDegrees } from '../../types/units';
 import { Vector2D, Vector3D } from '../../types/coordinates';
+import { calculateEarthOrbitalPhysics } from './solar';
 
 export type { Vector2D, Vector3D };
 
-export type ArmillaryProjectionMode = 'stereographic' | 'rojas' | 'horizon';
+export type ArmillaryModelMode = 'heliocentric' | 'geocentric' | '3D' | 'stereographic' | 'rojas' | 'horizon';
+export type ArmillaryProjectionMode = ArmillaryModelMode;
+
+export interface ArmillaryMilestoneNode {
+  id: string;
+  label: string;
+  date: string;
+  color: string;
+  textColor: string;
+  fillColor: string;
+  p3d: Vector3D;
+  pCam: Vector3D;
+  screenPos: Vector2D;
+  distanceAU: number;
+  distanceKm: number;
+  speedKms: number;
+  description: string;
+  isFront: boolean;
+}
+
+export interface ArmillaryOrbitalPhysics {
+  distanceAU: number;
+  distanceKm: number;
+  orbitalSpeedKms: number;
+  solarIrradiancePercent: number;
+  sunAngularDiameterArcmin: number;
+}
+
+export const ARMILLARY_MILESTONES_DATA = [
+  {
+    id: 'perihelion',
+    label: 'Perihelion',
+    date: 'Jan 3',
+    helioEclipticLon: 102.9,
+    color: '#ef4444',
+    textColor: 'text-rose-400',
+    fillColor: 'fill-rose-400',
+    distanceAU: 0.983,
+    distanceKm: 147098070,
+    speedKms: 30.29,
+    description: "Earth's closest approach to the Sun. Orbital velocity peaks according to Kepler's 2nd Law."
+  },
+  {
+    id: 'mar_equinox',
+    label: 'March Equinox',
+    date: 'Mar 20',
+    helioEclipticLon: 180.0,
+    color: '#c084fc',
+    textColor: 'text-purple-300',
+    fillColor: 'fill-purple-300',
+    distanceAU: 0.996,
+    distanceKm: 149000000,
+    speedKms: 29.84,
+    description: "Vernal Equinox. Sun crosses the celestial equator northbound; equal day and night worldwide."
+  },
+  {
+    id: 'jun_solstice',
+    label: 'June Solstice',
+    date: 'Jun 21',
+    helioEclipticLon: 270.0,
+    color: '#f59e0b',
+    textColor: 'text-amber-400',
+    fillColor: 'fill-amber-400',
+    distanceAU: 1.016,
+    distanceKm: 152000000,
+    speedKms: 29.31,
+    description: "Northern Summer Solstice. Earth's Northern Hemisphere reaches maximum +23.44° axial tilt toward the Sun."
+  },
+  {
+    id: 'aphelion',
+    label: 'Aphelion',
+    date: 'Jul 4',
+    helioEclipticLon: 282.9,
+    color: '#38bdf8',
+    textColor: 'text-sky-400',
+    fillColor: 'fill-sky-400',
+    distanceAU: 1.017,
+    distanceKm: 152097700,
+    speedKms: 29.29,
+    description: "Earth's furthest orbital point from the Sun. Orbital velocity reaches minimum speed."
+  },
+  {
+    id: 'sep_equinox',
+    label: 'September Equinox',
+    date: 'Sep 22',
+    helioEclipticLon: 0.0,
+    color: '#c084fc',
+    textColor: 'text-purple-300',
+    fillColor: 'fill-purple-300',
+    distanceAU: 1.003,
+    distanceKm: 150050000,
+    speedKms: 29.74,
+    description: "Autumnal Equinox. Sun crosses the celestial equator southbound; equal day and night worldwide."
+  },
+  {
+    id: 'dec_solstice',
+    label: 'December Solstice',
+    date: 'Dec 21',
+    helioEclipticLon: 90.0,
+    color: '#f59e0b',
+    textColor: 'text-amber-400',
+    fillColor: 'fill-amber-400',
+    distanceAU: 0.984,
+    distanceKm: 147100000,
+    speedKms: 30.27,
+    description: "Northern Winter Solstice. Earth's Northern Hemisphere reaches maximum -23.44° axial tilt away from the Sun."
+  }
+];
 
 export interface ArmillaryStarData {
   id: string;
@@ -62,6 +170,15 @@ export interface ArmillaryModelOutput {
   rings: ArmillaryRingPath[];
   almucantars: AlmucantarCircleData[];
   unequalHours: UnequalHourArcData[];
+  milestones: ArmillaryMilestoneNode[];
+  physics?: ArmillaryOrbitalPhysics;
+  earth: {
+    p3d: Vector3D;
+    pCam: Vector3D;
+    pProj: Vector2D;
+    screenPos: Vector2D;
+    isFront: boolean;
+  };
   stars: (ArmillaryStarData & {
     pCam: Vector3D;
     pProj: Vector2D;
@@ -107,6 +224,12 @@ export interface ArmillaryModelOutput {
     label: string;
     progressPercent: number;
   };
+  celestialRingsOpacity: number;
+  orbitRingOpacity: number;
+  milestonesOpacity: number;
+  starsOpacity: number;
+  bezelOpacity: number;
+  alidadeOpacity: number;
 }
 
 /**
@@ -524,6 +647,7 @@ export function generateArmillaryModel(params: {
   sunset?: HoursDecimal;
   isFreeReteMode?: boolean;
   freeReteOffsetDeg?: number;
+  exaggerateEccentricity?: boolean;
 }): ArmillaryModelOutput {
   const {
     julianDate,
@@ -548,7 +672,8 @@ export function generateArmillaryModel(params: {
     sunrise = 6,
     sunset = 18,
     isFreeReteMode = false,
-    freeReteOffsetDeg = 0
+    freeReteOffsetDeg = 0,
+    exaggerateEccentricity = false
   } = params;
 
   const lambdaClamp = clamp(morphLambda, 0, 1);
@@ -564,6 +689,16 @@ export function generateArmillaryModel(params: {
   const focalBeacon = generateProjectionFocalBeacon(projectionMode, r0, cameraPitch, cameraYaw, lambdaClamp);
 
   const reteOffset = isFreeReteMode ? freeReteOffsetDeg : 0;
+
+  // Calculate live Keplerian orbital physics
+  const physicsSolar = calculateEarthOrbitalPhysics(julianDate);
+  const physics: ArmillaryOrbitalPhysics = {
+    distanceAU: physicsSolar.distanceAU ?? 1.0,
+    distanceKm: physicsSolar.distanceKm ?? 149597870,
+    orbitalSpeedKms: physicsSolar.orbitalSpeedKms ?? 29.78,
+    solarIrradiancePercent: physicsSolar.solarIrradiancePercent ?? 100.0,
+    sunAngularDiameterArcmin: physicsSolar.sunAngularDiameterArcmin ?? 32.0
+  };
 
   // Helper to project a single 3D vector
   const transformVertex = (p3d: Vector3D): ArmillaryRingVertex => {
@@ -583,9 +718,12 @@ export function generateArmillaryModel(params: {
     }
 
     // 3. Continuous Morph Blend (3D vs 2D)
-    const screenX = (1 - lambdaClamp) * pCam.x + lambdaClamp * pProjX;
-    const screenY = (1 - lambdaClamp) * (-pCam.y) + lambdaClamp * (-pProjY);
-    const isFront = lambdaClamp >= 0.98 ? true : pCam.z >= 0;
+    const is3DTarget = projectionMode === 'heliocentric' || projectionMode === 'geocentric' || projectionMode === '3D';
+    const effectiveLambda = is3DTarget ? 0 : lambdaClamp;
+
+    const screenX = (1 - effectiveLambda) * pCam.x + effectiveLambda * pProjX;
+    const screenY = (1 - effectiveLambda) * (-pCam.y) + effectiveLambda * (-pProjY);
+    const isFront = effectiveLambda >= 0.98 ? true : pCam.z >= 0;
 
     return {
       p3d,
@@ -596,8 +734,230 @@ export function generateArmillaryModel(params: {
     };
   };
 
+  // -------------------------------------------------------------
+  // Universal Multi-Model Geometry Derivations
+  // -------------------------------------------------------------
+  interface RawModeGeometry {
+    sun3D: Vector3D;
+    earth3D: Vector3D;
+    moon3D: Vector3D;
+    milestones3D: Array<{ id: string; p3d: Vector3D }>;
+    celestialRingsOpacity: number;
+    orbitRingOpacity: number;
+    milestonesOpacity: number;
+    starsOpacity: number;
+    bezelOpacity: number;
+    alidadeOpacity: number;
+  }
+
+  const getRawModeGeometry = (mode: ArmillaryModelMode): RawModeGeometry => {
+    const isHelio = mode === 'heliocentric';
+    const isGeo = mode === 'geocentric';
+    const is3DMode = mode === '3D';
+
+    if (isHelio) {
+      const a = r0 * 1.1;
+      const e = exaggerateEccentricity ? 0.25 : 0.01671;
+      const b = a * Math.sqrt(1 - e * e);
+      const c = a * e;
+      const sun3D = exaggerateEccentricity ? { x: -c, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
+
+      // Earth's heliocentric longitude: lambda_earth = sunLambdaDeg + 180°
+      const earthLonRad = toRadians((sunLambdaDeg + 180) % 360);
+      const earth3D: Vector3D = {
+        x: a * Math.cos(earthLonRad),
+        y: 0,
+        z: b * Math.sin(earthLonRad)
+      };
+
+      // Moon relative to Earth
+      const moonAngleRad = toRadians(moonLambdaDeg);
+      const moon3D: Vector3D = {
+        x: earth3D.x + 16 * Math.cos(moonAngleRad),
+        y: earth3D.y + 16 * Math.sin(toRadians(5.14)) * Math.sin(moonAngleRad),
+        z: earth3D.z + 16 * Math.sin(moonAngleRad)
+      };
+
+      // Heliocentric milestones along Earth's orbit
+      const milestones3D = ARMILLARY_MILESTONES_DATA.map((m) => {
+        const lonRad = toRadians(m.helioEclipticLon);
+        return {
+          id: m.id,
+          p3d: {
+            x: a * Math.cos(lonRad),
+            y: 0,
+            z: b * Math.sin(lonRad)
+          }
+        };
+      });
+
+      return {
+        sun3D,
+        earth3D,
+        moon3D,
+        milestones3D,
+        celestialRingsOpacity: 0.0,
+        orbitRingOpacity: 1.0,
+        milestonesOpacity: 1.0,
+        starsOpacity: 0.25,
+        bezelOpacity: 0.0,
+        alidadeOpacity: 0.0
+      };
+    }
+
+    if (isGeo) {
+      const earth3D: Vector3D = { x: 0, y: 0, z: 0 };
+      const a = r0 * 1.1;
+      const sunLonRad = toRadians(sunLambdaDeg);
+      const epsRad = toRadians(obliquity);
+
+      // Sun apparent position revolving around Earth (r_sun = -r_earth)
+      const sun3D: Vector3D = {
+        x: a * Math.cos(sunLonRad),
+        y: a * Math.sin(sunLonRad) * Math.sin(epsRad),
+        z: a * Math.sin(sunLonRad) * Math.cos(epsRad)
+      };
+
+      // Geocentric Moon at physical orbit distance
+      const moon3D = equatorialToCartesian3D(moonRaDeg, moonDecDeg, 26);
+
+      // Inverted milestones along Sun's apparent ecliptic path (helioLon + 180°)
+      const milestones3D = ARMILLARY_MILESTONES_DATA.map((m) => {
+        const apparentSunLonRad = toRadians((m.helioEclipticLon + 180) % 360);
+        return {
+          id: m.id,
+          p3d: {
+            x: a * Math.cos(apparentSunLonRad),
+            y: a * Math.sin(apparentSunLonRad) * Math.sin(epsRad),
+            z: a * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
+          }
+        };
+      });
+
+      return {
+        sun3D,
+        earth3D,
+        moon3D,
+        milestones3D,
+        celestialRingsOpacity: 0.35,
+        orbitRingOpacity: 1.0,
+        milestonesOpacity: 1.0,
+        starsOpacity: 0.4,
+        bezelOpacity: 0.2,
+        alidadeOpacity: 0.0
+      };
+    }
+
+    // 3D Armillary & 2D Astrolabe modes
+    const earth3D: Vector3D = { x: 0, y: 0, z: 0 };
+    const sun3DBase = equatorialToCartesian3D(sunRaDeg, sunDecDeg, r0);
+    const sun3D = rotateEuler3D(sun3DBase, 0, reteOffset, 0);
+    const moon3DBase = equatorialToCartesian3D(moonRaDeg, moonDecDeg, r0);
+    const moon3D = rotateEuler3D(moon3DBase, 0, reteOffset, 0);
+
+    const milestones3D = ARMILLARY_MILESTONES_DATA.map((m) => {
+      const apparentSunLonRad = toRadians((m.helioEclipticLon + 180) % 360);
+      const epsRad = toRadians(obliquity);
+      return {
+        id: m.id,
+        p3d: {
+          x: r0 * Math.cos(apparentSunLonRad),
+          y: r0 * Math.sin(apparentSunLonRad) * Math.sin(epsRad),
+          z: r0 * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
+        }
+      };
+    });
+
+    return {
+      sun3D,
+      earth3D,
+      moon3D,
+      milestones3D,
+      celestialRingsOpacity: 1.0,
+      orbitRingOpacity: is3DMode ? 0.35 : 0.0,
+      milestonesOpacity: is3DMode ? 0.4 : 0.0,
+      starsOpacity: 1.0,
+      bezelOpacity: is3DMode ? 0.6 : 1.0,
+      alidadeOpacity: is3DMode ? 0.8 : 1.0
+    };
+  };
+
+  const targetGeom = getRawModeGeometry(projectionMode);
+  const sourceGeom = fromProjectionMode && fromProjectionMode !== projectionMode && transT < 1.0
+    ? getRawModeGeometry(fromProjectionMode)
+    : targetGeom;
+
+  // Blend bodies smoothly across states
+  const blendedSun3D: Vector3D = {
+    x: (1 - transT) * sourceGeom.sun3D.x + transT * targetGeom.sun3D.x,
+    y: (1 - transT) * sourceGeom.sun3D.y + transT * targetGeom.sun3D.y,
+    z: (1 - transT) * sourceGeom.sun3D.z + transT * targetGeom.sun3D.z
+  };
+
+  const blendedEarth3D: Vector3D = {
+    x: (1 - transT) * sourceGeom.earth3D.x + transT * targetGeom.earth3D.x,
+    y: (1 - transT) * sourceGeom.earth3D.y + transT * targetGeom.earth3D.y,
+    z: (1 - transT) * sourceGeom.earth3D.z + transT * targetGeom.earth3D.z
+  };
+
+  const blendedMoon3D: Vector3D = {
+    x: (1 - transT) * sourceGeom.moon3D.x + transT * targetGeom.moon3D.x,
+    y: (1 - transT) * sourceGeom.moon3D.y + transT * targetGeom.moon3D.y,
+    z: (1 - transT) * sourceGeom.moon3D.z + transT * targetGeom.moon3D.z
+  };
+
+  const celestialRingsOpacity = (1 - transT) * sourceGeom.celestialRingsOpacity + transT * targetGeom.celestialRingsOpacity;
+  const orbitRingOpacity = (1 - transT) * sourceGeom.orbitRingOpacity + transT * targetGeom.orbitRingOpacity;
+  const milestonesOpacity = (1 - transT) * sourceGeom.milestonesOpacity + transT * targetGeom.milestonesOpacity;
+  const starsOpacity = (1 - transT) * sourceGeom.starsOpacity + transT * targetGeom.starsOpacity;
+  const bezelOpacity = (1 - transT) * sourceGeom.bezelOpacity + transT * targetGeom.bezelOpacity;
+  const alidadeOpacity = (1 - transT) * sourceGeom.alidadeOpacity + transT * targetGeom.alidadeOpacity;
+
+  // -------------------------------------------------------------
+  // Celestial & Orbital Ring Paths
+  // -------------------------------------------------------------
   const rings: ArmillaryRingPath[] = [];
   const NUM_SAMPLES = 72;
+
+  // 0. Orbital Path Ring (Keplerian / Ecliptic orbit)
+  const orbitRingVertices: ArmillaryRingVertex[] = [];
+  for (let i = 0; i <= NUM_SAMPLES; i++) {
+    const angleRad = (i / NUM_SAMPLES) * 2 * Math.PI;
+    const a = r0 * 1.1;
+    const isTargetHelio = projectionMode === 'heliocentric';
+    const isSourceHelio = fromProjectionMode === 'heliocentric';
+    const isHelioT = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
+
+    const e = exaggerateEccentricity ? 0.25 : 0.01671;
+    const b = a * Math.sqrt(1 - e * e);
+    const c = a * e;
+
+    const xHelio = a * Math.cos(angleRad) + (exaggerateEccentricity ? -c * 0.5 : 0);
+    const yHelio = 0;
+    const zHelio = b * Math.sin(angleRad);
+
+    const epsRad = toRadians(obliquity);
+    const xGeo = a * Math.cos(angleRad);
+    const yGeo = a * Math.sin(angleRad) * Math.sin(epsRad);
+    const zGeo = a * Math.sin(angleRad) * Math.cos(epsRad);
+
+    const p3dOrb: Vector3D = {
+      x: isHelioT * xHelio + (1 - isHelioT) * xGeo,
+      y: isHelioT * yHelio + (1 - isHelioT) * yGeo,
+      z: isHelioT * zHelio + (1 - isHelioT) * zGeo
+    };
+    orbitRingVertices.push(transformVertex(p3dOrb));
+  }
+  const orbitPaths = buildSegmentedSvgPaths(orbitRingVertices);
+  rings.push({
+    id: 'orbit_path',
+    label: 'Orbital Path',
+    color: '#38bdf8', // Sky Blue
+    frontStrokeWidth: 1.6,
+    backStrokeWidth: 0.8,
+    vertices: orbitRingVertices,
+    ...orbitPaths
+  });
 
   // 1. Celestial Equator Ring (Dec = 0°)
   const equatorVertices: ArmillaryRingVertex[] = [];
@@ -681,7 +1041,6 @@ export function generateArmillaryModel(params: {
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const az = (i / NUM_SAMPLES) * 360;
     const p3dHoriz = horizontalToCartesian3D(0, az, r0);
-    // Convert topocentric to equatorial 3D frame via latitude tilt
     const p3dEq = rotateEuler3D(p3dHoriz, -(90 - latitude), 0, 0);
     horizonVertices.push(transformVertex(p3dEq));
   }
@@ -734,16 +1093,30 @@ export function generateArmillaryModel(params: {
     };
   });
 
-  // 8. Sun Bead (Rotates with Rete)
-  const sunP3DBase = equatorialToCartesian3D(sunRaDeg, sunDecDeg, r0);
-  const sunP3DRotated = rotateEuler3D(sunP3DBase, 0, reteOffset, 0);
-  const sunV = transformVertex(sunP3DRotated);
-  const sunHoriz = equatorialToHorizontal(sunRaDeg, sunDecDeg, latitude, lstDeg);
+  // 8. Milestone Nodes
+  const milestones: ArmillaryMilestoneNode[] = ARMILLARY_MILESTONES_DATA.map((m, idx) => {
+    const targetM3D = targetGeom.milestones3D[idx]?.p3d || { x: 0, y: 0, z: 0 };
+    const sourceM3D = sourceGeom.milestones3D[idx]?.p3d || targetM3D;
+    const blendedM3D: Vector3D = {
+      x: (1 - transT) * sourceM3D.x + transT * targetM3D.x,
+      y: (1 - transT) * sourceM3D.y + transT * targetM3D.y,
+      z: (1 - transT) * sourceM3D.z + transT * targetM3D.z
+    };
+    const v = transformVertex(blendedM3D);
+    return {
+      ...m,
+      p3d: blendedM3D,
+      pCam: v.pCam,
+      screenPos: v.screenPos,
+      isFront: v.isFront
+    };
+  });
 
-  // 9. Moon Bead (Rotates with Rete)
-  const moonP3DBase = equatorialToCartesian3D(moonRaDeg, moonDecDeg, r0);
-  const moonP3DRotated = rotateEuler3D(moonP3DBase, 0, reteOffset, 0);
-  const moonV = transformVertex(moonP3DRotated);
+  // 9. Earth, Sun, and Moon Beads
+  const earthV = transformVertex(blendedEarth3D);
+  const sunV = transformVertex(blendedSun3D);
+  const moonV = transformVertex(blendedMoon3D);
+  const sunHoriz = equatorialToHorizontal(sunRaDeg, sunDecDeg, latitude, lstDeg);
   const moonHoriz = equatorialToHorizontal(moonRaDeg, moonDecDeg, latitude, lstDeg);
 
   // 10. Almucantars and Planetary Hours
@@ -754,12 +1127,21 @@ export function generateArmillaryModel(params: {
     rings,
     almucantars,
     unequalHours: [],
+    milestones,
+    physics,
+    earth: {
+      p3d: blendedEarth3D,
+      pCam: earthV.pCam,
+      pProj: earthV.pProj,
+      screenPos: earthV.screenPos,
+      isFront: earthV.isFront
+    },
     stars,
     sun: {
       raDeg: asDegrees(sunRaDeg),
       decDeg: asDegrees(sunDecDeg),
       lambdaDeg: asDegrees(sunLambdaDeg),
-      p3d: sunP3DRotated,
+      p3d: blendedSun3D,
       pCam: sunV.pCam,
       pProj: sunV.pProj,
       screenPos: sunV.screenPos,
@@ -772,7 +1154,7 @@ export function generateArmillaryModel(params: {
       decDeg: asDegrees(moonDecDeg),
       lambdaDeg: asDegrees(moonLambdaDeg),
       phase: moonPhase,
-      p3d: moonP3DRotated,
+      p3d: blendedMoon3D,
       pCam: moonV.pCam,
       pProj: moonV.pProj,
       screenPos: moonV.screenPos,
@@ -785,7 +1167,13 @@ export function generateArmillaryModel(params: {
     apparentSolarHours,
     isFreeRete: isFreeReteMode,
     focalBeacon,
-    planetaryHour
+    planetaryHour,
+    celestialRingsOpacity,
+    orbitRingOpacity,
+    milestonesOpacity,
+    starsOpacity,
+    bezelOpacity,
+    alidadeOpacity
   };
 }
 

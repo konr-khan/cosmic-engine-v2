@@ -35,7 +35,7 @@ import {
   ArmillaryHoverHud,
   ArmillaryTelemetryHud
 } from './index';
-import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData } from '../../utils/cosmicMath';
+import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData, generateArmillaryModel } from '../../utils/cosmicMath';
 
 describe('Observatory 8-Widget Architecture & Integration Tests', () => {
   
@@ -59,6 +59,34 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(ArmillarySvgCanvas).toBeDefined();
       expect(ArmillaryHoverHud).toBeDefined();
       expect(ArmillaryTelemetryHud).toBeDefined();
+    });
+
+    it('generates multi-model geometry with Keplerian orbital physics and 6 milestones', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const helioModel = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(helioModel.milestones.length).toBe(6);
+      expect(helioModel.physics).toBeDefined();
+      expect(helioModel.physics?.distanceAU).toBeCloseTo(0.983, 2);
+      expect(helioModel.orbitRingOpacity).toBe(1.0);
+      expect(helioModel.celestialRingsOpacity).toBe(0.0);
     });
   });
 

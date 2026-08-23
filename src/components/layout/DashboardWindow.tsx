@@ -16,6 +16,7 @@ export interface DashboardWindowProps {
   onResize?: (id: string, width: number, height: number | string) => void;
   onToggleLock?: (id: string) => void;
   onResetSize?: (id: string) => void;
+  onToggleColSpan?: (id: string) => void;
 }
 
 export const DashboardWindow: React.FC<DashboardWindowProps> = ({ 
@@ -31,7 +32,8 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
   onDrop,
   onResize,
   onToggleLock,
-  onResetSize
+  onResetSize,
+  onToggleColSpan
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -68,11 +70,11 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
     ? "fixed inset-4 z-50 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/90 flex flex-col p-4 overflow-auto animate-in zoom-in-95 duration-200"
     : `bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-lg border border-slate-800/80 hover:border-slate-700/80 flex flex-col transition-all relative ${
         colSpan === 12 
-          ? 'col-span-12 2xl:col-span-6 3xl:col-span-6' 
+          ? 'col-span-12' 
           : colSpan === 6 
-          ? 'col-span-12 lg:col-span-6 3xl:col-span-3' 
+          ? 'col-span-12 2xl:col-span-6' 
           : colSpan === 4
-          ? 'col-span-12 md:col-span-6 lg:col-span-4 3xl:col-span-2'
+          ? 'col-span-12 md:col-span-6 lg:col-span-4'
           : 'col-span-12'
       }`;
 
@@ -113,7 +115,22 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
         </div>
 
         {/* HEADER CONTROLS */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1.5">
+          {/* Toggle 1-Col / 2-Col Width */}
+          {onToggleColSpan && !isLocked && !isMaximized && (
+            <button 
+              onClick={() => onToggleColSpan(id)}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors cursor-pointer border ${
+                colSpan === 12 
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30' 
+                  : 'text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+              title={colSpan === 12 ? "Switch to 1-Column width" : "Expand to 2-Column Panoramic width"}
+            >
+              {colSpan === 12 ? '2-Col' : '1-Col'}
+            </button>
+          )}
+
           {/* Reset Dimensions */}
           {onResetSize && !isLocked && (
             <button 

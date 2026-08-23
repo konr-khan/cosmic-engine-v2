@@ -135,4 +135,26 @@ describe('useDashboardLayout hook suite', () => {
     expect(resetLayout.isAllLocked).toBe(false);
     expect(resetLayout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
   });
+
+  it('toggles column span between 1-Col and 2-Col with handleToggleColSpan', () => {
+    stateCounter = 0;
+    const layout = useDashboardLayout();
+    const armillaryWin = layout.windows.find((w: { id: string }) => w.id === 'armillary');
+    const initialColSpan = armillaryWin?.colSpan;
+    expect(initialColSpan).toBe(12);
+
+    layout.handleToggleColSpan('armillary');
+
+    stateCounter = 0;
+    const updated = useDashboardLayout();
+    const toggledWin = updated.windows.find((w: { id: string }) => w.id === 'armillary');
+    expect(toggledWin?.colSpan).toBe(6);
+
+    layout.handleToggleColSpan('armillary');
+
+    stateCounter = 0;
+    const toggledBack = useDashboardLayout();
+    const backWin = toggledBack.windows.find((w: { id: string }) => w.id === 'armillary');
+    expect(backWin?.colSpan).toBe(12);
+  });
 });

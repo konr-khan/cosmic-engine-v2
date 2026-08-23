@@ -26,10 +26,11 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   hoverTime,
   onHoverTime
 }) => {
-  const [projectionMode, setProjectionMode] = useState<ArmillaryProjectionMode>('stereographic');
-  const [fromProjectionMode, setFromProjectionMode] = useState<ArmillaryProjectionMode>('stereographic');
+  const [projectionMode, setProjectionMode] = useState<ArmillaryProjectionMode>('3D');
+  const [fromProjectionMode, setFromProjectionMode] = useState<ArmillaryProjectionMode>('3D');
   const [projectionTransitionT, setProjectionTransitionT] = useState<number>(1.0);
   const [morphLambda, setMorphLambda] = useState<number>(0.0);
+  const [exaggerateEccentricity, setExaggerateEccentricity] = useState<boolean>(false);
   const [showRays, setShowRays] = useState<boolean>(false);
   const [showStars, setShowStars] = useState<boolean>(true);
   const [showTympan, setShowTympan] = useState<boolean>(true);
@@ -92,7 +93,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       sunrise,
       sunset,
       isFreeReteMode,
-      freeReteOffsetDeg
+      freeReteOffsetDeg,
+      exaggerateEccentricity
     });
   }, [
     julianDate,
@@ -116,19 +118,20 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     sunrise,
     sunset,
     isFreeReteMode,
-    freeReteOffsetDeg
+    freeReteOffsetDeg,
+    exaggerateEccentricity
   ]);
 
-  // --- Smooth Animated Morph Transition (Supports 3D <-> 2D and 2D <-> 2D Cross-Morph) ---
+  // --- Smooth Animated Morph Transition (Supports Universal Any-to-Any Morphing) ---
   const animRef = useRef<number | null>(null);
   const snapRuleAnimRef = useRef<number | null>(null);
 
   const handleSnapToPreset = useCallback((targetMode: ArmillaryProjectionMode, targetLambda: number) => {
     if (animRef.current) cancelAnimationFrame(animRef.current);
 
-    const isCrossProjection2D = morphLambda >= 0.1 && targetMode !== projectionMode && targetLambda >= 0.5;
+    const isModeSwitch = targetMode !== projectionMode;
 
-    if (isCrossProjection2D) {
+    if (isModeSwitch) {
       setFromProjectionMode(projectionMode);
       setProjectionMode(targetMode);
       setProjectionTransitionT(0.0);
@@ -139,9 +142,9 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     }
 
     const startLambda = morphLambda;
-    const startT = isCrossProjection2D ? 0.0 : 1.0;
+    const startT = isModeSwitch ? 0.0 : 1.0;
     const startTime = performance.now();
-    const duration = isCrossProjection2D ? 550 : 500; // ms
+    const duration = 600; // ms ease-out cubic spring curve
 
     const step = (now: number) => {
       const elapsed = now - startTime;
@@ -152,7 +155,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       const nextLambda = startLambda + (targetLambda - startLambda) * ease;
       setMorphLambda(parseFloat(nextLambda.toFixed(3)));
 
-      if (isCrossProjection2D) {
+      if (isModeSwitch) {
         const nextT = startT + (1.0 - startT) * ease;
         setProjectionTransitionT(parseFloat(nextT.toFixed(3)));
       }
@@ -245,6 +248,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         onToggleFreeRete={handleToggleFreeRete}
         onSnapToNow={handleSnapToNow}
         apparentSolarHours={model.apparentSolarHours}
+        exaggerateEccentricity={exaggerateEccentricity}
+        onToggleEccentricity={setExaggerateEccentricity}
       />
 
       {/* Main Armillary SVG Canvas */}

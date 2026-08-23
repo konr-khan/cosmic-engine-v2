@@ -42,8 +42,8 @@ export const PRESET_LAYOUTS: Record<string, PresetLayout> = {
     windows: [
       { id: 'today', title: "Today's Sky Horizon (Sun & Moon Dome)", colSpan: 12, height: '440px' },
       { id: 'armillary', title: 'Gyro-Morph Armillary & Astrolabe Projections', colSpan: 12, height: '520px' },
-      { id: 'almanac', title: 'Solar Almanac & 24h Polar Clock', colSpan: 12, height: '480px' },
-      { id: 'lunarAlmanac', title: 'Lunar Almanac (365-Day Ribbon & Ephemeris)', colSpan: 12, height: '400px' },
+      { id: 'almanac', title: 'Solar Almanac & 24h Polar Clock', colSpan: 6, height: '480px' },
+      { id: 'lunarAlmanac', title: 'Lunar Almanac (365-Day Ribbon & Ephemeris)', colSpan: 6, height: '400px' },
       { id: 'eclipse', title: 'Eclipse Mechanics & Shadow Geometry', colSpan: 12, height: '460px' },
       { id: 'map', title: 'Centered Daylight Terminator Map', colSpan: 6, height: '420px' },
       { id: 'macroOrbit', title: 'Solar System Macro Orbit', colSpan: 6, height: '420px' },
@@ -121,7 +121,7 @@ export const PRESET_LAYOUTS: Record<string, PresetLayout> = {
   }
 };
 
-const STORAGE_KEY = 'cosmic_window_layout_v9';
+const STORAGE_KEY = 'cosmic_window_layout_v10';
 
 export interface UseDashboardLayoutReturn {
   activePresetKey: string;
@@ -138,6 +138,7 @@ export interface UseDashboardLayoutReturn {
   handleDrop: (e: React.DragEvent<HTMLElement>, targetId: string) => void;
   handleResize: (id: string, _newWidth: number, newHeight: number | string) => void;
   handleToggleLock: (id: string) => void;
+  handleToggleColSpan: (id: string) => void;
   handleResetLayout: () => void;
 }
 
@@ -222,6 +223,17 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     setLockedWindows(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleToggleColSpan = (id: string) => {
+    setWindows(prev => prev.map(w => {
+      if (w.id === id) {
+        // Toggle between 12 (panoramic 2-col) and 6 (standard 1-col)
+        const nextColSpan = w.colSpan === 12 ? 6 : 12;
+        return { ...w, colSpan: nextColSpan };
+      }
+      return w;
+    }));
+  };
+
   const handleResetLayout = () => {
     setActivePresetKey('master');
     setWindows(PRESET_LAYOUTS.master.windows);
@@ -251,6 +263,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     handleDrop,
     handleResize,
     handleToggleLock,
+    handleToggleColSpan,
     handleResetLayout
   };
 }

@@ -208,15 +208,53 @@ Given lunar ecliptic coordinates $(\lambda, \beta, \Delta)$ and solar coordinate
 
 ---
 
-## 7. Gyro-Morph Armillary & Astrolabe Projections
+## 7. Gyro-Morph Armillary Multi-Model Unification & Astrolabe Projections
 
-### A. 3D Celestial Coordinate Space
+### A. Unified 6-Mode Framework
+The subsystem models an unbroken 4-stage continuum of cosmic abstraction:
+```
+[1. Heliocentric Orbit]       [2. Geocentric Orbit]       [3. 3D Armillary Sphere]       [4. 2D Astrolabe Plates]
+   (Copernican Truth)          (Ptolemaic Inversion)         (Spherical Lattice)             (Planispheric 2D)
+  • Sun @ (0,0,0)             • Earth @ (0,0,0)             • Earth @ (0,0,0)               • Stereographic Conformal
+  • Earth @ 1 AU orbits       • Sun @ 1 AU orbits           • 6 Celestial Rings             • Universal Rojas
+  • 6 Seasonal Milestones     • 6 Seasonal Milestones       • 12 Navigational Stars         • Topocentric Horizon
+```
+
+### B. Keplerian Orbital Geometry & Physics
+1. **Heliocentric Earth Position**:
+   With semi-major axis $a = 1.00000011\text{ AU}$, eccentricity $e = 0.01671022$ (or $e_{\text{exag}} = 0.25$), mean anomaly $M$, and true anomaly $\nu$:
+   \[
+   r = \frac{a(1 - e^2)}{1 + e \cos\nu}, \quad x_{\text{orbit}} = r \cos\lambda_{\text{earth}}, \quad z_{\text{orbit}} = r \sin\lambda_{\text{earth}}
+   \]
+   Scaled to canvas radius $R_0 = 100\text{ px}$:
+   \[
+   \vec{P}_{\oplus} = (x_{\text{orbit}} \cdot R_0, 0, z_{\text{orbit}} \cdot R_0), \quad \vec{P}_{\odot} = (0, 0, 0)
+   \]
+2. **Geocentric Inversion**:
+   Earth centered at origin $(0, 0, 0)$, and Sun in apparent annual ecliptic motion:
+   \[
+   \vec{P}_{\odot} = (-\vec{P}_{\oplus, x}, 0, -\vec{P}_{\oplus, z}), \quad \vec{P}_{\oplus} = (0, 0, 0)
+   \]
+3. **Keplerian Orbital Physics Metrics**:
+   * *Orbital Velocity (Vis-Viva Equation)*: $v = \sqrt{G M_\odot \left(\frac{2}{r} - \frac{1}{a}\right)} \approx 29.78 \sqrt{\frac{2}{r_{\text{AU}}} - 1}\text{ km/s}$
+   * *Relative Solar Irradiance*: $I = \left(\frac{1\text{ AU}}{r}\right)^2 \times 100\%$
+   * *Solar Angular Diameter*: $\theta_\odot = \frac{31.98'}{r_{\text{AU}}}$
+4. **Seasonal Milestone Nodes**:
+   6 seasonal milestone points ($M_k$) positioned along the orbit:
+   * *Perihelion* ($\lambda = 103^\circ$, $0.983\text{ AU}$, $30.29\text{ km/s}$)
+   * *March Equinox* ($\lambda = 0^\circ$, $0.996\text{ AU}$, $29.84\text{ km/s}$)
+   * *June Solstice* ($\lambda = 90^\circ$, $1.016\text{ AU}$, $29.29\text{ km/s}$)
+   * *Aphelion* ($\lambda = 283^\circ$, $1.017\text{ AU}$, $29.29\text{ km/s}$)
+   * *September Equinox* ($\lambda = 180^\circ$, $1.004\text{ AU}$, $29.72\text{ km/s}$)
+   * *December Solstice* ($\lambda = 270^\circ$, $0.984\text{ AU}$, $30.28\text{ km/s}$)
+
+### C. 3D Celestial Coordinate Space
 Given radius $R_0 = 100\text{ px}$, equatorial Right Ascension $\alpha \in [0^\circ, 360^\circ)$ and Declination $\delta \in [-90^\circ, +90^\circ]$:
 \[
 x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delta \cos\alpha
 \]
 
-### B. 2D Astrolabe Historical Projections
+### D. 2D Astrolabe Historical Projections
 1. **Stereographic Conformal Projection (Equatorial Plane)**:
    Projected from South Celestial Pole $(0, -R_0, 0)$ onto $y = 0$:
    \[
@@ -241,10 +279,12 @@ x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delt
    r_{\text{horiz}} = R_0 \tan\left(\frac{90^\circ - a}{2}\right), \quad x_{\text{horiz}} = r_{\text{horiz}} \sin A, \quad y_{\text{horiz}} = -r_{\text{horiz}} \cos A
    \]
 
-### C. Continuous 60 FPS Morph Interpolation
+### E. Universal Any-to-Any Morphing Engine
+Any transition from source model $\mathcal{M}_{\text{from}}$ to target model $\mathcal{M}_{\text{to}}$ with transition progress $T \in [0.0, 1.0]$:
 \[
-\vec{P}(\lambda) = (1 - \lambda) \mathbf{\Pi}_{\text{ortho}}(\mathbf{R}_{\text{cam}} \vec{P}_{3D}) + \lambda \vec{P}_{\text{proj}}, \quad \lambda \in [0.0, 1.0]
+\vec{P}(T) = (1 - T) \vec{P}_{\text{from}} + T \vec{P}_{\text{to}}
 \]
+where layer opacities for celestial rings, orbital rings, milestones, stars, bezel, and alidade are continuously interpolated via ease-out cubic spring curve $E(t) = 1 - (1 - t)^3$.
 
 ### D. Free Rete Spinning & Analog Solar Time Solver
 When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{free}}$:

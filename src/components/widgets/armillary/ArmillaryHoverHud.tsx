@@ -1,22 +1,28 @@
 import React from 'react';
-import { HoveredStarInfo, AlidadeSightingInfo, ArmillaryModelOutput } from './types';
+import { HoveredStarInfo, AlidadeSightingInfo, ArmillaryModelOutput, ArmillaryMilestoneNode } from './types';
 
 export interface ArmillaryHoverHudProps {
   hoveredStar: HoveredStarInfo | null;
-  hoveredBead: 'sun' | 'moon' | null;
+  hoveredBead: 'sun' | 'moon' | 'earth' | null;
+  hoveredMilestone: ArmillaryMilestoneNode | null;
   showRule: boolean;
   sightingInfo: AlidadeSightingInfo | null;
   sun: ArmillaryModelOutput['sun'];
   moon: ArmillaryModelOutput['moon'];
+  earth?: ArmillaryModelOutput['earth'];
+  physics?: ArmillaryModelOutput['physics'];
 }
 
 export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
   hoveredStar,
   hoveredBead,
+  hoveredMilestone,
   showRule,
   sightingInfo,
   sun,
-  moon
+  moon,
+  earth,
+  physics
 }) => {
   return (
     <>
@@ -91,6 +97,43 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
           </div>
           <div className="mt-1 pt-1 border-t border-slate-800 text-[10px] text-slate-400">
             Click Moon to snap Alidade sighting arm
+          </div>
+        </div>
+      )}
+
+      {/* Floating Earth Hover Popover (Heliocentric / Geocentric) */}
+      {hoveredBead === 'earth' && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-sky-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-sky-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span>⊕ Earth (Terra)</span>
+            <span className="text-[10px] text-slate-400 font-normal">Orbiter</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Axial Tilt (ε): <strong className="text-sky-300">23.44°</strong></div>
+            {physics && (
+              <>
+                <div>Heliocentric Dist: <strong className="text-white">{physics.distanceAU.toFixed(3)} AU</strong></div>
+                <div>Orbital Velocity: <strong className="text-emerald-400">{physics.orbitalSpeedKms.toFixed(1)} km/s</strong></div>
+                <div>Solar Irradiance: <strong className="text-amber-300">{physics.solarIrradiancePercent.toFixed(1)}%</strong></div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Seasonal Milestone Hover Popover */}
+      {hoveredMilestone && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-purple-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
+            <strong className={`${hoveredMilestone.textColor} font-bold`}>{hoveredMilestone.label}</strong>
+            <span className="text-[10px] text-slate-400 font-mono">{hoveredMilestone.date}</span>
+          </div>
+          <div className="space-y-1 text-[11px]">
+            <div className="text-slate-300 leading-relaxed">{hoveredMilestone.description}</div>
+            <div className="pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
+              <span>Dist: <strong className="text-white">{hoveredMilestone.distanceAU} AU</strong></span>
+              <span>Speed: <strong className="text-emerald-400">{hoveredMilestone.speedKms} km/s</strong></span>
+            </div>
           </div>
         </div>
       )}

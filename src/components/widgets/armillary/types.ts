@@ -1,8 +1,11 @@
 import { 
+  ArmillaryModelMode,
   ArmillaryProjectionMode, 
   ArmillaryStarData, 
   AlmucantarCircleData, 
   ArmillaryModelOutput,
+  ArmillaryMilestoneNode,
+  ArmillaryOrbitalPhysics,
   AlidadeSightingInfo,
   ProjectionFocalBeaconOutput,
   LaserRay
@@ -10,10 +13,13 @@ import {
 import { SolarAlmanacData, OrbitalData } from '../../../types';
 
 export type { 
+  ArmillaryModelMode,
   ArmillaryProjectionMode, 
   ArmillaryStarData, 
   AlmucantarCircleData, 
   ArmillaryModelOutput,
+  ArmillaryMilestoneNode,
+  ArmillaryOrbitalPhysics,
   AlidadeSightingInfo,
   ProjectionFocalBeaconOutput,
   LaserRay
