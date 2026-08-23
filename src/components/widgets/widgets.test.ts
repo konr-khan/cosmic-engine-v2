@@ -33,7 +33,16 @@ import {
   ArmillaryHeaderControls,
   ArmillarySvgCanvas,
   ArmillaryHoverHud,
-  ArmillaryTelemetryHud
+  ArmillaryTelemetryHud,
+  ArmillaryDefs,
+  ArmillaryBezelLayer,
+  ArmillaryTympanLayer,
+  ArmillaryLaserLayer,
+  ArmillaryObserverConeLayer,
+  ArmillaryRingsLayer,
+  ArmillaryStarsLayer,
+  ArmillaryBeadsLayer,
+  ArmillaryAlidadeLayer
 } from './index';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData, generateArmillaryModel } from '../../utils/cosmicMath';
 
@@ -59,6 +68,15 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(ArmillarySvgCanvas).toBeDefined();
       expect(ArmillaryHoverHud).toBeDefined();
       expect(ArmillaryTelemetryHud).toBeDefined();
+      expect(ArmillaryDefs).toBeDefined();
+      expect(ArmillaryBezelLayer).toBeDefined();
+      expect(ArmillaryTympanLayer).toBeDefined();
+      expect(ArmillaryLaserLayer).toBeDefined();
+      expect(ArmillaryObserverConeLayer).toBeDefined();
+      expect(ArmillaryRingsLayer).toBeDefined();
+      expect(ArmillaryStarsLayer).toBeDefined();
+      expect(ArmillaryBeadsLayer).toBeDefined();
+      expect(ArmillaryAlidadeLayer).toBeDefined();
     });
 
     it('generates multi-model geometry with Keplerian orbital physics and 6 milestones', () => {

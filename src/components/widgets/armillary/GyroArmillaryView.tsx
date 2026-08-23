@@ -26,8 +26,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   hoverTime,
   onHoverTime
 }) => {
-  const [projectionMode, setProjectionMode] = useState<ArmillaryProjectionMode>('3D');
-  const [fromProjectionMode, setFromProjectionMode] = useState<ArmillaryProjectionMode>('3D');
+  const [projectionMode, setProjectionMode] = useState<ArmillaryProjectionMode>('geocentric');
+  const [fromProjectionMode, setFromProjectionMode] = useState<ArmillaryProjectionMode>('geocentric');
   const [projectionTransitionT, setProjectionTransitionT] = useState<number>(1.0);
   const [morphLambda, setMorphLambda] = useState<number>(0.0);
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState<boolean>(false);

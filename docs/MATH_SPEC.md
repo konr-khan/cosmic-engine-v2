@@ -210,17 +210,27 @@ Given lunar ecliptic coordinates $(\lambda, \beta, \Delta)$ and solar coordinate
 
 ## 7. Gyro-Morph Armillary Multi-Model Unification & Astrolabe Projections
 
-### A. Unified 6-Mode Framework
-The subsystem models an unbroken 4-stage continuum of cosmic abstraction:
+### A. Unified 5-Mode Continuum
+The subsystem models an unbroken continuum across 5 modes:
 ```
-[1. Heliocentric Orbit]       [2. Geocentric Orbit]       [3. 3D Armillary Sphere]       [4. 2D Astrolabe Plates]
-   (Copernican Truth)          (Ptolemaic Inversion)         (Spherical Lattice)             (Planispheric 2D)
-  • Sun @ (0,0,0)             • Earth @ (0,0,0)             • Earth @ (0,0,0)               • Stereographic Conformal
-  • Earth @ 1 AU orbits       • Sun @ 1 AU orbits           • 6 Celestial Rings             • Universal Rojas
-  • 6 Seasonal Milestones     • 6 Seasonal Milestones       • 12 Navigational Stars         • Topocentric Horizon
+[1. Heliocentric Orbit]       [2. Geocentric Apparent & 3D Sphere]       [3. 2D Astrolabe Plates]
+   (Copernican Truth)              (Apparent & Spherical Lattice)               (Planispheric 2D)
+  • Sun @ (0,0,0) / Focus        • Earth @ (0,0,0)                            • Stereographic Conformal
+  • Earth @ 1 AU orbits          • Sun revolving on Ecliptic track            • Universal Rojas
+  • 6 Seasonal Milestones        • 6 Celestial Rings & 12 Stars               • Topocentric Horizon
 ```
 
-### B. Keplerian Orbital Geometry & Physics
+### B. Clamped Ecliptic Track Sun Bead
+In Astrolabe plates and Geocentric apparent modes, the Sun bead $\vec{P}_\odot$ is mathematically clamped directly to the parametric Ecliptic track of radius $R_0$, obliquity $\epsilon = 23.439^\circ$, and apparent solar ecliptic longitude $\lambda_\odot$:
+\[
+\vec{P}_{\odot,\text{base}} = \begin{pmatrix} R_0 \cos\lambda_\odot \\ R_0 \sin\lambda_\odot \sin\epsilon \\ R_0 \sin\lambda_\odot \cos\epsilon \end{pmatrix}
+\]
+Rotated by Rete offset $\Delta\theta_{\text{rete}}$ around the $Y$-axis:
+\[
+\vec{P}_\odot = \mathbf{R}_y(\Delta\theta_{\text{rete}}) \vec{P}_{\odot,\text{base}}
+\]
+
+### C. Keplerian Orbital Geometry & Physics
 1. **Heliocentric Earth Position**:
    With semi-major axis $a = 1.00000011\text{ AU}$, eccentricity $e = 0.01671022$ (or $e_{\text{exag}} = 0.25$), mean anomaly $M$, and true anomaly $\nu$:
    \[
@@ -231,9 +241,9 @@ The subsystem models an unbroken 4-stage continuum of cosmic abstraction:
    \vec{P}_{\oplus} = (x_{\text{orbit}} \cdot R_0, 0, z_{\text{orbit}} \cdot R_0), \quad \vec{P}_{\odot} = (0, 0, 0)
    \]
 2. **Geocentric Inversion**:
-   Earth centered at origin $(0, 0, 0)$, and Sun in apparent annual ecliptic motion:
+   Earth centered at origin $(0, 0, 0)$, and Sun revolving along the apparent annual ecliptic loop:
    \[
-   \vec{P}_{\odot} = (-\vec{P}_{\oplus, x}, 0, -\vec{P}_{\oplus, z}), \quad \vec{P}_{\oplus} = (0, 0, 0)
+   \vec{P}_{\odot} = (a \cos\lambda_\odot, a \sin\lambda_\odot \sin\epsilon, a \sin\lambda_\odot \cos\epsilon), \quad \vec{P}_{\oplus} = (0, 0, 0)
    \]
 3. **Keplerian Orbital Physics Metrics**:
    * *Orbital Velocity (Vis-Viva Equation)*: $v = \sqrt{G M_\odot \left(\frac{2}{r} - \frac{1}{a}\right)} \approx 29.78 \sqrt{\frac{2}{r_{\text{AU}}} - 1}\text{ km/s}$
@@ -248,13 +258,13 @@ The subsystem models an unbroken 4-stage continuum of cosmic abstraction:
    * *September Equinox* ($\lambda = 180^\circ$, $1.004\text{ AU}$, $29.72\text{ km/s}$)
    * *December Solstice* ($\lambda = 270^\circ$, $0.984\text{ AU}$, $30.28\text{ km/s}$)
 
-### C. 3D Celestial Coordinate Space
+### D. 3D Celestial Coordinate Space
 Given radius $R_0 = 100\text{ px}$, equatorial Right Ascension $\alpha \in [0^\circ, 360^\circ)$ and Declination $\delta \in [-90^\circ, +90^\circ]$:
 \[
 x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delta \cos\alpha
 \]
 
-### D. 2D Astrolabe Historical Projections
+### E. 2D Astrolabe Historical Projections
 1. **Stereographic Conformal Projection (Equatorial Plane)**:
    Projected from South Celestial Pole $(0, -R_0, 0)$ onto $y = 0$:
    \[
@@ -279,14 +289,14 @@ x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delt
    r_{\text{horiz}} = R_0 \tan\left(\frac{90^\circ - a}{2}\right), \quad x_{\text{horiz}} = r_{\text{horiz}} \sin A, \quad y_{\text{horiz}} = -r_{\text{horiz}} \cos A
    \]
 
-### E. Universal Any-to-Any Morphing Engine
+### F. Universal Any-to-Any Morphing Engine & Staged Choreography
 Any transition from source model $\mathcal{M}_{\text{from}}$ to target model $\mathcal{M}_{\text{to}}$ with transition progress $T \in [0.0, 1.0]$:
 \[
 \vec{P}(T) = (1 - T) \vec{P}_{\text{from}} + T \vec{P}_{\text{to}}
 \]
-where layer opacities for celestial rings, orbital rings, milestones, stars, bezel, and alidade are continuously interpolated via ease-out cubic spring curve $E(t) = 1 - (1 - t)^3$.
+where layer opacities for celestial rings, orbital rings, milestones, stars, bezel, and alidade are continuously interpolated via ease-out cubic spring curve $E(t) = 1 - (1 - t)^3$. Staged choreography orchestrates camera alignment ($\lambda \in [0.0, 0.4]$), geometric unwrapping ($\lambda \in [0.2, 0.8]$), and astrolabe plate decoration materialization ($\lambda \in [0.6, 1.0]$).
 
-### D. Free Rete Spinning & Analog Solar Time Solver
+### G. Free Rete Spinning & Analog Solar Time Solver
 When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{free}}$:
 1. **Apparent Local Sidereal Time**:
    \[
@@ -300,7 +310,7 @@ When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{f
    T_{\text{solar}} = \left(\frac{H_\odot}{15^\circ} + 12\right) \bmod 24
    \]
 
-### E. Volumetric Laser Projection Beacons & Conic Light Envelope
+### H. Volumetric Laser Projection Beacons & Conic Light Envelope
 1. **Center of Projection (Focal Pole)**:
    * Stereographic: $\vec{F}_{3D} = (0, -R_0, 0)$ (South Celestial Pole).
    * Rojas: $\vec{F}_{3D} = (0, 0, +1.5 R_0)$ (Orthogonal sightline).
@@ -316,7 +326,7 @@ When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{f
 4. **Laser Conic Rays**:
    8 radial rays connecting $\vec{F}_{\text{screen}}$ through circle vertices $\vec{P}_i(\lambda)$ down to the planar projective rim at radius $1.4 R_0$.
 
-### F. Astrolabe Alidade Sighting Arm Mathematics
+### I. Astrolabe Alidade Sighting Arm Mathematics
 Given sighting rule angle $\theta_{\text{rule}} \in [0^\circ, 360^\circ)$:
 1. **Sighted Right Ascension**:
    \[

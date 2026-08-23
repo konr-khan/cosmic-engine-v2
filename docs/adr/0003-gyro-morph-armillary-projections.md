@@ -52,12 +52,21 @@ The visualizer must satisfy three conflicting constraints:
    - Equip the astrolabe rule with dual pinnule sighting vanes (pinhole slits) and an extended laser sightline.
    - Smoothly animate the sighting arm to lock onto stars (*Sirius*, *Vega*, *Arcturus*, *Rigel*), Sun, or Moon upon user click.
 
+8. **Decomposed Modular Math & Canvas Architecture**:
+   - Math functions decomposed into dedicated domain sub-modules under `src/utils/cosmicMath/armillary/` (`coordinates`, `projections`, `astrolabe`, `focalBeacon`, `alidade`, `paths`, `generator`).
+   - SVG visual canvas decomposed into modular visual layers under `src/components/widgets/armillary/canvas/` (`ArmillaryDefs`, `ArmillaryBezelLayer`, `ArmillaryTympanLayer`, `ArmillaryLaserLayer`, `ArmillaryObserverConeLayer`, `ArmillaryRingsLayer`, `ArmillaryStarsLayer`, `ArmillaryBeadsLayer`, `ArmillaryAlidadeLayer`).
+
+9. **Clamped Ecliptic Track Sun Bead**:
+   - Sun bead position $\vec{P}_\odot$ is mathematically clamped to the parametric Ecliptic curve ($r_0 \cos \lambda, r_0 \sin \lambda \sin \epsilon, r_0 \sin \lambda \cos \epsilon$), eliminating drift across seasons and Rete rotations.
+
 ## Consequences
 
 * **Positive**:
   - Delivers fluid, liquid topological transformations at a steady 60 FPS without GPU/WebGL overhead.
+  - Streamlines the continuum into 5 intuitive modes (`heliocentric`, `geocentric`, `stereographic`, `rojas`, `horizon`), merging 3D Sphere into Geocentric Apparent motion.
   - Mathematically authentic across all historical projections and Renaissance horology.
-  - Decoupled from React render bottlenecks; verified by 160 unit tests.
+  - Highly maintainable modular architecture with clear separation of math routines and rendering layers; verified by 170 unit tests across 7 test suites.
+
 * **Invariants**:
   - Keep domain projection math pure and deterministic in `src/utils/cosmicMath/armillary.ts`.
   - Isolate pointer and drag events on SVG canvases and sliders to prevent triggering dashboard window drag-and-drop.

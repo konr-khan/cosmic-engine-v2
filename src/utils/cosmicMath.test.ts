@@ -1553,9 +1553,122 @@ describe('cosmicMath utilities', () => {
       const sunDist = Math.hypot(geoModel.sun.p3d.x, geoModel.sun.p3d.y, geoModel.sun.p3d.z);
       expect(sunDist).toBeGreaterThan(90);
 
-      // Opacity contracts
-      expect(geoModel.celestialRingsOpacity).toBeCloseTo(0.35, 2);
+      // Opacity contracts in unified Geocentric mode
+      expect(geoModel.celestialRingsOpacity).toBeCloseTo(0.85, 2);
       expect(geoModel.orbitRingOpacity).toBe(1.0);
+    });
+
+    it('clamps Sun bead strictly to the Ecliptic track across seasons and Rete rotation', () => {
+      const sunLambda = 120; // 120° Ecliptic Longitude (Leo/Cancer)
+      const obliquity = 23.439;
+      const epsRad = (obliquity * Math.PI) / 180;
+      const lambdaRad = (sunLambda * Math.PI) / 180;
+      const r0 = 100;
+
+      const model = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 122,
+        sunDecDeg: 20,
+        sunLambdaDeg: sunLambda,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0
+      });
+
+      // Theoretical 3D position on Ecliptic circle
+      const expectedX = r0 * Math.cos(lambdaRad);
+      const expectedY = r0 * Math.sin(lambdaRad) * Math.sin(epsRad);
+      const expectedZ = r0 * Math.sin(lambdaRad) * Math.cos(epsRad);
+
+      expect(model.sun.p3d.x).toBeCloseTo(expectedX, 1);
+      expect(model.sun.p3d.y).toBeCloseTo(expectedY, 1);
+      expect(model.sun.p3d.z).toBeCloseTo(expectedZ, 1);
+
+      // Distance from origin must equal r0
+      const dist = Math.hypot(model.sun.p3d.x, model.sun.p3d.y, model.sun.p3d.z);
+      expect(dist).toBeCloseTo(r0, 1);
+    });
+
+    it('implements staged morph choreography with progressive plate materialization', () => {
+      const baseParams = {
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        projectionMode: 'stereographic' as const,
+        cameraPitch: 25,
+        cameraYaw: 35,
+        r0: 100
+      };
+
+      // Stage 1: lambda = 0.0 (3D Celestial Sphere, no flat plate decorations)
+      const stage0 = generateArmillaryModel({ ...baseParams, morphLambda: 0.0 });
+      expect(stage0.bezelOpacity).toBe(0.0);
+      expect(stage0.alidadeOpacity).toBe(0.0);
+      expect(stage0.celestialRingsOpacity).toBe(1.0);
+
+      // Stage 2: lambda = 0.5 (Mid-morph, bezel and alidade materializing)
+      const stageMid = generateArmillaryModel({ ...baseParams, morphLambda: 0.5 });
+      expect(stageMid.bezelOpacity).toBeGreaterThan(0.0);
+      expect(stageMid.bezelOpacity).toBeLessThan(1.0);
+
+      // Stage 3: lambda = 1.0 (Full 2D plate, full opacity)
+      const stageFull = generateArmillaryModel({ ...baseParams, morphLambda: 1.0 });
+      expect(stageFull.bezelOpacity).toBe(1.0);
+      expect(stageFull.alidadeOpacity).toBe(1.0);
+    });
+
+    it('supports full 5-mode continuum seamlessly', () => {
+      const modes: Array<'heliocentric' | 'geocentric' | 'stereographic' | 'rojas' | 'horizon'> = [
+        'heliocentric',
+        'geocentric',
+        'stereographic',
+        'rojas',
+        'horizon'
+      ];
+
+      for (const mode of modes) {
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunRaDeg: 280,
+          sunDecDeg: -23,
+          sunLambdaDeg: 280,
+          moonRaDeg: 120,
+          moonDecDeg: 15,
+          moonLambdaDeg: 120,
+          moonPhase: 0.5,
+          morphLambda: mode === 'heliocentric' || mode === 'geocentric' ? 0.0 : 1.0,
+          projectionMode: mode,
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        expect(model.rings.length).toBeGreaterThan(0);
+        expect(model.stars.length).toBe(12);
+        expect(model.sun.screenPos).toBeDefined();
+        expect(model.moon.screenPos).toBeDefined();
+        expect(model.earth.screenPos).toBeDefined();
+      }
     });
 
     it('smoothly interpolates any-to-any transitions between Heliocentric and Stereographic modes', () => {

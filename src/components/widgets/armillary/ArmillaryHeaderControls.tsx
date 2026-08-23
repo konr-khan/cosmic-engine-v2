@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  Layers, 
   Sparkles, 
   RotateCcw, 
   Grid, 
@@ -58,8 +57,8 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
   exaggerateEccentricity = false,
   onToggleEccentricity
 }) => {
-  const isOrbital = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
-  const is3D = projectionMode === '3D' || (morphLambda <= 0.05 && !isOrbital);
+  const isOrbital = projectionMode === 'heliocentric';
+  const is3D = projectionMode === 'geocentric' || (morphLambda <= 0.05 && !isOrbital);
 
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-2 w-full select-none">
@@ -74,9 +73,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             {projectionMode === 'heliocentric' 
               ? '☉ Heliocentric Orbit'
               : projectionMode === 'geocentric'
-              ? '⊕ Geocentric Apparent'
-              : is3D 
-              ? '🌐 3D Spherical Lattice' 
+              ? '⊕ Geocentric Armillary Sphere'
               : `${projectionMode.toUpperCase()} Plate`}
           </span>
         </div>
@@ -87,7 +84,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
 
       {/* Control Actions & Segmented Toggles */}
       <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto justify-start xl:justify-end">
-        {/* 6-Mode Segmented Pill Bar */}
+        {/* 5-Mode Segmented Pill Bar */}
         <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-mono overflow-x-auto">
           {/* 1. Heliocentric Orbit */}
           <button
@@ -103,7 +100,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             <span>☉ Orbit</span>
           </button>
 
-          {/* 2. Geocentric Apparent Orbit */}
+          {/* 2. Geocentric Apparent & 3D Celestial Armillary Sphere */}
           <button
             onClick={() => onSnapToPreset('geocentric', 0.0)}
             className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
@@ -111,27 +108,13 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Ptolemaic Geocentric Apparent Ecliptic Motion (Earth centered)"
+            title="Geocentric Apparent Motion & 3D Celestial Armillary Sphere (Earth centered)"
           >
             <Globe className="w-3 h-3" />
             <span>⊕ Apparent</span>
           </button>
 
-          {/* 3. 3D Armillary Sphere */}
-          <button
-            onClick={() => onSnapToPreset('3D', 0.0)}
-            className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
-              is3D && projectionMode === '3D'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-            title="3D Spherical Celestial Armillary Sphere"
-          >
-            <Layers className="w-3 h-3" />
-            <span>🌐 Sphere</span>
-          </button>
-
-          {/* 4. Stereographic Conformal Rete */}
+          {/* 3. Stereographic Conformal Rete */}
           <button
             onClick={() => onSnapToPreset('stereographic', 1.0)}
             className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
@@ -144,7 +127,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             <span>🧭 Rete</span>
           </button>
 
-          {/* 5. Universal Rojas Orthographic */}
+          {/* 4. Universal Rojas Orthographic */}
           <button
             onClick={() => onSnapToPreset('rojas', 1.0)}
             className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
@@ -157,7 +140,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             <span>📐 Rojas</span>
           </button>
 
-          {/* 6. Topocentric Horizon Stereonet */}
+          {/* 5. Topocentric Horizon Stereonet */}
           <button
             onClick={() => onSnapToPreset('horizon', 1.0)}
             className={`px-2.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
@@ -171,7 +154,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
           </button>
         </div>
 
-        {/* Exaggerated vs True Scale toggle when in orbital modes */}
+        {/* Exaggerated vs True Scale toggle when in orbital heliocentric mode */}
         {isOrbital && onToggleEccentricity && (
           <div className="flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
             <button

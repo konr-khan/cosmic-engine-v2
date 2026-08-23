@@ -1,0 +1,308 @@
+import React from 'react';
+import { 
+  ArmillaryModelOutput, 
+  ArmillaryProjectionMode, 
+  ArmillaryMilestoneNode,
+  ArmillaryLunarNodes
+} from '../types';
+import { toRadians } from '../../../../utils/cosmicMath';
+
+export interface ArmillaryBeadsLayerProps {
+  earth: ArmillaryModelOutput['earth'];
+  sun: ArmillaryModelOutput['sun'];
+  moon: ArmillaryModelOutput['moon'];
+  milestones: ArmillaryMilestoneNode[];
+  lunarNodes?: ArmillaryLunarNodes;
+  projectionMode: ArmillaryProjectionMode;
+  isOrbital: boolean;
+  orbitRingOpacity: number;
+  milestonesOpacity: number;
+  lunarOrbitOpacity: number;
+  onHoverBead: (bead: 'sun' | 'moon' | 'earth' | null) => void;
+  onHoverMilestone: (m: ArmillaryMilestoneNode | null) => void;
+  onHoverNode: (node: 'asc' | 'desc' | null) => void;
+  onTargetClick: (name: string, screenPos: { x: number; y: number }) => void;
+}
+
+export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
+  earth,
+  sun,
+  moon,
+  milestones,
+  lunarNodes,
+  projectionMode,
+  isOrbital,
+  orbitRingOpacity,
+  milestonesOpacity,
+  lunarOrbitOpacity,
+  onHoverBead,
+  onHoverMilestone,
+  onHoverNode,
+  onTargetClick
+}) => {
+  return (
+    <>
+      {/* 1. Earth-Sun Connection Line in Orbital Modes */}
+      {isOrbital && orbitRingOpacity > 0.05 && (
+        <line
+          x1={earth.screenPos.x}
+          y1={earth.screenPos.y}
+          x2={sun.screenPos.x}
+          y2={sun.screenPos.y}
+          stroke="#fbbf24"
+          strokeWidth="0.75"
+          strokeDasharray="3 3"
+          opacity={orbitRingOpacity * 0.6}
+          className="pointer-events-none"
+        />
+      )}
+
+      {/* 2. Seasonal Milestone Nodes (Heliocentric / Geocentric) */}
+      {milestonesOpacity > 0.05 && milestones.map((m) => (
+        <g
+          key={m.id}
+          className="cursor-pointer transition-transform hover:scale-110"
+          opacity={milestonesOpacity * (m.isFront ? 1.0 : 0.4)}
+          onPointerEnter={() => onHoverMilestone(m)}
+          onPointerLeave={() => onHoverMilestone(null)}
+        >
+          {/* Milestone Halo */}
+          <circle
+            cx={m.screenPos.x}
+            cy={m.screenPos.y}
+            r="4.5"
+            fill={m.color}
+            fillOpacity="0.2"
+            stroke={m.color}
+            strokeWidth="0.6"
+            strokeDasharray="2 2"
+          />
+          {/* Milestone Core */}
+          <circle
+            cx={m.screenPos.x}
+            cy={m.screenPos.y}
+            r="2.0"
+            fill={m.color}
+            stroke="#ffffff"
+            strokeWidth="0.75"
+          />
+          {/* Milestone Label */}
+          <text
+            x={m.screenPos.x}
+            y={m.screenPos.y - 5.5}
+            fontSize="3.0"
+            fill={m.color}
+            fontFamily="monospace"
+            fontWeight="bold"
+            textAnchor="middle"
+            className="pointer-events-none drop-shadow"
+          >
+            {m.label}
+          </text>
+        </g>
+      ))}
+
+      {/* 3. Earth Bead (Heliocentric / Geocentric) */}
+      <g
+        filter="url(#ringGlow)"
+        className="cursor-pointer"
+        onPointerEnter={() => onHoverBead('earth')}
+        onPointerLeave={() => onHoverBead(null)}
+      >
+        {/* Earth Atmosphere Glow */}
+        <circle
+          cx={earth.screenPos.x}
+          cy={earth.screenPos.y}
+          r="4.8"
+          fill="#38bdf8"
+          fillOpacity="0.3"
+        />
+        {/* Earth Core */}
+        <circle
+          cx={earth.screenPos.x}
+          cy={earth.screenPos.y}
+          r="2.8"
+          fill="#0284c7"
+          stroke="#ffffff"
+          strokeWidth="0.8"
+        />
+        {/* Axial Tilt Marker (23.44°) */}
+        <line
+          x1={earth.screenPos.x - 3.5 * Math.sin(toRadians(23.44))}
+          y1={earth.screenPos.y - 3.5 * Math.cos(toRadians(23.44))}
+          x2={earth.screenPos.x + 3.5 * Math.sin(toRadians(23.44))}
+          y2={earth.screenPos.y + 3.5 * Math.cos(toRadians(23.44))}
+          stroke="#38bdf8"
+          strokeWidth="0.6"
+          opacity="0.85"
+        />
+        <text
+          x={earth.screenPos.x}
+          y={earth.screenPos.y + 7.0}
+          fontSize="3.2"
+          fill="#38bdf8"
+          fontFamily="monospace"
+          fontWeight="bold"
+          textAnchor="middle"
+        >
+          {projectionMode === 'geocentric' ? '⊕ EARTH (Center)' : '⊕ EARTH'}
+        </text>
+      </g>
+
+      {/* 4. Lunar Ascending & Descending Nodes */}
+      {lunarNodes && lunarOrbitOpacity > 0.05 && (
+        <g>
+          {/* Ascending Node (Northbound, Sky Blue) */}
+          <g
+            className="cursor-pointer transition-transform hover:scale-110"
+            onPointerEnter={() => onHoverNode('asc')}
+            onPointerLeave={() => onHoverNode(null)}
+          >
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r="2.5"
+              fill="#38bdf8"
+              stroke="#ffffff"
+              strokeWidth="0.6"
+            />
+            <text
+              x={lunarNodes.ascendingNode.screenPos.x}
+              y={lunarNodes.ascendingNode.screenPos.y - 3.5}
+              fontSize="3.2"
+              fill="#38bdf8"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              ☊
+            </text>
+          </g>
+
+          {/* Descending Node (Southbound, Rose Red) */}
+          <g
+            className="cursor-pointer transition-transform hover:scale-110"
+            onPointerEnter={() => onHoverNode('desc')}
+            onPointerLeave={() => onHoverNode(null)}
+          >
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r="2.5"
+              fill="#f43f5e"
+              stroke="#ffffff"
+              strokeWidth="0.6"
+            />
+            <text
+              x={lunarNodes.descendingNode.screenPos.x}
+              y={lunarNodes.descendingNode.screenPos.y - 3.5}
+              fontSize="3.2"
+              fill="#f43f5e"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              ☋
+            </text>
+          </g>
+        </g>
+      )}
+
+      {/* 5. Sun Bead (Golden Orb with Radial Corona - Click to Snap) */}
+      <g 
+        filter="url(#sunGlow)"
+        className="cursor-pointer"
+        onClick={() => onTargetClick('Sun (Sol)', sun.screenPos)}
+        onPointerEnter={() => onHoverBead('sun')}
+        onPointerLeave={() => onHoverBead(null)}
+      >
+        {/* Ray to Origin */}
+        <line
+          x1="0"
+          y1="0"
+          x2={sun.screenPos.x}
+          y2={sun.screenPos.y}
+          stroke="#f59e0b"
+          strokeWidth="0.6"
+          opacity="0.5"
+        />
+        {/* Outer Sun Corona */}
+        <circle
+          cx={sun.screenPos.x}
+          cy={sun.screenPos.y}
+          r="5.5"
+          fill="#f59e0b"
+          fillOpacity="0.25"
+        />
+        {/* Core Sun Bead */}
+        <circle
+          cx={sun.screenPos.x}
+          cy={sun.screenPos.y}
+          r="3.0"
+          fill="#fbbf24"
+          stroke="#ffffff"
+          strokeWidth="1.0"
+        />
+        <text
+          x={sun.screenPos.x}
+          y={sun.screenPos.y + 7.0}
+          fontSize="3.5"
+          fill="#fbbf24"
+          fontFamily="monospace"
+          fontWeight="bold"
+          textAnchor="middle"
+        >
+          ☉ SUN
+        </text>
+      </g>
+
+      {/* 6. Moon Bead (Gray/Silver Phase Disc - Click to Snap) */}
+      <g 
+        filter="url(#starGlow)"
+        className="cursor-pointer"
+        onClick={() => onTargetClick('Moon (Luna)', moon.screenPos)}
+        onPointerEnter={() => onHoverBead('moon')}
+        onPointerLeave={() => onHoverBead(null)}
+      >
+        {/* Ray to Origin */}
+        <line
+          x1="0"
+          y1="0"
+          x2={moon.screenPos.x}
+          y2={moon.screenPos.y}
+          stroke="#94a3b8"
+          strokeWidth="0.6"
+          opacity="0.4"
+        />
+        {/* Moon Corona Glow */}
+        <circle
+          cx={moon.screenPos.x}
+          cy={moon.screenPos.y}
+          r="4.8"
+          fill="#94a3b8"
+          fillOpacity="0.2"
+        />
+        {/* Moon Core */}
+        <circle
+          cx={moon.screenPos.x}
+          cy={moon.screenPos.y}
+          r="2.6"
+          fill="#e2e8f0"
+          stroke="#475569"
+          strokeWidth="1.0"
+        />
+        <text
+          x={moon.screenPos.x}
+          y={moon.screenPos.y + 7.0}
+          fontSize="3.5"
+          fill="#cbd5e1"
+          fontFamily="monospace"
+          fontWeight="bold"
+          textAnchor="middle"
+        >
+          ☽ MOON
+        </text>
+      </g>
+    </>
+  );
+};

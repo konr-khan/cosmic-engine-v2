@@ -10,9 +10,10 @@ Welcome to **Cosmic Engine V2.0**. This document provides essential architectura
 
 Key capabilities include:
 - **Gyro-Morph Dynamic Armillary & Astrolabe**: 
-  - **Universal 6-Model Continuum**: Seamlessly unites the Copernican Solar System and historical Astrolabes across 6 continuous modes: `☉ Orbit` (Heliocentric Keplerian planetary orbit), `⊕ Apparent` (Ptolemaic Geocentric apparent motion), `🌐 Sphere` (3D Celestial Armillary Sphere), `🧭 Rete` (Stereographic Conformal planisphere), `📐 Rojas` (Universal Rojas Orthographic on solstitial colure), and `🔭 Horizon` (Topocentric Horizon stereonet).
-  - **Continuous 60 FPS Any-to-Any Morph Interpolation**: Universal topological vector morphing between any source model and any target model driven by animated ease-out cubic spring physics.
+  - **Universal 5-Model Continuum**: Seamlessly unites the Copernican Solar System and historical Astrolabes across 5 continuous modes: `☉ Orbit` (Heliocentric Keplerian planetary orbit), `⊕ Apparent` (Geocentric apparent motion & 3D Celestial Armillary Sphere), `🧭 Rete` (Stereographic Conformal planisphere), `📐 Rojas` (Universal Rojas Orthographic on solstitial colure), and `🔭 Horizon` (Topocentric Horizon stereonet).
+  - **Continuous 60 FPS Any-to-Any Morph Interpolation & Staged Choreography**: Universal topological vector morphing between any source model and any target model driven by animated ease-out cubic spring physics, with staged camera alignment, geometric unwrapping, and progressive astrolabe plate materialization.
   - **Keplerian Orbital Dynamics & Scale Controls**: True Scale ($1\times$, $e=0.0167$) vs. Exaggerated Eccentricity ($e=0.25$) modes, 6 seasonal milestone halo nodes (Perihelion, Aphelion, Solstices, Equinoxes), and live orbital physics HUD reporting Earth distance (AU/km), velocity (km/s), solar irradiance (%), and apparent diameter (arcmin).
+  - **Clamped Ecliptic Track Sun Bead**: Mathematical clamping of the Sun bead directly to the Ecliptic ring curve ($r_0 \cos \lambda, r_0 \sin \lambda \sin \epsilon, r_0 \sin \lambda \cos \epsilon$), eliminating drift across seasons and Rete rotation.
   - **SED Precision Hairline Astrolabe Redesign**: Precision double-grooved hairline brass bezel (`#b45309`/`#78350f`, $0.75\text{px}$), delicate monospace Roman numeral micro-labels, slim $1.6\text{px}$ Alidade sighting arm with cyan laser sightline, and muted almucantars.
   - **Free Rete Spinning & Analog Astrolabe Solver**: Unlocked mouse/touch dragging of the golden Rete with real-time **Apparent Solar Time** solver (`☉ HH:MM`) and instant **Snap Now** sidereal clock resync.
   - **Volumetric Laser Projection Cones & Focal Beacon**: Optical Center of Projection beacon at $(0, -R_0, 0)$ with radiating laser rays and translucent conic light envelopes.
@@ -46,7 +47,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 160 unit tests across 7 test suites)
+- **Testing**: `vitest` (`npm test` — 170 unit tests across 7 test suites)
 
 ### Essential Commands
 
@@ -54,7 +55,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (160 unit tests across 7 test suites) |
+| `npm test` | Runs Vitest unit test suite (170 unit tests across 7 test suites) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run test:coverage` | Runs Vitest with v8 code coverage reporting |
 | `npm run build` | Builds production distribution to `dist/` |
@@ -102,10 +103,21 @@ Cosmic Engine V2.0/
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
-│   │   │   ├── armillary.ts     # 3D Armillary & 2D Astrolabe projections (Stereo, Rojas, Horizon, Stars, Rete solver, Laser cones, Sighting alidade)
+│   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
+│   │   │   │   ├── index.ts          # Barrel re-export
+│   │   │   │   ├── types.ts          # Armillary domain types & 5-model continuum definitions
+│   │   │   │   ├── constants.ts      # Milestones, 12 Astrolabe Stars, Zodiac Signs, Chaldean Planets
+│   │   │   │   ├── coordinates.ts    # GMST, LST, 3D Euler rotations, Alt/Az & RA/Dec coordinate conversions
+│   │   │   │   ├── projections.ts    # Stereographic Conformal, Rojas Orthographic, Topocentric Horizon
+│   │   │   │   ├── astrolabe.ts      # Almucantar curves, Unequal planetary hours, Free Rete LST solver
+│   │   │   │   ├── focalBeacon.ts    # Center of projection focal pole beacon & laser rays
+│   │   │   │   ├── alidade.ts        # Real-time Alidade sighting telemetry & snap-to-target solver
+│   │   │   │   ├── paths.ts          # Depth-sorted SVG path segment generator
+│   │   │   │   └── generator.ts      # generateArmillaryModel with staged morph & clamped Sun bead
+│   │   │   ├── armillary.ts     # Re-export bridge to ./armillary
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (98 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (100 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -122,10 +134,21 @@ Cosmic Engine V2.0/
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (10 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (11 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
-│       │   │   ├── ArmillarySvgCanvas.tsx      # Interactive 3D Euler SVG viewport & Rete/Tympan
-│       │   │   ├── ArmillaryHeaderControls.tsx # Mode pills, morph slider & spring-snap triggers
+│       │   │   ├── canvas/                   # Modular SVG canvas layers
+│       │   │   │   ├── index.ts              # Canvas barrel export
+│       │   │   │   ├── ArmillaryDefs.tsx     # SVG gradients & glow filters
+│       │   │   │   ├── ArmillaryBezelLayer.tsx # Hairline double-grooved brass bezel & 24h Roman markings
+│       │   │   │   ├── ArmillaryTympanLayer.tsx # Almucantar altitude curves for stereographic plate
+│       │   │   │   ├── ArmillaryLaserLayer.tsx # Volumetric laser projection beacon, cone wash & radiating rays
+│       │   │   │   ├── ArmillaryObserverConeLayer.tsx # Topocentric observer FOV cone, zenith ray & pin
+│       │   │   │   ├── ArmillaryRingsLayer.tsx # Depth-sorted celestial rings & Zodiac ecliptic glyph markers
+│       │   │   │   ├── ArmillaryStarsLayer.tsx # 12 Classical Navigational Astrolabe Stars & sighting pointers
+│       │   │   │   ├── ArmillaryBeadsLayer.tsx # Earth, Sun (clamped), Moon, milestones, lunar nodes & connector
+│       │   │   │   └── ArmillaryAlidadeLayer.tsx # Hairline Alidade sighting rule, laser sightline & pinnules
+│       │   │   ├── ArmillarySvgCanvas.tsx      # Interactive 3D Euler SVG viewport coordinator
+│       │   │   ├── ArmillaryHeaderControls.tsx # 5-mode pills, morph slider & spring-snap triggers
 │       │   │   ├── ArmillaryHoverHud.tsx       # Floating star, sun/moon & Alidade telemetry HUD
 │       │   │   ├── ArmillaryTelemetryHud.tsx  # 4-column horological telemetry footer
 │       │   │   ├── types.ts                    # Armillary domain interfaces & props

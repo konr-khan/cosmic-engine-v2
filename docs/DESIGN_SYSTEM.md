@@ -26,7 +26,7 @@ Cosmic Engine uses a strict semantic color palette to represent physical astrono
 To maximize information density without adding text clutter, orbital loops and curves adhere to standard vector stroke encodings:
 
 ### A. Gyro-Morph Armillary Multi-Model Continuum & SED Astrolabe Styling
-* **6 Unified Framework Modes**: `[☉ Orbit | ⊕ Apparent | 🌐 Sphere | 🧭 Rete | 📐 Rojas | 🔭 Horizon]`.
+* **5 Unified Framework Modes**: `[☉ Orbit | ⊕ Apparent | 🧭 Rete | 📐 Rojas | 🔭 Horizon]`.
 * **SED Hairline Double-Grooved Bezel**: Precision concentric outer rings (`stroke="#b45309"` outer, `stroke="#78350f"` inner, `strokeWidth="0.75"`), $0.5\text{px}-0.75\text{px}$ micro-ticks, and delicate monospace Roman numeral micro-labels (`text-[8px] font-mono fill-amber-300/80`).
 * **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: **Solid Stroke** with full opacity (`opacity="0.9"`) representing the celestial sphere facing the viewer.
 * **Back Hemisphere ($z_{\text{cam}} < 0$)**: **Dashed Stroke** (`stroke-dasharray="3 2"`, `opacity="0.35"`) representing the far side of the celestial sphere.

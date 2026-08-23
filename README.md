@@ -7,9 +7,10 @@
 ## ✨ Features
 
 - 🪐 **Gyro-Morph Dynamic Armillary & Astrolabe**: 
-  - **Universal 6-Model Continuum**: Seamlessly unites the Copernican Solar System and historical Astrolabes across 6 continuous modes: `☉ Orbit` (Heliocentric Keplerian planetary orbit), `⊕ Apparent` (Ptolemaic Geocentric apparent motion), `🌐 Sphere` (3D Celestial Armillary Sphere), `🧭 Rete` (Stereographic Conformal planisphere), `📐 Rojas` (Universal Rojas Orthographic on solstitial colure), and `🔭 Horizon` (Topocentric Horizon stereonet).
-  - **Universal Any-to-Any 60 FPS Morphing**: Smooth topological vector morphing between any source model and any target model driven by animated ease-out cubic spring physics.
+  - **Universal 5-Model Continuum**: Seamlessly unites the Copernican Solar System and historical Astrolabes across 5 continuous modes: `☉ Orbit` (Heliocentric Keplerian planetary orbit), `⊕ Apparent` (Geocentric apparent motion & 3D Celestial Armillary Sphere), `🧭 Rete` (Stereographic Conformal planisphere), `📐 Rojas` (Universal Rojas Orthographic on solstitial colure), and `🔭 Horizon` (Topocentric Horizon stereonet).
+  - **Universal Any-to-Any 60 FPS Morphing & Staged Choreography**: Smooth topological vector morphing between any source model and any target model driven by animated ease-out cubic spring physics, with staged camera alignment, geometric unwrapping, and progressive astrolabe plate materialization.
   - **Keplerian Orbital Dynamics & Scale Controls**: True Scale ($1\times$, $e=0.0167$) vs. Exaggerated Eccentricity ($e=0.25$) modes, 6 seasonal milestone halo nodes (Perihelion, Aphelion, Solstices, Equinoxes), and live orbital physics HUD reporting Earth distance (AU/km), velocity (km/s), solar irradiance (%), and apparent diameter (arcmin).
+  - **Clamped Ecliptic Track Sun Bead**: Mathematical clamping of the Sun bead directly to the Ecliptic ring curve ($r_0 \cos \lambda, r_0 \sin \lambda \sin \epsilon, r_0 \sin \lambda \cos \epsilon$), eliminating drift across seasons and Rete rotation.
   - **SED Precision Hairline Astrolabe Redesign**: Precision double-grooved hairline brass bezel (`#b45309`/`#78350f`, $0.75\text{px}$), delicate monospace Roman numeral micro-labels, slim $1.6\text{px}$ Alidade sighting arm with cyan laser sightline, and muted almucantars.
   - **Free Rete Spinning & Analog Astrolabe Solver**: Unlocks the golden Rete to spin freely with mouse/touch, converting the astrolabe into a functional analog computing instrument that solves the resulting **Apparent Solar Time** (`☉ HH:MM`) in real-time with **Snap to Now** clock resynchronization.
   - **Volumetric Laser Projection Cones & Focal Beacon**: Optical Center of Projection beacon (South Celestial Pole at $(0, -R_0, 0)$, Rojas orthogonal beam, Nadir) with radiating laser rays and translucent conic light envelopes.
@@ -60,7 +61,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (160 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, armillary projections, and worker fallback)
+- **Testing**: `vitest` (170 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, armillary projections, and worker fallback)
 
 ---
 
@@ -76,7 +77,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (160 unit tests across 7 suites)
+# Run Vitest test suite (170 unit tests across 7 suites)
 npm test
 
 # Run full test suite in single-run CI mode
