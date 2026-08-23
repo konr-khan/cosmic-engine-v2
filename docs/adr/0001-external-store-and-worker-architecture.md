@@ -20,7 +20,8 @@ In early iterations, two critical performance bottlenecks emerged:
 2. **Singleton Worker Manager (`EphemerisWorkerManager`)**:
    - A single application-level Web Worker singleton handles all heavy ephemeris calculations (Meeus lunar series, 2-step iterative rise/set solvers, syzygy eclipse shadow geometry, and 365-day annual matrices).
    - Implements **in-flight request deduplication and coalescing**: identical calculation signatures share a single `postMessage` RPC dispatch and fan out results to all registered subscriber callbacks.
-   - In-memory caching for 365-day annual matrices (`annualSolarCache`, `annualLunarCache`).
+   - **Monotonic Generation Tagging & Stale Invalidation**: Dispatched calculation requests carry monotonic generation IDs. Incoming worker responses are verified against the active query generation before updating hook state, immediately discarding stale or out-of-order payloads during rapid scrub gestures.
+   - **Bounded Memory Matrix Caching**: In-memory caching for 365-day annual matrices (`annualSolarCache`, `annualLunarCache`) keyed by composite coordinate hashes (`${year}:${lat.toFixed(2)}:${lon.toFixed(2)}`), with a bounded eviction strategy to keep worker memory usage strictly bounded during multi-year navigation.
    - Lazy synchronous fallback execution when Workers are unavailable or pending bootstrap.
    - **Proactive Lifecycle Teardown**: Auto-registers `beforeunload` and `pagehide` listeners in browser environments and exposes `terminate()` for root React component unmount cleanup to prevent thread leaks across SPA navigation and HMR dev reloads.
 
@@ -28,8 +29,8 @@ In early iterations, two critical performance bottlenecks emerged:
 
 * **Positive**:
   - Stable 60 FPS animation ticking with zero garbage collection stutter.
-  - No thread proliferation; worker memory consumption stays under $12\text{ MB}$.
-  - Main thread remains responsive during rapid scrubs across 170 automated unit tests across 7 test suites.
+  - No thread proliferation; worker memory consumption stays bounded under $12\text{ MB}$.
+  - Main thread remains responsive during high-frequency timeline scrubbing; architecture validated across 170 unit tests in 7 test suites.
   - Clean worker thread and memory reclamation upon window close, tab switch, or SPA teardown.
 * **Invariants**:
   - Never replace `useChronometerStore` with standard React component closures inside animation hot paths.

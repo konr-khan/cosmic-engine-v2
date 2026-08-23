@@ -187,8 +187,11 @@ Given lunar ecliptic coordinates $(\lambda, \beta, \Delta)$ and solar coordinate
 * Sun Horizontal Parallax: $\pi_\odot \approx 0.0024^\circ$
 
 ### B. Earth Shadow Cones at Lunar Distance (with 1.02 Atmospheric Refraction)
-* **Umbra Radius**: $\rho_u = 1.02 \cdot (\pi_{\text{moon}} + \pi_\odot - s_\odot)$
-* **Penumbra Radius**: $\rho_p = 1.02 \cdot (\pi_{\text{moon}} + \pi_\odot + s_\odot)$
+* **Umbra Radius**: $\rho_u = 1.02 \cdot (\pi_{\text{moon}} + \pi_\odot - s_\odot) \quad [\text{degrees}]$
+* **Penumbra Radius**: $\rho_p = 1.02 \cdot (\pi_{\text{moon}} + \pi_\odot + s_\odot) \quad [\text{degrees}]$
+
+> [!NOTE]
+> Shadow radii ($\rho_u, \rho_p$), parallaxes ($\pi_{\text{moon}}, \pi_\odot$), and solar/lunar semi-diameters ($s_\odot, s_{\text{moon}}$) are evaluated strictly in angular degrees (scaled by the Chauvenet-Danjon $1.02$ atmospheric enlargement factor) and are distinct from physical linear kilometers ($\Delta$).
 
 ### C. Syzygy Angular Separation ($\gamma$)
 * **Lunar Eclipse**:
@@ -259,9 +262,11 @@ Rotated by Rete offset $\Delta\theta_{\text{rete}}$ around the $Y$-axis:
    * *December Solstice* ($\lambda = 270^\circ$, $0.984\text{ AU}$, $30.28\text{ km/s}$)
 
 ### D. 3D Celestial Coordinate Space
+Standardized coordinate frame where the $+X$ axis points to the Vernal Equinox ($\Upsilon$, $\alpha = 0^\circ, \lambda = 0^\circ$), $+Y$ points to the North Celestial Pole ($\delta = +90^\circ$), and $+Z$ completes the right-handed basis ($\alpha = 90^\circ$ at $\delta = 0^\circ$).
+
 Given radius $R_0 = 100\text{ px}$, equatorial Right Ascension $\alpha \in [0^\circ, 360^\circ)$ and Declination $\delta \in [-90^\circ, +90^\circ]$:
 \[
-x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delta \cos\alpha
+x = R_0 \cos\delta \cos\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delta \sin\alpha
 \]
 
 ### E. 2D Astrolabe Historical Projections
@@ -270,6 +275,7 @@ x = R_0 \cos\delta \sin\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delt
    \[
    x_{\text{stereo}} = R_0 \frac{x}{R_0 + y}, \quad z_{\text{stereo}} = R_0 \frac{z}{R_0 + y}
    \]
+   * *Singularity Guard*: For points near the South Celestial Pole ($y \to -R_0$), the denominator diverges ($R_0 + y \to 0$). Implementations apply a singularity check $|R_0 + y| < 10^{-6}$ and finite canvas bounding clamp to prevent unbounded division by zero.
    * *Almucantar (Altitude $a$) Circles*: Center $y_c = R_0 \frac{\cos\phi}{\sin\phi + \sin a}$, Radius $r_a = R_0 \frac{\cos a}{\sin\phi + \sin a}$.
    * *Equator Circle*: Radius $R_0$.
    * *Tropic of Cancer*: $R_{\text{Can}} = R_0 \tan\left(\frac{90^\circ - 23.44^\circ}{2}\right)$.
@@ -337,10 +343,10 @@ Given sighting rule angle $\theta_{\text{rule}} \in [0^\circ, 360^\circ)$:
    H_{\text{sighted}} = (\theta_{\text{LST}} - \alpha_{\text{sighted}}) \times \frac{\pi}{180^\circ}
    \]
    \[
-   \sin a_{\text{sighted}} = \sin\phi \sin\delta + \cos\phi \cos\delta \cos H_{\text{sighted}}
+   \sin a_{\text{sighted}} = \sin\phi \sin\delta + \cos\phi \cos\delta \cos H_{\text{sighted}} \implies a_{\text{sighted}} = \arcsin(\operatorname{clamp}(\sin a_{\text{sighted}}, -1, 1))
    \]
    \[
-   \cos A_{\text{sighted}} = \frac{\sin\delta - \sin\phi \sin a_{\text{sighted}}}{\cos\phi \cos a_{\text{sighted}}}
+   A_{\text{sighted}} = \operatorname{atan2}(-\cos\delta \sin H_{\text{sighted}}, \; \sin\delta \cos\phi - \cos\delta \sin\phi \cos H_{\text{sighted}}) \bmod 360^\circ
    \]
 3. **Nearest Target Sighting Lock**:
    Target angle $\theta_{\text{target}} = (\operatorname{atan2}(y_{\text{screen}}, x_{\text{screen}}) \times \frac{180^\circ}{\pi} + 90^\circ + 360^\circ) \bmod 360^\circ$. Sighting locks when $|\Delta\theta| \le 10.0^\circ$.

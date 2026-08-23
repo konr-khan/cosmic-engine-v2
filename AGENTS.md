@@ -117,7 +117,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── armillary.ts     # Re-export bridge to ./armillary
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (100 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (107 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -238,6 +238,10 @@ Cosmic Engine V2.0/
   - Subagents operate inside their isolated sandbox, self-heal minor build/test regressions, and return a clean, structured summary diff to the orchestrator.
 - **Terminal Execution**:
   - Run linters, type checks, and test suites inside the worker subagent sandbox to maintain a clean parent conversation thread.
+- **File Operation & Critical Path Guardrails**:
+  - **Nominal Branded Units Guardrail**: Never modify `src/types/units.ts` without running the full test matrix (`npm test -- --run` and `npm run typecheck`). Branded nominal unit regressions silently cascade across all coordinate and ephemeris solvers.
+  - **Barrel Export Integrity**: Never modify root or subsystem barrel exports (`index.ts`) without verifying that no circular dependencies or type-only export breaks are introduced.
+  - **Mathematical Provenance Guardrail**: Agents must never delete, minify, or rewrite comments citing Jean Meeus chapter references or IAU standard models in `src/utils/cosmicMath/`.
 
 ### C. Mandatory Persistent Documentation Verification
 Before implementing or modifying code, all agents must proactively consult and verify alignment with the persistent specifications in `docs/`:
@@ -344,8 +348,13 @@ The Eclipse demonstrator renders synchronized dual perspectives in `activeTab ==
 1. **Modernize Deprecations**: Modernize legacy library APIs and deprecated framework methods when refactoring touched files (e.g., modern React 19 paradigms, Tailwind v4 CSS directives).
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval. Run `npm run typecheck` (`tsc --noEmit`) to verify.
-4. **Preserve Math Accuracy**: Cite standard astronomical references for formula changes and verify polar/solstice edge cases.
-5. **No Regressions**: All 137 unit tests across the 7 test suites must pass on every modification. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts`, `useCosmicEngine.test.ts`, `useEphemerisWorker.test.ts`, `useDashboardLayout.test.ts`, `WindowErrorBoundary.test.tsx`, `widgets.test.ts`, or `cosmicStore.test.ts`.
+4. **Preserve Math Accuracy & Provenance**: Preserve all formal Jean Meeus / IAU chapter citations, constant derivations, and inline LaTeX/math derivation comments when refactoring `src/utils/cosmicMath/`.
+5. **No Regressions**: All 170 unit tests across the 7 test suites must pass on every modification without regressions. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts` (107 tests), `useEphemerisWorker.test.ts` (19 tests), `useCosmicEngine.test.ts` (13 tests), `widgets.test.ts` (11 tests), `useDashboardLayout.test.ts` (7 tests), `cosmicStore.test.ts` (7 tests), or `WindowErrorBoundary.test.tsx` (6 tests).
+6. **React 19 & Modern Directives**:
+   - **Direct `ref` Passing**: Pass `ref` directly as a standard component prop; do not wrap components in `React.forwardRef()` (deprecated in React 19).
+   - **Document Metadata**: Leverage React 19's native document metadata tags (`<title>`, `<meta>`) or React 19 form/action primitives where applicable instead of legacy third-party wrappers (e.g. `react-helmet`).
+   - **Data Flow & Store Invariants**: Maintain stable selector references in `useSyncExternalStore` for 60 FPS animation ticker loops; do not replace with `React.use()` or Suspense boundaries on per-frame render hot paths.
+   - **Memoization Hygiene**: Avoid unnecessary `useCallback` or `useMemo` wrappers around pure math calls outside render loops. Pure mathematical routines in `src/utils/cosmicMath/` should remain pure, standalone top-level functions.
 
 ### B. Testing & Mocking Standards for Agents
 - **Vitest Mocking Guidelines**:

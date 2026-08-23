@@ -12,9 +12,12 @@ Cosmic Engine uses a strict semantic color palette to represent physical astrono
 | :--- | :--- | :--- | :--- |
 | **Sky Blue** | `#38bdf8` | `text-sky-400`, `fill-sky-400`, `bg-sky-400` | **Observer Location Pin ("YOU")**, **Ascending Lunar Orbital Node** ($\beta \ge 0$, North of ecliptic), **High Tide Water Indicator** |
 | **Crimson / Rose** | `#f43f5e` | `text-rose-500`, `fill-rose-500`, `bg-rose-500` | **Descending Lunar Orbital Node** ($\beta < 0$, South of ecliptic), **Negative (Southern) Declination** |
-| **Amber / Gold** | `#fbbf24` | `text-amber-400`, `fill-amber-400`, `border-amber-400` | **Subsolar Point**, **Sun Ray Vectors**, **Daylight Terminator Rim**, **Solar Noon Action** |
+| **Amber / Gold** | `#fbbf24` / `#fde047` | `text-amber-400`, `fill-amber-400`, `border-amber-400` | **Subsolar Point**, **Daylight Hemisphere** ($h \ge -0.833^\circ$), **Sun Ray Vectors**, **Daylight Terminator Rim**, **Solar Noon Action** |
+| **Civil Twilight Amber** | `#fcd34d` | `fill-amber-400/80`, `text-amber-300` | **Civil Twilight Band** ($-6.0^\circ \le h < -0.833^\circ$, horizon visible, bright stars emerge) |
+| **Nautical Twilight Slate** | `#64748b` | `fill-slate-500`, `text-slate-400` | **Nautical Twilight Band** ($-12.0^\circ \le h < -6.0^\circ$, sea horizon fades, navigation stars visible) |
+| **Astronomical Twilight Slate** | `#334155` | `fill-slate-700`, `text-slate-500` | **Astronomical Twilight Band** ($-18.0^\circ \le h < -12.0^\circ$, faint skyglow before deep night) |
+| **Deep Space Slate** | `#020617` / `#0b0f19` | `bg-slate-950`, `bg-slate-900`, `fill-slate-950` | **Deep Astronomical Night** ($h < -18.0^\circ$), **Ocean Baseline**, **Card Backgrounds** |
 | **Indigo / Cyan** | `#6366f1` / `#06b6d4` | `text-indigo-400`, `text-cyan-400` | **Lunar Transit Action**, **Lunar Ray Vectors**, **Gravitational Syzygy / Spring Tide Potential** |
-| **Deep Space Slate** | `#020617` / `#0b0f19` | `bg-slate-950`, `bg-slate-900` | **Deep Astronomical Night**, **Ocean Baseline**, **Card Backgrounds** |
 | **Emerald** | `#10b981` | `text-emerald-400`, `bg-emerald-500` | **Celestial Equator Ring**, **Date Ring / Selector**, **Orbital Alignment (100%)**, **Perigee Status** |
 | **Antique Brass / Gold** | `#b45309` / `#f59e0b` | `text-amber-500`, `stroke-amber-600` | **Outer Mater Rim**, **Ecliptic Rete**, **12 Zodiac Arcs**, **Astrolabe Sighting Rule (Alidade)** |
 | **Cyan / Steel** | `#06b6d4` | `stroke-cyan-500`, `text-cyan-400` | **Local Horizon Ring**, **Almucantar Elevation Plate (Tympan)** |
@@ -61,9 +64,12 @@ border-radius: 0.75rem;                   /* rounded-xl */
 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-2xl */
 ```
 
-### Micro-Typography Standards
+### Micro-Typography & Accessibility Standards
 * **Mathematical Telemetry & Coordinates**: Always rendered in monospace (`font-mono`, e.g., `text-xs font-mono`, `text-[10px] font-mono`).
 * **Widget Titles & Section Headers**: Rendered in clean sans-serif (`font-sans font-semibold tracking-wider text-xs uppercase`).
+* **High-Contrast Micro-Label Overlays**: When rendering $0.75\text{px}$ hairline labels (e.g., `text-[8px] font-mono fill-amber-300/80`) over dynamic viewports (illuminated daylight Earth, laser cones, Sun glow), enforce dark drop-shadows or stroke halos for WCAG AAA contrast:
+  - *Tailwind SVG Drop-Shadow*: `drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]`
+  - *SVG Text Stroke Halo*: `paintOrder="stroke" stroke="#020617" strokeWidth="0.8px" strokeLinejoin="round"`
 * **Interactive Hover HUDs**: Use `pointer-events-none` with fast fade/zoom animations (`animate-in fade-in zoom-in-95 duration-150`) to avoid blocking cursor scrub gestures.
 
 ---
@@ -79,9 +85,15 @@ The dashboard layout utilizes a flexible 12-column responsive CSS grid with dyna
 
 ---
 
-## 5. Interaction Patterns
+## 5. Interaction Patterns & Cursor Grammar
 
-1. **Click-to-Snap**: Primary temporal milestones (Solar Noon, Lunar Transit) and astrolabe sighting targets (Stars, Sun, Moon) feature instant or spring-animated snapping.
-2. **Free Astrolabe Solver Mode**: Dragging the golden Rete bypasses clock lock to calculate apparent solar and sidereal time dynamically.
-3. **Cross-Card Hover Synchronization**: Hovering over timestamps or calendar dates in any widget propagates `hoverTime` and `hoverDate` across all mounted visualizers simultaneously.
-4. **Fluid Card Resizing**: Bottom-right resize thumbs allow non-destructive card expansion with a minimum height floor ($220\text{px}$).
+1. **Interactive Cursor Grammar**:
+   * `cursor-grab` / `active:cursor-grabbing`: Rotational dragging elements (Astrolabe Rete, Chronometer time/date rings, 3D Celestial sphere camera rotation).
+   * `cursor-crosshair`: Spatial aiming & measurement instruments (Alidade sighting arm rule, Daylight Terminator Map coordinate crosshairs).
+   * `cursor-pointer`: Discrete action buttons, snap triggers, milestone nodes, elevation peak targets, and tab pills.
+   * `cursor-se-resize`: Window bottom-right resize handles.
+   * `cursor-default` + `pointer-events-none`: Floating HUD popovers and readouts.
+2. **Click-to-Snap**: Primary temporal milestones (Solar Noon, Lunar Transit) and astrolabe sighting targets (Stars, Sun, Moon) feature instant or spring-animated snapping.
+3. **Free Astrolabe Solver Mode**: Dragging the golden Rete bypasses clock lock to calculate apparent solar and sidereal time dynamically.
+4. **Cross-Card Hover Synchronization**: Hovering over timestamps or calendar dates in any widget propagates `hoverTime` and `hoverDate` across all mounted visualizers simultaneously.
+5. **Fluid Card Resizing**: Bottom-right resize thumbs allow non-destructive card expansion with a minimum height floor ($220\text{px}$).
