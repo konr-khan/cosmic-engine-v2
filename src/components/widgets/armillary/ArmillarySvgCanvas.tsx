@@ -22,6 +22,7 @@ export interface ArmillarySvgCanvasProps {
   onCameraChange: (cam: ArmillaryCameraState) => void;
   r0?: number;
   latitude?: number;
+  longitude?: number;
   isFreeReteMode?: boolean;
   onFreeReteRotate?: (deltaDeg: number) => void;
   ruleAngleDeg?: number;
@@ -41,6 +42,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   onCameraChange,
   r0 = 100,
   latitude = 47.06,
+  longitude = 15.44,
   isFreeReteMode = false,
   onFreeReteRotate,
   ruleAngleDeg: controlledRuleAngle,
@@ -48,8 +50,9 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   onSnapToTarget
 }) => {
   const [hoveredStar, setHoveredStar] = useState<HoveredStarInfo | null>(null);
-  const [hoveredBead, setHoveredBead] = useState<'sun' | 'moon' | 'earth' | null>(null);
+  const [hoveredBead, setHoveredBead] = useState<'sun' | 'moon' | 'earth' | 'observer' | null>(null);
   const [hoveredMilestone, setHoveredMilestone] = useState<ArmillaryMilestoneNode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<'asc' | 'desc' | null>(null);
   const [localRuleAngle, setLocalRuleAngle] = useState<number>(0);
   const [isDraggingRule, setIsDraggingRule] = useState<boolean>(false);
   const [isDraggingCamera, setIsDraggingCamera] = useState<boolean>(false);
@@ -80,10 +83,13 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
     milestones, 
     localSiderealTimeDeg, 
     focalBeacon, 
+    observerCone,
+    lunarNodes,
     apparentSolarHours, 
     physics,
     celestialRingsOpacity,
     orbitRingOpacity,
+    lunarOrbitOpacity,
     milestonesOpacity,
     starsOpacity,
     bezelOpacity,
@@ -365,8 +371,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           </g>
         )}
 
-        {/* 2. Volumetric Laser Projection Beacon & Ray Cones (When Rays Active) */}
-        {showRays && focalBeacon && (
+        {/* 2. Volumetric Laser Projection Beacon & Ray Cones (For 2D/3D Astrolabe Plates) */}
+        {showRays && focalBeacon && !isOrbital && (
           <g filter="url(#laserGlow)" className="pointer-events-none">
             {/* Translucent Conic Projection Light Wash */}
             {focalBeacon.conePathD && (
@@ -421,6 +427,69 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
               textAnchor="middle"
             >
               ⌖ FOCAL BEACON
+            </text>
+          </g>
+        )}
+
+        {/* 2b. Topocentric Observer Field of View (FOV) Sky Cone (In Heliocentric & Geocentric Modes) */}
+        {observerCone && orbitRingOpacity > 0.05 && (
+          <g className="pointer-events-none">
+            {/* Local Horizon Tangent Disc (Alt = 0°) */}
+            {observerCone.horizonDiscPathD && (
+              <path
+                d={observerCone.horizonDiscPathD}
+                fill="#06b6d4"
+                fillOpacity="0.15"
+                stroke="#06b6d4"
+                strokeWidth="0.6"
+                strokeDasharray="2 2"
+              />
+            )}
+
+            {/* Translucent Observer Sky Cone Envelope */}
+            {observerCone.conePathD && (
+              <path
+                d={observerCone.conePathD}
+                fill={observerCone.isDaytime ? '#38bdf8' : '#818cf8'}
+                fillOpacity="0.18"
+                stroke={observerCone.isDaytime ? '#38bdf8' : '#818cf8'}
+                strokeWidth="0.5"
+                strokeDasharray="3 2"
+                opacity="0.85"
+              />
+            )}
+
+            {/* Zenith Ray Line pointing outward from Observer */}
+            <line
+              x1={observerCone.zenithRay.start.x}
+              y1={observerCone.zenithRay.start.y}
+              x2={observerCone.zenithRay.end.x}
+              y2={observerCone.zenithRay.end.y}
+              stroke="#38bdf8"
+              strokeWidth="0.75"
+              strokeDasharray="2 2"
+              opacity="0.85"
+            />
+
+            {/* Observer Zenith Target Marker */}
+            <circle
+              cx={observerCone.zenithScreenPos.x}
+              cy={observerCone.zenithScreenPos.y}
+              r="1.6"
+              fill="#38bdf8"
+              stroke="#ffffff"
+              strokeWidth="0.5"
+            />
+            <text
+              x={observerCone.zenithScreenPos.x}
+              y={observerCone.zenithScreenPos.y - 3.2}
+              fontSize="2.8"
+              fill="#38bdf8"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              ZENITH
             </text>
           </g>
         )}
@@ -670,7 +739,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
             x2={earth.screenPos.x + 3.5 * Math.sin(toRadians(23.44))}
             y2={earth.screenPos.y + 3.5 * Math.cos(toRadians(23.44))}
             stroke="#38bdf8"
-            strokeWidth="0.5"
+            strokeWidth="0.6"
             opacity="0.85"
           />
           <text
@@ -682,9 +751,107 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
             fontWeight="bold"
             textAnchor="middle"
           >
-            ⊕ EARTH
+            {projectionMode === 'geocentric' ? '⊕ EARTH (Center)' : '⊕ EARTH'}
           </text>
         </g>
+
+        {/* 10b. Topocentric Observer Pin ("YOU") on Earth's Surface */}
+        {observerCone && orbitRingOpacity > 0.05 && (
+          <g
+            className="cursor-pointer"
+            onPointerEnter={() => setHoveredBead('observer')}
+            onPointerLeave={() => setHoveredBead(null)}
+          >
+            {/* Pulsing Location Ring */}
+            <circle
+              cx={observerCone.observerScreenPos.x}
+              cy={observerCone.observerScreenPos.y}
+              r="3.8"
+              fill="#38bdf8"
+              fillOpacity="0.35"
+              stroke="#38bdf8"
+              strokeWidth="0.5"
+              strokeDasharray="2 1"
+            />
+            <circle
+              cx={observerCone.observerScreenPos.x}
+              cy={observerCone.observerScreenPos.y}
+              r="1.8"
+              fill="#38bdf8"
+              stroke="#ffffff"
+              strokeWidth="0.6"
+            />
+            <text
+              x={observerCone.observerScreenPos.x + 3.5}
+              y={observerCone.observerScreenPos.y - 2.5}
+              fontSize="3.0"
+              fill="#38bdf8"
+              fontFamily="monospace"
+              fontWeight="bold"
+            >
+              YOU
+            </text>
+          </g>
+        )}
+
+        {/* 10c. Lunar Ascending & Descending Nodes */}
+        {lunarNodes && lunarOrbitOpacity > 0.05 && (
+          <g>
+            {/* Ascending Node (Northbound, Sky Blue) */}
+            <g
+              className="cursor-pointer transition-transform hover:scale-110"
+              onPointerEnter={() => setHoveredNode('asc')}
+              onPointerLeave={() => setHoveredNode(null)}
+            >
+              <circle
+                cx={lunarNodes.ascendingNode.screenPos.x}
+                cy={lunarNodes.ascendingNode.screenPos.y}
+                r="2.5"
+                fill="#38bdf8"
+                stroke="#ffffff"
+                strokeWidth="0.6"
+              />
+              <text
+                x={lunarNodes.ascendingNode.screenPos.x}
+                y={lunarNodes.ascendingNode.screenPos.y - 3.5}
+                fontSize="3.2"
+                fill="#38bdf8"
+                fontFamily="monospace"
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                ☊
+              </text>
+            </g>
+
+            {/* Descending Node (Southbound, Rose Red) */}
+            <g
+              className="cursor-pointer transition-transform hover:scale-110"
+              onPointerEnter={() => setHoveredNode('desc')}
+              onPointerLeave={() => setHoveredNode(null)}
+            >
+              <circle
+                cx={lunarNodes.descendingNode.screenPos.x}
+                cy={lunarNodes.descendingNode.screenPos.y}
+                r="2.5"
+                fill="#f43f5e"
+                stroke="#ffffff"
+                strokeWidth="0.6"
+              />
+              <text
+                x={lunarNodes.descendingNode.screenPos.x}
+                y={lunarNodes.descendingNode.screenPos.y - 3.5}
+                fontSize="3.2"
+                fill="#f43f5e"
+                fontFamily="monospace"
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                ☋
+              </text>
+            </g>
+          </g>
+        )}
 
         {/* 11. Sun Bead (Golden Orb with Radial Corona - Click to Snap) */}
         <g 
@@ -855,21 +1022,27 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           </g>
         )}
 
-        {/* Center Origin Pivot Pin */}
-        <circle cx="0" cy="0" r="2.0" fill="#f59e0b" stroke="#78350f" strokeWidth="0.75" />
+        {/* Center Origin Pivot Pin (Hidden in Geocentric mode where Earth is at center) */}
+        {projectionMode !== 'geocentric' && (
+          <circle cx="0" cy="0" r="2.0" fill="#f59e0b" stroke="#78350f" strokeWidth="0.75" />
+        )}
       </svg>
 
-      {/* Glassmorphic Sighting & Star/Sun/Moon/Earth/Milestone Hover Telemetry HUD */}
+      {/* Glassmorphic Sighting & Star/Sun/Moon/Earth/Observer/Milestone Hover Telemetry HUD */}
       <ArmillaryHoverHud
         hoveredStar={hoveredStar}
         hoveredBead={hoveredBead}
         hoveredMilestone={hoveredMilestone}
+        hoveredNode={hoveredNode}
         showRule={showRule}
         sightingInfo={sightingInfo}
         sun={sun}
         moon={moon}
         earth={earth}
         physics={physics}
+        observerCone={observerCone}
+        latitude={latitude}
+        longitude={longitude}
       />
     </div>
   );

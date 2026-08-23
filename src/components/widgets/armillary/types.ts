@@ -8,7 +8,9 @@ import {
   ArmillaryOrbitalPhysics,
   AlidadeSightingInfo,
   ProjectionFocalBeaconOutput,
-  LaserRay
+  LaserRay,
+  ArmillaryObserverCone,
+  ArmillaryLunarNodes
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
 
@@ -22,7 +24,9 @@ export type {
   ArmillaryOrbitalPhysics,
   AlidadeSightingInfo,
   ProjectionFocalBeaconOutput,
-  LaserRay
+  LaserRay,
+  ArmillaryObserverCone,
+  ArmillaryLunarNodes
 };
 
 export interface ArmillaryCameraState {

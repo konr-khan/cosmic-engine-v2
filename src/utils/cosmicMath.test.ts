@@ -1238,7 +1238,7 @@ describe('cosmicMath utilities', () => {
         r0: 100
       });
 
-      expect(model3D.rings.length).toBe(7);
+      expect(model3D.rings.length).toBe(8);
       expect(model3D.stars.length).toBe(12);
       expect(model3D.sun.screenPos).toBeDefined();
       expect(model3D.moon.screenPos).toBeDefined();
@@ -1263,7 +1263,7 @@ describe('cosmicMath utilities', () => {
         r0: 100
       });
 
-      expect(model2D.rings.length).toBe(7);
+      expect(model2D.rings.length).toBe(8);
       expect(model2D.stars.length).toBe(12);
       // In 2D stereographic, equator is a 100px radius circle
       const eqRing = model2D.rings.find(r => r.id === 'equator');
@@ -1298,11 +1298,57 @@ describe('cosmicMath utilities', () => {
         r0: 100
       });
 
-      expect(modelCross.rings.length).toBe(7);
+      expect(modelCross.rings.length).toBe(8);
       const eqVertex = modelCross.rings[0].vertices[0];
       expect(eqVertex.screenPos).toBeDefined();
       expect(typeof eqVertex.screenPos.x).toBe('number');
       expect(typeof eqVertex.screenPos.y).toBe('number');
+
+      // Verify lunar orbit ring is generated
+      const lunarOrbit = modelCross.rings.find((r) => r.id === 'lunar_orbit');
+      expect(lunarOrbit).toBeDefined();
+      expect(lunarOrbit?.label).toContain('Lunar Orbit');
+
+      // Verify muted palette for Tropic rings
+      const cancerRing = modelCross.rings.find((r) => r.id === 'tropic_cancer');
+      const capricornRing = modelCross.rings.find((r) => r.id === 'tropic_capricorn');
+      expect(cancerRing?.color).toBe('#d97706'); // Muted Antique Brass
+      expect(capricornRing?.color).toBe('#94a3b8'); // Muted Slate
+    });
+
+    it('generates topocentric observer FOV sky cone and lunar nodes in orbital modes', () => {
+      const helioModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Observer FOV Sky Cone
+      expect(helioModel.observerCone).toBeDefined();
+      expect(helioModel.observerCone?.observerScreenPos).toBeDefined();
+      expect(helioModel.observerCone?.zenithScreenPos).toBeDefined();
+      expect(helioModel.observerCone?.horizonDiscPathD).toMatch(/^M\s.+Z$/);
+      expect(helioModel.observerCone?.conePathD).toMatch(/^M\s.+Z$/);
+      expect(typeof helioModel.observerCone?.sunElevationDeg).toBe('number');
+      expect(typeof helioModel.observerCone?.isDaytime).toBe('boolean');
+
+      // Lunar Nodes (Ascending & Descending)
+      expect(helioModel.lunarNodes).toBeDefined();
+      expect(helioModel.lunarNodes?.ascendingNode.screenPos).toBeDefined();
+      expect(helioModel.lunarNodes?.descendingNode.screenPos).toBeDefined();
     });
 
     it('solves apparent local sidereal and solar time from free Rete angles', () => {

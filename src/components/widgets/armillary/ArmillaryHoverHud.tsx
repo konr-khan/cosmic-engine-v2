@@ -3,26 +3,34 @@ import { HoveredStarInfo, AlidadeSightingInfo, ArmillaryModelOutput, ArmillaryMi
 
 export interface ArmillaryHoverHudProps {
   hoveredStar: HoveredStarInfo | null;
-  hoveredBead: 'sun' | 'moon' | 'earth' | null;
+  hoveredBead: 'sun' | 'moon' | 'earth' | 'observer' | null;
   hoveredMilestone: ArmillaryMilestoneNode | null;
+  hoveredNode?: 'asc' | 'desc' | null;
   showRule: boolean;
   sightingInfo: AlidadeSightingInfo | null;
   sun: ArmillaryModelOutput['sun'];
   moon: ArmillaryModelOutput['moon'];
   earth?: ArmillaryModelOutput['earth'];
   physics?: ArmillaryModelOutput['physics'];
+  observerCone?: ArmillaryModelOutput['observerCone'];
+  latitude?: number;
+  longitude?: number;
 }
 
 export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
   hoveredStar,
   hoveredBead,
   hoveredMilestone,
+  hoveredNode,
   showRule,
   sightingInfo,
   sun,
   moon,
   earth,
-  physics
+  physics,
+  observerCone,
+  latitude = 47.06,
+  longitude = 15.44
 }) => {
   return (
     <>
@@ -121,18 +129,44 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
         </div>
       )}
 
-      {/* Floating Seasonal Milestone Hover Popover */}
-      {hoveredMilestone && (
-        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-purple-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+      {/* Floating Observer Sky Cone Hover Popover */}
+      {hoveredBead === 'observer' && observerCone && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-sky-400/60 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-sky-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+              Observer Sky Cone ("YOU")
+            </span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${observerCone.isDaytime ? 'bg-amber-500/20 text-amber-300' : 'bg-indigo-500/20 text-indigo-300'}`}>
+              {observerCone.isDaytime ? '☀️ DAYLIGHT' : '🌌 NIGHT'}
+            </span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Coordinates: <strong className="text-white">{latitude.toFixed(2)}°N, {longitude.toFixed(2)}°E</strong></div>
+            <div>Sun Elevation: <strong className={observerCone.sunElevationDeg >= 0 ? 'text-amber-300' : 'text-slate-400'}>{observerCone.sunElevationDeg >= 0 ? `+${observerCone.sunElevationDeg}°` : `${observerCone.sunElevationDeg}°`}</strong></div>
+            <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
+              Cone projects observer's visible sky hemisphere (Alt &gt; 0°) rotating with Earth's 24h diurnal cycle.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Lunar Node Hover Popover */}
+      {hoveredNode && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
-            <strong className={`${hoveredMilestone.textColor} font-bold`}>{hoveredMilestone.label}</strong>
-            <span className="text-[10px] text-slate-400 font-mono">{hoveredMilestone.date}</span>
+            <strong className={hoveredNode === 'asc' ? 'text-sky-400' : 'text-rose-400'}>
+              {hoveredNode === 'asc' ? '☊ Ascending Node (Northbound)' : '☋ Descending Node (Southbound)'}
+            </strong>
           </div>
           <div className="space-y-1 text-[11px]">
-            <div className="text-slate-300 leading-relaxed">{hoveredMilestone.description}</div>
-            <div className="pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-              <span>Dist: <strong className="text-white">{hoveredMilestone.distanceAU} AU</strong></span>
-              <span>Speed: <strong className="text-emerald-400">{hoveredMilestone.speedKms} km/s</strong></span>
+            <div className="text-slate-300 leading-relaxed">
+              {hoveredNode === 'asc' 
+                ? "Point where Moon's 5.14° inclined orbit crosses the ecliptic plane moving North (β ≥ 0)."
+                : "Point where Moon's 5.14° inclined orbit crosses the ecliptic plane moving South (β < 0)."}
+            </div>
+            <div className="text-[10px] text-amber-400/80 pt-1 border-t border-slate-800">
+              Syzygy near nodes produces Solar and Lunar eclipses.
             </div>
           </div>
         </div>

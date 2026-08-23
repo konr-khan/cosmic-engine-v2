@@ -266,6 +266,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
           onCameraChange={setCamera}
           r0={100}
           latitude={latitude}
+          longitude={longitude}
           isFreeReteMode={isFreeReteMode}
           onFreeReteRotate={handleFreeReteRotate}
           ruleAngleDeg={ruleAngleDeg}

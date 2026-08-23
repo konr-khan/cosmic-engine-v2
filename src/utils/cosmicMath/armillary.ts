@@ -166,6 +166,30 @@ export interface ArmillaryRingPath {
   fullPathD: string;
 }
 
+export interface ArmillaryObserverCone {
+  observerScreenPos: Vector2D;
+  zenithScreenPos: Vector2D;
+  horizonDiscPathD: string;
+  conePathD: string;
+  zenithRay: { start: Vector2D; end: Vector2D };
+  isDaytime: boolean;
+  sunElevationDeg: number;
+  label: string;
+}
+
+export interface ArmillaryLunarNodes {
+  ascendingNode: {
+    screenPos: Vector2D;
+    isFront: boolean;
+    lonDeg: number;
+  };
+  descendingNode: {
+    screenPos: Vector2D;
+    isFront: boolean;
+    lonDeg: number;
+  };
+}
+
 export interface ArmillaryModelOutput {
   rings: ArmillaryRingPath[];
   almucantars: AlmucantarCircleData[];
@@ -217,6 +241,8 @@ export interface ArmillaryModelOutput {
   apparentSolarHours?: number;
   isFreeRete?: boolean;
   focalBeacon?: ProjectionFocalBeaconOutput;
+  observerCone?: ArmillaryObserverCone;
+  lunarNodes?: ArmillaryLunarNodes;
   planetaryHour: {
     hourNumber: number;
     isDay: boolean;
@@ -226,6 +252,7 @@ export interface ArmillaryModelOutput {
   };
   celestialRingsOpacity: number;
   orbitRingOpacity: number;
+  lunarOrbitOpacity: number;
   milestonesOpacity: number;
   starsOpacity: number;
   bezelOpacity: number;
@@ -744,6 +771,7 @@ export function generateArmillaryModel(params: {
     milestones3D: Array<{ id: string; p3d: Vector3D }>;
     celestialRingsOpacity: number;
     orbitRingOpacity: number;
+    lunarOrbitOpacity: number;
     milestonesOpacity: number;
     starsOpacity: number;
     bezelOpacity: number;
@@ -798,6 +826,7 @@ export function generateArmillaryModel(params: {
         milestones3D,
         celestialRingsOpacity: 0.0,
         orbitRingOpacity: 1.0,
+        lunarOrbitOpacity: 1.0,
         milestonesOpacity: 1.0,
         starsOpacity: 0.25,
         bezelOpacity: 0.0,
@@ -818,7 +847,7 @@ export function generateArmillaryModel(params: {
         z: a * Math.sin(sunLonRad) * Math.cos(epsRad)
       };
 
-      // Geocentric Moon at physical orbit distance
+      // Geocentric Moon at physical orbit distance (26 px)
       const moon3D = equatorialToCartesian3D(moonRaDeg, moonDecDeg, 26);
 
       // Inverted milestones along Sun's apparent ecliptic path (helioLon + 180°)
@@ -841,6 +870,7 @@ export function generateArmillaryModel(params: {
         milestones3D,
         celestialRingsOpacity: 0.35,
         orbitRingOpacity: 1.0,
+        lunarOrbitOpacity: 1.0,
         milestonesOpacity: 1.0,
         starsOpacity: 0.4,
         bezelOpacity: 0.2,
@@ -875,6 +905,7 @@ export function generateArmillaryModel(params: {
       milestones3D,
       celestialRingsOpacity: 1.0,
       orbitRingOpacity: is3DMode ? 0.35 : 0.0,
+      lunarOrbitOpacity: is3DMode ? 0.4 : 0.0,
       milestonesOpacity: is3DMode ? 0.4 : 0.0,
       starsOpacity: 1.0,
       bezelOpacity: is3DMode ? 0.6 : 1.0,
@@ -908,6 +939,7 @@ export function generateArmillaryModel(params: {
 
   const celestialRingsOpacity = (1 - transT) * sourceGeom.celestialRingsOpacity + transT * targetGeom.celestialRingsOpacity;
   const orbitRingOpacity = (1 - transT) * sourceGeom.orbitRingOpacity + transT * targetGeom.orbitRingOpacity;
+  const lunarOrbitOpacity = (1 - transT) * sourceGeom.lunarOrbitOpacity + transT * targetGeom.lunarOrbitOpacity;
   const milestonesOpacity = (1 - transT) * sourceGeom.milestonesOpacity + transT * targetGeom.milestonesOpacity;
   const starsOpacity = (1 - transT) * sourceGeom.starsOpacity + transT * targetGeom.starsOpacity;
   const bezelOpacity = (1 - transT) * sourceGeom.bezelOpacity + transT * targetGeom.bezelOpacity;
@@ -959,7 +991,43 @@ export function generateArmillaryModel(params: {
     ...orbitPaths
   });
 
-  // 1. Celestial Equator Ring (Dec = 0°)
+  // 1. Lunar Orbit Ring (5.14° Inclined around Earth)
+  const lunarOrbitVertices: ArmillaryRingVertex[] = [];
+  const isHelioMode = projectionMode === 'heliocentric';
+  const lunarOrbitRadius = isHelioMode ? 16 : 26;
+  for (let i = 0; i <= NUM_SAMPLES; i++) {
+    const angleRad = (i / NUM_SAMPLES) * 2 * Math.PI;
+    const incRad = toRadians(5.14);
+    const epsRad = toRadians(obliquity);
+
+    // Position relative to Earth
+    const xRel = lunarOrbitRadius * Math.cos(angleRad);
+    const yRel = lunarOrbitRadius * Math.sin(angleRad) * Math.sin(incRad);
+    const zRel = lunarOrbitRadius * Math.sin(angleRad) * Math.cos(incRad);
+
+    // Apply obliquity if geocentric frame
+    const p3dLunar: Vector3D = isHelioMode
+      ? { x: blendedEarth3D.x + xRel, y: blendedEarth3D.y + yRel, z: blendedEarth3D.z + zRel }
+      : {
+          x: blendedEarth3D.x + xRel,
+          y: blendedEarth3D.y + yRel * Math.cos(epsRad) - zRel * Math.sin(epsRad),
+          z: blendedEarth3D.z + yRel * Math.sin(epsRad) + zRel * Math.cos(epsRad)
+        };
+
+    lunarOrbitVertices.push(transformVertex(p3dLunar));
+  }
+  const lunarOrbitPaths = buildSegmentedSvgPaths(lunarOrbitVertices);
+  rings.push({
+    id: 'lunar_orbit',
+    label: 'Lunar Orbit (5.14° Inclined)',
+    color: '#cbd5e1', // Silver/Slate
+    frontStrokeWidth: 1.2,
+    backStrokeWidth: 0.6,
+    vertices: lunarOrbitVertices,
+    ...lunarOrbitPaths
+  });
+
+  // 2. Celestial Equator Ring (Dec = 0°)
   const equatorVertices: ArmillaryRingVertex[] = [];
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const ra = (i / NUM_SAMPLES) * 360;
@@ -977,7 +1045,7 @@ export function generateArmillaryModel(params: {
     ...eqPaths
   });
 
-  // 2. Ecliptic Rete Ring (Inclined at 23.44°, Rotates with LST or Free Rete Offset)
+  // 3. Ecliptic Rete Ring (Inclined at 23.44°, Rotates with LST or Free Rete Offset)
   const eclipticVertices: ArmillaryRingVertex[] = [];
   const epsRad = toRadians(obliquity);
   for (let i = 0; i <= NUM_SAMPLES; i++) {
@@ -1000,7 +1068,7 @@ export function generateArmillaryModel(params: {
     ...eclPaths
   });
 
-  // 3. Tropic of Cancer (Dec = +23.44°)
+  // 4. Tropic of Cancer (Dec = +23.44° - Muted Antique Brass)
   const cancerVertices: ArmillaryRingVertex[] = [];
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const ra = (i / NUM_SAMPLES) * 360;
@@ -1011,14 +1079,14 @@ export function generateArmillaryModel(params: {
   rings.push({
     id: 'tropic_cancer',
     label: 'Tropic of Cancer (+23.44°)',
-    color: '#f43f5e', // Rose
-    frontStrokeWidth: 1.2,
-    backStrokeWidth: 0.8,
+    color: '#d97706', // Muted Antique Brass / Amber
+    frontStrokeWidth: 0.9,
+    backStrokeWidth: 0.5,
     vertices: cancerVertices,
     ...cancerPaths
   });
 
-  // 4. Tropic of Capricorn (Dec = -23.44°)
+  // 5. Tropic of Capricorn (Dec = -23.44° - Muted Slate/Silver)
   const capricornVertices: ArmillaryRingVertex[] = [];
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const ra = (i / NUM_SAMPLES) * 360;
@@ -1029,14 +1097,14 @@ export function generateArmillaryModel(params: {
   rings.push({
     id: 'tropic_capricorn',
     label: 'Tropic of Capricorn (-23.44°)',
-    color: '#38bdf8', // Sky Blue
-    frontStrokeWidth: 1.2,
-    backStrokeWidth: 0.8,
+    color: '#94a3b8', // Muted Slate
+    frontStrokeWidth: 0.9,
+    backStrokeWidth: 0.5,
     vertices: capricornVertices,
     ...capricornPaths
   });
 
-  // 5. Local Horizon Ring (Alt = 0°)
+  // 6. Local Horizon Ring (Alt = 0°)
   const horizonVertices: ArmillaryRingVertex[] = [];
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const az = (i / NUM_SAMPLES) * 360;
@@ -1055,7 +1123,7 @@ export function generateArmillaryModel(params: {
     ...horizPaths
   });
 
-  // 6. Solstitial Colure Ring (RA = 90° and 270° plane)
+  // 7. Solstitial Colure Ring (RA = 90° and 270° plane)
   const colureVertices: ArmillaryRingVertex[] = [];
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const theta = (i / NUM_SAMPLES) * 2 * Math.PI;
@@ -1075,7 +1143,7 @@ export function generateArmillaryModel(params: {
     ...colurePaths
   });
 
-  // 7. Celestial Navigational Stars (Rotates with Rete)
+  // 8. Celestial Navigational Stars (Rotates with Rete)
   const stars = ASTROLABE_STARS.map((s) => {
     const p3dBase = equatorialToCartesian3D(s.raDeg, s.decDeg, r0);
     const p3dRotated = rotateEuler3D(p3dBase, 0, reteOffset, 0);
@@ -1093,14 +1161,14 @@ export function generateArmillaryModel(params: {
     };
   });
 
-  // 8. Milestone Nodes
+  // 9. Milestone Nodes
   const milestones: ArmillaryMilestoneNode[] = ARMILLARY_MILESTONES_DATA.map((m, idx) => {
     const targetM3D = targetGeom.milestones3D[idx]?.p3d || { x: 0, y: 0, z: 0 };
     const sourceM3D = sourceGeom.milestones3D[idx]?.p3d || targetM3D;
     const blendedM3D: Vector3D = {
       x: (1 - transT) * sourceM3D.x + transT * targetM3D.x,
-      y: (1 - transT) * sourceM3D.y + transT * targetM3D.y,
-      z: (1 - transT) * sourceM3D.z + transT * targetM3D.z
+      y: (1 - transT) * sourceM3D.y + transT * targetGeom.milestones3D[idx]?.p3d.y || targetM3D.y,
+      z: (1 - transT) * sourceM3D.z + transT * targetGeom.milestones3D[idx]?.p3d.z || targetM3D.z
     };
     const v = transformVertex(blendedM3D);
     return {
@@ -1112,14 +1180,121 @@ export function generateArmillaryModel(params: {
     };
   });
 
-  // 9. Earth, Sun, and Moon Beads
+  // 10. Lunar Nodes (Ascending & Descending)
+  const ascNode3D: Vector3D = isHelioMode
+    ? { x: blendedEarth3D.x + 16, y: blendedEarth3D.y, z: blendedEarth3D.z }
+    : { x: blendedEarth3D.x + 26, y: blendedEarth3D.y, z: blendedEarth3D.z };
+  const descNode3D: Vector3D = isHelioMode
+    ? { x: blendedEarth3D.x - 16, y: blendedEarth3D.y, z: blendedEarth3D.z }
+    : { x: blendedEarth3D.x - 26, y: blendedEarth3D.y, z: blendedEarth3D.z };
+  const ascV = transformVertex(ascNode3D);
+  const descV = transformVertex(descNode3D);
+  const lunarNodes: ArmillaryLunarNodes = {
+    ascendingNode: { screenPos: ascV.screenPos, isFront: ascV.isFront, lonDeg: 0 },
+    descendingNode: { screenPos: descV.screenPos, isFront: descV.isFront, lonDeg: 180 }
+  };
+
+  // 11. Topocentric Observer Field of View (FOV) Sky Cone
+  let observerCone: ArmillaryObserverCone | undefined = undefined;
+  if (orbitRingOpacity > 0.05) {
+    const phi = toRadians(latitude);
+    const rotDeg = (gmstDeg + longitude + 360) % 360;
+    const rotRad = toRadians(rotDeg);
+    const epsRad = toRadians(obliquity);
+
+    // Observer body vector on Earth
+    const vx = Math.cos(phi) * Math.sin(rotRad);
+    const vy = Math.sin(phi);
+    const vz = Math.cos(phi) * Math.cos(rotRad);
+
+    // Tilted zenith direction in 3D space
+    const nzX = vx;
+    const nzY = vy * Math.cos(epsRad) - vz * Math.sin(epsRad);
+    const nzZ = vy * Math.sin(epsRad) + vz * Math.cos(epsRad);
+
+    // Observer pin on Earth surface
+    const pObs3D: Vector3D = {
+      x: blendedEarth3D.x + 3.5 * nzX,
+      y: blendedEarth3D.y + 3.5 * nzY,
+      z: blendedEarth3D.z + 3.5 * nzZ
+    };
+
+    // Zenith ray tip (30 px outward)
+    const pZenith3D: Vector3D = {
+      x: pObs3D.x + 30 * nzX,
+      y: pObs3D.y + 30 * nzY,
+      z: pObs3D.z + 30 * nzZ
+    };
+
+    const obsV = transformVertex(pObs3D);
+    const zenithV = transformVertex(pZenith3D);
+
+    // Tangent horizon disc (circle of radius 12 perpendicular to zenith)
+    const uRaw = Math.abs(nzY) < 0.99 ? { x: -nzZ, y: 0, z: nzX } : { x: 1, y: 0, z: 0 };
+    const uLen = Math.sqrt(uRaw.x * uRaw.x + uRaw.y * uRaw.y + uRaw.z * uRaw.z) || 1;
+    const u = { x: uRaw.x / uLen, y: uRaw.y / uLen, z: uRaw.z / uLen };
+    const w = { x: nzY * u.z - nzZ * u.y, y: nzZ * u.x - nzX * u.z, z: nzX * u.y - nzY * u.x };
+
+    const discPoints: Vector2D[] = [];
+    const NUM_DISC_SAMPLES = 24;
+    for (let i = 0; i <= NUM_DISC_SAMPLES; i++) {
+      const aRad = (i / NUM_DISC_SAMPLES) * 2 * Math.PI;
+      const rDisc = 12;
+      const pt3D: Vector3D = {
+        x: pObs3D.x + rDisc * (u.x * Math.cos(aRad) + w.x * Math.sin(aRad)),
+        y: pObs3D.y + rDisc * (u.y * Math.cos(aRad) + w.y * Math.sin(aRad)),
+        z: pObs3D.z + rDisc * (u.z * Math.cos(aRad) + w.z * Math.sin(aRad))
+      };
+      discPoints.push(transformVertex(pt3D).screenPos);
+    }
+
+    let horizonDiscPathD = '';
+    if (discPoints.length > 0) {
+      horizonDiscPathD = `M ${discPoints[0].x.toFixed(1)} ${discPoints[0].y.toFixed(1)} `;
+      for (let i = 1; i < discPoints.length; i++) {
+        horizonDiscPathD += `L ${discPoints[i].x.toFixed(1)} ${discPoints[i].y.toFixed(1)} `;
+      }
+      horizonDiscPathD += 'Z';
+    }
+
+    // Cone envelope polygon (connecting observer to outer rim and zenith)
+    let conePathD = `M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} `;
+    for (const pt of discPoints) {
+      conePathD += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
+    }
+    conePathD += `L ${zenithV.screenPos.x.toFixed(1)} ${zenithV.screenPos.y.toFixed(1)} Z`;
+
+    // Solar elevation angle for observer
+    const sunDir = {
+      x: blendedSun3D.x - blendedEarth3D.x,
+      y: blendedSun3D.y - blendedEarth3D.y,
+      z: blendedSun3D.z - blendedEarth3D.z
+    };
+    const sunLen = Math.sqrt(sunDir.x * sunDir.x + sunDir.y * sunDir.y + sunDir.z * sunDir.z) || 1;
+    const sinAlt = (nzX * sunDir.x + nzY * sunDir.y + nzZ * sunDir.z) / sunLen;
+    const sunElevationDeg = toDegrees(Math.asin(clamp(sinAlt, -1, 1)));
+    const isDaytime = sunElevationDeg > -0.833;
+
+    observerCone = {
+      observerScreenPos: obsV.screenPos,
+      zenithScreenPos: zenithV.screenPos,
+      horizonDiscPathD,
+      conePathD,
+      zenithRay: { start: obsV.screenPos, end: zenithV.screenPos },
+      isDaytime,
+      sunElevationDeg: parseFloat(sunElevationDeg.toFixed(1)),
+      label: isDaytime ? 'Observer Sky (Daylight)' : 'Observer Sky (Night Cosmos)'
+    };
+  }
+
+  // 12. Earth, Sun, and Moon Beads
   const earthV = transformVertex(blendedEarth3D);
   const sunV = transformVertex(blendedSun3D);
   const moonV = transformVertex(blendedMoon3D);
   const sunHoriz = equatorialToHorizontal(sunRaDeg, sunDecDeg, latitude, lstDeg);
   const moonHoriz = equatorialToHorizontal(moonRaDeg, moonDecDeg, latitude, lstDeg);
 
-  // 10. Almucantars and Planetary Hours
+  // 13. Almucantars and Planetary Hours
   const almucantars = generateAlmucantars(latitude, 15, r0);
   const planetaryHour = calculatePlanetaryHour(timeOfDay, sunrise, sunset, dayOfWeek);
 
@@ -1167,9 +1342,12 @@ export function generateArmillaryModel(params: {
     apparentSolarHours,
     isFreeRete: isFreeReteMode,
     focalBeacon,
+    observerCone,
+    lunarNodes,
     planetaryHour,
     celestialRingsOpacity,
     orbitRingOpacity,
+    lunarOrbitOpacity,
     milestonesOpacity,
     starsOpacity,
     bezelOpacity,
