@@ -21,6 +21,7 @@ export const OrbitSvgCanvas: React.FC<OrbitSvgCanvasProps> = ({
   return (
     <svg 
       viewBox="-290 -280 580 560" 
+      style={{ touchAction: 'none' }}
       className="w-full h-full max-h-[380px] overflow-visible"
       preserveAspectRatio="xMidYMid meet"
     >

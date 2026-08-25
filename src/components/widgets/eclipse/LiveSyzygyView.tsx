@@ -1,6 +1,6 @@
 import React from 'react';
 import { EclipseData } from '../../../types';
-import { calculateEarthSideGeometry, generateOrbitalSegments } from '../../../utils/cosmicMath';
+import { calculateEarthSideGeometry, generateOrbitalSegments, toRadians } from '../../../utils/cosmicMath';
 
 export interface LiveSyzygyViewProps {
   eclipse: EclipseData;
@@ -31,7 +31,7 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
   const liveEarthY = 110;
   const liveOrbitalRx = 85;
 
-  const nodeAngleRad = ((eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0)) * Math.PI) / 180;
+  const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0));
   const liveMoonX = liveEarthX - (Math.cos(phaseRad) * liveOrbitalRx);
   const liveMoonY = liveEarthY - (beta * scalePxPerDeg);
 

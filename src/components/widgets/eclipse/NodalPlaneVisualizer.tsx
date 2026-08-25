@@ -5,7 +5,8 @@ import {
   calculateEarthOrbitalPhysics, 
   getJulianDate, 
   calculateEarthAxialGeometry, 
-  generateOrbitalSegments 
+  generateOrbitalSegments,
+  toRadians
 } from '../../../utils/cosmicMath';
 
 export interface NodalPlaneVisualizerProps {
@@ -27,7 +28,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
 
   const beta = eclipse.beta; // Ecliptic latitude: -5.14° to +5.14°
   const distKm = eclipse.distanceKm || 384400;
-  const offsetKm = Math.round(distKm * Math.sin((beta * Math.PI) / 180));
+  const offsetKm = Math.round(distKm * Math.sin(toRadians(beta)));
   const penumbraRadKm = eclipse.penumbraRadiusKm || 9500;
   const umbraRadKm = eclipse.umbraRadiusKm || 4600;
   const isInsideCorridor = Math.abs(offsetKm) <= penumbraRadKm;
@@ -53,7 +54,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const centerY = 90;
   
   // Real-time seasonal nodal orientation across the sightline:
-  const nodeAngleRad = ((eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0)) * Math.PI) / 180;
+  const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0));
   const isAscending = eclipse.isAscendingHemisphere ?? (beta >= 0);
 
   const phaseVal = eclipse.phaseValue || 0; // 0.0 (New Moon) to 0.5 (Full Moon) to 1.0

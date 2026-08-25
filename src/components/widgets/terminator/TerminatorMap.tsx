@@ -197,7 +197,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
           </div>
         )}
 
-        <svg viewBox="0 0 360 180" className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox="0 0 360 180" style={{ touchAction: 'none' }} className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
           <defs>
             <clipPath id="terminatorBounds">
               <rect x="0" y="0" width="360" height="180" rx="8" />
@@ -244,12 +244,14 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             {/* Subsolar Point Marker with Soft Dynamic Distance-Scaled Glow */}
             <g 
               className="cursor-pointer"
+              style={{ touchAction: 'none' }}
               onPointerEnter={() => setHoveredPoint('sun')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
+              <circle cx={relSunX} cy={sunCy} r="12" fill="transparent" />
               <circle cx={relSunX} cy={sunCy} r={sunGlowRadius} fill={CONFIG.THEME.SUN_FILL} opacity="0.25" />
               <circle cx={relSunX} cy={sunCy} r={sunRadius} fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
-              <text x={relSunX + sunRadius + 3} y={sunCy + 3} className="text-[7.5px] fill-amber-300 font-bold font-mono select-none pointer-events-none">
+              <text x={relSunX + sunRadius + 3} y={sunCy + 3} className="text-[7.5px] fill-amber-300 font-bold font-mono select-none pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">
                 SUN
               </text>
             </g>
@@ -262,12 +264,14 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             {/* Sublunar Point Marker (Moon Zenith) with Soft Dynamic Distance-Scaled Glow */}
             <g 
               className="cursor-pointer"
+              style={{ touchAction: 'none' }}
               onPointerEnter={() => setHoveredPoint('moon')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
+              <circle cx={relMoonX} cy={moonCy} r="12" fill="transparent" />
               <circle cx={relMoonX} cy={moonCy} r={moonGlowRadius} fill="#94a3b8" opacity="0.25" />
               <circle cx={relMoonX} cy={moonCy} r={moonRadius} fill="#f8fafc" stroke="#475569" strokeWidth="1.5" className="drop-shadow" />
-              <text x={relMoonX + moonRadius + 3} y={moonCy + 3} className="text-[7.5px] fill-slate-300 font-bold font-mono select-none pointer-events-none">
+              <text x={relMoonX + moonRadius + 3} y={moonCy + 3} className="text-[7.5px] fill-slate-300 font-bold font-mono select-none pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">
                 MOON
               </text>
             </g>
@@ -275,12 +279,14 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             {/* User Observer Position Marker with Glow (Unified Sky Blue #38bdf8) */}
             <g 
               className="cursor-pointer"
+              style={{ touchAction: 'none' }}
               onPointerEnter={() => setHoveredPoint('observer')}
               onPointerLeave={() => setHoveredPoint(null)}
             >
+              <circle cx={180} cy={userCy} r="12" fill="transparent" />
               <circle cx={180} cy={userCy} r="8" fill="#38bdf8" opacity="0.25" className="animate-pulse" />
               <circle cx={180} cy={userCy} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.2" className="drop-shadow" />
-              <text x={186} y={userCy - 4} className="text-[8px] fill-sky-300 font-bold font-mono">YOU</text>
+              <text x={186} y={userCy - 4} className="text-[8px] fill-sky-300 font-bold font-mono drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">YOU</text>
             </g>
           </g>
         </svg>
