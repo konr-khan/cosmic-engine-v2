@@ -50,6 +50,7 @@ import {
   calculatePlanetaryHour,
   generateArmillaryModel,
   computeProjection2D,
+  computeContinuousProjection2D,
   calculateReteAngleToLST,
   generateProjectionFocalBeacon,
   calculateAlidadeSighting,
@@ -1376,6 +1377,21 @@ describe('cosmicMath utilities', () => {
       const p3d = { x: 50, y: 30, z: 80 };
       const stereo2D = computeProjection2D(p3d, 'stereographic', 100, 47.06, 0);
       const rojas2D = computeProjection2D(p3d, 'rojas', 100, 47.06, 0);
+
+      // Verify continuous projection endpoints
+      const projStart = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 0.0, 100, 47.06, 0);
+      const projEnd = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 1.0, 100, 47.06, 0);
+      expect(projStart.x).toBeCloseTo(stereo2D.x, 3);
+      expect(projStart.y).toBeCloseTo(stereo2D.y, 3);
+      expect(projEnd.x).toBeCloseTo(rojas2D.x, 3);
+      expect(projEnd.y).toBeCloseTo(rojas2D.y, 3);
+
+      // Verify smooth intermediate projection between stereographic and horizon
+      const projStereoToHorizon = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.5, 100, 47.06, 0);
+      expect(typeof projStereoToHorizon.x).toBe('number');
+      expect(typeof projStereoToHorizon.y).toBe('number');
+      expect(isNaN(projStereoToHorizon.x)).toBe(false);
+      expect(isNaN(projStereoToHorizon.y)).toBe(false);
 
       // Halfway transition between stereographic and rojas
       const modelCross = generateArmillaryModel({

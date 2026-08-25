@@ -22,7 +22,7 @@ import {
   equatorialToHorizontal, 
   rotateEuler3D 
 } from './coordinates';
-import { computeProjection2D } from './projections';
+import { computeProjection2D, computeContinuousProjection2D } from './projections';
 import { 
   generateAlmucantars, 
   calculatePlanetaryHour, 
@@ -122,30 +122,29 @@ export function generateArmillaryModel(params: {
     // 1. 3D Camera view
     const pCam = rotateEuler3D(p3d, cameraPitch, cameraYaw, 0);
 
-    // 2. 2D Target Projection
-    const pProjTarget = computeProjection2D(p3d, projectionMode, r0, latitude, lstDeg);
-    let pProjX = pProjTarget.x;
-    let pProjY = pProjTarget.y;
-
-    // 2D-to-2D Cross-Projection Interpolation (when switching between 2D historical plates)
-    if (fromProjectionMode && fromProjectionMode !== projectionMode && transT < 1.0) {
-      const pProjSource = computeProjection2D(p3d, fromProjectionMode, r0, latitude, lstDeg);
-      pProjX = (1 - transT) * pProjSource.x + transT * pProjTarget.x;
-      pProjY = (1 - transT) * pProjSource.y + transT * pProjTarget.y;
-    }
+    // 2. 2D Continuous Target Projection (circle-preserving across historical plates)
+    const pProj = computeContinuousProjection2D(
+      p3d,
+      fromProjectionMode,
+      projectionMode,
+      transT,
+      r0,
+      latitude,
+      lstDeg
+    );
 
     // 3. Continuous Staged Morph Blend (3D vs 2D)
     const is3DTarget = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
     const effectiveLambda = is3DTarget ? 0 : lambdaClamp;
 
-    const screenX = (1 - effectiveLambda) * pCam.x + effectiveLambda * pProjX;
-    const screenY = (1 - effectiveLambda) * (-pCam.y) + effectiveLambda * (-pProjY);
+    const screenX = (1 - effectiveLambda) * pCam.x + effectiveLambda * pProj.x;
+    const screenY = (1 - effectiveLambda) * (-pCam.y) + effectiveLambda * (-pProj.y);
     const isFront = effectiveLambda >= 0.98 ? true : pCam.z >= 0;
 
     return {
       p3d,
       pCam,
-      pProj: { x: pProjX, y: pProjY },
+      pProj,
       screenPos: { x: screenX, y: screenY },
       isFront
     };

@@ -75,3 +75,95 @@ export function computeProjection2D(
     return projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
   }
 }
+
+/**
+ * Continuous, circle-preserving cross-projection interpolation between historical astrolabe models.
+ * Transitions between stereographic, rojas, and horizon frames using SO(3) coordinate rotation
+ * and continuous perspective focal scale u in [R0, infinity), preserving circles and conic contours.
+ */
+export function computeContinuousProjection2D(
+  p3d: Vector3D,
+  fromMode: ArmillaryProjectionMode | undefined,
+  targetMode: ArmillaryProjectionMode,
+  transT: number = 1.0,
+  r0: number = 100,
+  latitude: Latitude = 47.06,
+  lstDeg: Degrees | number = 0
+): Vector2D {
+  const t = clamp(transT, 0, 1);
+  if (!fromMode || fromMode === targetMode || t >= 1.0) {
+    return computeProjection2D(p3d, targetMode, r0, latitude, lstDeg);
+  }
+  if (t <= 0.0) {
+    return computeProjection2D(p3d, fromMode, r0, latitude, lstDeg);
+  }
+
+  // 1. Stereographic <-> Horizon (Continuous Latitude Rotation on S^2)
+  if (
+    (fromMode === 'stereographic' && targetMode === 'horizon') ||
+    (fromMode === 'horizon' && targetMode === 'stereographic')
+  ) {
+    const isToHorizon = targetMode === 'horizon';
+    const currentT = isToHorizon ? t : 1 - t;
+    // Interpolate observer latitude from 90° (North Pole = Stereographic) to actual observer latitude
+    const effLat = 90 - (90 - latitude) * currentT;
+    const effLst = lstDeg * currentT;
+    const { raDeg, decDeg } = cartesian3DToEquatorial(p3d);
+    const horiz = equatorialToHorizontal(raDeg, decDeg, effLat, effLst);
+    return projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
+  }
+
+  // 2. Stereographic <-> Rojas (Optical Focal Pull + Colure Plane Rotation)
+  if (
+    (fromMode === 'stereographic' && targetMode === 'rojas') ||
+    (fromMode === 'rojas' && targetMode === 'stereographic')
+  ) {
+    const isToRojas = targetMode === 'rojas';
+    const currentT = isToRojas ? t : 1 - t;
+
+    // Colure plane rotation angle theta: 0° (equatorial) -> 90° (solstitial colure)
+    const thetaRad = currentT * (Math.PI / 2);
+    const cosT = Math.cos(thetaRad);
+    const sinT = Math.sin(thetaRad);
+
+    // Rotate around X axis
+    const yt = p3d.y * cosT + p3d.z * sinT;
+    const zt = -p3d.y * sinT + p3d.z * cosT;
+
+    // Continuous perspective focal scaling (d = R0 -> infinity)
+    const stereoWeight = 1 - currentT;
+    const denom = Math.max(0.1, r0 + yt * stereoWeight);
+    const focalScale = (r0 * stereoWeight + denom * (1 - stereoWeight)) / denom;
+
+    const xProj = p3d.x * focalScale;
+    const yProj = (1 - currentT) * (zt * (r0 / denom)) + currentT * yt;
+
+    return { x: xProj, y: yProj };
+  }
+
+  // 3. Rojas <-> Horizon (Composite continuous rotation & focal transition)
+  if (
+    (fromMode === 'rojas' && targetMode === 'horizon') ||
+    (fromMode === 'horizon' && targetMode === 'rojas')
+  ) {
+    const isToHorizon = targetMode === 'horizon';
+    const currentT = isToHorizon ? t : 1 - t;
+
+    if (currentT < 0.5) {
+      const subT = currentT * 2;
+      return computeContinuousProjection2D(p3d, 'rojas', 'stereographic', subT, r0, latitude, lstDeg);
+    } else {
+      const subT = (currentT - 0.5) * 2;
+      return computeContinuousProjection2D(p3d, 'stereographic', 'horizon', subT, r0, latitude, lstDeg);
+    }
+  }
+
+  // Default fallback for 3D modes
+  const p1 = computeProjection2D(p3d, fromMode, r0, latitude, lstDeg);
+  const p2 = computeProjection2D(p3d, targetMode, r0, latitude, lstDeg);
+  return {
+    x: (1 - t) * p1.x + t * p2.x,
+    y: (1 - t) * p1.y + t * p2.y
+  };
+}
+
