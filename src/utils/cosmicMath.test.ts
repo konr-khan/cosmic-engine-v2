@@ -3,6 +3,7 @@ import {
   toRadians,
   toDegrees,
   clamp,
+  slerp3D,
   formatTime,
   formatYMD,
   getSectorPath,
@@ -119,6 +120,68 @@ describe('cosmicMath utilities', () => {
 
       // Symmetrical 12h daylight sector spans 180° centered around 12 o'clock (-90° in SVG)
       expect(standardPath).toContain('A 50 50 0 0 1');
+    });
+  });
+
+  describe('Spherical Linear Interpolation (slerp3D)', () => {
+    it('returns exact endpoints at t=0 and t=1', () => {
+      const v1 = { x: 100, y: 0, z: 0 };
+      const v2 = { x: 0, y: 100, z: 0 };
+      expect(slerp3D(v1, v2, 0)).toEqual(v1);
+      expect(slerp3D(v2, v1, 1)).toEqual(v1);
+    });
+
+    it('strictly preserves constant radius along great-circle trajectory on S^2', () => {
+      const r = 100;
+      const v1 = { x: r, y: 0, z: 0 };
+      const v2 = { x: 0, y: r, z: 0 };
+      
+      for (let step = 0; step <= 10; step++) {
+        const t = step / 10;
+        const vt = slerp3D(v1, v2, t);
+        const radius = Math.sqrt(vt.x * vt.x + vt.y * vt.y + vt.z * vt.z);
+        expect(radius).toBeCloseTo(r, 4);
+      }
+
+      // Midpoint at t=0.5 between (100, 0, 0) and (0, 100, 0) should be (100*cos(45°), 100*sin(45°), 0)
+      const mid = slerp3D(v1, v2, 0.5);
+      expect(mid.x).toBeCloseTo(100 * Math.SQRT1_2, 4);
+      expect(mid.y).toBeCloseTo(100 * Math.SQRT1_2, 4);
+      expect(mid.z).toBeCloseTo(0, 4);
+    });
+
+    it('smoothly scales magnitude when transitioning from/to origin', () => {
+      const origin = { x: 0, y: 0, z: 0 };
+      const target = { x: 0, y: 50, z: 50 };
+      
+      const mid = slerp3D(origin, target, 0.5);
+      expect(mid.x).toBeCloseTo(0, 4);
+      expect(mid.y).toBeCloseTo(25, 4);
+      expect(mid.z).toBeCloseTo(25, 4);
+
+      const midRev = slerp3D(target, origin, 0.5);
+      expect(midRev.x).toBeCloseTo(0, 4);
+      expect(midRev.y).toBeCloseTo(25, 4);
+      expect(midRev.z).toBeCloseTo(25, 4);
+    });
+
+    it('handles nearly opposite 180° vectors without NaN singularities', () => {
+      const v1 = { x: 100, y: 0, z: 0 };
+      const v2 = { x: -100, y: 0, z: 0 };
+      const mid = slerp3D(v1, v2, 0.5);
+      const rad = Math.sqrt(mid.x * mid.x + mid.y * mid.y + mid.z * mid.z);
+      expect(rad).toBeCloseTo(100, 3);
+      expect(isNaN(mid.x)).toBe(false);
+      expect(isNaN(mid.y)).toBe(false);
+      expect(isNaN(mid.z)).toBe(false);
+    });
+
+    it('interpolates magnitude linearly when vectors have different radii', () => {
+      const v1 = { x: 100, y: 0, z: 0 };
+      const v2 = { x: 0, y: 200, z: 0 };
+      const mid = slerp3D(v1, v2, 0.5);
+      const rad = Math.sqrt(mid.x * mid.x + mid.y * mid.y + mid.z * mid.z);
+      expect(rad).toBeCloseTo(150, 4);
     });
   });
 

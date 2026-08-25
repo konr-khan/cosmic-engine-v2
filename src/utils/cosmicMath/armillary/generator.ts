@@ -1,6 +1,6 @@
 import { Degrees, Latitude, Longitude, HoursDecimal, JulianDate, asDegrees } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
-import { toRadians, toDegrees, clamp } from '../core';
+import { toRadians, toDegrees, clamp, slerp3D } from '../core';
 import { calculateEarthOrbitalPhysics } from '../solar';
 import { 
   ArmillaryModelMode,
@@ -320,24 +320,10 @@ export function generateArmillaryModel(params: {
     ? getRawModeGeometry(fromProjectionMode)
     : targetGeom;
 
-  // Blend bodies smoothly across states
-  const blendedSun3D: Vector3D = {
-    x: (1 - transT) * sourceGeom.sun3D.x + transT * targetGeom.sun3D.x,
-    y: (1 - transT) * sourceGeom.sun3D.y + transT * targetGeom.sun3D.y,
-    z: (1 - transT) * sourceGeom.sun3D.z + transT * targetGeom.sun3D.z
-  };
-
-  const blendedEarth3D: Vector3D = {
-    x: (1 - transT) * sourceGeom.earth3D.x + transT * targetGeom.earth3D.x,
-    y: (1 - transT) * sourceGeom.earth3D.y + transT * targetGeom.earth3D.y,
-    z: (1 - transT) * sourceGeom.earth3D.z + transT * targetGeom.earth3D.z
-  };
-
-  const blendedMoon3D: Vector3D = {
-    x: (1 - transT) * sourceGeom.moon3D.x + transT * targetGeom.moon3D.x,
-    y: (1 - transT) * sourceGeom.moon3D.y + transT * targetGeom.moon3D.y,
-    z: (1 - transT) * sourceGeom.moon3D.z + transT * targetGeom.moon3D.z
-  };
+  // Blend celestial bodies smoothly across states using spherical SLERP (preserving radius and geodesic trajectory)
+  const blendedSun3D: Vector3D = slerp3D(sourceGeom.sun3D, targetGeom.sun3D, transT);
+  const blendedEarth3D: Vector3D = slerp3D(sourceGeom.earth3D, targetGeom.earth3D, transT);
+  const blendedMoon3D: Vector3D = slerp3D(sourceGeom.moon3D, targetGeom.moon3D, transT);
 
   const celestialRingsOpacity = (1 - transT) * sourceGeom.celestialRingsOpacity + transT * targetGeom.celestialRingsOpacity;
   const orbitRingOpacity = (1 - transT) * sourceGeom.orbitRingOpacity + transT * targetGeom.orbitRingOpacity;
@@ -353,7 +339,7 @@ export function generateArmillaryModel(params: {
   const rings: ArmillaryRingPath[] = [];
   const NUM_SAMPLES = 72;
 
-  // 0. Orbital Path Ring (Keplerian / Ecliptic orbit)
+  // 0. Orbital Path Ring (Keplerian / Ecliptic orbit with rigid plane tilt)
   const orbitRingVertices: ArmillaryRingVertex[] = [];
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const angleRad = (i / NUM_SAMPLES) * 2 * Math.PI;
@@ -366,19 +352,15 @@ export function generateArmillaryModel(params: {
     const b = a * Math.sqrt(1 - e * e);
     const c = a * e;
 
-    const xHelio = a * Math.cos(angleRad) + (exaggerateEccentricity ? -c * 0.5 : 0);
-    const yHelio = 0;
-    const zHelio = b * Math.sin(angleRad);
+    const xOrb = a * Math.cos(angleRad) + (exaggerateEccentricity ? -c * 0.5 * isHelioT : 0);
+    const zOrb = (isHelioT * b + (1 - isHelioT) * a) * Math.sin(angleRad);
 
-    const epsRad = toRadians(obliquity);
-    const xGeo = a * Math.cos(angleRad);
-    const yGeo = a * Math.sin(angleRad) * Math.sin(epsRad);
-    const zGeo = a * Math.sin(angleRad) * Math.cos(epsRad);
-
+    // Smoothly tilt the orbital plane from Ecliptic obliquity (23.44°) to Heliocentric ecliptic (0°)
+    const tiltRad = toRadians((1 - isHelioT) * obliquity);
     const p3dOrb: Vector3D = {
-      x: isHelioT * xHelio + (1 - isHelioT) * xGeo,
-      y: isHelioT * yHelio + (1 - isHelioT) * yGeo,
-      z: isHelioT * zHelio + (1 - isHelioT) * zGeo
+      x: xOrb,
+      y: zOrb * Math.sin(tiltRad),
+      z: zOrb * Math.cos(tiltRad)
     };
     orbitRingVertices.push(transformVertex(p3dOrb));
   }
@@ -567,11 +549,7 @@ export function generateArmillaryModel(params: {
   const milestones: ArmillaryMilestoneNode[] = ARMILLARY_MILESTONES_DATA.map((m, idx) => {
     const targetM3D = targetGeom.milestones3D[idx]?.p3d || { x: 0, y: 0, z: 0 };
     const sourceM3D = sourceGeom.milestones3D[idx]?.p3d || targetM3D;
-    const blendedM3D: Vector3D = {
-      x: (1 - transT) * sourceM3D.x + transT * targetM3D.x,
-      y: (1 - transT) * sourceM3D.y + transT * (targetGeom.milestones3D[idx]?.p3d.y ?? targetM3D.y),
-      z: (1 - transT) * sourceM3D.z + transT * (targetGeom.milestones3D[idx]?.p3d.z ?? targetM3D.z)
-    };
+    const blendedM3D: Vector3D = slerp3D(sourceM3D, targetM3D, transT);
     const v = transformVertex(blendedM3D);
     return {
       ...m,

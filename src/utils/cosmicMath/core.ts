@@ -8,6 +8,7 @@ import {
   asRadians, 
   asJulianDate 
 } from '../../types/units';
+import { Vector3D } from '../../types/coordinates';
 
 /**
  * Converts degrees to radians.
@@ -251,3 +252,108 @@ export const formatTimeHHMM = (t: number | null | undefined): string => {
   const m = Math.floor((norm - h) * 60);
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
+
+/**
+ * Spherical Linear Interpolation (SLERP) for 3D Cartesian vectors.
+ * Smoothly interpolates direction along the shortest great-circle arc on S^2
+ * and linearly interpolates magnitude, preventing chord-cutting artifacts and
+ * keeping celestial bodies on their orbital spheres during model transitions.
+ *
+ * @param v1 - Starting 3D vector
+ * @param v2 - Target 3D vector
+ * @param t - Interpolation factor in [0, 1]
+ * @returns Interpolated 3D vector
+ */
+export const slerp3D = (v1: Vector3D, v2: Vector3D, t: number): Vector3D => {
+  const clampT = clamp(t, 0, 1);
+  if (clampT === 0) return { ...v1 };
+  if (clampT === 1) return { ...v2 };
+
+  const r1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+  const r2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z);
+
+  // If both vectors are at or near the origin, standard linear interpolation
+  if (r1 < 1e-6 && r2 < 1e-6) {
+    return {
+      x: (1 - clampT) * v1.x + clampT * v2.x,
+      y: (1 - clampT) * v1.y + clampT * v2.y,
+      z: (1 - clampT) * v1.z + clampT * v2.z
+    };
+  }
+
+  // If one vector is at origin, smoothly scale magnitude along the non-zero direction
+  if (r1 < 1e-6) {
+    return { x: v2.x * clampT, y: v2.y * clampT, z: v2.z * clampT };
+  }
+  if (r2 < 1e-6) {
+    const scale = 1 - clampT;
+    return { x: v1.x * scale, y: v1.y * scale, z: v1.z * scale };
+  }
+
+  // Normalized unit vectors
+  const u1 = { x: v1.x / r1, y: v1.y / r1, z: v1.z / r1 };
+  const u2 = { x: v2.x / r2, y: v2.y / r2, z: v2.z / r2 };
+
+  // Dot product and angle
+  let dot = u1.x * u2.x + u1.y * u2.y + u1.z * u2.z;
+  dot = clamp(dot, -1, 1);
+
+  // If vectors are nearly identical / collinear in same direction
+  if (dot > 0.99995) {
+    const rT = (1 - clampT) * r1 + clampT * r2;
+    const avgX = (1 - clampT) * u1.x + clampT * u2.x;
+    const avgY = (1 - clampT) * u1.y + clampT * u2.y;
+    const avgZ = (1 - clampT) * u1.z + clampT * u2.z;
+    const avgLen = Math.sqrt(avgX * avgX + avgY * avgY + avgZ * avgZ) || 1;
+    return {
+      x: (avgX / avgLen) * rT,
+      y: (avgY / avgLen) * rT,
+      z: (avgZ / avgLen) * rT
+    };
+  }
+
+  const theta = Math.acos(dot);
+  const sinTheta = Math.sin(theta);
+
+  // If vectors are nearly opposite (180 deg), choose a deterministic orthogonal axis to rotate around
+  if (sinTheta < 1e-5) {
+    const ortho = Math.abs(u1.y) < 0.99 
+      ? { x: -u1.z, y: 0, z: u1.x }
+      : { x: 0, y: -u1.z, z: u1.y };
+    const orthoLen = Math.sqrt(ortho.x * ortho.x + ortho.y * ortho.y + ortho.z * ortho.z) || 1;
+    const normOrtho = { x: ortho.x / orthoLen, y: ortho.y / orthoLen, z: ortho.z / orthoLen };
+    
+    const rotAngle = clampT * Math.PI;
+    const cosA = Math.cos(rotAngle);
+    const sinA = Math.sin(rotAngle);
+    
+    // Rodrigues rotation formula (normOrtho . u1 = 0)
+    const crossX = normOrtho.y * u1.z - normOrtho.z * u1.y;
+    const crossY = normOrtho.z * u1.x - normOrtho.x * u1.z;
+    const crossZ = normOrtho.x * u1.y - normOrtho.y * u1.x;
+
+    const rT = (1 - clampT) * r1 + clampT * r2;
+    return {
+      x: (u1.x * cosA + crossX * sinA) * rT,
+      y: (u1.y * cosA + crossY * sinA) * rT,
+      z: (u1.z * cosA + crossZ * sinA) * rT
+    };
+  }
+
+  // Standard Slerp formula on S^2
+  const w1 = Math.sin((1 - clampT) * theta) / sinTheta;
+  const w2 = Math.sin(clampT * theta) / sinTheta;
+
+  const ux = w1 * u1.x + w2 * u2.x;
+  const uy = w1 * u1.y + w2 * u2.y;
+  const uz = w1 * u1.z + w2 * u2.z;
+
+  const rT = (1 - clampT) * r1 + clampT * r2;
+
+  return {
+    x: ux * rT,
+    y: uy * rT,
+    z: uz * rT
+  };
+};
+
