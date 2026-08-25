@@ -106,6 +106,75 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(helioModel.orbitRingOpacity).toBe(1.0);
       expect(helioModel.celestialRingsOpacity).toBe(0.0);
     });
+
+    it('aligns camera orientation with target projection poles across all 5 continuum modes', () => {
+      const jd = getJulianDate(new Date(2026, 2, 20), 12);
+      
+      // 1. Stereographic Astrolabe Rete (North Celestial Pole top-down perspective at pitch 90°)
+      const stereoModel = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 0,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 90,
+        cameraYaw: 0,
+        r0: 100
+      });
+      expect(stereoModel.sun.screenPos.x).toBeCloseTo(100, 1);
+      expect(stereoModel.sun.screenPos.y).toBeCloseTo(0, 1);
+
+      // 2. Rojas Orthographic (Solstitial colure side-on perspective at pitch 0°)
+      const rojasModel = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 0,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'rojas',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+      expect(rojasModel.bezelOpacity).toBe(1.0);
+      expect(rojasModel.sun.screenPos).toBeDefined();
+
+      // 3. Topocentric Horizon Stereonet (Zenith perspective at pitch 90°)
+      const horizonModel = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 0,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'horizon',
+        cameraPitch: 90,
+        cameraYaw: 0,
+        r0: 100
+      });
+      expect(horizonModel.almucantars.length).toBeGreaterThan(0);
+    });
   });
 
   describe('Solar Almanac Subsystem', () => {

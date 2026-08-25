@@ -44,6 +44,24 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     roll: 0
   });
 
+  const saved3DCameraRef = useRef<ArmillaryCameraState>({
+    pitch: 25,
+    yaw: 35,
+    roll: 0
+  });
+
+  const getCanonicalCameraForMode = useCallback((mode: ArmillaryProjectionMode, lambda: number): ArmillaryCameraState => {
+    const is3D = mode === 'heliocentric' || mode === 'geocentric' || lambda <= 0.05;
+    if (is3D) {
+      return saved3DCameraRef.current;
+    }
+    if (mode === 'rojas') {
+      return { pitch: 0, yaw: 0, roll: 0 };
+    }
+    // stereographic and horizon
+    return { pitch: 90, yaw: 0, roll: 0 };
+  }, []);
+
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
   const activeDate = currentDate;
 
@@ -122,7 +140,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     exaggerateEccentricity
   ]);
 
-  // --- Smooth Animated Morph Transition (Supports Universal Any-to-Any Morphing) ---
+  // --- Smooth Animated Morph Transition (Supports Universal Any-to-Any Morphing with Staged Camera Alignment) ---
   const animRef = useRef<number | null>(null);
   const snapRuleAnimRef = useRef<number | null>(null);
 
@@ -143,8 +161,15 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
 
     const startLambda = morphLambda;
     const startT = isModeSwitch ? 0.0 : 1.0;
+
+    // Staged SO(3) Camera Alignment
+    const startCam = { ...camera };
+    const targetCam = getCanonicalCameraForMode(targetMode, targetLambda);
+    const deltaPitch = targetCam.pitch - startCam.pitch;
+    const deltaYaw = (targetCam.yaw - startCam.yaw + 540) % 360 - 180;
+
     const startTime = performance.now();
-    const duration = 600; // ms ease-out cubic spring curve
+    const duration = 650; // ms ease-out cubic spring curve
 
     const step = (now: number) => {
       const elapsed = now - startTime;
@@ -160,18 +185,59 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         setProjectionTransitionT(parseFloat(nextT.toFixed(3)));
       }
 
+      // Smoothly swing camera into projection pole alignment
+      const nextPitch = startCam.pitch + deltaPitch * ease;
+      const nextYaw = (startCam.yaw + deltaYaw * ease + 360) % 360;
+      setCamera({
+        pitch: parseFloat(nextPitch.toFixed(1)),
+        yaw: parseFloat(nextYaw.toFixed(1)),
+        roll: 0
+      });
+
       if (progress < 1) {
         animRef.current = requestAnimationFrame(step);
       } else {
         setMorphLambda(targetLambda);
         setProjectionTransitionT(1.0);
         setFromProjectionMode(targetMode);
+        setCamera(targetCam);
         animRef.current = null;
       }
     };
 
     animRef.current = requestAnimationFrame(step);
-  }, [morphLambda, projectionMode]);
+  }, [camera, getCanonicalCameraForMode, morphLambda, projectionMode]);
+
+  const handleMorphChange = useCallback((newLambda: number) => {
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
+    setMorphLambda(newLambda);
+    const is3DTarget = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
+    if (!is3DTarget) {
+      const startCam = saved3DCameraRef.current;
+      const targetCam = projectionMode === 'rojas' 
+        ? { pitch: 0, yaw: 0, roll: 0 } 
+        : { pitch: 90, yaw: 0, roll: 0 };
+      const deltaPitch = targetCam.pitch - startCam.pitch;
+      const deltaYaw = (targetCam.yaw - startCam.yaw + 540) % 360 - 180;
+      const p = Math.max(0, Math.min(1, newLambda));
+      setCamera({
+        pitch: parseFloat((startCam.pitch + deltaPitch * p).toFixed(1)),
+        yaw: parseFloat(((startCam.yaw + deltaYaw * p + 360) % 360).toFixed(1)),
+        roll: 0
+      });
+    }
+  }, [projectionMode]);
+
+  const handleCameraChange = useCallback((newCam: ArmillaryCameraState) => {
+    setCamera(newCam);
+    const is3D = projectionMode === 'geocentric' || projectionMode === 'heliocentric' || morphLambda <= 0.05;
+    if (is3D) {
+      saved3DCameraRef.current = newCam;
+    }
+  }, [projectionMode, morphLambda]);
 
   // --- Snap Alidade Rule to Celestial Target ---
   const handleSnapToTarget = useCallback((_targetName: string, targetAngleDeg: number) => {
@@ -223,8 +289,10 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   }, []);
 
   const handleResetCamera = useCallback(() => {
-    setCamera({ pitch: 25, yaw: 35, roll: 0 });
-  }, []);
+    saved3DCameraRef.current = { pitch: 25, yaw: 35, roll: 0 };
+    const targetCam = getCanonicalCameraForMode(projectionMode, morphLambda);
+    setCamera(targetCam);
+  }, [getCanonicalCameraForMode, morphLambda, projectionMode]);
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
@@ -233,7 +301,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         projectionMode={projectionMode}
         onSelectMode={(m) => setProjectionMode(m)}
         morphLambda={morphLambda}
-        onMorphChange={(l) => setMorphLambda(l)}
+        onMorphChange={handleMorphChange}
         showRays={showRays}
         onToggleRays={() => setShowRays(!showRays)}
         showStars={showStars}
@@ -263,7 +331,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
           showTympan={showTympan}
           showRule={showRule}
           camera={camera}
-          onCameraChange={setCamera}
+          onCameraChange={handleCameraChange}
           r0={100}
           latitude={latitude}
           longitude={longitude}

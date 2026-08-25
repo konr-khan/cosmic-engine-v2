@@ -40,6 +40,7 @@ export interface ArmillaryHeaderControlsProps {
 export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = ({
   projectionMode,
   morphLambda,
+  onMorphChange,
   showRays,
   onToggleRays,
   showStars,
@@ -172,27 +173,44 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
         )}
 
         {/* Morph Slider Bar */}
-        <div className="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800/80 text-xs font-mono">
-          <span className="text-[10px] uppercase text-slate-400 font-bold">Morph λ:</span>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={morphLambda}
-            draggable={false}
-            onDragStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onChange={(e) => onSnapToPreset(projectionMode, parseFloat(e.target.value))}
-            className="w-20 sm:w-24 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-            title="Continuous 3D to 2D morph parameter λ"
-          />
-          <span className="text-[11px] font-bold text-amber-400 w-8 text-right">
+        <div 
+          className="flex items-center gap-2 bg-slate-950/90 px-3 py-1 rounded-xl border border-slate-800/80 text-xs font-mono select-none touch-none"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onPointerMove={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          <span className="text-[10px] uppercase text-slate-400 font-bold whitespace-nowrap">Morph λ:</span>
+          <div className="relative flex items-center h-7 w-20 sm:w-28 touch-none">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={morphLambda}
+              draggable={false}
+              onDragStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onPointerMove={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              onInput={(e) => onMorphChange(parseFloat((e.target as HTMLInputElement).value))}
+              onChange={(e) => onMorphChange(parseFloat((e.target as HTMLInputElement).value))}
+              className="w-full h-2 rounded-full appearance-none cursor-grab active:cursor-grabbing touch-none border border-slate-700/60 focus:outline-none focus:ring-1 focus:ring-amber-400/50 [&::-webkit-slider-thumb]:w-4.5 [&::-webkit-slider-thumb]:h-4.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-400 [&::-webkit-slider-thumb]:hover:bg-amber-300 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-amber-400/30 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-amber-950 [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:active:cursor-grabbing [&::-webkit-slider-thumb]:appearance-none [&::-moz-range-thumb]:w-4.5 [&::-moz-range-thumb]:h-4.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-amber-400 [&::-moz-range-thumb]:hover:bg-amber-300 [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-amber-950 [&::-moz-range-thumb]:cursor-grab [&::-moz-range-thumb]:active:cursor-grabbing"
+              style={{
+                background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${morphLambda * 100}%, #1e293b ${morphLambda * 100}%, #1e293b 100%)`
+              }}
+              title="Continuous 3D to 2D morph parameter λ (drag to smoothly blend)"
+            />
+          </div>
+          <span className="text-[11px] font-bold text-amber-400 w-8 text-right font-mono tabular-nums">
             {Math.round(morphLambda * 100)}%
           </span>
         </div>
