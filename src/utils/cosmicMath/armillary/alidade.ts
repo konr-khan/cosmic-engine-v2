@@ -1,5 +1,6 @@
 import { Latitude } from '../../../types/units';
 import { Vector2D } from '../../../types/coordinates';
+import { toDegrees } from '../core';
 import { equatorialToHorizontal } from './coordinates';
 import { AlidadeSightingInfo } from './types';
 
@@ -24,7 +25,7 @@ export function calculateAlidadeSighting(
   let minDiff = 360;
 
   // Check Sun
-  const sunAngle = (Math.atan2(sun.screenPos.y, sun.screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
+  const sunAngle = (toDegrees(Math.atan2(sun.screenPos.y, sun.screenPos.x)) + 90 + 360) % 360;
   const diffSun = Math.min(Math.abs(normAngle - sunAngle), 360 - Math.abs(normAngle - sunAngle));
   if (diffSun < minDiff && diffSun < 10) {
     minDiff = diffSun;
@@ -32,7 +33,7 @@ export function calculateAlidadeSighting(
   }
 
   // Check Moon
-  const moonAngle = (Math.atan2(moon.screenPos.y, moon.screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
+  const moonAngle = (toDegrees(Math.atan2(moon.screenPos.y, moon.screenPos.x)) + 90 + 360) % 360;
   const diffMoon = Math.min(Math.abs(normAngle - moonAngle), 360 - Math.abs(normAngle - moonAngle));
   if (diffMoon < minDiff && diffMoon < 10) {
     minDiff = diffMoon;
@@ -41,7 +42,7 @@ export function calculateAlidadeSighting(
 
   // Check Stars
   for (const s of stars) {
-    const sAngle = (Math.atan2(s.screenPos.y, s.screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
+    const sAngle = (toDegrees(Math.atan2(s.screenPos.y, s.screenPos.x)) + 90 + 360) % 360;
     const diff = Math.min(Math.abs(normAngle - sAngle), 360 - Math.abs(normAngle - sAngle));
     if (diff < minDiff && diff < 10) {
       minDiff = diff;

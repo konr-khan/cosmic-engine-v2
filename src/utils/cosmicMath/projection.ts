@@ -5,6 +5,8 @@
  * and 4-quadrant orbital loop path generators for side-on and axial sightline eclipse viewers.
  */
 
+import { toRadians } from './core';
+
 export interface EarthSideGeometry {
   earthR: number;
   poleLineX: number;
@@ -37,8 +39,8 @@ export function calculateEarthSideGeometry(
   timeOfDay: number,
   longitude: number = 0
 ): EarthSideGeometry {
-  const epsRad = (23.439281 * Math.PI) / 180;
-  const sunLambdaRad = (sunLambdaDeg * Math.PI) / 180;
+  const epsRad = toRadians(23.439281);
+  const sunLambdaRad = toRadians(sunLambdaDeg);
 
   // Projected tilt in side-on view (Sun on left at -X, Earth at center):
   const thetaSide = epsRad * Math.sin(sunLambdaRad); // rad
@@ -60,9 +62,9 @@ export function calculateEarthSideGeometry(
   const eqY2 = earthCenterY - earthRadius * uy;
 
   // Observer Location Pin (incorporating geographic longitude offset):
-  const latRad = (latitude * Math.PI) / 180;
+  const latRad = toRadians(latitude);
   const localHourAngleDeg = ((timeOfDay - 12) * 15) + longitude;
-  const hRad = (localHourAngleDeg * Math.PI) / 180;
+  const hRad = toRadians(localHourAngleDeg);
 
   const xBody = -Math.cos(latRad) * Math.cos(hRad); // negative towards Sun on left
   const yBody = Math.sin(latRad);
@@ -118,8 +120,8 @@ export function calculateEarthAxialGeometry(
   longitude: number = 0
 ): EarthAxialGeometry {
   const earthR = earthRadius;
-  const epsRad = (23.439281 * Math.PI) / 180; // Earth obliquity 23.44°
-  const sunLambdaRad = (sunLambdaDeg * Math.PI) / 180;
+  const epsRad = toRadians(23.439281); // Earth obliquity 23.44°
+  const sunLambdaRad = toRadians(sunLambdaDeg);
 
   // Unit vectors in screen projection (Z facing viewer along Sun->Earth sightline):
   const nx = -Math.sin(epsRad) * Math.cos(sunLambdaRad);
@@ -155,9 +157,9 @@ export function calculateEarthAxialGeometry(
   const equatorPathD = eqPts.join(' ');
 
   // Observer Location Pin (incorporating geographic longitude offset)
-  const latRad = (latitude * Math.PI) / 180;
+  const latRad = toRadians(latitude);
   const localHourAngleDeg = ((timeOfDay - 12) * 15) + longitude;
-  const hRad = (localHourAngleDeg * Math.PI) / 180;
+  const hRad = toRadians(localHourAngleDeg);
 
   const xBody = Math.cos(latRad) * Math.sin(hRad);
   const yBody = Math.sin(latRad);

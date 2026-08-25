@@ -253,8 +253,8 @@ export const calculateLunarEvents = (
  */
 export const calculateLunarIllumination = (phase: number, beta?: number): number => {
   if (beta !== undefined) {
-    const dRad = (phase * 360) * (Math.PI / 180);
-    const bRad = beta * (Math.PI / 180);
+    const dRad = toRadians(phase * 360);
+    const bRad = toRadians(beta);
     const cosPsi = Math.cos(bRad) * Math.cos(dRad);
     const psiRad = Math.acos(clamp(cosPsi, -1, 1));
     const sinPsi = Math.sin(psiRad);

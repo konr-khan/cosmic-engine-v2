@@ -1,4 +1,4 @@
-import { getJulianDate } from './core';
+import { getJulianDate, toRadians, toDegrees } from './core';
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
 import { JulianDate, asJulianDate } from '../../types/units';
@@ -56,9 +56,9 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
 
   // Angular radii and parallax
   const sSun = solarPos.sunAngularRadiusDeg ?? (31.986 / (solarPos.distanceAU || 1) / 120); // ~0.267°
-  const sMoon = lunarPos.angularRadiusDeg ?? (Math.asin(1737.4 / distanceKm) * (180 / Math.PI)); // ~0.26° - 0.28°
-  const piMoon = lunarPos.parallaxDeg ?? (Math.asin(6378.137 / distanceKm) * (180 / Math.PI)); // ~0.95° - 1.02°
-  const piSun = Math.asin(6378.137 / sunDistanceKm) * (180 / Math.PI); // ~0.0024°
+  const sMoon = lunarPos.angularRadiusDeg ?? toDegrees(Math.asin(1737.4 / distanceKm)); // ~0.26° - 0.28°
+  const piMoon = lunarPos.parallaxDeg ?? toDegrees(Math.asin(6378.137 / distanceKm)); // ~0.95° - 1.02°
+  const piSun = toDegrees(Math.asin(6378.137 / sunDistanceKm)); // ~0.0024°
 
   // Earth umbra & penumbra radii at Moon's distance (including 1.02 atmospheric enlargement)
   const umbraRadiusDeg = (piMoon + piSun - sSun) * 1.02;
@@ -66,11 +66,11 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
 
   // Angular separation from center of Earth's shadow (for Lunar Eclipse)
   const dLonOpp = ((elongation - 180 + 540) % 360) - 180;
-  const gammaLunar = Math.sqrt(Math.pow(dLonOpp * Math.cos(beta * Math.PI / 180), 2) + Math.pow(beta, 2));
+  const gammaLunar = Math.sqrt(Math.pow(dLonOpp * Math.cos(toRadians(beta)), 2) + Math.pow(beta, 2));
 
   // Angular separation from Sun center (for Solar Eclipse)
   const dLonConj = ((elongation + 180) % 360) - 180;
-  const gammaSolar = Math.sqrt(Math.pow(dLonConj * Math.cos(beta * Math.PI / 180), 2) + Math.pow(beta, 2));
+  const gammaSolar = Math.sqrt(Math.pow(dLonConj * Math.cos(toRadians(beta)), 2) + Math.pow(beta, 2));
 
   let type: EclipseType = "NONE";
   let category: 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE' = "NO_ECLIPSE";
