@@ -350,3 +350,60 @@ Given sighting rule angle $\theta_{\text{rule}} \in [0^\circ, 360^\circ)$:
    \]
 3. **Nearest Target Sighting Lock**:
    Target angle $\theta_{\text{target}} = (\operatorname{atan2}(y_{\text{screen}}, x_{\text{screen}}) \times \frac{180^\circ}{\pi} + 90^\circ + 360^\circ) \bmod 360^\circ$. Sighting locks when $|\Delta\theta| \le 10.0^\circ$.
+
+---
+
+## 8. Gravitational Tidal Vectors & Syzygy Deformation
+
+### A. Gravitational Syzygy Alignment Factor
+Given geocentric angle to Sun $\theta_\odot$ and geocentric angle to Moon $\theta_{\text{moon}}$:
+\[
+\text{alignmentFactor} = \cos(2(\theta_{\text{moon}} - \theta_\odot)) \in [-1.0, 1.0]
+\]
+* **Spring Tides (Syzygy)**: When Sun and Moon align ($\theta_{\text{moon}} - \theta_\odot \in \{0, \pi\}$, New / Full Moon), $\text{alignmentFactor} \to +1.0$.
+* **Neap Tides (Quadrature)**: When Sun and Moon are orthogonal ($\theta_{\text{moon}} - \theta_\odot \in \{\pi/2, 3\pi/2\}$, First / Third Quarter), $\text{alignmentFactor} \to -1.0$.
+* **Classification Threshold**:
+  \[
+  \text{TideType} = \begin{cases}
+  \text{Spring Tide} & \text{if } \text{alignmentFactor} > 0.8 \\
+  \text{Neap Tide} & \text{if } \text{alignmentFactor} < -0.8 \\
+  \text{Transitional} & \text{otherwise}
+  \end{cases}
+  \]
+
+### B. Ocean Tidal Bulge Deformation
+Given baseline Earth ocean radius $R_{\text{base}}$:
+\[
+r_x = R_{\text{base}} + 6 + 3 \cdot \text{alignmentFactor}, \quad r_y = R_{\text{base}}
+\]
+* *Spring Syzygy Bulge*: $r_x = R_{\text{base}} + 9\text{ px}$ (Tidal deformation ratio $\approx 2.0\times$).
+* *Neap Quadrature Bulge*: $r_x = R_{\text{base}} + 3\text{ px}$ (Tidal deformation ratio $\approx 1.0\times$).
+
+### C. Local Observer Tide Status
+Given local observer diurnal rotation angle $\theta_{\text{user}} = ((t_{\text{UTC}} - 12) \cdot 15^\circ + \lambda_{\text{geo}}) \bmod 360^\circ$ and lunar phase angle $\theta_{\text{phase}} = \text{phase} \cdot 360^\circ$:
+\[
+\Delta\theta = (\theta_{\text{user}} - \theta_{\text{phase}} + 360^\circ) \bmod 360^\circ
+\]
+* **High Tide**: $\Delta\theta \in [0^\circ, 45^\circ] \cup [135^\circ, 225^\circ] \cup [315^\circ, 360^\circ]$ (Observer aligns with the sub-lunar or anti-lunar ocean tidal bulge).
+* **Low Tide**: $\Delta\theta \in (45^\circ, 135^\circ) \cup (225^\circ, 315^\circ)$ (Observer is positioned in the quadrature tidal trough).
+
+---
+
+## 9. Dynamic Ephemeris Distance & Apparent Diameter Scaling
+
+### A. Subsolar Apparent Angular Diameter ($\theta_\odot$)
+Given instantaneous Earth-Sun heliocentric distance $r_{\text{AU}} \in [0.983, 1.017]\text{ AU}$:
+\[
+\theta_\odot = \frac{31.98'}{r_{\text{AU}}} \quad [\text{arcminutes}]
+\]
+* *Perihelion ($0.983\text{ AU}$)*: $\theta_\odot \approx 32.53'$.
+* *Aphelion ($1.017\text{ AU}$)*: $\theta_\odot \approx 31.45'$.
+
+### B. Sublunar Apparent Angular Diameter ($\theta_{\text{moon}}$)
+Given instantaneous geocentric lunar distance $d_{\text{km}} \in [356,400, 406,700]\text{ km}$ relative to mean distance $d_0 = 384,400\text{ km}$:
+\[
+\theta_{\text{moon}} = 31.13' \cdot \left(\frac{384,400\text{ km}}{d_{\text{km}}}\right) \quad [\text{arcminutes}]
+\]
+* *Perigee ($356,400\text{ km}$)*: $\theta_{\text{moon}} \approx 33.57'$.
+* *Apogee ($406,700\text{ km}$)*: $\theta_{\text{moon}} \approx 29.42'$.
+

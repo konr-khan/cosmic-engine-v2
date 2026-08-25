@@ -47,7 +47,7 @@ Key capabilities include:
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Icons & Visualization**: `lucide-react`
-- **Testing**: `vitest` (`npm test` — 170 unit tests across 7 test suites)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 7 modules)
 
 ### Essential Commands
 
@@ -55,7 +55,7 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (170 unit tests across 7 test suites) |
+| `npm test` | Runs Vitest unit test suite (pure math, hooks, layout state, state store, error boundaries, widgets, worker fallbacks) |
 | `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
 | `npm run test:coverage` | Runs Vitest with v8 code coverage reporting |
 | `npm run build` | Builds production distribution to `dist/` |
@@ -287,7 +287,7 @@ Standard coordinate conventions used throughout the engine:
 
 **Singularity & Angle Safeguards**:
 - Guard against polar singularities ($\pm 90^\circ$ latitude) where longitude converges; ensure zero `NaN` propagation.
-- Handle continuous polar day (midnight sun) and polar night without dividing by zero in hour angle computations ($\cos \omega = \frac{\sin h_0 - \sin \phi \sin \delta}{\cos \phi \cos \delta}$, clamped to $[-1, 1]$).
+- Handle continuous polar day (midnight sun) and polar night without dividing by zero in hour angle computations; all piecewise clamping criteria are canonically specified in [`docs/MATH_SPEC.md#4-twilight-thresholds--exact-polar-bound-handling`](docs/MATH_SPEC.md#4-twilight-thresholds--exact-polar-bound-handling).
 - All angular calculations must strictly wrap outputs using helper functions (`wrap360` to $[0, 360^\circ)$, `wrap180` to $[-180^\circ, 180^\circ]$, and `wrap2Pi` to $[0, 2\pi)$).
 
 ### C. External Store & 60 FPS Performance Budget (`src/store/cosmicStore.ts`)
@@ -317,16 +317,15 @@ Standard coordinate conventions used throughout the engine:
 - Layout management supports dragging, resizing, locking, and responsive column spanning (`colSpan={12}` spans full width on standard screens, collapsing to 6 columns on ultra-wide displays: `2xl:col-span-6 3xl:col-span-6`). Presets persist in `localStorage` under `cosmic_window_layout_v7`.
 
 ### G. Side-by-Side Dual-Perspective Eclipse Geometry Contracts (`src/components/widgets/eclipse/`)
-The Eclipse demonstrator renders synchronized dual perspectives in `activeTab === 'geometry'`:
+The Eclipse demonstrator renders synchronized dual perspectives in `activeTab === 'geometry'`. All geometric angles, shadow cone radii, transverse slope equations, and nodal alignment algorithms are canonically specified in [`docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry`](docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry):
 1. **Transverse Syzygy Profile (`ShadowRayDiagram.tsx`)**:
    - Strictly edge-on transverse profile ($R_y = 0$).
-   - The Moon's orbital plane line passes through Earth $(X=310, Y=110)$ with slope modulated by real-time annual nodal alignment: $\text{tiltSlope} = \sin(\Delta \Omega) \cdot \sin(5.14^\circ) \cdot 2.2$, where $\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$.
-   - Moon linear position along the plane: $s = -\cos(\text{phaseRad}) \in [-1, 1]$, placing New Moon at $s = -1$ (between Sun and Earth) and Full Moon at $s = +1$ (in Earth's shadow).
+   - The Moon's orbital plane line passes through Earth with slope dynamically modulated by real-time annual nodal alignment ($\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$).
+   - Moon linear position along the plane follows elongation $s = -\cos(\text{phaseRad}) \in [-1, 1]$ (New Moon at $s = -1$, Full Moon at $s = +1$).
 2. **Axial Sightline Down-the-Barrel View (`NodalPlaneVisualizer.tsx`)**:
-   - View looking directly along the Sun-Earth axis with Earth centered at $(200, 90)$ and the Sun partially eclipsed behind Earth.
-   - Transverse cross-axis displacement: $s = \sin(\text{phaseRad}) \in [-1, 1]$, placing Syzygy (New/Full Moon) directly at center $X = 200$, and Quarters at extremities $X = 200 \pm 100$.
-   - Tilted orbital plane line slope across sightline: $\text{tiltSlope} = \cos(\Delta \Omega) \cdot \sin(5.14^\circ) \cdot 2.2$.
-   - Dynamic Ascending ($\Omega$) and Descending ($\mho$) nodes glide along the orbital line: $s_{\text{node}} = -\sin(\Delta \Omega)$, converging into the center target $(200, 90)$ during eclipse seasons and moving to outer extremities during off-seasons.
+   - View looking directly along the Sun-Earth axis with Earth centered and the Sun partially eclipsed behind Earth.
+   - Transverse cross-axis displacement follows $s = \sin(\text{phaseRad}) \in [-1, 1]$ (Syzygy at center $X = 200$, Quarters at extremities $X = 200 \pm 100$).
+   - Dynamic Ascending ($\Omega$) and Descending ($\mho$) nodes glide along the orbital line ($s_{\text{node}} = -\sin(\Delta \Omega)$), converging into the center target during eclipse seasons and moving to outer extremities during off-seasons.
 3. **Exact UTC Preset Snapping**:
    - `EclipsePresetItem` requires explicit `timeOfDay: number` (fractional UTC hour) to guarantee that clicking presets snaps directly to peak totality (e.g., $06:58\text{ UTC}$ for Mar 14, 2025 Blood Moon).
 
@@ -335,9 +334,7 @@ The Eclipse demonstrator renders synchronized dual perspectives in `activeTab ==
 - Heliocentric 3D views feature matching glowing halo nodes along the 1 AU Earth orbit ring.
 
 ### I. Dynamic Ephemeris Distance & Apparent Diameter Scaling (`TerminatorMap.tsx`)
-- Subsolar and Sublunar discs scale dynamically based on instantaneous orbital distance:
-  - Sun diameter: $31.98' / r_{\text{AU}}$ ($31.5' \to 32.5'$).
-  - Moon diameter: $31.13' \cdot (384,400 / d_{\text{km}})$ ($29.4' \to 33.5'$).
+- Subsolar and Sublunar discs scale dynamically based on instantaneous orbital distance and apparent angular diameter formulas canonically documented in [`docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling`](docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling).
 - Glassmorphic HUD popovers report live distance in AU / km and apparent diameter in arcminutes.
 
 ---
@@ -349,7 +346,7 @@ The Eclipse demonstrator renders synchronized dual perspectives in `activeTab ==
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval. Run `npm run typecheck` (`tsc --noEmit`) to verify.
 4. **Preserve Math Accuracy & Provenance**: Preserve all formal Jean Meeus / IAU chapter citations, constant derivations, and inline LaTeX/math derivation comments when refactoring `src/utils/cosmicMath/`.
-5. **No Regressions**: All 170 unit tests across the 7 test suites must pass on every modification without regressions. If extending functions or APIs, add corresponding unit tests to `cosmicMath.test.ts` (107 tests), `useEphemerisWorker.test.ts` (19 tests), `useCosmicEngine.test.ts` (13 tests), `widgets.test.ts` (11 tests), `useDashboardLayout.test.ts` (7 tests), `cosmicStore.test.ts` (7 tests), or `WindowErrorBoundary.test.tsx` (6 tests).
+5. **No Regressions**: All unit tests across the comprehensive test suite must pass on every modification without regressions. When extending functions or APIs, add corresponding unit tests to the appropriate domain suite (`src/utils/cosmicMath.test.ts` for pure math, `src/hooks/useEphemerisWorker.test.ts` for worker RPC, `src/hooks/useCosmicEngine.test.ts` for engine hooks, `src/components/widgets/widgets.test.ts` for widgets, `src/hooks/useDashboardLayout.test.ts` for layout state, `src/store/cosmicStore.test.ts` for state store, or `src/components/common/WindowErrorBoundary.test.tsx` for error boundaries).
 6. **React 19 & Modern Directives**:
    - **Direct `ref` Passing**: Pass `ref` directly as a standard component prop; do not wrap components in `React.forwardRef()` (deprecated in React 19).
    - **Document Metadata**: Leverage React 19's native document metadata tags (`<title>`, `<meta>`) or React 19 form/action primitives where applicable instead of legacy third-party wrappers (e.g. `react-helmet`).
@@ -370,18 +367,11 @@ The Eclipse demonstrator renders synchronized dual perspectives in `activeTab ==
 
 Cosmic Engine V2.0 maintains a sleek, dark observatory aesthetic (slate/zinc dark mode with indigo, cyan, amber, and emerald accents).
 
-### A. Semantic Color Mapping
-
-| Astronomical Layer / Domain | Color Semantics | Tailwind CSS v4 Classes / Hex |
-| :--- | :--- | :--- |
-| **Solar Path & Corona** | Golden / Amber | `text-amber-400`, `fill-amber-300` (`#fbbf24`, `#fde047`) |
-| **Civil Twilight** | Warm Amber | `fill-amber-400/80` (`#fcd34d`) |
-| **Nautical Twilight** | Medium Slate Blue | `fill-slate-500` (`#64748b`) |
-| **Astronomical Twilight** | Deep Slate | `fill-slate-700` (`#334155`) |
-| **Night & Backgrounds** | Deep Space Slate | `bg-slate-900`, `bg-slate-950`, `fill-slate-900` (`#0f172a`, `#020617`) |
-| **Lunar & Tidal Vectors** | Electric Cyan / Sky | `text-cyan-400`, `stroke-sky-400` (`#38bdf8`, `#06b6d4`) |
-| **Syzygy & Node Corridor** | Emerald Green | `text-emerald-400`, `stroke-emerald-500` (`#10b981`) |
-| **Horizon Grid & Celestial Axis** | Deep Indigo | `text-indigo-400`, `stroke-indigo-500` (`#6366f1`) |
+### A. Semantic Color Mapping & Visual Tokens
+All visual tokens, color semantics, vector stroke encodings, and glassmorphic HUD styling rules are canonically defined in [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md):
+- **Canonical Design Reference**: Consult [`docs/DESIGN_SYSTEM.md#1-color-semantics--astronomical-meaning`](docs/DESIGN_SYSTEM.md#1-color-semantics--astronomical-meaning) for the complete semantic color palette table.
+- **Vector Stroke Encodings**: Consult [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings) for celestial ring front/back splitting, lunar waxing/waning strokes, and milestone halo nodes.
+- **Glassmorphism & Micro-Typography**: Consult [`docs/DESIGN_SYSTEM.md#3-glassmorphic-popover--hud-hierarchy`](docs/DESIGN_SYSTEM.md#3-glassmorphic-popover--hud-hierarchy) for backdrop blur, monospace telemetry rules, and WCAG AAA contrast guidelines.
 
 ### B. Container & Layout Guidelines
 - Widgets in `src/components/widgets/` must remain unbordered and flush with `DashboardWindow`'s body container.
@@ -392,3 +382,4 @@ Cosmic Engine V2.0 maintains a sleek, dark observatory aesthetic (slate/zinc dar
 - **Smallest Effective Difference (SED)**: Visual distinctions and gridlines must be rendered with minimal visual noise and subtle contrast gradations. Let the vector astronomical curves and orbital bodies carry the primary focal weight.
 - **Progressive Disclosure**: Primary widget viewports must remain glanceable and uncluttered by default. Deep mathematical derivations, extended ephemeris metrics (e.g. parallactic angle, orbital velocities, exact nodal angles), and configuration controls must be accessible through obvious, discoverable affordances (hover tooltips, scrubbers, disclosure panels, modal popovers).
 - **Affordance Clarity**: Any interactive control that reveals deeper data must present unambiguous visual affordances (`cursor-pointer`, `cursor-crosshair`, hover ring highlights, or pill badges) so users immediately recognize how to access extended information.
+

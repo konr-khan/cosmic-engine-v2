@@ -20,14 +20,11 @@ The visualizer must satisfy three conflicting constraints:
 
 1. **Universal Any-to-Any Vector Interpolation & Staged Choreography**:
    - Pure domain math functions implemented in `src/utils/cosmicMath/armillary/`.
-   - Generalizes morphing across all 5 coordinate model spaces (`☉ Orbit`, `⊕ Apparent`, `🧭 Rete`, `📐 Rojas`, `🔭 Horizon`) via a single continuous topological vector blend:
-     \[
-     \vec{P}(T) = (1 - T)\vec{P}_{\text{from}} + T\vec{P}_{\text{to}}
-     \]
+   - Generalizes morphing across all 5 coordinate model spaces (`☉ Orbit`, `⊕ Apparent`, `🧭 Rete`, `📐 Rojas`, `🔭 Horizon`) via continuous topological vector blending and ease-out cubic spring physics; formal derivations and staged timing intervals are canonically defined in [`../MATH_SPEC.md#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections`](../MATH_SPEC.md#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections).
    - Staged choreography coordinates camera pitch/yaw alignment ($T \in [0.0, 0.4]$), geometric unwrapping ($T \in [0.2, 0.8]$), and astrolabe plate decoration materialization ($T \in [0.6, 1.0]$).
 
 2. **Analytical Circle Almucantar Derivations**:
-   - For observer latitude $\phi$ and altitude $a$, compute stereographic Almucantar center $y_c = R_0 \frac{\cos\phi}{\sin\phi + \sin a}$ and radius $r = R_0 \frac{\cos a}{\sin\phi + \sin a}$ rather than approximating with discretized line segments.
+   - For observer latitude $\phi$ and altitude $a$, compute stereographic Almucantar centers and radii using exact analytical circle formulas (see [`../MATH_SPEC.md#e-2d-astrolabe-historical-projections`](../MATH_SPEC.md#e-2d-astrolabe-historical-projections)) rather than approximating with discretized line segments.
 
 3. **Depth-Sorted Front/Back Vector Splitting**:
    - Segments with $z_{\text{cam}} \ge 0$ render with solid, vibrant strokes; segments with $z_{\text{cam}} < 0$ render with dashed, muted strokes (`buildSegmentedSvgPaths`).
@@ -38,7 +35,7 @@ The visualizer must satisfy three conflicting constraints:
 
 5. **Analog Astrolabe Free Rete Solver Mode**:
    - Allow user to uncouple the Rete from the live astronomical clock and rotate it manually.
-   - Calculate Apparent Local Sidereal Time ($\theta_{\text{apparent}}$) and Apparent Solar Time ($T_{\text{solar}}$) instantaneously as an interactive analog computer.
+   - Calculate Apparent Local Sidereal Time ($\theta_{\text{apparent}}$) and Apparent Solar Time ($T_{\text{solar}}$) instantaneously as an interactive analog computer (see [`../MATH_SPEC.md#g-free-rete-spinning--analog-solar-time-solver`](../MATH_SPEC.md#g-free-rete-spinning--analog-solar-time-solver)).
 
 6. **Volumetric Optical Laser Cones & Center of Projection Beacon**:
    - Render the physical projection center $(0, -R_0, 0)$ as a glowing focal beacon with 8 radiating laser rays and a translucent conic envelope linking the 3D sphere to the 2D projective plate.
@@ -52,7 +49,7 @@ The visualizer must satisfy three conflicting constraints:
    - SVG visual canvas decomposed into modular visual layers under `src/components/widgets/armillary/canvas/` (`ArmillaryDefs`, `ArmillaryBezelLayer`, `ArmillaryTympanLayer`, `ArmillaryLaserLayer`, `ArmillaryObserverConeLayer`, `ArmillaryRingsLayer`, `ArmillaryStarsLayer`, `ArmillaryBeadsLayer`, `ArmillaryAlidadeLayer`).
 
 9. **Clamped Ecliptic Track Sun Bead**:
-   - Sun bead position $\vec{P}_\odot$ is mathematically clamped to the parametric Ecliptic curve ($r_0 \cos \lambda, r_0 \sin \lambda \sin \epsilon, r_0 \sin \lambda \cos \epsilon$), eliminating drift across seasons and Rete rotations.
+   - Sun bead position $\vec{P}_\odot$ is mathematically clamped directly to the parametric Ecliptic track (see [`../MATH_SPEC.md#b-clamped-ecliptic-track-sun-bead`](../MATH_SPEC.md#b-clamped-ecliptic-track-sun-bead)), eliminating drift across seasons and Rete rotations.
 
 ## Consequences
 
@@ -60,7 +57,7 @@ The visualizer must satisfy three conflicting constraints:
   - Delivers fluid, liquid topological transformations at a steady 60 FPS without GPU/WebGL overhead.
   - Streamlines the continuum into 5 intuitive modes (`heliocentric`, `geocentric`, `stereographic`, `rojas`, `horizon`), merging 3D Sphere into Geocentric Apparent motion.
   - Mathematically authentic across all historical projections and Renaissance horology.
-  - Highly maintainable modular architecture with clear separation of math routines and rendering layers; verified by 170 unit tests across 7 test suites.
+  - Highly maintainable modular architecture with clear separation of math routines and rendering layers; verified across comprehensive Vitest domain test suites.
 
 * **Invariants**:
   - Keep domain projection math pure and deterministic in `src/utils/cosmicMath/armillary/`.

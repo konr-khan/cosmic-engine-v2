@@ -59,9 +59,8 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **Bundler & Dev Server**: Vite 6+ (`vite`)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
-- **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
-- **Icons & Data Viz**: `lucide-react`
-- **Testing**: `vitest` (170 automated unit tests across 7 test suites: pure math, hooks, layout state, state store, error boundaries, widgets, armillary projections, and worker fallback)
+- **Concurrency**: Web Worker dedicated thread & singleton multiplexer
+- **Testing**: `vitest` (Comprehensive automated unit test suite covering pure math, hooks, layout state, state store, error boundaries, observatory widgets, and worker fallback)
 
 ---
 
@@ -77,7 +76,7 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite (170 unit tests across 7 suites)
+# Run Vitest test suite
 npm test
 
 # Run full test suite in single-run CI mode
@@ -93,154 +92,31 @@ Cosmic Engine V2.0/
 ├── index.html                   # HTML entry point with title & viewport config
 ├── package.json                 # Project dependencies & Vite scripts
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
-├── tsconfig.node.json           # TypeScript build tooling configuration
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── tailwind.config.js           # Tailwind CSS configuration
-├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & quick start
-├── AGENTS.md                    # Agent guidelines & architecture map
+├── AGENTS.md                    # Agent protocols & full granular file navigation map
 ├── docs/                        # Persistent technical specifications & ADRs
-│   ├── MATH_SPEC.md             # Astronomical math specification & coordinate formulas
-│   ├── DESIGN_SYSTEM.md         # Visual tokens, color semantics & vector stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs)
-│       ├── 0001-external-store-and-worker-architecture.md
-│       ├── 0002-branded-nominal-unit-typing.md
-│       └── 0003-gyro-morph-armillary-projections.md
-├── src/
-│   ├── main.tsx                 # React root renderer
-│   ├── App.tsx                  # Master Observatory dashboard container
-│   ├── vite-env.d.ts            # Vite client environment types
-│   ├── index.css                # Global styles & Tailwind imports
-│   ├── types/                   # Foundational TypeScript domain models
-│   │   ├── units.ts             # Branded types (Degrees, Radians, JulianDate) & converters
-│   │   ├── coordinates.ts       # Coordinate systems (AltAzimuth, Equatorial, Ecliptic, 2D/3D vectors)
-│   │   ├── astronomy.ts         # Astronomical models (SolarPosition, LunarPosition, EclipseData)
-│   │   ├── worker.ts            # Web Worker RPC contracts & serialization payloads
-│   │   ├── store.ts             # Store contracts & window layout types
-│   │   └── index.ts             # Central re-export entry
-│   ├── utils/
-│   │   ├── cosmicMath/          # Pure astronomical math domain modules
-│   │   │   ├── index.ts         # Central re-export entry file
-│   │   │   ├── constants.ts     # Orbital radii, twilight thresholds & theme tokens
-│   │   │   ├── core.ts          # Julian dates, hour formatting & trig helpers
-│   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
-│   │   │   ├── lunar.ts         # Lunar ephemeris solver, nodal precession, parallactic angle & annual lunar matrix
-│   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
-│   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
-│   │   │   │   ├── index.ts          # Barrel re-export
-│   │   │   │   ├── types.ts          # Armillary domain types & 5-model continuum definitions
-│   │   │   │   ├── constants.ts      # Milestones, 12 Astrolabe Stars, Zodiac Signs, Chaldean Planets
-│   │   │   │   ├── coordinates.ts    # GMST, LST, 3D Euler rotations, Alt/Az & RA/Dec coordinate conversions
-│   │   │   │   ├── projections.ts    # Stereographic Conformal, Rojas Orthographic, Topocentric Horizon
-│   │   │   │   ├── astrolabe.ts      # Almucantar curves, Unequal planetary hours, Free Rete LST solver
-│   │   │   │   ├── focalBeacon.ts    # Center of projection focal pole beacon & laser rays
-│   │   │   │   ├── alidade.ts        # Real-time Alidade sighting telemetry & snap-to-target solver
-│   │   │   │   ├── paths.ts          # Depth-sorted SVG path segment generator
-│   │   │   │   └── generator.ts      # generateArmillaryModel with staged morph & clamped Sun bead
-│   │   │   ├── armillary.ts     # Re-export bridge to ./armillary
-│   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
-│   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (107 tests)
-│   ├── store/                   # External state store & chronometer controls
-│   │   ├── cosmicStore.ts       # External state store & animation frame ticker
-│   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
-│   ├── workers/                 # Web Worker offload scripts
-│   │   ├── ephemerisWorker.ts   # Dedicated worker for Meeus ephemeris, eclipse geometry & 365-day matrices
-│   │   └── ephemerisWorkerManager.ts # Application singleton worker manager, deduplication & matrix cache
-│   ├── hooks/
-│   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
-│   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests)
-│   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (19 tests)
-│   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
-│   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
-│   └── components/              # Grouped component architecture
-│       ├── widgets/             # Core visualization widgets
-│       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (11 tests)
-│       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
-│       │   │   ├── canvas/                   # Modular SVG canvas layers
-│       │   │   │   ├── index.ts              # Canvas barrel export
-│       │   │   │   ├── ArmillaryDefs.tsx     # SVG gradients & glow filters
-│       │   │   │   ├── ArmillaryBezelLayer.tsx # Hairline double-grooved brass bezel & 24h Roman markings
-│       │   │   │   ├── ArmillaryTympanLayer.tsx # Almucantar altitude curves for stereographic plate
-│       │   │   │   ├── ArmillaryLaserLayer.tsx # Volumetric laser projection beacon, cone wash & radiating rays
-│       │   │   │   ├── ArmillaryObserverConeLayer.tsx # Topocentric observer FOV cone, zenith ray & pin
-│       │   │   │   ├── ArmillaryRingsLayer.tsx # Depth-sorted celestial rings & Zodiac ecliptic glyph markers
-│       │   │   │   ├── ArmillaryStarsLayer.tsx # 12 Classical Navigational Astrolabe Stars & sighting pointers
-│       │   │   │   ├── ArmillaryBeadsLayer.tsx # Earth, Sun (clamped), Moon, milestones, lunar nodes & connector
-│       │   │   │   └── ArmillaryAlidadeLayer.tsx # Hairline Alidade sighting rule, laser sightline & pinnules
-│       │   │   ├── ArmillarySvgCanvas.tsx      # Interactive 3D Euler SVG viewport coordinator
-│       │   │   ├── ArmillaryHeaderControls.tsx # 5-mode pills, morph slider & spring-snap triggers
-│       │   │   ├── ArmillaryHoverHud.tsx       # Floating star, sun/moon & Alidade telemetry HUD
-│       │   │   ├── ArmillaryTelemetryHud.tsx  # 4-column horological telemetry footer
-│       │   │   ├── types.ts                    # Armillary domain interfaces & props
-│       │   │   ├── GyroArmillaryView.tsx      # Subsystem coordinator container
-│       │   │   └── index.ts                    # Barrel export
-│       │   ├── terminator/      # Decomposed daylight terminator map subsystem modules
-│       │   │   ├── TerminatorMap.tsx           # Centered daylight terminator map with subsolar & sublunar points
-│       │   │   └── index.ts                    # Barrel export
-│       │   ├── tides/           # Decomposed gravitational tidal force subsystem modules
-│       │   │   ├── MicroTideView.tsx           # Earth gravitational tidal force micro-view & ocean wave oscillator
-│       │   │   └── index.ts                    # Barrel export
-│       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
-│       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
-│       │   │   ├── OrbitHoverHud.tsx       # Floating glassmorphic hover popovers
-│       │   │   ├── OrbitPhysicsHud.tsx     # 4-column telemetry physics footer
-│       │   │   ├── OrbitHeaderControls.tsx # True scale vs. exaggerated scale toggle
-│       │   │   ├── milestones.ts           # Extracted seasonal orbital milestones
-│       │   │   ├── types.ts                # Macro-orbit domain interfaces & props
-│       │   │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   ├── solar/           # Decomposed solar almanac subsystem modules
-│       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
-│       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
-│       │   │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
-│       │   │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   ├── today/           # Decomposed today's horizon subsystem modules
-│       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
-│       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
-│       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
-│       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
-│       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
-│       │   │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
-│       │   │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
-│       │   │   └── index.ts                # Barrel export
-│       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
-│       │       ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
-│       │       ├── EclipseStatusBadge.tsx      # Syzygy classification & proximity badge
-│       │       ├── ShadowRayDiagram.tsx        # Decomposed coordinator container
-│       │       ├── ShadowRayHoverHud.tsx       # Floating glassmorphic hover popovers
-│       │       ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
-│       │       ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
-│       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
-│       │       ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon & Lunar POV)
-│       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
-│       │       └── index.ts                    # Barrel export
-│   ├── controls/            # Interactive astrolabe inputs
-│   │   ├── ArmillaryRail.tsx          # Slider control rail
-│   │   ├── BufferedInput.tsx          # Blur/Enter commit input wrapper
-│   │   ├── ControlRing.tsx            # Concentric drag ring
-│   │   ├── LatitudeSlider.tsx         # Latitude coordinate slider
-│   │   └── PolarLongitudeSelector.tsx # Polar stereographic longitude selector
-│   ├── layout/              # Container layout modules
-│   │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
-│   │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
-│   │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
-│   │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
-│   │       ├── AstrolabeDial.tsx           # 4-concentric interactive SVG astrolabe dial
-│   │       ├── ChronometerReadoutCards.tsx # Direct input cards & parseTimeString validator
-│   │       ├── SolsticeJumpControls.tsx    # Twilight phase pill & solstice fast jumps
-│   │       └── ChronometerModalPopovers.tsx # Accessible modal wrappers for Lat/Lon sliders
-│   └── common/              # Shared visual components
-│       ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
-│       ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
-│       ├── LivingMarble.tsx                # Non-tearing 3D Earth globe visualizer
-│       └── PhaseVisual.tsx                 # Lunar phase disc with parallactic tilt
+│   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
+│   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
+│   └── adr/                     # Architecture Decision Records (ADRs 0001-0003)
+└── src/
+    ├── main.tsx                 # React root renderer
+    ├── App.tsx                  # Master Observatory dashboard container
+    ├── types/                   # Symbol-branded nominal units, coordinates & RPC contracts
+    ├── utils/cosmicMath/        # Pure astronomical mathematical algorithms & projections
+    ├── store/                   # High-frequency external chronometer store (60 FPS ticker)
+    ├── workers/                 # Web Worker offloading for Meeus ephemeris & annual matrices
+    ├── hooks/                   # Custom domain hooks (engine, worker RPC, dashboard layout)
+    └── components/              # Grouped visual component architecture
+        ├── widgets/             # 8 core observatory subsystems (Armillary, Solar, Lunar, etc.)
+        ├── controls/            # Interactive astrolabe dials, sliders & longitude selector
+        ├── layout/              # Observatory navbar, window wrappers & chronometer dock
+        └── common/              # Shared error boundaries, globe visualizer & phase discs
 ```
+
+> [!TIP]
+> For the complete, granular submodule file tree with all individual SVG canvas layers and decomposed modules, see [`AGENTS.md`](./AGENTS.md#3-repository-architecture).
 
 ---
 
@@ -261,17 +137,17 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, and asynchronous worker operations:
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, and asynchronous worker operations across 7 specialized domain suites:
 
-| Test Suite | File | Tests | Focus Areas |
-| :--- | :--- | :--- | :--- |
-| **Cosmic Math** | `src/utils/cosmicMath.test.ts` | 107 | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, and 5-model Gyro-Morph armillary/astrolabe continuum |
-| **Observatory Widgets** | `src/components/widgets/widgets.test.ts` | 11 | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 8 observatory window subsystems |
-| **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` | 13 | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
-| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | 19 | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
-| **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` | 7 | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
-| **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` | 6 | Fault isolation, derived state error capture, and in-place module reset recovery |
-| **Cosmic State Store** | `src/store/cosmicStore.test.ts` | 7 | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
+| Domain Module | File | Focus Areas |
+| :--- | :--- | :--- |
+| **Cosmic Math** | `src/utils/cosmicMath.test.ts` | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, and 5-model Gyro-Morph armillary/astrolabe continuum |
+| **Observatory Widgets** | `src/components/widgets/widgets.test.ts` | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 8 observatory window subsystems |
+| **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
+| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
+| **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
+| **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` | Fault isolation, derived state error capture, and in-place module reset recovery |
+| **Cosmic State Store** | `src/store/cosmicStore.test.ts` | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 
 Run the full suite with:
 ```bash
