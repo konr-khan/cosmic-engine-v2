@@ -62,10 +62,18 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         <g
           key={m.id}
           className="cursor-pointer transition-transform hover:scale-110"
+          style={{ touchAction: 'none' }}
           opacity={milestonesOpacity * (m.isFront ? 1.0 : 0.4)}
           onPointerEnter={() => onHoverMilestone(m)}
           onPointerLeave={() => onHoverMilestone(null)}
         >
+          {/* Invisible Touch Hitbox */}
+          <circle
+            cx={m.screenPos.x}
+            cy={m.screenPos.y}
+            r="10"
+            fill="transparent"
+          />
           {/* Milestone Halo */}
           <circle
             cx={m.screenPos.x}
@@ -95,7 +103,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
             fontFamily="monospace"
             fontWeight="bold"
             textAnchor="middle"
-            className="pointer-events-none drop-shadow"
+            className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
           >
             {m.label}
           </text>
@@ -106,9 +114,17 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       <g
         filter="url(#ringGlow)"
         className="cursor-pointer"
+        style={{ touchAction: 'none' }}
         onPointerEnter={() => onHoverBead('earth')}
         onPointerLeave={() => onHoverBead(null)}
       >
+        {/* Invisible Touch Hitbox */}
+        <circle
+          cx={earth.screenPos.x}
+          cy={earth.screenPos.y}
+          r="10"
+          fill="transparent"
+        />
         {/* Earth Atmosphere Glow */}
         <circle
           cx={earth.screenPos.x}
@@ -144,6 +160,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           fontFamily="monospace"
           fontWeight="bold"
           textAnchor="middle"
+          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
         >
           {projectionMode === 'geocentric' ? '⊕ EARTH (Center)' : '⊕ EARTH'}
         </text>
@@ -155,9 +172,17 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           {/* Ascending Node (Northbound, Sky Blue) */}
           <g
             className="cursor-pointer transition-transform hover:scale-110"
+            style={{ touchAction: 'none' }}
             onPointerEnter={() => onHoverNode('asc')}
             onPointerLeave={() => onHoverNode(null)}
           >
+            {/* Invisible Touch Hitbox */}
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r="8"
+              fill="transparent"
+            />
             <circle
               cx={lunarNodes.ascendingNode.screenPos.x}
               cy={lunarNodes.ascendingNode.screenPos.y}
@@ -174,6 +199,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               fontFamily="monospace"
               fontWeight="bold"
               textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
             >
               ☊
             </text>
@@ -182,9 +208,17 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           {/* Descending Node (Southbound, Rose Red) */}
           <g
             className="cursor-pointer transition-transform hover:scale-110"
+            style={{ touchAction: 'none' }}
             onPointerEnter={() => onHoverNode('desc')}
             onPointerLeave={() => onHoverNode(null)}
           >
+            {/* Invisible Touch Hitbox */}
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r="8"
+              fill="transparent"
+            />
             <circle
               cx={lunarNodes.descendingNode.screenPos.x}
               cy={lunarNodes.descendingNode.screenPos.y}
@@ -201,6 +235,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               fontFamily="monospace"
               fontWeight="bold"
               textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
             >
               ☋
             </text>
@@ -212,10 +247,21 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       <g 
         filter="url(#sunGlow)"
         className="cursor-pointer"
-        onClick={() => onTargetClick('Sun (Sol)', sun.screenPos)}
+        style={{ touchAction: 'none' }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTargetClick('Sun (Sol)', sun.screenPos);
+        }}
         onPointerEnter={() => onHoverBead('sun')}
         onPointerLeave={() => onHoverBead(null)}
       >
+        {/* Invisible Touch Hitbox */}
+        <circle
+          cx={sun.screenPos.x}
+          cy={sun.screenPos.y}
+          r="12"
+          fill="transparent"
+        />
         {/* Ray to Origin */}
         <line
           x1="0"
@@ -251,6 +297,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           fontFamily="monospace"
           fontWeight="bold"
           textAnchor="middle"
+          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
         >
           ☉ SUN
         </text>
@@ -260,10 +307,21 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       <g 
         filter="url(#starGlow)"
         className="cursor-pointer"
-        onClick={() => onTargetClick('Moon (Luna)', moon.screenPos)}
+        style={{ touchAction: 'none' }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTargetClick('Moon (Luna)', moon.screenPos);
+        }}
         onPointerEnter={() => onHoverBead('moon')}
         onPointerLeave={() => onHoverBead(null)}
       >
+        {/* Invisible Touch Hitbox */}
+        <circle
+          cx={moon.screenPos.x}
+          cy={moon.screenPos.y}
+          r="12"
+          fill="transparent"
+        />
         {/* Ray to Origin */}
         <line
           x1="0"
@@ -299,6 +357,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           fontFamily="monospace"
           fontWeight="bold"
           textAnchor="middle"
+          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
         >
           ☽ MOON
         </text>

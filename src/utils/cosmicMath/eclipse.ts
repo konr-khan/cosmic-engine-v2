@@ -1,7 +1,7 @@
 import { getJulianDate } from './core';
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
-import { JulianDate } from '../../types/units';
+import { JulianDate, asJulianDate } from '../../types/units';
 import { EclipseType, EclipseClassification, EclipseScannerPreset } from '../../types/astronomy';
 
 export interface EclipseCalculationResult {
@@ -260,11 +260,11 @@ export const findUpcomingEclipses = (
 
     if (distToNewMoon < 7 && Math.abs(lun.beta) < 1.6) {
       const dLonConj = ((elongation + 180) % 360) - 180;
-      peakJD = (jd - (dLonConj / 12.19)) as JulianDate;
+      peakJD = asJulianDate(jd - (dLonConj / 12.19));
       isCandidate = true;
     } else if (distToFullMoon < 7 && Math.abs(lun.beta) < 1.6) {
       const dLonOpp = ((elongation - 180 + 540) % 360) - 180;
-      peakJD = (jd - (dLonOpp / 12.19)) as JulianDate;
+      peakJD = asJulianDate(jd - (dLonOpp / 12.19));
       isCandidate = true;
     }
 

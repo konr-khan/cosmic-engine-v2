@@ -39,9 +39,9 @@ export function generateProjectionFocalBeacon(
   for (const angleDeg of RAY_ANGLES) {
     const rad = toRadians(angleDeg);
     const ringPoint3D: Vector3D = {
-      x: r0 * Math.sin(rad),
+      x: r0 * Math.cos(rad),
       y: 0,
-      z: r0 * Math.cos(rad)
+      z: r0 * Math.sin(rad)
     };
     const ringCam = rotateEuler3D(ringPoint3D, cameraPitch, cameraYaw, 0);
     const ringProj = projectStereographicConformal(ringPoint3D, r0);
@@ -63,9 +63,9 @@ export function generateProjectionFocalBeacon(
   for (let i = 0; i <= NUM_CONE_SAMPLES; i++) {
     const rad = (i / NUM_CONE_SAMPLES) * 2 * Math.PI;
     const ringPoint3D: Vector3D = {
-      x: r0 * Math.sin(rad),
+      x: r0 * Math.cos(rad),
       y: 0,
-      z: r0 * Math.cos(rad)
+      z: r0 * Math.sin(rad)
     };
     const ringCam = rotateEuler3D(ringPoint3D, cameraPitch, cameraYaw, 0);
     const ringProj = projectStereographicConformal(ringPoint3D, r0);

@@ -1,6 +1,6 @@
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { calculateSolarPosition } from './solar';
-import { JulianDate, Latitude, Longitude, Degrees, asDegrees, HoursDecimal } from '../../types/units';
+import { JulianDate, Latitude, Longitude, Degrees, asDegrees, HoursDecimal, julianDateToCenturies } from '../../types/units';
 import { 
   LunarPhaseName, 
   LunarPosition, 
@@ -18,7 +18,7 @@ export type { LunarPositionFull, LunarEventMetrics, AnnualLunarMatrixItem };
  * @returns Lunar position and coordinates
  */
 export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPositionFull => {
-  const T = (julianDate - 2451545.0) / 36525.0;
+  const T = julianDateToCenturies(julianDate);
   
   let L_prime = (218.3164477 + 481267.88123421 * T) % 360;
   if (L_prime < 0) L_prime += 360;

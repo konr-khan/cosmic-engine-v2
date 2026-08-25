@@ -72,6 +72,7 @@ export const ArmillaryObserverConeLayer: React.FC<ArmillaryObserverConeLayerProp
           fontFamily="monospace"
           fontWeight="bold"
           textAnchor="middle"
+          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
         >
           ZENITH
         </text>
@@ -80,9 +81,17 @@ export const ArmillaryObserverConeLayer: React.FC<ArmillaryObserverConeLayerProp
       {/* Topocentric Observer Pin ("YOU") on Earth's Surface */}
       <g
         className="cursor-pointer"
+        style={{ touchAction: 'none' }}
         onPointerEnter={() => onHoverBead('observer')}
         onPointerLeave={() => onHoverBead(null)}
       >
+        {/* Invisible Touch Hitbox */}
+        <circle
+          cx={observerCone.observerScreenPos.x}
+          cy={observerCone.observerScreenPos.y}
+          r="10"
+          fill="transparent"
+        />
         {/* Pulsing Location Ring */}
         <circle
           cx={observerCone.observerScreenPos.x}
@@ -109,6 +118,7 @@ export const ArmillaryObserverConeLayer: React.FC<ArmillaryObserverConeLayerProp
           fill="#38bdf8"
           fontFamily="monospace"
           fontWeight="bold"
+          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
         >
           YOU
         </text>

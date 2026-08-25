@@ -21,14 +21,30 @@ export const ArmillaryAlidadeLayer: React.FC<ArmillaryAlidadeLayerProps> = ({
 
   return (
     <g 
-      className="cursor-grab active:cursor-grabbing"
+      className="cursor-grab active:cursor-grabbing select-none"
+      style={{ touchAction: 'none' }}
       opacity={alidadeOpacity}
       onDragStart={(e) => {
         e.preventDefault();
         e.stopPropagation();
       }}
-      onPointerDown={onPointerDownRule}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onPointerDownRule(e);
+      }}
     >
+      {/* Invisible Touch Hitbox for Sighting Arm Dragging */}
+      <line
+        x1={-140 * sinA}
+        y1={140 * cosA}
+        x2={140 * sinA}
+        y2={-140 * cosA}
+        stroke="transparent"
+        strokeWidth="20"
+        strokeLinecap="round"
+      />
+
       {/* Extended Cyan Laser Sighting Ray */}
       <line
         x1={-140 * sinA}

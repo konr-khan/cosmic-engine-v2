@@ -22,11 +22,10 @@ export function calculateLST(julianDate: JulianDate | number, longitude: Longitu
 
 /**
  * Converts equatorial coordinates (RA, Dec) into 3D Cartesian coordinates on celestial sphere of radius R0.
- * Coordinate frame:
- * +Y: North Celestial Pole
- * -Y: South Celestial Pole
- * +Z: Vernal Equinox (RA = 0°, Dec = 0°)
- * +X: RA = 90°, Dec = 0°
+ * Coordinate frame (IAU / MATH_SPEC.md Section 7.D):
+ * +X: Vernal Equinox (RA = 0°, Dec = 0°)
+ * +Y: North Celestial Pole (Dec = +90°)
+ * +Z: RA = 90°, Dec = 0° (Right-handed basis)
  */
 export function equatorialToCartesian3D(raDeg: Degrees | number, decDeg: Degrees | number, r0: number = 100): Vector3D {
   const raRad = toRadians(raDeg);
@@ -34,9 +33,9 @@ export function equatorialToCartesian3D(raDeg: Degrees | number, decDeg: Degrees
   const cosDec = Math.cos(decRad);
 
   return {
-    x: r0 * cosDec * Math.sin(raRad),
+    x: r0 * cosDec * Math.cos(raRad),
     y: r0 * Math.sin(decRad),
-    z: r0 * cosDec * Math.cos(raRad)
+    z: r0 * cosDec * Math.sin(raRad)
   };
 }
 
@@ -48,7 +47,7 @@ export function cartesian3DToEquatorial(p: Vector3D): { raDeg: Degrees; decDeg: 
   if (r < 1e-9) return { raDeg: asDegrees(0), decDeg: asDegrees(0) };
 
   const decRad = Math.asin(clamp(p.y / r, -1, 1));
-  const raRad = Math.atan2(p.x, p.z);
+  const raRad = Math.atan2(p.z, p.x);
   const raDeg = (toDegrees(raRad) + 360) % 360;
 
   return {
@@ -60,8 +59,8 @@ export function cartesian3DToEquatorial(p: Vector3D): { raDeg: Degrees; decDeg: 
 /**
  * Converts Alt-Azimuth coordinates to Topocentric 3D Cartesian vector.
  * +Y: Zenith (+90° Alt)
- * +Z: North (Az = 0°)
- * +X: East (Az = 90°)
+ * +X: North (Az = 0°)
+ * +Z: East (Az = 90°)
  */
 export function horizontalToCartesian3D(altDeg: Degrees | number, azDeg: Degrees | number, r0: number = 100): Vector3D {
   const altRad = toRadians(altDeg);
@@ -69,14 +68,15 @@ export function horizontalToCartesian3D(altDeg: Degrees | number, azDeg: Degrees
   const cosAlt = Math.cos(altRad);
 
   return {
-    x: r0 * cosAlt * Math.sin(azRad),
+    x: r0 * cosAlt * Math.cos(azRad),
     y: r0 * Math.sin(altRad),
-    z: r0 * cosAlt * Math.cos(azRad)
+    z: r0 * cosAlt * Math.sin(azRad)
   };
 }
 
 /**
  * Computes topocentric Altitude and Azimuth from observer Latitude and Local Hour Angle (H) & Declination.
+ * Solves Azimuth via exact 2-argument atan2 matching MATH_SPEC.md Section 7.I (singularity-free).
  */
 export function equatorialToHorizontal(
   raDeg: Degrees | number,
@@ -93,14 +93,10 @@ export function equatorialToHorizontal(
   const altRad = Math.asin(clamp(sinAlt, -1, 1));
   const altDeg = toDegrees(altRad);
 
-  const cosAlt = Math.cos(altRad);
-  let azDeg = 0;
-  if (Math.abs(cosAlt) > 1e-7) {
-    const cosAz = (Math.sin(decRad) - Math.sin(latRad) * sinAlt) / (Math.cos(latRad) * cosAlt);
-    const sinAz = -Math.cos(decRad) * Math.sin(hRad) / cosAlt;
-    const azRad = Math.atan2(sinAz, cosAz);
-    azDeg = (toDegrees(azRad) + 360) % 360;
-  }
+  const sinAz = -Math.cos(decRad) * Math.sin(hRad);
+  const cosAz = Math.sin(decRad) * Math.cos(latRad) - Math.cos(decRad) * Math.sin(latRad) * Math.cos(hRad);
+  const azRad = Math.atan2(sinAz, cosAz);
+  const azDeg = (toDegrees(azRad) + 360) % 360;
 
   return { altDeg: parseFloat(altDeg.toFixed(2)), azDeg: parseFloat(azDeg.toFixed(2)) };
 }

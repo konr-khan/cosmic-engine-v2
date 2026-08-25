@@ -66,7 +66,8 @@ export const ArmillaryBezelLayer: React.FC<ArmillaryBezelLayerProps> = ({ bezelO
             fontWeight="bold"
             textAnchor="middle"
             dominantBaseline="central"
-            opacity="0.8"
+            opacity="0.85"
+            className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
           >
             {ROMAN_HOURS[i]}
           </text>

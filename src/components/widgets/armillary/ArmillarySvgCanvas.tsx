@@ -243,6 +243,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
       <svg
         ref={svgRef}
         viewBox="-150 -150 300 300"
+        style={{ touchAction: 'none' }}
         onDragStart={(e) => {
           e.preventDefault();
           e.stopPropagation();

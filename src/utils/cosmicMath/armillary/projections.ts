@@ -7,17 +7,23 @@ import { ArmillaryProjectionMode } from './types';
 /**
  * Stereographic Conformal Projection
  * Projects from South Celestial Pole (0, -R0, 0) onto equatorial plane y = 0.
- * Conformal property: preserves all circles and angles.
+ * Conformal property: preserves all circles and angles (MATH_SPEC.md Section 7.E.1).
+ * Singularity Guard: Bounded finite clamping for points near South Pole (y -> -R0).
  */
 export function projectStereographicConformal(p: Vector3D, r0: number = 100): Vector2D {
   const denom = r0 + p.y;
+  const maxBound = r0 * 10;
   if (Math.abs(denom) < 1e-6) {
-    return { x: p.x * 1000, y: p.z * 1000 };
+    const safeSign = denom >= 0 ? 1 : -1;
+    return {
+      x: clamp(p.x * (r0 / (safeSign * 1e-6)), -maxBound, maxBound),
+      y: clamp(p.z * (r0 / (safeSign * 1e-6)), -maxBound, maxBound)
+    };
   }
-  const scale = (2 * r0) / denom;
+  const scale = r0 / denom;
   return {
-    x: p.x * (scale / 2),
-    y: p.z * (scale / 2)
+    x: clamp(p.x * scale, -maxBound, maxBound),
+    y: clamp(p.z * scale, -maxBound, maxBound)
   };
 }
 

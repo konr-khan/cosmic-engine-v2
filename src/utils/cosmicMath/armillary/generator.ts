@@ -525,13 +525,13 @@ export function generateArmillaryModel(params: {
     ...horizPaths
   });
 
-  // 7. Solstitial Colure Ring (RA = 90° and 270° plane)
+  // 7. Solstitial Colure Ring (RA = 90° and 270° plane, x = 0)
   const colureVertices: ArmillaryRingVertex[] = [];
   for (let i = 0; i <= NUM_SAMPLES; i++) {
     const theta = (i / NUM_SAMPLES) * 2 * Math.PI;
-    const x = r0 * Math.cos(theta);
+    const x = 0;
     const y = r0 * Math.sin(theta);
-    const z = 0;
+    const z = r0 * Math.cos(theta);
     colureVertices.push(transformVertex({ x, y, z }));
   }
   const colurePaths = buildSegmentedSvgPaths(colureVertices);

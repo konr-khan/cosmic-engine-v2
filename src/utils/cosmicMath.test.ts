@@ -1123,7 +1123,8 @@ describe('cosmicMath utilities', () => {
       expect(lstOlympia).toBeCloseTo((280.4606 - 122.81 + 360) % 360, 1);
     });
 
-    it('transforms equatorial coordinates to 3D Cartesian coordinates and back', () => {
+    it('transforms equatorial coordinates to 3D Cartesian coordinates and back (+X Vernal Equinox)', () => {
+      // North Pole (RA = 0, Dec = 90) -> (0, 100, 0)
       const pNorthPole = equatorialToCartesian3D(0, 90, 100);
       expect(pNorthPole.x).toBeCloseTo(0);
       expect(pNorthPole.y).toBeCloseTo(100);
@@ -1132,28 +1133,53 @@ describe('cosmicMath utilities', () => {
       const eqBack = cartesian3DToEquatorial(pNorthPole);
       expect(eqBack.decDeg).toBeCloseTo(90);
 
+      // Vernal Equinox (RA = 0, Dec = 0) -> (+X: 100, 0, 0)
       const pEquinox = equatorialToCartesian3D(0, 0, 100);
-      expect(pEquinox.x).toBeCloseTo(0);
+      expect(pEquinox.x).toBeCloseTo(100);
       expect(pEquinox.y).toBeCloseTo(0);
-      expect(pEquinox.z).toBeCloseTo(100);
+      expect(pEquinox.z).toBeCloseTo(0);
 
       const eqBack2 = cartesian3DToEquatorial(pEquinox);
       expect(eqBack2.raDeg).toBeCloseTo(0);
       expect(eqBack2.decDeg).toBeCloseTo(0);
+
+      // RA = 90°, Dec = 0° -> (+Z: 0, 0, 100)
+      const pRA90 = equatorialToCartesian3D(90, 0, 100);
+      expect(pRA90.x).toBeCloseTo(0);
+      expect(pRA90.y).toBeCloseTo(0);
+      expect(pRA90.z).toBeCloseTo(100);
+
+      const eqBack3 = cartesian3DToEquatorial(pRA90);
+      expect(eqBack3.raDeg).toBeCloseTo(90);
+      expect(eqBack3.decDeg).toBeCloseTo(0);
     });
 
-    it('projects stereographic conformal coordinates preserving equator and circles', () => {
-      // Equator point (0, 0, 100) -> (0, 100)
-      const pEq = { x: 0, y: 0, z: 100 };
+    it('projects stereographic conformal coordinates preserving equator, circles, and singularity bounds', () => {
+      // Equator point at Vernal Equinox (100, 0, 0) -> (100, 0)
+      const pEq = { x: 100, y: 0, z: 0 };
       const projEq = projectStereographicConformal(pEq, 100);
-      expect(projEq.x).toBeCloseTo(0);
-      expect(projEq.y).toBeCloseTo(100);
+      expect(projEq.x).toBeCloseTo(100);
+      expect(projEq.y).toBeCloseTo(0);
+
+      // Equator point at RA = 90 (0, 0, 100) -> (0, 100)
+      const pEq90 = { x: 0, y: 0, z: 100 };
+      const projEq90 = projectStereographicConformal(pEq90, 100);
+      expect(projEq90.x).toBeCloseTo(0);
+      expect(projEq90.y).toBeCloseTo(100);
 
       // North Pole (0, 100, 0) -> (0, 0)
       const pNP = { x: 0, y: 100, z: 0 };
       const projNP = projectStereographicConformal(pNP, 100);
       expect(projNP.x).toBeCloseTo(0);
       expect(projNP.y).toBeCloseTo(0);
+
+      // South Celestial Pole singularity guard (y -> -100)
+      const pSP = { x: 10, y: -100, z: 10 };
+      const projSP = projectStereographicConformal(pSP, 100);
+      expect(Number.isFinite(projSP.x)).toBe(true);
+      expect(Number.isFinite(projSP.y)).toBe(true);
+      expect(Math.abs(projSP.x)).toBeLessThanOrEqual(1000);
+      expect(Math.abs(projSP.y)).toBeLessThanOrEqual(1000);
     });
 
     it('projects universal Rojas orthographic coordinates', () => {
@@ -1178,6 +1204,18 @@ describe('cosmicMath utilities', () => {
       const horizE = projectTopocentricHorizon(0, 90, 100);
       expect(horizE.x).toBeCloseTo(100);
       expect(horizE.y).toBeCloseTo(0);
+    });
+
+    it('computes topocentric horizontal coordinates via 2-argument atan2', () => {
+      // Meridian transit due South: lat = 45, dec = 0, lst = 0, ra = 0 -> alt = 45, az = 180 (South)
+      const southTransit = equatorialToHorizontal(0, 0, 45, 0);
+      expect(southTransit.altDeg).toBeCloseTo(45, 1);
+      expect(southTransit.azDeg).toBeCloseTo(180, 1);
+
+      // North Star: lat = 47.06, dec = 90, lst = 0, ra = 0 -> alt = 47.06, az = 0 (North)
+      const polaris = equatorialToHorizontal(0, 90, 47.06, 0);
+      expect(polaris.altDeg).toBeCloseTo(47.06, 1);
+      expect(polaris.azDeg).toBeCloseTo(0, 1);
     });
 
     it('calculates analytical Almucantar elevation circles for astrolabe tympan', () => {

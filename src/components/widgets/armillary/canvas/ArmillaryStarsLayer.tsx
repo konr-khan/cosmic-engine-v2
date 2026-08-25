@@ -30,7 +30,11 @@ export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
           <g 
             key={star.id}
             className="cursor-pointer transition-all"
-            onClick={() => onTargetClick(star.name, star.screenPos)}
+            style={{ touchAction: 'none' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTargetClick(star.name, star.screenPos);
+            }}
             onPointerEnter={(e) => {
               e.stopPropagation();
               onHoverStar({
@@ -41,6 +45,14 @@ export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
             }}
             onPointerLeave={() => onHoverStar(null)}
           >
+            {/* Invisible Touch Hitbox for Star Selection */}
+            <circle
+              cx={star.screenPos.x}
+              cy={star.screenPos.y}
+              r="8"
+              fill="transparent"
+            />
+
             {/* Gothic Flamme / Star Pointer */}
             <line
               x1={0}
@@ -63,7 +75,7 @@ export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
               strokeWidth={isHovered ? 1.2 : 0.6}
             />
 
-            {/* Star Label */}
+            {/* Star Label with High-Contrast Drop Shadow */}
             <text
               x={star.screenPos.x + 2.5}
               y={star.screenPos.y - 2.5}
@@ -71,6 +83,7 @@ export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
               fill={isHovered ? '#fbbf24' : '#94a3b8'}
               fontFamily="monospace"
               fontWeight={isHovered ? 'bold' : 'normal'}
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
             >
               {star.name}
             </text>
