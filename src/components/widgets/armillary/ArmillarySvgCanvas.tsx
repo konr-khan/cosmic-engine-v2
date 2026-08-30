@@ -108,7 +108,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
 
   const isOrbital = projectionMode === 'heliocentric';
   const is3D = projectionMode === 'geocentric' || (morphLambda <= 0.05 && !isOrbital);
-  const isStereo2D = morphLambda >= 0.95 && projectionMode === 'stereographic';
+  const isTympanVisible = (projectionMode === 'stereographic' || projectionMode === 'horizon') && morphLambda >= 0.15;
 
   // Calculate live Alidade sighting telemetry
   const sightingInfo: AlidadeSightingInfo | null = showRule
@@ -286,10 +286,11 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           onHoverBead={(b) => setHoveredBead(b)}
         />
 
-        {/* 3. Tympan Altitude Circles (Muted Almucantars) */}
+        {/* 3. Tympan Altitude Circles (Muted Progressive Almucantars) */}
         <ArmillaryTympanLayer
           showTympan={showTympan}
-          isStereo2D={isStereo2D}
+          isTympanVisible={isTympanVisible}
+          morphLambda={morphLambda}
           celestialRingsOpacity={celestialRingsOpacity}
           almucantars={almucantars}
         />

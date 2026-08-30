@@ -12,8 +12,14 @@ const ROMAN_HOURS = [
 export const ArmillaryBezelLayer: React.FC<ArmillaryBezelLayerProps> = ({ bezelOpacity }) => {
   if (bezelOpacity <= 0.01) return null;
 
+  const bezelScale = 0.94 + 0.06 * bezelOpacity;
+
   return (
-    <g opacity={bezelOpacity} className="transition-opacity duration-300 pointer-events-none">
+    <g 
+      opacity={bezelOpacity} 
+      transform={`scale(${bezelScale})`}
+      className="transition-opacity duration-300 pointer-events-none"
+    >
       {/* Outer Double-Grooved Rings */}
       <circle cx="0" cy="0" r="140" fill="none" stroke="#b45309" strokeWidth="0.75" />
       <circle cx="0" cy="0" r="134" fill="#020617" fillOpacity="0.85" stroke="#78350f" strokeWidth="0.75" />

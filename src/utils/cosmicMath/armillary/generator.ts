@@ -24,7 +24,8 @@ import {
 } from './coordinates';
 import { computeProjection2D, computeContinuousProjection2D } from './projections';
 import { 
-  generateAlmucantars, 
+  generateAlmucantars,
+  generateContinuousAlmucantars,
   calculatePlanetaryHour, 
   calculateReteAngleToLST 
 } from './astrolabe';
@@ -674,7 +675,7 @@ export function generateArmillaryModel(params: {
   const moonHoriz = equatorialToHorizontal(moonRaDeg, moonDecDeg, latitude, lstDeg);
 
   // 13. Almucantars and Planetary Hours
-  const almucantars = generateAlmucantars(latitude, 15, r0);
+  const almucantars = generateContinuousAlmucantars(latitude, projectionMode, fromProjectionMode, transT, 15, r0);
   const planetaryHour = calculatePlanetaryHour(timeOfDay, sunrise, sunset, dayOfWeek);
 
   return {

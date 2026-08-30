@@ -3,21 +3,31 @@ import { AlmucantarCircleData } from '../types';
 
 export interface ArmillaryTympanLayerProps {
   showTympan: boolean;
-  isStereo2D: boolean;
+  isTympanVisible: boolean;
+  morphLambda: number;
   celestialRingsOpacity: number;
   almucantars: AlmucantarCircleData[];
 }
 
 export const ArmillaryTympanLayer: React.FC<ArmillaryTympanLayerProps> = ({
   showTympan,
-  isStereo2D,
+  isTympanVisible,
+  morphLambda,
   celestialRingsOpacity,
   almucantars
 }) => {
-  if (!showTympan || !isStereo2D || celestialRingsOpacity <= 0.05) return null;
+  if (!showTympan || !isTympanVisible || celestialRingsOpacity <= 0.05) return null;
+
+  const tympanProgress = Math.max(0, Math.min(1, (morphLambda - 0.15) / 0.7));
+  const opacity = 0.45 * tympanProgress * celestialRingsOpacity;
+  const scale = 0.94 + 0.06 * tympanProgress;
 
   return (
-    <g className="pointer-events-none" opacity={0.35 * celestialRingsOpacity}>
+    <g 
+      className="pointer-events-none transition-opacity duration-200" 
+      opacity={opacity}
+      transform={`scale(${scale})`}
+    >
       {almucantars.map((a) => (
         <circle
           key={`almucantar-${a.altitude}`}
@@ -26,7 +36,7 @@ export const ArmillaryTympanLayer: React.FC<ArmillaryTympanLayerProps> = ({
           r={a.radius}
           fill="none"
           stroke={a.isHorizon ? '#06b6d4' : '#64748b'}
-          strokeWidth={a.isHorizon ? 1.0 : 0.5}
+          strokeWidth={a.isHorizon ? 1.1 : 0.5}
           strokeDasharray={a.isHorizon ? 'none' : '3,3'}
         />
       ))}

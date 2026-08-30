@@ -1,6 +1,6 @@
 import { Degrees, Latitude, HoursDecimal, asDegrees } from '../../../types/units';
-import { toRadians } from '../core';
-import { AlmucantarCircleData } from './types';
+import { toRadians, clamp } from '../core';
+import { AlmucantarCircleData, ArmillaryProjectionMode } from './types';
 import { CHALDEAN_PLANETS } from './constants';
 
 /**
@@ -43,6 +43,50 @@ export function generateAlmucantars(latitude: Latitude, stepDeg: number = 15, r0
   const list: AlmucantarCircleData[] = [];
   for (let alt = 0; alt <= 85; alt += stepDeg) {
     list.push(calculateAlmucantarCircle(alt, latitude, r0));
+  }
+  return list;
+}
+
+/**
+ * Generates continuous Almucantars for Stereographic, Horizon, or cross-transitioning plates.
+ */
+export function generateContinuousAlmucantars(
+  latitude: Latitude,
+  projectionMode: ArmillaryProjectionMode,
+  fromProjectionMode: ArmillaryProjectionMode | undefined,
+  transT: number = 1.0,
+  stepDeg: number = 15,
+  r0: number = 100
+): AlmucantarCircleData[] {
+  const isHorizonTarget = projectionMode === 'horizon';
+  const isHorizonSource = fromProjectionMode === 'horizon';
+  const isTransitioning = fromProjectionMode && fromProjectionMode !== projectionMode && transT < 1.0;
+
+  const list: AlmucantarCircleData[] = [];
+  for (let alt = 0; alt <= 85; alt += stepDeg) {
+    const stereoCircle = calculateAlmucantarCircle(alt, latitude, r0);
+    const clampedAlt = clamp(alt, -89.9, 90);
+    const horizonRadius = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+    const horizonCircle: AlmucantarCircleData = {
+      altitude: asDegrees(alt),
+      centerY: 0,
+      radius: parseFloat(horizonRadius.toFixed(2)),
+      isHorizon: Math.abs(alt) < 0.1
+    };
+
+    if (!isTransitioning) {
+      list.push(isHorizonTarget ? horizonCircle : stereoCircle);
+    } else {
+      const sourceCircle = isHorizonSource ? horizonCircle : stereoCircle;
+      const targetCircle = isHorizonTarget ? horizonCircle : stereoCircle;
+      const t = clamp(transT, 0, 1);
+      list.push({
+        altitude: asDegrees(alt),
+        centerY: parseFloat(((1 - t) * sourceCircle.centerY + t * targetCircle.centerY).toFixed(2)),
+        radius: parseFloat(((1 - t) * sourceCircle.radius + t * targetCircle.radius).toFixed(2)),
+        isHorizon: Math.abs(alt) < 0.1
+      });
+    }
   }
   return list;
 }

@@ -15,6 +15,7 @@ export const ArmillaryAlidadeLayer: React.FC<ArmillaryAlidadeLayerProps> = ({
 }) => {
   if (!showRule || alidadeOpacity <= 0.05) return null;
 
+  const alidadeScale = 0.92 + 0.08 * alidadeOpacity;
   const rad = (ruleAngleDeg * Math.PI) / 180;
   const sinA = Math.sin(rad);
   const cosA = Math.cos(rad);
@@ -24,6 +25,7 @@ export const ArmillaryAlidadeLayer: React.FC<ArmillaryAlidadeLayerProps> = ({
       className="cursor-grab active:cursor-grabbing select-none"
       style={{ touchAction: 'none' }}
       opacity={alidadeOpacity}
+      transform={`scale(${alidadeScale})`}
       onDragStart={(e) => {
         e.preventDefault();
         e.stopPropagation();

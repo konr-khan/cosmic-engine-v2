@@ -47,6 +47,7 @@ import {
   projectTopocentricHorizon,
   calculateAlmucantarCircle,
   generateAlmucantars,
+  generateContinuousAlmucantars,
   calculatePlanetaryHour,
   generateArmillaryModel,
   computeProjection2D,
@@ -1291,6 +1292,15 @@ describe('cosmicMath utilities', () => {
       const almucantars = generateAlmucantars(47.06, 15, 100);
       expect(almucantars.length).toBeGreaterThanOrEqual(6);
       expect(almucantars[0].altitude).toBe(0);
+
+      // Continuous Almucantar interpolation between stereographic (eccentric) and horizon (concentric)
+      const stereoAlm = generateContinuousAlmucantars(47.06, 'stereographic', undefined, 1.0, 15, 100);
+      const horizonAlm = generateContinuousAlmucantars(47.06, 'horizon', undefined, 1.0, 15, 100);
+      const midAlm = generateContinuousAlmucantars(47.06, 'horizon', 'stereographic', 0.5, 15, 100);
+
+      expect(stereoAlm.length).toBe(horizonAlm.length);
+      expect(horizonAlm.every(a => a.centerY === 0)).toBe(true); // Horizon is strictly concentric
+      expect(midAlm[0].centerY).toBeCloseTo(stereoAlm[0].centerY * 0.5, 1);
     });
 
     it('calculates historical unequal planetary hours and Chaldean ruler', () => {
