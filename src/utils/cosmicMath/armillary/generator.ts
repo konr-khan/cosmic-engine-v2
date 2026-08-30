@@ -30,7 +30,7 @@ import {
   calculateReteAngleToLST 
 } from './astrolabe';
 import { generateProjectionFocalBeacon } from './focalBeacon';
-import { buildSegmentedSvgPaths } from './paths';
+import { buildSegmentedSvgPaths, generateParametricRing3D } from './paths';
 
 /**
  * Generates the complete dynamic Gyro-Morph Armillary Model data structure at 60 FPS.
@@ -336,198 +336,189 @@ export function generateArmillaryModel(params: {
   const alidadeOpacity = (1 - transT) * sourceGeom.alidadeOpacity + transT * targetGeom.alidadeOpacity;
 
   // -------------------------------------------------------------
-  // Celestial & Orbital Ring Paths
+  // Celestial & Orbital Ring Paths (Unified Parametric Pipeline)
   // -------------------------------------------------------------
   const rings: ArmillaryRingPath[] = [];
   const NUM_SAMPLES = 72;
 
   // 0. Orbital Path Ring (Keplerian / Ecliptic orbit with rigid plane tilt)
-  const orbitRingVertices: ArmillaryRingVertex[] = [];
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const angleRad = (i / NUM_SAMPLES) * 2 * Math.PI;
-    const a = r0 * 1.1;
-    const isTargetHelio = projectionMode === 'heliocentric';
-    const isSourceHelio = fromProjectionMode === 'heliocentric';
-    const isHelioT = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
+  const isTargetHelio = projectionMode === 'heliocentric';
+  const isSourceHelio = fromProjectionMode === 'heliocentric';
+  const isHelioT = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
+  const aOrb = r0 * 1.1;
+  const eOrb = exaggerateEccentricity ? 0.25 : 0.01671;
+  const bOrb = aOrb * Math.sqrt(1 - eOrb * eOrb);
+  const cOrb = aOrb * eOrb;
+  const tiltRad = toRadians((1 - isHelioT) * obliquity);
 
-    const e = exaggerateEccentricity ? 0.25 : 0.01671;
-    const b = a * Math.sqrt(1 - e * e);
-    const c = a * e;
-
-    const xOrb = a * Math.cos(angleRad) + (exaggerateEccentricity ? -c * 0.5 * isHelioT : 0);
-    const zOrb = (isHelioT * b + (1 - isHelioT) * a) * Math.sin(angleRad);
-
-    // Smoothly tilt the orbital plane from Ecliptic obliquity (23.44°) to Heliocentric ecliptic (0°)
-    const tiltRad = toRadians((1 - isHelioT) * obliquity);
-    const p3dOrb: Vector3D = {
-      x: xOrb,
-      y: zOrb * Math.sin(tiltRad),
-      z: zOrb * Math.cos(tiltRad)
-    };
-    orbitRingVertices.push(transformVertex(p3dOrb));
-  }
-  const orbitPaths = buildSegmentedSvgPaths(orbitRingVertices);
-  rings.push({
-    id: 'orbit_path',
-    label: 'Orbital Path',
-    color: '#38bdf8', // Sky Blue
-    frontStrokeWidth: 1.6,
-    backStrokeWidth: 0.8,
-    vertices: orbitRingVertices,
-    ...orbitPaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'orbit_path',
+        label: 'Orbital Path',
+        color: '#38bdf8', // Sky Blue
+        frontStrokeWidth: 1.6,
+        backStrokeWidth: 0.8,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => {
+          const angleRad = t * 2 * Math.PI;
+          const xOrb = aOrb * Math.cos(angleRad) + (exaggerateEccentricity ? -cOrb * 0.5 * isHelioT : 0);
+          const zOrb = (isHelioT * bOrb + (1 - isHelioT) * aOrb) * Math.sin(angleRad);
+          return {
+            x: xOrb,
+            y: zOrb * Math.sin(tiltRad),
+            z: zOrb * Math.cos(tiltRad)
+          };
+        }
+      },
+      transformVertex
+    )
+  );
 
   // 1. Lunar Orbit Ring (5.14° Inclined around Earth)
-  const lunarOrbitVertices: ArmillaryRingVertex[] = [];
   const isHelioMode = projectionMode === 'heliocentric';
   const lunarOrbitRadius = isHelioMode ? 16 : 26;
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const angleRad = (i / NUM_SAMPLES) * 2 * Math.PI;
-    const incRad = toRadians(5.14);
-    const epsRad = toRadians(obliquity);
+  const incRad = toRadians(5.14);
+  const epsRad = toRadians(obliquity);
 
-    // Position relative to Earth
-    const xRel = lunarOrbitRadius * Math.cos(angleRad);
-    const yRel = lunarOrbitRadius * Math.sin(angleRad) * Math.sin(incRad);
-    const zRel = lunarOrbitRadius * Math.sin(angleRad) * Math.cos(incRad);
-
-    // Apply obliquity if geocentric frame
-    const p3dLunar: Vector3D = isHelioMode
-      ? { x: blendedEarth3D.x + xRel, y: blendedEarth3D.y + yRel, z: blendedEarth3D.z + zRel }
-      : {
-          x: blendedEarth3D.x + xRel,
-          y: blendedEarth3D.y + yRel * Math.cos(epsRad) - zRel * Math.sin(epsRad),
-          z: blendedEarth3D.z + yRel * Math.sin(epsRad) + zRel * Math.cos(epsRad)
-        };
-
-    lunarOrbitVertices.push(transformVertex(p3dLunar));
-  }
-  const lunarOrbitPaths = buildSegmentedSvgPaths(lunarOrbitVertices);
-  rings.push({
-    id: 'lunar_orbit',
-    label: 'Lunar Orbit (5.14° Inclined)',
-    color: '#cbd5e1', // Silver/Slate
-    frontStrokeWidth: 1.2,
-    backStrokeWidth: 0.6,
-    vertices: lunarOrbitVertices,
-    ...lunarOrbitPaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'lunar_orbit',
+        label: 'Lunar Orbit (5.14° Inclined)',
+        color: '#cbd5e1', // Silver/Slate
+        frontStrokeWidth: 1.2,
+        backStrokeWidth: 0.6,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => {
+          const angleRad = t * 2 * Math.PI;
+          const xRel = lunarOrbitRadius * Math.cos(angleRad);
+          const yRel = lunarOrbitRadius * Math.sin(angleRad) * Math.sin(incRad);
+          const zRel = lunarOrbitRadius * Math.sin(angleRad) * Math.cos(incRad);
+          return isHelioMode
+            ? { x: blendedEarth3D.x + xRel, y: blendedEarth3D.y + yRel, z: blendedEarth3D.z + zRel }
+            : {
+                x: blendedEarth3D.x + xRel,
+                y: blendedEarth3D.y + yRel * Math.cos(epsRad) - zRel * Math.sin(epsRad),
+                z: blendedEarth3D.z + yRel * Math.sin(epsRad) + zRel * Math.cos(epsRad)
+              };
+        }
+      },
+      transformVertex
+    )
+  );
 
   // 2. Celestial Equator Ring (Dec = 0°)
-  const equatorVertices: ArmillaryRingVertex[] = [];
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const ra = (i / NUM_SAMPLES) * 360;
-    const p3d = equatorialToCartesian3D(ra, 0, r0);
-    equatorVertices.push(transformVertex(p3d));
-  }
-  const eqPaths = buildSegmentedSvgPaths(equatorVertices);
-  rings.push({
-    id: 'equator',
-    label: 'Celestial Equator',
-    color: '#10b981', // Emerald
-    frontStrokeWidth: 2.0,
-    backStrokeWidth: 1.0,
-    vertices: equatorVertices,
-    ...eqPaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'equator',
+        label: 'Celestial Equator',
+        color: '#10b981', // Emerald
+        frontStrokeWidth: 2.0,
+        backStrokeWidth: 1.0,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => equatorialToCartesian3D(t * 360, 0, r0)
+      },
+      transformVertex
+    )
+  );
 
   // 3. Ecliptic Rete Ring (Inclined at 23.44°, Rotates with LST or Free Rete Offset)
-  const eclipticVertices: ArmillaryRingVertex[] = [];
-  const epsRad = toRadians(obliquity);
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const lDeg = (i / NUM_SAMPLES) * 360;
-    const lRad = toRadians(lDeg);
-    const xBase = r0 * Math.cos(lRad);
-    const yBase = r0 * Math.sin(lRad) * Math.sin(epsRad);
-    const zBase = r0 * Math.sin(lRad) * Math.cos(epsRad);
-    const p3dRotated = rotateEuler3D({ x: xBase, y: yBase, z: zBase }, 0, reteOffset, 0);
-    eclipticVertices.push(transformVertex(p3dRotated));
-  }
-  const eclPaths = buildSegmentedSvgPaths(eclipticVertices);
-  rings.push({
-    id: 'ecliptic',
-    label: 'Ecliptic (Zodiac Rete)',
-    color: '#f59e0b', // Amber/Gold
-    frontStrokeWidth: 2.2,
-    backStrokeWidth: 1.0,
-    vertices: eclipticVertices,
-    ...eclPaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'ecliptic',
+        label: 'Ecliptic (Zodiac Rete)',
+        color: '#f59e0b', // Amber/Gold
+        frontStrokeWidth: 2.2,
+        backStrokeWidth: 1.0,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => {
+          const lRad = toRadians(t * 360);
+          const xBase = r0 * Math.cos(lRad);
+          const yBase = r0 * Math.sin(lRad) * Math.sin(epsRad);
+          const zBase = r0 * Math.sin(lRad) * Math.cos(epsRad);
+          return rotateEuler3D({ x: xBase, y: yBase, z: zBase }, 0, reteOffset, 0);
+        }
+      },
+      transformVertex
+    )
+  );
 
   // 4. Tropic of Cancer (Dec = +23.44° - Muted Antique Brass)
-  const cancerVertices: ArmillaryRingVertex[] = [];
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const ra = (i / NUM_SAMPLES) * 360;
-    const p3d = equatorialToCartesian3D(ra, obliquity, r0);
-    cancerVertices.push(transformVertex(p3d));
-  }
-  const cancerPaths = buildSegmentedSvgPaths(cancerVertices);
-  rings.push({
-    id: 'tropic_cancer',
-    label: 'Tropic of Cancer (+23.44°)',
-    color: '#d97706', // Muted Antique Brass / Amber
-    frontStrokeWidth: 0.9,
-    backStrokeWidth: 0.5,
-    vertices: cancerVertices,
-    ...cancerPaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'tropic_cancer',
+        label: 'Tropic of Cancer (+23.44°)',
+        color: '#d97706', // Muted Antique Brass / Amber
+        frontStrokeWidth: 0.9,
+        backStrokeWidth: 0.5,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => equatorialToCartesian3D(t * 360, obliquity, r0)
+      },
+      transformVertex
+    )
+  );
 
   // 5. Tropic of Capricorn (Dec = -23.44° - Muted Slate/Silver)
-  const capricornVertices: ArmillaryRingVertex[] = [];
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const ra = (i / NUM_SAMPLES) * 360;
-    const p3d = equatorialToCartesian3D(ra, -obliquity, r0);
-    capricornVertices.push(transformVertex(p3d));
-  }
-  const capricornPaths = buildSegmentedSvgPaths(capricornVertices);
-  rings.push({
-    id: 'tropic_capricorn',
-    label: 'Tropic of Capricorn (-23.44°)',
-    color: '#94a3b8', // Muted Slate
-    frontStrokeWidth: 0.9,
-    backStrokeWidth: 0.5,
-    vertices: capricornVertices,
-    ...capricornPaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'tropic_capricorn',
+        label: 'Tropic of Capricorn (-23.44°)',
+        color: '#94a3b8', // Muted Slate
+        frontStrokeWidth: 0.9,
+        backStrokeWidth: 0.5,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => equatorialToCartesian3D(t * 360, -obliquity, r0)
+      },
+      transformVertex
+    )
+  );
 
   // 6. Local Horizon Ring (Alt = 0°)
-  const horizonVertices: ArmillaryRingVertex[] = [];
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const az = (i / NUM_SAMPLES) * 360;
-    const p3dHoriz = horizontalToCartesian3D(0, az, r0);
-    const p3dEq = rotateEuler3D(p3dHoriz, -(90 - latitude), 0, 0);
-    horizonVertices.push(transformVertex(p3dEq));
-  }
-  const horizPaths = buildSegmentedSvgPaths(horizonVertices);
-  rings.push({
-    id: 'horizon',
-    label: 'Local Horizon',
-    color: '#06b6d4', // Cyan
-    frontStrokeWidth: 2.0,
-    backStrokeWidth: 1.0,
-    vertices: horizonVertices,
-    ...horizPaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'horizon',
+        label: 'Local Horizon',
+        color: '#06b6d4', // Cyan
+        frontStrokeWidth: 2.0,
+        backStrokeWidth: 1.0,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => {
+          const p3dHoriz = horizontalToCartesian3D(0, t * 360, r0);
+          return rotateEuler3D(p3dHoriz, -(90 - latitude), 0, 0);
+        }
+      },
+      transformVertex
+    )
+  );
 
   // 7. Solstitial Colure Ring (RA = 90° and 270° plane, x = 0)
-  const colureVertices: ArmillaryRingVertex[] = [];
-  for (let i = 0; i <= NUM_SAMPLES; i++) {
-    const theta = (i / NUM_SAMPLES) * 2 * Math.PI;
-    const x = 0;
-    const y = r0 * Math.sin(theta);
-    const z = r0 * Math.cos(theta);
-    colureVertices.push(transformVertex({ x, y, z }));
-  }
-  const colurePaths = buildSegmentedSvgPaths(colureVertices);
-  rings.push({
-    id: 'colure',
-    label: 'Solstitial Colure',
-    color: '#64748b', // Slate
-    frontStrokeWidth: 1.2,
-    backStrokeWidth: 0.8,
-    vertices: colureVertices,
-    ...colurePaths
-  });
+  rings.push(
+    generateParametricRing3D(
+      {
+        id: 'colure',
+        label: 'Solstitial Colure',
+        color: '#64748b', // Slate
+        frontStrokeWidth: 1.2,
+        backStrokeWidth: 0.8,
+        sampleCount: NUM_SAMPLES,
+        samplePoint: (t) => {
+          const theta = t * 2 * Math.PI;
+          return {
+            x: 0,
+            y: r0 * Math.sin(theta),
+            z: r0 * Math.cos(theta)
+          };
+        }
+      },
+      transformVertex
+    )
+  );
 
   // 8. Celestial Navigational Stars (Rotates with Rete)
   const stars = ASTROLABE_STARS.map((s) => {

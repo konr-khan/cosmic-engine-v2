@@ -2,9 +2,8 @@ import { useMemo } from 'react';
 import { 
   CONFIG, 
   getJulianDate, 
-  calculateSolarPosition, 
+  calculateEphemerisFrame,
   calculateDaylightDurationPrecise,
-  calculateLunarPosition,
   getPhaseName,
   toRadians,
   toDegrees
@@ -75,31 +74,27 @@ export const useCosmicEngine = (
 
   return useMemo(() => {
     const JD = julianDate;
-
-    const solarPos = calculateSolarPosition(JD);
+    const frame = calculateEphemerisFrame(JD, latitude, longitude, useAnalemma);
+    const { solarPos } = frame;
     const { declination, equationOfTime, n, lambda: solarLambda } = solarPos;
-    const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
-    
-    const eotCorrection = useAnalemma ? equationOfTime : 0;
-    const solarNoon = 12 - (longitude / 15) - (eotCorrection / 60);
-    const dayLen = calculateDaylightDurationPrecise(latitude, declination, OFFICIAL);
+    const { CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
     
     const solarData: SolarAlmanacData = {
-      dayLength: dayLen,
+      dayLength: frame.dayLength,
       civil: calculateDaylightDurationPrecise(latitude, declination, CIVIL),
       nautical: calculateDaylightDurationPrecise(latitude, declination, NAUTICAL),
       astronomical: calculateDaylightDurationPrecise(latitude, declination, ASTRONOMICAL),
-      sunrise: solarNoon - (dayLen / 2),
-      sunset: solarNoon + (dayLen / 2),
-      solarNoon,
-      equationOfTime: eotCorrection,
+      sunrise: frame.sunrise,
+      sunset: frame.sunset,
+      solarNoon: frame.solarNoon,
+      equationOfTime: frame.equationOfTime,
       daysSinceEpoch: n,
-      noonElevation: 90 - Math.abs(latitude - declination),
+      noonElevation: frame.noonElevation,
       declination,
       lambda: solarLambda,
       eclipticLongitude: solarLambda,
-      isPolarNight: dayLen <= 0,
-      isMidnightSun: dayLen >= 24,
+      isPolarNight: frame.isPolarNight,
+      isMidnightSun: frame.isMidnightSun,
       distanceAU: solarPos.distanceAU,
       distanceKm: solarPos.distanceKm,
       orbitalSpeedKms: solarPos.orbitalSpeedKms,
@@ -112,7 +107,7 @@ export const useCosmicEngine = (
     let orbitalData: OrbitalData | null = null;
 
     if (isOrbitalActive) {
-      const lunarPos = calculateLunarPosition(JD);
+      const lunarPos = frame.lunarPos;
       const { earthOrbitRadius, moonOrbitRadius, daysInYear, earthRadius } = CONFIG.ORBIT;
 
       const earthTheta = (n / daysInYear) * 2 * Math.PI;

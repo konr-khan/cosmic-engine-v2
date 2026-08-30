@@ -31,7 +31,7 @@ The architecture cleanly decouples:
 | F6 | Seamless Depth Stroke Unification | Unify depth-split strokes (solid front $z \ge 0$, dashed back $z < 0$) into 100% solid opacity without flicker or double-drawing as $\lambda \ge 0.85$ (continuous scaling across $\lambda \in [0.85, 1.0]$). | M2 | ORIGINAL_REQUEST §R2 |
 | F7 | Analytical Projection & Tolerance Unit Tests | Unit tests verifying Ecliptic center ($Y_c = -R_0 \tan\epsilon$) and radius ($R_{\text{ecl}} = R_0 / \cos\epsilon$) within $< 10^{-4}$ tolerance, and absence of Cartesian chord-cutting artifacts across intermediate morphing frames. | M1, M3 | ORIGINAL_REQUEST §AC |
 | F8 | Staged Camera & Depth Unification Component Tests | Component tests verifying camera alignment completion at $\lambda = 0.45$, back stroke opacity unification at $\lambda \ge 0.85$, and user 3D angle restoration. | M2, M3 | ORIGINAL_REQUEST §AC |
-| F9 | Full Test Suite & Strict Typecheck Compliance | Execute full Vitest suite (`npm test -- --run`) ensuring all 211 tests across 9 suites pass and `npm run typecheck` passes with zero errors under strict branded nominal typing. | M3 | ORIGINAL_REQUEST §AC |
+| F9 | Full Test Suite & Strict Typecheck Compliance | Execute full Vitest suite (`npm test -- --run`) ensuring all 223 tests across 10 suites pass and `npm run typecheck` passes with zero errors under strict branded nominal typing. | M3 | ORIGINAL_REQUEST §AC |
 
 ---
 
@@ -39,9 +39,9 @@ The architecture cleanly decouples:
 
 | # | Target | Description | Status |
 |---|--------|-------------|--------|
-| R1 | Unified 3D $\to$ 2D Space-Curve Pipeline | Consolidate ring transformation, $SO(3)$ Euler projection, depth-splitting ($z_{\text{cam}} \gtrless 0$), and continuous dash blending across Equator, Tropics, Ecliptic, and Almucantars into a single functional pipeline. | PLANNED |
-| R2 | Centralized `EphemerisFrame` Snapshot | Calculate solar/lunar ephemeris elements once per tick in `cosmicStore` and distribute immutable frame slices across widgets to eliminate redundant per-frame trigonometric calculations. | PLANNED |
-| R3 | Decoupled Camera Staging Hook (`useStagedCamera`) | Extract camera Euler angle interpolation and canonical pole snapping ($\lambda \in [0.0, 0.45]$) from `GyroArmillaryView.tsx` and `ArmillarySvgCanvas.tsx` into a reusable custom hook. | PLANNED |
+| R1 | Unified 3D $\to$ 2D Space-Curve Pipeline | Consolidate ring transformation, $SO(3)$ Euler projection, depth-splitting ($z_{\text{cam}} \gtrless 0$), and continuous dash blending across Equator, Tropics, Ecliptic, and Almucantars into `generateParametricRing3D`. | DONE |
+| R2 | Centralized `EphemerisFrame` Snapshot | Calculate solar/lunar ephemeris elements in one pass via `calculateEphemerisFrame` and distribute immutable frame slices across widgets to eliminate redundant per-frame calculations. | DONE |
+| R3 | Decoupled Camera Staging Hook (`useStagedCamera`) | Extract camera Euler angle interpolation and canonical pole snapping ($\lambda \in [0.0, 0.45]$) from `GyroArmillaryView.tsx` into a reusable custom hook `useStagedCamera`. | DONE |
 
 ---
 

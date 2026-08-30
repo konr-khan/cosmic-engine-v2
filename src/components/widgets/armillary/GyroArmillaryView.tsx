@@ -2,8 +2,7 @@ import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { 
   generateArmillaryModel, 
   getJulianDate, 
-  calculateSolarPosition, 
-  calculateLunarPosition 
+  calculateEphemerisFrame
 } from '../../../utils/cosmicMath';
 import { 
   GyroArmillaryViewProps, 
@@ -65,21 +64,20 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   }, [activeDate, activeTime]);
 
   // Ephemeris derivations for Sun & Moon
-  const fallbackSolar = useMemo(() => calculateSolarPosition(julianDate), [julianDate]);
-  const fallbackLunar = useMemo(() => calculateLunarPosition(julianDate), [julianDate]);
+  const fallbackFrame = useMemo(() => calculateEphemerisFrame(julianDate, latitude, longitude), [julianDate, latitude, longitude]);
 
-  const sunRaDeg = fallbackSolar.rightAscension ?? 0;
-  const sunDecDeg = solarData?.declination ?? fallbackSolar.declination ?? 0;
-  const sunLambdaDeg = fallbackSolar.lambda ?? 0;
+  const sunRaDeg = fallbackFrame.solarPos.rightAscension ?? 0;
+  const sunDecDeg = solarData?.declination ?? fallbackFrame.solarPos.declination ?? 0;
+  const sunLambdaDeg = fallbackFrame.solarPos.lambda ?? 0;
 
-  const moonRaDeg = orbitalData?.lunarPos?.rightAscension ?? fallbackLunar.rightAscension ?? 0;
-  const moonDecDeg = orbitalData?.lunarEvents?.declination ?? fallbackLunar.declination ?? 0;
-  const moonLambdaDeg = fallbackLunar.lambda ?? 0;
-  const moonPhase = orbitalData?.phase?.value ?? fallbackLunar.phase ?? 0.5;
+  const moonRaDeg = orbitalData?.lunarPos?.rightAscension ?? fallbackFrame.lunarPos.rightAscension ?? 0;
+  const moonDecDeg = orbitalData?.lunarEvents?.declination ?? fallbackFrame.lunarPos.declination ?? 0;
+  const moonLambdaDeg = fallbackFrame.lunarPos.lambda ?? 0;
+  const moonPhase = orbitalData?.phase?.value ?? fallbackFrame.lunarPos.phase ?? 0.5;
 
   const dayOfWeek = activeDate.getUTCDay();
-  const sunrise = solarData?.sunrise ?? 6;
-  const sunset = solarData?.sunset ?? 18;
+  const sunrise = solarData?.sunrise ?? fallbackFrame.sunrise;
+  const sunset = solarData?.sunset ?? fallbackFrame.sunset;
 
   // Generate 60 FPS Gyro-Morph Model
   const model = useMemo(() => {

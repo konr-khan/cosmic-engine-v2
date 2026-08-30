@@ -55,7 +55,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 9 modules, 211 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 10 modules, 223 tests)
 
 ### Essential Commands
 
@@ -124,8 +124,9 @@ Cosmic Engine V2.0/
 │   │   │   │   └── generator.ts      # generateArmillaryModel with staged morph & clamped Sun bead
 │   │   │   ├── armillary.ts     # Re-export bridge to ./armillary
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
-│   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (130 tests)
+│   │   │   ├── geoData.ts       # World landmass continent outline polygons
+│   │   │   └── frame.ts         # Centralized EphemerisFrame snapshot generator
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (133 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -145,6 +146,8 @@ Cosmic Engine V2.0/
 │       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (24 tests)
 │       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (5 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
+│       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook
+│       │   │   ├── useStagedCamera.test.ts   # Vitest tests for camera staging & memory (9 tests)
 │       │   │   ├── m2_adversarial.test.ts    # Vitest tests for 2-phase camera staging & memory (6 tests)
 │       │   │   ├── canvas/                   # Modular SVG canvas layers
 │       │   │   │   ├── index.ts              # Canvas barrel export

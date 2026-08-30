@@ -6,3 +6,4 @@ export * from './eclipse';
 export * from './projection';
 export * from './geoData';
 export * from './armillary';
+export * from './frame';

@@ -58,3 +58,12 @@ export const toDegrees = (rad: Radians | number): Degrees => {
 export const julianDateToCenturies = (jd: JulianDate | number): JulianCenturies => {
   return ((jd - 2451545.0) / 36525.0) as JulianCenturies;
 };
+
+/**
+ * Verified boundary conversion gatekeepers between presentation coordinates and nominal branded radians.
+ */
+export const latToRadians = (lat: Latitude): Radians => toRadians(asDegrees(lat));
+export const lonToRadians = (lon: Longitude): Radians => toRadians(asDegrees(lon));
+export const radiansToLat = (rad: Radians): Latitude => toDegrees(rad) as Latitude;
+export const radiansToLon = (rad: Radians): Longitude => toDegrees(rad) as Longitude;
+

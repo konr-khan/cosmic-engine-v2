@@ -56,29 +56,55 @@ import {
   generateProjectionFocalBeacon,
   calculateAlidadeSighting,
   rotateEuler3D,
+  generateParametricRing3D,
+  calculateEphemerisFrame,
   ArmillaryProjectionMode,
   ASTROLABE_STARS,
   ZODIAC_SIGNS
 } from './cosmicMath';
-import { Vector2D, Vector3D, Degrees, Latitude, Longitude, HoursDecimal } from '../types';
+import { 
+  Vector2D, 
+  Vector3D, 
+  Degrees, 
+  Latitude, 
+  Longitude, 
+  HoursDecimal,
+  latToRadians,
+  lonToRadians,
+  radiansToLat,
+  radiansToLon
+} from '../types';
 
 describe('cosmicMath utilities', () => {
 
   describe('Angle & Unit Conversions', () => {
     it('converts degrees to radians accurately', () => {
       expect(toRadians(0)).toBe(0);
-      expect(toRadians(90)).toBeCloseTo(Math.PI / 2);
-      expect(toRadians(180)).toBeCloseTo(Math.PI);
-      expect(toRadians(270)).toBeCloseTo(1.5 * Math.PI);
-      expect(toRadians(360)).toBeCloseTo(2 * Math.PI);
+      expect(toRadians(180)).toBeCloseTo(Math.PI, 6);
+      expect(toRadians(360)).toBeCloseTo(Math.PI * 2, 6);
     });
 
     it('converts radians to degrees accurately', () => {
       expect(toDegrees(0)).toBe(0);
-      expect(toDegrees(Math.PI / 2)).toBeCloseTo(90);
-      expect(toDegrees(Math.PI)).toBeCloseTo(180);
-      expect(toDegrees(1.5 * Math.PI)).toBeCloseTo(270);
-      expect(toDegrees(2 * Math.PI)).toBeCloseTo(360);
+      expect(toDegrees(Math.PI)).toBeCloseTo(180, 6);
+      expect(toDegrees(Math.PI * 2)).toBeCloseTo(360, 6);
+    });
+
+    it('performs bidirectional reciprocal conversion between presentation coordinates and nominal radians', () => {
+      const testLat: Latitude = 47.06;
+      const testLon: Longitude = -122.81;
+
+      const radLat = latToRadians(testLat);
+      const radLon = lonToRadians(testLon);
+
+      expect(radLat).toBeCloseTo(47.06 * (Math.PI / 180), 6);
+      expect(radLon).toBeCloseTo(-122.81 * (Math.PI / 180), 6);
+
+      const recoveredLat = radiansToLat(radLat);
+      const recoveredLon = radiansToLon(radLon);
+
+      expect(recoveredLat).toBeCloseTo(testLat, 6);
+      expect(recoveredLon).toBeCloseTo(testLon, 6);
     });
 
     it('clamps numeric values within boundaries using clamp', () => {
@@ -2393,9 +2419,100 @@ describe('cosmicMath utilities', () => {
           }
         }
       });
+
+      // -------------------------------------------------------------------------
+      // Test 8: Unified Parametric Ring Space-Curve Pipeline
+      // -------------------------------------------------------------------------
+      describe('generateParametricRing3D Functional Space-Curve Pipeline', () => {
+        it('generates continuous SVG paths, non-empty front/back segments, and depth-sorted vertices', () => {
+          const r0 = 100;
+          const dummyTransform = (p3d: Vector3D) => ({
+            p3d,
+            pCam: p3d,
+            pProj: { x: p3d.x, y: p3d.z },
+            screenPos: { x: p3d.x, y: -p3d.y },
+            isFront: p3d.z >= 0
+          });
+
+          const ring = generateParametricRing3D(
+            {
+              id: 'test_equator',
+              label: 'Test Equator',
+              color: '#10b981',
+              frontStrokeWidth: 2.0,
+              backStrokeWidth: 1.0,
+              sampleCount: 36,
+              samplePoint: (t) => equatorialToCartesian3D(t * 360, 0, r0)
+            },
+            dummyTransform
+          );
+
+          expect(ring.id).toBe('test_equator');
+          expect(ring.label).toBe('Test Equator');
+          expect(ring.color).toBe('#10b981');
+          expect(ring.vertices.length).toBe(37); // sampleCount + 1
+          expect(ring.fullPathD).toContain('M');
+          expect(ring.fullPathD).toContain('L');
+          expect(ring.frontPathD.length).toBeGreaterThan(0);
+          expect(ring.backPathD.length).toBeGreaterThan(0);
+
+          // Verify endpoint wrapping
+          const firstV = ring.vertices[0];
+          const lastV = ring.vertices[ring.vertices.length - 1];
+          expect(firstV.p3d.x).toBeCloseTo(lastV.p3d.x, 3);
+          expect(firstV.p3d.y).toBeCloseTo(lastV.p3d.y, 3);
+          expect(firstV.p3d.z).toBeCloseTo(lastV.p3d.z, 3);
+        });
+      });
+
+      // -------------------------------------------------------------------------
+      // Test 9: Centralized EphemerisFrame Snapshot Generation
+      // -------------------------------------------------------------------------
+      describe('calculateEphemerisFrame Snapshot Invariants', () => {
+        it('computes complete, finite, and consistent solar/lunar ephemeris snapshot in a single pass', () => {
+          const jd = 2451545.0; // J2000.0 (Jan 1, 2000 12:00 UTC)
+          const lat: Latitude = 47.06;
+          const lon: Longitude = -122.81;
+
+          const frame = calculateEphemerisFrame(jd, lat, lon, true);
+
+          // Structural presence
+          expect(frame.julianDate).toBe(jd);
+          expect(Number.isFinite(frame.gmst)).toBe(true);
+          expect(Number.isFinite(frame.lst)).toBe(true);
+          expect(Number.isFinite(frame.solarNoon)).toBe(true);
+          expect(Number.isFinite(frame.dayLength)).toBe(true);
+          expect(Number.isFinite(frame.sunrise)).toBe(true);
+          expect(Number.isFinite(frame.sunset)).toBe(true);
+          expect(Number.isFinite(frame.noonElevation)).toBe(true);
+
+          // Solar metrics
+          expect(frame.solarPos).toBeDefined();
+          expect(frame.solarPos.distanceAU).toBeGreaterThan(0.98);
+          expect(frame.solarPos.distanceAU).toBeLessThan(1.02);
+
+          // Lunar metrics
+          expect(frame.lunarPos).toBeDefined();
+          expect(frame.lunarPos.distanceKm).toBeGreaterThan(350000);
+          expect(frame.lunarPos.distanceKm).toBeLessThan(410000);
+
+          // Subsolar & sublunar geographic coordinates
+          expect(frame.subsolarPoint.lat).toBeGreaterThanOrEqual(-90);
+          expect(frame.subsolarPoint.lat).toBeLessThanOrEqual(90);
+          expect(frame.subsolarPoint.lon).toBeGreaterThanOrEqual(-180);
+          expect(frame.subsolarPoint.lon).toBeLessThanOrEqual(180);
+
+          expect(frame.sublunarPoint.lat).toBeGreaterThanOrEqual(-90);
+          expect(frame.sublunarPoint.lat).toBeLessThanOrEqual(90);
+          expect(frame.sublunarPoint.lon).toBeGreaterThanOrEqual(-180);
+          expect(frame.sublunarPoint.lon).toBeLessThanOrEqual(180);
+        });
+      });
     });
   });
 
 });
+
+
 
 

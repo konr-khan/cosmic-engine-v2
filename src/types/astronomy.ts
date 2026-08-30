@@ -3,8 +3,31 @@
  * Astronomical data structures for solar almanac, lunar ephemeris, syzygy eclipse geometry, and tidal vectors.
  */
 
-import { Degrees, HoursDecimal, JulianDate } from './units';
+import { Degrees, HoursDecimal, JulianDate, Latitude, Longitude } from './units';
 import { OrbitalPositions, OrbitalAngles } from './coordinates';
+
+/**
+ * High-performance immutable snapshot of instantaneous solar, lunar, and coordinate ephemeris.
+ * Flat structure optimized for shallow equality checks (shallowEqual) in React 19 external store subscriptions.
+ */
+export interface EphemerisFrame {
+  julianDate: JulianDate;
+  gmst: Degrees;
+  lst: Degrees;
+  solarPos: SolarPositionFull;
+  lunarPos: LunarPositionFull;
+  subsolarPoint: { lat: Latitude; lon: Longitude };
+  sublunarPoint: { lat: Latitude; lon: Longitude };
+  solarNoon: HoursDecimal;
+  declination: Degrees;
+  equationOfTime: number;
+  dayLength: HoursDecimal;
+  sunrise: HoursDecimal;
+  sunset: HoursDecimal;
+  noonElevation: Degrees;
+  isPolarNight: boolean;
+  isMidnightSun: boolean;
+}
 
 /** Standard twilight elevation thresholds below true horizon */
 export interface TwilightThresholds {

@@ -23,9 +23,12 @@ Adopt a **pragmatic hybrid typing model**:
    - `asDegrees(n: number): Degrees` / `asRadians(n: number): Radians`: **Scalar assertion / identity wrapping (0 math operations)**. Asserts that an unbranded primitive scalar is *already* physically in that unit space (e.g., constant coefficients, parsed JSON payloads).
    - `toRadians(deg: Degrees): Radians` / `toDegrees(rad: Radians): Degrees`: **Physical mathematical transformation** ($n \times \frac{\pi}{180}$ or $n \times \frac{180}{\pi}$).
    - `julianDateToCenturies(jd: JulianDate): JulianCenturies` and `createUTCDate(year, month, day): Date`: Verified bridges between unit spaces and calendar frames.
-3. **Ergonomic Aliases for UI & Boundary Crossing**:
+3. **Ergonomic Aliases for UI & Boundary Crossing Gatekeepers**:
    - Presentation parameters (`Latitude`, `Longitude`, `HoursDecimal`, `DayOfYear`, `Pixels`) remain standard `number` aliases to eliminate casting friction across React inputs and SVG coordinates.
-   - *Boundary Contract*: When observer `Latitude` or `Longitude` is passed into core trigonometric formulas (e.g., $\sin\phi$ or $\cos\phi$ in hour angle calculations), it must be explicitly converted to `Radians` via `toRadians(asDegrees(lat))` before entering `Math.sin()` or `Math.cos()`.
+   - *Boundary Gatekeepers*: Dedicated reciprocal gatekeeper functions in [`src/types/units.ts`](../../src/types/units.ts) serve as verified domain bridges:
+     - `latToRadians(lat: Latitude): Radians` and `radiansToLat(rad: Radians): Latitude`
+     - `lonToRadians(lon: Longitude): Radians` and `radiansToLon(rad: Radians): Longitude`
+   - *Boundary Contract*: When observer `Latitude` or `Longitude` is passed into core trigonometric formulas (e.g., $\sin\phi$ or $\cos\phi$ in hour angle calculations), it must be explicitly converted to `Radians` via `latToRadians(lat)` (or `toRadians(asDegrees(lat))`) before entering `Math.sin()` or `Math.cos()`.
 4. **Deterministic UTC Calendar Invariance**:
    - Astronomical Julian dates (`getJulianDate`) and day-of-year calculations (`getDayOfYear`) explicitly evaluate calendar fields via UTC accessors (`getUTCFullYear`, `getUTCMonth`, `getUTCDate`), preventing 1-day temporal skew across client machine timezones.
 5. **Topocentric vs. Geocentric Ephemeris Contracts**:

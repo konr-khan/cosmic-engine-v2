@@ -140,19 +140,20 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
    - Coordinates, sliders, and timeline parameters (`Latitude`, `Longitude`, `HoursDecimal`, `DayOfYear`, `Pixels`) remain pure `number` type aliases.
    - This eliminates casting friction across React components, SVG viewports, and native `<input>` form handlers.
 3. **Conversion Gatekeepers & Boundary Contracts**:
-   - Dedicated gatekeeper utility functions (`toRadians(deg: Degrees): Radians`, `toDegrees(rad: Radians): Degrees`, `julianDateToCenturies(jd: JulianDate): JulianCenturies`) serve as the verified, compile-time bridges between distinct unit spaces.
-   - When crossing from UI parameters (`Latitude`, `Longitude`) into trigonometric solvers, parameters are explicitly wrapped and converted via `toRadians(asDegrees(lat))` or dedicated helpers to ensure type safety without unsafe casts.
+   - Dedicated gatekeeper utility functions (`toRadians(deg: Degrees): Radians`, `toDegrees(rad: Radians): Degrees`, `julianDateToCenturies(jd: JulianDate): JulianCenturies`, `latToRadians(lat: Latitude): Radians`, `radiansToLat(rad: Radians): Latitude`, `lonToRadians(lon: Longitude): Radians`, `radiansToLon(rad: Radians): Longitude`) serve as verified, compile-time bridges between distinct unit spaces.
+   - When crossing from UI parameters (`Latitude`, `Longitude`) into trigonometric solvers, parameters are explicitly wrapped and converted via `latToRadians(lat)` (or `toRadians(asDegrees(lat))`) to ensure type safety without unsafe casts.
 
 ---
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, and asynchronous worker operations across 9 specialized domain suites (**211 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, and asynchronous worker operations across 10 specialized domain suites (**223 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
-| **Cosmic Math** | `src/utils/cosmicMath.test.ts` (130 tests) | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, closed-form stereographic conformal ring invariants ($R_0 \sec\epsilon$), and 5-model Gyro-Morph continuum |
+| **Cosmic Math** | `src/utils/cosmicMath.test.ts` (133 tests) | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, closed-form stereographic conformal ring invariants ($R_0 \sec\epsilon$), and 5-model Gyro-Morph continuum |
 | **Observatory Widgets** | `src/components/widgets/widgets.test.ts` (24 tests) | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 8 observatory window subsystems, including camera pole timing and depth stroke unification |
+| **Staged Camera Hook** | `src/components/widgets/armillary/useStagedCamera.test.ts` (9 tests) | 2-phase Euler angle interpolation ($\lambda \le 0.45$), canonical pole locking ($\lambda \ge 0.45$), memory angle retention, and reverse transition unwinding |
 | **Camera Staging Adversarial** | `src/components/widgets/armillary/m2_adversarial.test.ts` (6 tests) | Camera alignment timing ($0 \le \lambda \le 0.45$), canonical pole lock ($0.45 \le \lambda \le 1.0$), geodesic wrapping, and custom user 3D angle restoration |
 | **Depth Stroke Unification** | `src/components/widgets/depthUnificationStress.test.ts` (5 tests) | Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\lambda \in [0.85, 1.0]$ |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (13 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
