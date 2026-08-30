@@ -8,6 +8,14 @@ import { ArmillaryProjectionMode } from './types';
  * Stereographic Conformal Projection
  * Projects from South Celestial Pole (0, -R0, 0) onto equatorial plane y = 0.
  * Conformal property: preserves all circles and angles (MATH_SPEC.md Section 7.E.1).
+ * 
+ * Mathematical Invariants:
+ * - Celestial Equator (dec = 0°): Projects to concentric circle with radius R = R0.
+ * - Tropic of Cancer (dec = +eps): Projects to concentric circle with radius R = R0 * tan((90° - eps) / 2).
+ * - Tropic of Capricorn (dec = -eps): Projects to concentric circle with radius R = R0 * tan((90° + eps) / 2).
+ * - Ecliptic Great Circle (inclined by eps): Projects to eccentric circle with
+ *   Center (X_c, Y_c) = (0, -R0 * tan(eps)) and Radius R_ecl = R0 / cos(eps) = R0 * sec(eps).
+ * 
  * Singularity Guard: Bounded finite clamping for points near South Pole (y -> -R0).
  */
 export function projectStereographicConformal(p: Vector3D, r0: number = 100): Vector2D {

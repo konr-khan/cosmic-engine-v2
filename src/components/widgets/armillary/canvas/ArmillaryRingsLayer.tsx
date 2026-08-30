@@ -1,20 +1,28 @@
 import React from 'react';
-import { ArmillaryRingPath, ZodiacSignSegment } from '../types';
+import { ArmillaryRingPath } from '../types';
 import { ZODIAC_SIGNS } from '../../../../utils/cosmicMath';
 
 export interface ArmillaryRingsLayerProps {
   rings: ArmillaryRingPath[];
-  is3D: boolean;
+  is3D?: boolean;
+  morphLambda?: number;
   orbitRingOpacity: number;
   celestialRingsOpacity: number;
 }
 
 export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
   rings,
-  is3D,
+  is3D = true,
+  morphLambda,
   orbitRingOpacity,
   celestialRingsOpacity
 }) => {
+  const lambda = morphLambda !== undefined ? morphLambda : (is3D ? 0.0 : 1.0);
+  const u = Math.max(0, Math.min(1, (lambda - 0.85) / 0.15));
+  const backOpacityFactor = 0.35 + 0.65 * u;
+  const dashGap = 2 * (1 - u);
+  const strokeDasharray = u >= 0.99 ? 'none' : (u <= 0.01 ? '3,2' : `3,${parseFloat(dashGap.toFixed(2))}`);
+
   return (
     <>
       {/* Back Ring Segments (Depth Sorted: zCam < 0) */}
@@ -22,17 +30,19 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
         {rings.map((ring) => {
           const isOrbitPath = ring.id === 'orbit_path';
           const ringOpacity = isOrbitPath ? orbitRingOpacity : celestialRingsOpacity;
-          if (ringOpacity <= 0.01) return null;
+          if (ringOpacity <= 0.01 || !ring.backPathD) return null;
+
+          const strokeWidth = ring.backStrokeWidth + (ring.frontStrokeWidth - ring.backStrokeWidth) * u;
 
           return (
             <path
               key={`back-${ring.id}`}
-              d={is3D ? ring.backPathD : ring.fullPathD}
+              d={ring.backPathD}
               fill="none"
               stroke={ring.color}
-              strokeWidth={ring.backStrokeWidth}
-              strokeDasharray={is3D ? '3,2' : 'none'}
-              opacity={ringOpacity * (is3D ? 0.35 : 0.85)}
+              strokeWidth={strokeWidth}
+              strokeDasharray={strokeDasharray}
+              opacity={ringOpacity * backOpacityFactor}
             />
           );
         })}
@@ -43,7 +53,7 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
         {rings.map((ring) => {
           const isOrbitPath = ring.id === 'orbit_path';
           const ringOpacity = isOrbitPath ? orbitRingOpacity : celestialRingsOpacity;
-          if (ringOpacity <= 0.01) return null;
+          if (ringOpacity <= 0.01 || !ring.frontPathD) return null;
 
           return (
             <path

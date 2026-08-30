@@ -145,14 +145,16 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
       }
     }
 
-    setIsDraggingCamera(true);
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      pitch: camera.pitch,
-      yaw: camera.yaw,
-      reteStartAngle: 0
-    };
+    if (is3D) {
+      setIsDraggingCamera(true);
+      dragStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        pitch: camera.pitch,
+        yaw: camera.yaw,
+        reteStartAngle: 0
+      };
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -299,6 +301,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         <ArmillaryRingsLayer
           rings={rings}
           is3D={is3D}
+          morphLambda={morphLambda}
           orbitRingOpacity={orbitRingOpacity}
           celestialRingsOpacity={celestialRingsOpacity}
         />

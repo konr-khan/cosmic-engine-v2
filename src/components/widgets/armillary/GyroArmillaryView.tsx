@@ -14,6 +14,46 @@ import { ArmillaryHeaderControls } from './ArmillaryHeaderControls';
 import { ArmillarySvgCanvas } from './ArmillarySvgCanvas';
 import { ArmillaryTelemetryHud } from './ArmillaryTelemetryHud';
 
+/**
+ * 2-Phase Staged SO(3) Camera Choreography Helper:
+ * Phase A (lambda in [0.0 -> 0.45]): pCam = min(1, lambda / 0.45). Smoothly reorient pitch -> 90°/0° and yaw -> 0° using shortest angular geodesic delta.
+ * Phase B (lambda in [0.45 -> 1.0]): Camera remains strictly locked at canonical pole (90°, 0° for stereographic/horizon, 0°, 0° for rojas).
+ */
+export const computeStagedCamera = (
+  targetMode: ArmillaryProjectionMode,
+  lambda: number,
+  saved3D: ArmillaryCameraState,
+  fromMode?: ArmillaryProjectionMode
+): ArmillaryCameraState => {
+  const is3DTarget = targetMode === 'heliocentric' || targetMode === 'geocentric';
+  if (is3DTarget && lambda <= 0.001) {
+    return saved3D;
+  }
+
+  // Canonical projection pole:
+  // Rojas Orthographic aligns along solstitial colure (pitch = 0°, yaw = 0°)
+  // Stereographic and Topocentric Horizon align with Zenith/NCP pole (pitch = 90°, yaw = 0°)
+  const isRojas = targetMode === 'rojas' || (is3DTarget && fromMode === 'rojas');
+  const targetCam: ArmillaryCameraState = isRojas
+    ? { pitch: 0, yaw: 0, roll: 0 }
+    : { pitch: 90, yaw: 0, roll: 0 };
+
+  // Phase A: Alignment completes across lambda in [0.0 -> 0.45]
+  // Phase B: Camera is locked at canonical pole for lambda in [0.45 -> 1.0]
+  const pCam = Math.max(0, Math.min(1, lambda / 0.45));
+  const deltaPitch = targetCam.pitch - saved3D.pitch;
+  const deltaYaw = (targetCam.yaw - saved3D.yaw + 540) % 360 - 180;
+
+  const pitchVal = parseFloat((saved3D.pitch + deltaPitch * pCam).toFixed(1));
+  const yawVal = parseFloat(((saved3D.yaw + deltaYaw * pCam + 360) % 360).toFixed(1));
+
+  return {
+    pitch: Object.is(pitchVal, -0) ? 0 : pitchVal,
+    yaw: Object.is(yawVal, -0) || yawVal === 360 ? 0 : yawVal,
+    roll: 0
+  };
+};
+
 export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   solarData,
   orbitalData,
@@ -51,16 +91,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   });
 
   const getCanonicalCameraForMode = useCallback((mode: ArmillaryProjectionMode, lambda: number): ArmillaryCameraState => {
-    const is3D = mode === 'heliocentric' || mode === 'geocentric' || lambda <= 0.05;
-    if (is3D) {
-      return saved3DCameraRef.current;
-    }
-    if (mode === 'rojas') {
-      return { pitch: 0, yaw: 0, roll: 0 };
-    }
-    // stereographic and horizon
-    return { pitch: 90, yaw: 0, roll: 0 };
-  }, []);
+    return computeStagedCamera(mode, lambda, saved3DCameraRef.current, fromProjectionMode);
+  }, [fromProjectionMode]);
 
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
   const activeDate = currentDate;
@@ -161,12 +193,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
 
     const startLambda = morphLambda;
     const startT = isModeSwitch ? 0.0 : 1.0;
-
-    // Staged SO(3) Camera Alignment
-    const startCam = { ...camera };
-    const targetCam = getCanonicalCameraForMode(targetMode, targetLambda);
-    const deltaPitch = targetCam.pitch - startCam.pitch;
-    const deltaYaw = (targetCam.yaw - startCam.yaw + 540) % 360 - 180;
+    const saved3D = saved3DCameraRef.current;
+    const prevMode = projectionMode;
 
     const startTime = performance.now();
     const duration = 650; // ms ease-out cubic spring curve
@@ -178,21 +206,17 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       const ease = 1 - Math.pow(1 - progress, 3);
 
       const nextLambda = startLambda + (targetLambda - startLambda) * ease;
-      setMorphLambda(parseFloat(nextLambda.toFixed(3)));
+      const clampedLambda = parseFloat(nextLambda.toFixed(3));
+      setMorphLambda(clampedLambda);
 
       if (isModeSwitch) {
         const nextT = startT + (1.0 - startT) * ease;
         setProjectionTransitionT(parseFloat(nextT.toFixed(3)));
       }
 
-      // Smoothly swing camera into projection pole alignment
-      const nextPitch = startCam.pitch + deltaPitch * ease;
-      const nextYaw = (startCam.yaw + deltaYaw * ease + 360) % 360;
-      setCamera({
-        pitch: parseFloat(nextPitch.toFixed(1)),
-        yaw: parseFloat(nextYaw.toFixed(1)),
-        roll: 0
-      });
+      // Smoothly swing camera into projection pole alignment using 2-phase staged choreography
+      const nextCam = computeStagedCamera(targetMode, clampedLambda, saved3D, prevMode);
+      setCamera(nextCam);
 
       if (progress < 1) {
         animRef.current = requestAnimationFrame(step);
@@ -200,13 +224,13 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         setMorphLambda(targetLambda);
         setProjectionTransitionT(1.0);
         setFromProjectionMode(targetMode);
-        setCamera(targetCam);
+        setCamera(computeStagedCamera(targetMode, targetLambda, saved3D, prevMode));
         animRef.current = null;
       }
     };
 
     animRef.current = requestAnimationFrame(step);
-  }, [camera, getCanonicalCameraForMode, morphLambda, projectionMode]);
+  }, [morphLambda, projectionMode]);
 
   const handleMorphChange = useCallback((newLambda: number) => {
     if (animRef.current) {
@@ -214,22 +238,9 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       animRef.current = null;
     }
     setMorphLambda(newLambda);
-    const is3DTarget = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
-    if (!is3DTarget) {
-      const startCam = saved3DCameraRef.current;
-      const targetCam = projectionMode === 'rojas' 
-        ? { pitch: 0, yaw: 0, roll: 0 } 
-        : { pitch: 90, yaw: 0, roll: 0 };
-      const deltaPitch = targetCam.pitch - startCam.pitch;
-      const deltaYaw = (targetCam.yaw - startCam.yaw + 540) % 360 - 180;
-      const p = Math.max(0, Math.min(1, newLambda));
-      setCamera({
-        pitch: parseFloat((startCam.pitch + deltaPitch * p).toFixed(1)),
-        yaw: parseFloat(((startCam.yaw + deltaYaw * p + 360) % 360).toFixed(1)),
-        roll: 0
-      });
-    }
-  }, [projectionMode]);
+    const nextCam = computeStagedCamera(projectionMode, newLambda, saved3DCameraRef.current, fromProjectionMode);
+    setCamera(nextCam);
+  }, [fromProjectionMode, projectionMode]);
 
   const handleCameraChange = useCallback((newCam: ArmillaryCameraState) => {
     setCamera(newCam);

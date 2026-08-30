@@ -135,12 +135,14 @@ export function generateArmillaryModel(params: {
     );
 
     // 3. Continuous Staged Morph Blend (3D vs 2D)
+    // Phase A (lambda in [0.0, 0.45]): 3D geometry remains 100% spherical (geomLambda = 0) while camera aligns.
+    // Phase B (lambda in [0.45, 1.0]): Unwraps 2D planar geometry with locked canonical camera pole.
     const is3DTarget = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
-    const effectiveLambda = is3DTarget ? 0 : lambdaClamp;
+    const geomLambda = is3DTarget ? 0 : clamp((lambdaClamp - 0.45) / 0.55, 0, 1);
 
-    const screenX = (1 - effectiveLambda) * pCam.x + effectiveLambda * pProj.x;
-    const screenY = (1 - effectiveLambda) * (-pCam.y) + effectiveLambda * (-pProj.y);
-    const isFront = effectiveLambda >= 0.98 ? true : pCam.z >= 0;
+    const screenX = (1 - geomLambda) * pCam.x + geomLambda * pProj.x;
+    const screenY = (1 - geomLambda) * (-pCam.y) + geomLambda * (-pProj.y);
+    const isFront = geomLambda >= 0.85 ? true : pCam.z >= 0;
 
     return {
       p3d,
