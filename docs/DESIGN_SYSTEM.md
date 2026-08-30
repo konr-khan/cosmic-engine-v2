@@ -30,15 +30,25 @@ To maximize information density without adding text clutter, orbital loops and c
 
 ### A. Gyro-Morph Armillary Multi-Model Continuum & SED Astrolabe Styling
 * **5 Unified Framework Modes**: `[☉ Orbit | ⊕ Apparent | 🧭 Rete | 📐 Rojas | 🔭 Horizon]`.
-* **Circle-Preserving Geometry**: All coordinate rings (Equator, Ecliptic, Tropics, Almucantars) maintain strict circularity during 3D unrolling and 2D cross-projection morphs without peanut distortion or vertex pulling.
+* **Decoupled 2-Stage Staged Choreography**:
+  - **Phase A ($\lambda \in [0.0 \to 0.45]$)**: Rotates camera pitch and yaw to canonical poles ($\text{Pitch} = 90^\circ / 0^\circ, \text{Yaw} = 0^\circ$) via shortest angular geodesic delta while maintaining 100% spherical 3D geometry ($\lambda_{\text{geom}} = 0$).
+  - **Phase B ($\lambda \in [0.45 \to 1.0]$)**: Locks camera at canonical pole while continuous projective flattening ($\lambda_{\text{geom}} \in [0, 1]$) and progressive plate decorations materialize.
+  - **Symmetric Reverse Transitions**: Re-folds 2D plate into 3D sphere before restoring custom user 3D viewing angles with zero drift.
+* **Closed-Form Stereographic Conformal Orbit Target**:
+  - **Celestial Equator**: Concentric circle of radius $R_0$.
+  - **Tropics of Cancer & Capricorn**: Concentric circles of radii $R_0 \tan((90^\circ \mp \epsilon)/2)$.
+  - **Ecliptic Great Circle**: Eccentric circle with Center $(0, -R_0 \tan(\epsilon/2))$ and Radius $R_{\text{ecl}} = R_0 / \cos\epsilon = R_0 \sec\epsilon$, preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
+* **Continuous Depth-Split Stroke Unification**:
+  - **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: Solid stroke (`frontStrokeWidth = 2.0-2.2px`, `opacity = 0.9-1.0`).
+  - **Back Hemisphere ($z_{\text{cam}} < 0$)**: Dashed stroke (`strokeDasharray = "3,2"`, `backStrokeWidth = 1.0px`, `opacity = 0.35`).
+  - **Smooth Blending ($\lambda \in [0.85 \to 1.0]$)**: Back segments continuously interpolate opacity ($0.35 \to 1.0$), width ($1.0\text{px} \to 2.0\text{px}$), and dash gap closure ($2 \cdot (1 - u)$), unifying into seamless solid astrolabe plate lines without duplicate paths.
 * **Progressive Radial Expansion**:
   - **Outer Double-Grooved Brass Bezel**: Expands radially (`transform="scale(0.94 + 0.06 * opacity)"`, `#b45309`/`#78350f`, $0.75\text{px}$) with $0.5\text{px}-0.75\text{px}$ micro-ticks and delicate monospace Roman numeral micro-labels (`text-[8px] font-mono fill-amber-300/80`).
   - **Tympan Altitude Arcs (Almucantars)**: Smoothly glide from eccentric stereographic circles to concentric horizon stereonet rings (`transform="scale(0.94 + 0.06 * progress)"`, `#06b6d4` for horizon, `#64748b` dashed for altitudes).
   - **Alidade Sighting Arm**: Expands radially (`transform="scale(0.92 + 0.08 * opacity)"`) from the center pivot reticle pin.
-* **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: **Solid Stroke** with full opacity (`opacity="0.9"`) representing the celestial sphere facing the viewer.
-* **Back Hemisphere ($z_{\text{cam}} < 0$)**: **Dashed Stroke** (`stroke-dasharray="3 2"`, `opacity="0.35"`) representing the far side of the celestial sphere.
 * **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 glowing milestone halo nodes (Perihelion `#a855f7`, Solstices `#38bdf8`/`#f43f5e`, Equinoxes `#34d399`/`#fbbf24`, Aphelion `#818cf8`) featuring geodesic spherical SLERP trajectories.
 * **Earth Bead**: Sky blue core (`#0284c7`, `#38bdf8`) with atmospheric glow and $23.44^\circ$ axial tilt vector.
+* **Parametric Sun Bead**: Mathematically clamped directly to $(r_0 \cos\lambda, r_0 \sin\lambda \sin\epsilon, r_0 \sin\lambda \cos\epsilon)$ on the Ecliptic track across all 4 seasons and free Rete rotation (residual $< 1.42 \times 10^{-13}\text{ px}$).
 * **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$) or freely in Astrolabe Solver Mode.
 * **Navigational Astrolabe Stars**: Rendered as delicate diamond florets (`strokeWidth="0.6"`, `r="1.2-3.2px"`) with hairline dashed flame pointers and glowing magnitude halos.
 * **SED Hairline Alidade Sighting Arm**: Slim $1.6\text{px}$ brass ruler body with dark wood inlay (`#78350f`, $0.75\text{px}$), cyan laser sightline (`#38bdf8`, $0.75\text{px}$ dashed), dual pinhole pinnule sighting vanes, and central reticle pin.

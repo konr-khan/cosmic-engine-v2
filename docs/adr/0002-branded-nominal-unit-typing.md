@@ -31,6 +31,8 @@ Adopt a **pragmatic hybrid typing model**:
 5. **Topocentric vs. Geocentric Ephemeris Contracts**:
    - Geocentric solvers (`calculateLunarPosition`, `calculateSolarPosition`) return celestial spherical coordinates $(\lambda, \beta, \delta, \alpha, \Delta)$ alongside true Meeus Chapter 48 phase angles $i$ and disc illumination $k$.
    - Topocentric solvers (`calculateLunarEvents`, `calculateParallacticAngle`) explicitly take observer coordinates (`Latitude`, `Longitude`) and compute horizon-relative transit, rise/set, and parallactic tilt $\eta$.
+6. **Gyro-Morph Coordinate & Projection Invariants**:
+   - Closed-form stereographic conformal ring projections (Ecliptic, Equator, Tropics, Horizon) and parametric Sun bead clamping in `src/utils/cosmicMath/armillary/` strictly accept branded `Degrees` / `Radians` parameters, preventing trigonometric angular errors during continuous topological morphing.
 
 ## Consequences
 

@@ -16,6 +16,7 @@ In early iterations, two critical performance bottlenecks emerged:
    - Time animation ticking runs via `requestAnimationFrame` outside React's render lifecycle.
    - The custom hook `useChronometerStore` implements React 19's `useSyncExternalStore` with stable selector `useRef` caching and shallow equality comparators (`shallowEqual`).
    - State updates verify value equivalence (including `Date.getTime()`) before notifying subscribers.
+   - Hot-path 60 FPS visual transforms (such as Gyro-Morph 2-phase camera staging, free Rete rotation, and Alidade sighting) integrate smoothly with the chronometer store without triggering React component scheduler churn.
 
 2. **Singleton Worker Manager (`EphemerisWorkerManager`)**:
    - A single application-level Web Worker singleton handles all heavy ephemeris calculations (Meeus lunar series, 2-step iterative rise/set solvers, syzygy eclipse shadow geometry, and 365-day annual matrices).

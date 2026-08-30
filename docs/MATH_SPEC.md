@@ -276,10 +276,12 @@ x = R_0 \cos\delta \cos\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delt
    x_{\text{stereo}} = R_0 \frac{x}{R_0 + y}, \quad z_{\text{stereo}} = R_0 \frac{z}{R_0 + y}
    \]
    * *Singularity Guard*: For points near the South Celestial Pole ($y \to -R_0$), the denominator diverges ($R_0 + y \to 0$). Implementations apply a singularity check $|R_0 + y| < 10^{-6}$ and finite canvas bounding clamp to prevent unbounded division by zero.
-   * *Almucantar (Altitude $a$) Circles*: Center $y_c = R_0 \frac{\cos\phi}{\sin\phi + \sin a}$, Radius $r_a = R_0 \frac{\cos a}{\sin\phi + \sin a}$.
-   * *Equator Circle*: Radius $R_0$.
-   * *Tropic of Cancer*: $R_{\text{Can}} = R_0 \tan\left(\frac{90^\circ - 23.44^\circ}{2}\right)$.
-   * *Tropic of Capricorn*: $R_{\text{Cap}} = R_0 \tan\left(\frac{90^\circ + 23.44^\circ}{2}\right)$.
+   * *Conformal Circle Invariants*: Under stereographic projection, every circle on $S^2$ maps to an exact circle in the plane:
+     - **Celestial Equator ($\delta = 0^\circ$)**: Concentric circle with radius $R = R_0$.
+     - **Tropic of Cancer ($\delta = +\epsilon$)**: Concentric circle with radius $R_{\text{Can}} = R_0 \tan\left(\frac{90^\circ - \epsilon}{2}\right)$.
+     - **Tropic of Capricorn ($\delta = -\epsilon$)**: Concentric circle with radius $R_{\text{Cap}} = R_0 \tan\left(\frac{90^\circ + \epsilon}{2}\right)$.
+     - **Ecliptic Great Circle (inclined by $\epsilon = 23.439^\circ$)**: Eccentric circle with Center $(X_c, Y_c) = (0, -R_0 \tan(\epsilon/2))$ and Radius $R_{\text{ecl}} = \frac{R_0}{\cos\epsilon} = R_0 \sec\epsilon$. In screen coordinates where $Y$ is inverted, the center is $(0, +R_0 \tan\epsilon)$.
+     - **Almucantar (Altitude $a$) Circles**: Center $y_c = R_0 \frac{\cos\phi}{\sin\phi + \sin a}$, Radius $r_a = R_0 \frac{\cos a}{\sin\phi + \sin a}$.
 
 2. **Universal Rojas Orthographic Projection (Solstitial Colure Plane)**:
    Projected orthographically onto $z = 0$:
@@ -335,21 +337,54 @@ Transitions between 2D historical plates avoid point-wise Cartesian chord pullin
    \]
 
 3. **Continuous Almucantars (`generateContinuousAlmucantars`)**:
-   Altitude circles transition continuously between eccentric stereographic circles and concentric horizon stereonet circles:
+   Altitude circles transition continuously between eccentric stereographic circles and concentric horizon stereonet rings:
    \[
    y_c(t) = (1 - t) y_{c,\text{stereo}} + t \cdot 0, \quad r_a(t) = (1 - t) r_{a,\text{stereo}} + t \left[ R_0 \tan\left(\frac{90^\circ - a}{2}\right) \right]
    \]
 
-#### 3. Staged $SO(3)$ Camera Alignment Choreography
-When transitioning between 3D spherical modes ($\lambda = 0$) and 2D astrolabe plates ($\lambda = 1$), camera Euler angles $(\psi, \theta)$ smoothly reorient to canonical projection poles:
-* `stereographic` & `horizon`: $(\psi_{\text{canon}}, \theta_{\text{canon}}) = (90^\circ, 0^\circ)$ (Zenith / North Pole overhead view).
-* `rojas`: $(\psi_{\text{canon}}, \theta_{\text{canon}}) = (0^\circ, 0^\circ)$ (Solstitial colure side-on view).
-* `heliocentric` & `geocentric`: Restores the user's custom saved 3D camera angles.
-Interpolation uses ease-out cubic spring physics with shortest-angular-delta yaw unwrapping:
+#### 3. Decoupled 2-Stage Staged $SO(3)$ Camera Alignment Choreography
+When transitioning between 3D spherical modes ($\lambda = 0$) and 2D astrolabe plates ($\lambda = 1$), camera Euler angles $(\psi, \theta)$ and geometric flattening $\lambda_{\text{geom}}$ decouple into 2 sequential intervals:
+* **Phase A ($\lambda \in [0.0 \to 0.45]$ — Camera Alignment)**:
+  \[
+  \lambda_{\text{cam}} = \operatorname{clamp}\left(\frac{\lambda}{0.45}, 0, 1\right), \quad \lambda_{\text{geom}} = 0
+  \]
+  Camera Euler angles swing smoothly to canonical projection poles via shortest geodesic angular delta:
+  \[
+  \Delta\theta_{\text{shortest}} = (\theta_{\text{canon}} - \theta_0 + 540^\circ) \bmod 360^\circ - 180^\circ
+  \]
+  \[
+  \psi(\lambda) = \psi_0 + (\psi_{\text{canon}} - \psi_0) \cdot \lambda_{\text{cam}}, \quad \theta(\lambda) = (\theta_0 + \Delta\theta_{\text{shortest}} \cdot \lambda_{\text{cam}} + 360^\circ) \bmod 360^\circ
+  \]
+  Where $(\psi_{\text{canon}}, \theta_{\text{canon}}) = (90^\circ, 0^\circ)$ for stereographic and horizon, and $(0^\circ, 0^\circ)$ for rojas. Because $\lambda_{\text{geom}} = 0$, 3D spherical geometry remains completely rigid, eliminating diagonal axis shear.
+
+* **Phase B ($\lambda \in [0.45 \to 1.0]$ — Geometric Flattening & Plate Materialization)**:
+  \[
+  \lambda_{\text{geom}} = \operatorname{clamp}\left(\frac{\lambda - 0.45}{0.55}, 0, 1\right), \quad \text{Camera locked at } (\psi_{\text{canon}}, \theta_{\text{canon}})
+  \]
+  Screen vertex positions blend continuously from 3D camera projection to 2D target projection:
+  \[
+  \begin{pmatrix} x_{\text{screen}} \\ y_{\text{screen}} \end{pmatrix} = (1 - \lambda_{\text{geom}}) \begin{pmatrix} x_{\text{cam}} \\ -y_{\text{cam}} \end{pmatrix} + \lambda_{\text{geom}} \begin{pmatrix} x_{\text{proj}} \\ -y_{\text{proj}} \end{pmatrix}
+  \]
+  Progressive plate decorations (bezel, almucantars, alidade) fade in smoothly across $\lambda_{\text{geom}} \in [0, 1]$.
+
+* **Symmetric Reverse Transitions ($2\text{D} \to 3\text{D}$)**:
+  Plate decorations fade and 2D geometry re-folds into 3D sphere ($\lambda: 1.0 \to 0.45$) under locked pole before camera restores saved user angles $(\psi_{\text{user}}, \theta_{\text{user}})$ ($\lambda: 0.45 \to 0.0$) with zero angular drift.
+
+#### 4. Continuous Depth-Split Stroke Unification
+To avoid visual popping between depth-split 3D spherical rendering (solid front $z_{\text{cam}} \ge 0$, dashed back $z_{\text{cam}} < 0$) and unified 2D astrolabe plates, back segment paths continuously scale over $\lambda \in [0.85, 1.0]$:
 \[
-\theta(t) = \theta_0 + (\Delta\theta_{\text{shortest}}) \cdot E(t), \quad E(t) = 1 - (1 - t)^3
+u = \operatorname{clamp}\left(\frac{\lambda - 0.85}{0.15}, 0, 1\right)
 \]
-Staged choreography orchestrates camera alignment ($\lambda \in [0.0, 0.4]$), geometric unwrapping ($\lambda \in [0.2, 0.8]$), and progressive plate materialization ($\lambda \in [0.15, 1.0]$).
+\[
+\text{opacity}_{\text{back}}(\lambda) = \text{opacity}_{\text{ring}} \cdot (0.35 + 0.65 \cdot u)
+\]
+\[
+w_{\text{back}}(\lambda) = w_{\text{back}, 0} + (w_{\text{front}} - w_{\text{back}, 0}) \cdot u
+\]
+\[
+\text{dashGap}(u) = 2 \cdot (1 - u) \implies \text{strokeDasharray} = \begin{cases} \text{'none'} & \text{if } u \ge 0.99 \\ \text{'3,2'} & \text{if } u \le 0.01 \\ \text{'3,'} + \text{dashGap} & \text{otherwise} \end{cases}
+\]
+At $\lambda \ge 0.85$, $z_{\text{cam}} < 0$ segments seamlessly blend to $100\%$ solid opacity and match front stroke width without duplicating path elements.
 
 ### G. Free Rete Spinning & Analog Solar Time Solver
 When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{free}}$:

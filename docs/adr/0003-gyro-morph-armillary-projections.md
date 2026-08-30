@@ -21,14 +21,17 @@ The visualizer must satisfy three conflicting constraints:
 1. **Universal Any-to-Any Vector Interpolation & Staged Choreography**:
    - Pure domain math functions implemented in `src/utils/cosmicMath/armillary/`.
    - Generalizes morphing across all 5 coordinate model spaces (`☉ Orbit`, `⊕ Apparent`, `🧭 Rete`, `📐 Rojas`, `🔭 Horizon`) via continuous topological vector blending and ease-out cubic spring physics; formal derivations and staged timing intervals are canonically defined in [`../MATH_SPEC.md#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections`](../MATH_SPEC.md#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections).
-   - Staged choreography coordinates camera pitch/yaw alignment ($T \in [0.0, 0.4]$), geometric unwrapping ($T \in [0.2, 0.8]$), and astrolabe plate decoration materialization ($T \in [0.6, 1.0]$).
+   - Strict 2-phase decoupling separates camera orientation from geometric planar flattening:
+     - **Phase A ($\lambda \in [0.0 \to 0.45]$)**: Align camera orientation $(\text{Pitch} \to 90^\circ / 0^\circ, \text{Yaw} \to 0^\circ)$ via shortest geodesic angular delta while geometry remains a rigid 3D sphere ($\lambda_{\text{geom}} = 0$).
+     - **Phase B ($\lambda \in [0.45 \to 1.0]$)**: Camera locks at the canonical projection pole while continuous projective flattening ($\lambda_{\text{geom}} \in [0, 1]$) and progressive plate decorations materialize.
+     - **Symmetric Reverse Transitions**: Folds 2D plate back into 3D sphere under locked camera before restoring custom user 3D viewing angles with zero drift.
 
 2. **Analytical Circle Almucantar Derivations**:
    - For observer latitude $\phi$ and altitude $a$, compute stereographic Almucantar centers and radii using exact analytical circle formulas (see [`../MATH_SPEC.md#e-2d-astrolabe-historical-projections`](../MATH_SPEC.md#e-2d-astrolabe-historical-projections)) rather than approximating with discretized line segments.
 
-3. **Depth-Sorted Front/Back Vector Splitting**:
+3. **Depth-Sorted Front/Back Vector Splitting & Continuous Unification**:
    - Segments with $z_{\text{cam}} \ge 0$ render with solid, vibrant strokes; segments with $z_{\text{cam}} < 0$ render with dashed, muted strokes (`buildSegmentedSvgPaths`).
-   - At $\lambda \ge 0.98$, all segments unify into solid 2D astrolabe lines.
+   - Over $\lambda \in [0.85, 1.0]$, back segment strokes continuously unify: opacity interpolates from $0.35 \to 1.0$, stroke width expands to match front width, and dash gaps close ($2 \cdot (1 - u)$ where $u = \operatorname{clamp}((\lambda - 0.85)/0.15, 0, 1)$), producing a seamless solid line without double-drawing `fullPathD`.
 
 4. **Spring Physics Transition Loop**:
    - Animate transition progress $T$ using `requestAnimationFrame` with ease-out cubic deceleration ($1 - (1 - p)^3$) over 500–550ms.
@@ -55,11 +58,13 @@ The visualizer must satisfy three conflicting constraints:
     - Pure spherical linear interpolation on $S^2$ for the Sun, Moon, Earth, and all 6 seasonal orbital milestones, preserving exact orbital radii ($r = R_0$) and eliminating chord-cutting or center-dipping artifacts.
     - Rigid $X$-axis rotation $\alpha(t) = (1 - t) \cdot 23.44^\circ$ for Keplerian-to-Ecliptic orbital ring transitions.
 
-11. **Staged $SO(3)$ Camera Alignment Choreography & Memory**:
-    - Reorients camera pitch and yaw to canonical projection poles ($\text{Pitch} = 90^\circ, \text{Yaw} = 0^\circ$ for Stereographic and Horizon; $\text{Pitch} = 0^\circ, \text{Yaw} = 0^\circ$ for Rojas) during flattening.
-    - Caches and restores the user's custom 3D viewing perspective in Heliocentric and Geocentric modes, completely eliminating oblique axis shearing.
+11. **Decoupled 2-Stage $SO(3)$ Camera Alignment Choreography & Memory**:
+    - Reorients camera pitch and yaw to canonical projection poles ($\text{Pitch} = 90^\circ, \text{Yaw} = 0^\circ$ for Stereographic and Horizon; $\text{Pitch} = 0^\circ, \text{Yaw} = 0^\circ$ for Rojas) during Phase A ($\lambda \in [0.0, 0.45]$) while geometry remains 100% spherical 3D.
+    - Locks camera at canonical pole during Phase B ($\lambda \in [0.45, 1.0]$) while projective unwrapping executes.
+    - Caches and restores the user's custom 3D viewing perspective in Heliocentric and Geocentric modes, completely eliminating diagonal axis shear during flattening.
 
-12. **Continuous Conformal & Circle-Preserving Projections (`computeContinuousProjection2D`)**:
+12. **Continuous Conformal & Closed-Form Circle-Preserving Projections (`computeContinuousProjection2D`)**:
+    - **Closed-Form Stereographic Conformal Orbit Target**: The Ecliptic ring projects directly as an eccentric circle with Center $Y_c = -R_0\tan(\epsilon/2)$ and Radius $R_{\text{ecl}} = R_0/\cos\epsilon = R_0\sec\epsilon$, preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
     - Stereographic $\longleftrightarrow$ Horizon: Continuous $SO(3)$ observer latitude rotation $\phi(t) = 90^\circ - (90^\circ - \phi) \cdot t$ and $LST(t)$ before applying conformal stereographic projection, mathematically guaranteeing that every celestial circle remains an exact circle throughout the transition.
     - Stereographic $\longleftrightarrow$ Rojas: Continuous optical perspective focal pull $d(t) \in [R_0, \infty)$ combined with $90^\circ$ solstitial colure rotation, transforming circles into Rojas parallel chords without vertex pinching.
 
