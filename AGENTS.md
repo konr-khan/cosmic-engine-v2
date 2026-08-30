@@ -11,7 +11,11 @@ Welcome to **Cosmic Engine V2.0**. This document provides essential architectura
 Key capabilities include:
 - **Gyro-Morph Dynamic Armillary & Astrolabe**: 
   - **Universal 5-Model Continuum**: Seamlessly unites the Copernican Solar System and historical Astrolabes across 5 continuous modes: `☉ Orbit` (Heliocentric Keplerian planetary orbit), `⊕ Apparent` (Geocentric apparent motion & 3D Celestial Armillary Sphere), `🧭 Rete` (Stereographic Conformal planisphere), `📐 Rojas` (Universal Rojas Orthographic on solstitial colure), and `🔭 Horizon` (Topocentric Horizon stereonet).
-  - **Continuous 60 FPS Any-to-Any Morph Interpolation & Staged Choreography**: Universal topological vector morphing between any source model and any target model driven by animated ease-out cubic spring physics, with staged camera alignment, geometric unwrapping, and progressive astrolabe plate materialization.
+  - **Spherical SLERP & Geodesic Celestial Trajectories**: Pure great-circle spherical linear interpolation (`slerp3D`) on $S^2$ for the Sun, Moon, Earth, and all 6 seasonal orbital milestones, preserving exact radii and eliminating chord-cutting or center-dipping artifacts.
+  - **Staged $SO(3)$ Camera Alignment Choreography & Memory**: Synchronized camera reorientation to canonical projection poles ($\text{Pitch} = 90^\circ$ for Stereographic/Horizon, $\text{Pitch} = 0^\circ$ for Rojas) while preserving custom user 3D viewing angles in heliocentric and geocentric modes, completely eliminating diagonal axis shear during flattening.
+  - **Continuous Conformal & Circle-Preserving Projections**: Smooth cross-projection transitions (`computeContinuousProjection2D`) with optical focal pulling ($d \in [R_0, \infty)$) and $SO(3)$ observer latitude rotation, ensuring celestial rings maintain their circularity without peanut distortion or vertex pulling.
+  - **Progressive Almucantar & Bezel Materialization**: Smooth radial expansion ($94\% \to 100\%$) of the double-grooved brass bezel, progressive elevation curve fading from $\lambda = 0.15 \to 1.0$, and continuous sliding between eccentric stereographic almucantars and concentric horizon stereonet rings (`generateContinuousAlmucantars`).
+  - **Overhauled Morph $\lambda$ Slider**: Expanded $28\text{px}$ touch target with event isolation (`stopPropagation`, `touch-action: none`) and fluid 60 FPS direct slider-to-canvas binding.
   - **Keplerian Orbital Dynamics & Scale Controls**: True Scale ($1\times$, $e=0.0167$) vs. Exaggerated Eccentricity ($e=0.25$) modes, 6 seasonal milestone halo nodes (Perihelion, Aphelion, Solstices, Equinoxes), and live orbital physics HUD reporting Earth distance (AU/km), velocity (km/s), solar irradiance (%), and apparent diameter (arcmin).
   - **Clamped Ecliptic Track Sun Bead**: Mathematical clamping of the Sun bead directly to the Ecliptic ring curve ($r_0 \cos \lambda, r_0 \sin \lambda \sin \epsilon, r_0 \sin \lambda \cos \epsilon$), eliminating drift across seasons and Rete rotation.
   - **SED Precision Hairline Astrolabe Redesign**: Precision double-grooved hairline brass bezel (`#b45309`/`#78350f`, $0.75\text{px}$), delicate monospace Roman numeral micro-labels, slim $1.6\text{px}$ Alidade sighting arm with cyan laser sightline, and muted almucantars.
@@ -117,7 +121,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── armillary.ts     # Re-export bridge to ./armillary
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   └── geoData.ts       # World landmass continent outline polygons
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (107 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (114 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)

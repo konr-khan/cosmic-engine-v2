@@ -51,6 +51,22 @@ The visualizer must satisfy three conflicting constraints:
 9. **Clamped Ecliptic Track Sun Bead**:
    - Sun bead position $\vec{P}_\odot$ is mathematically clamped directly to the parametric Ecliptic track (see [`../MATH_SPEC.md#b-clamped-ecliptic-track-sun-bead`](../MATH_SPEC.md#b-clamped-ecliptic-track-sun-bead)), eliminating drift across seasons and Rete rotations.
 
+10. **Spherical SLERP & Geodesic Celestial Trajectories (`slerp3D`)**:
+    - Pure spherical linear interpolation on $S^2$ for the Sun, Moon, Earth, and all 6 seasonal orbital milestones, preserving exact orbital radii ($r = R_0$) and eliminating chord-cutting or center-dipping artifacts.
+    - Rigid $X$-axis rotation $\alpha(t) = (1 - t) \cdot 23.44^\circ$ for Keplerian-to-Ecliptic orbital ring transitions.
+
+11. **Staged $SO(3)$ Camera Alignment Choreography & Memory**:
+    - Reorients camera pitch and yaw to canonical projection poles ($\text{Pitch} = 90^\circ, \text{Yaw} = 0^\circ$ for Stereographic and Horizon; $\text{Pitch} = 0^\circ, \text{Yaw} = 0^\circ$ for Rojas) during flattening.
+    - Caches and restores the user's custom 3D viewing perspective in Heliocentric and Geocentric modes, completely eliminating oblique axis shearing.
+
+12. **Continuous Conformal & Circle-Preserving Projections (`computeContinuousProjection2D`)**:
+    - Stereographic $\longleftrightarrow$ Horizon: Continuous $SO(3)$ observer latitude rotation $\phi(t) = 90^\circ - (90^\circ - \phi) \cdot t$ and $LST(t)$ before applying conformal stereographic projection, mathematically guaranteeing that every celestial circle remains an exact circle throughout the transition.
+    - Stereographic $\longleftrightarrow$ Rojas: Continuous optical perspective focal pull $d(t) \in [R_0, \infty)$ combined with $90^\circ$ solstitial colure rotation, transforming circles into Rojas parallel chords without vertex pinching.
+
+13. **Progressive Radial Expansion & Continuous Almucantars (`generateContinuousAlmucantars`)**:
+    - Continuous interpolation of altitude circle centers and radii between eccentric stereographic curves and concentric horizon stereonet rings.
+    - Progressive radial expansion ($94\% \to 100\%$) and smooth opacity fading ($\lambda \in [0.15, 1.0]$) for the brass bezel, tympan almucantars, and alidade sighting rule.
+
 ## Consequences
 
 * **Positive**:

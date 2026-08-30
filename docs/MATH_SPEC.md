@@ -296,11 +296,60 @@ x = R_0 \cos\delta \cos\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delt
    \]
 
 ### F. Universal Any-to-Any Morphing Engine & Staged Choreography
-Any transition from source model $\mathcal{M}_{\text{from}}$ to target model $\mathcal{M}_{\text{to}}$ with transition progress $T \in [0.0, 1.0]$:
+
+#### 1. Spherical SLERP & Geodesic Trajectories (`slerp3D`)
+For any two celestial 3D vectors $\vec{v}_1, \vec{v}_2 \in \mathbb{R}^3$ (Sun, Moon, Earth, and 6 seasonal milestone halo nodes):
 \[
-\vec{P}(T) = (1 - T) \vec{P}_{\text{from}} + T \vec{P}_{\text{to}}
+r_1 = \|\vec{v}_1\|, \quad r_2 = \|\vec{v}_2\|, \quad r(t) = (1 - t) r_1 + t r_2
 \]
-where layer opacities for celestial rings, orbital rings, milestones, stars, bezel, and alidade are continuously interpolated via ease-out cubic spring curve $E(t) = 1 - (1 - t)^3$. Staged choreography orchestrates camera alignment ($\lambda \in [0.0, 0.4]$), geometric unwrapping ($\lambda \in [0.2, 0.8]$), and astrolabe plate decoration materialization ($\lambda \in [0.6, 1.0]$).
+Let $\hat{u}_1 = \vec{v}_1 / r_1$, $\hat{u}_2 = \vec{v}_2 / r_2$, and angle $\Omega = \arccos(\operatorname{clamp}(\hat{u}_1 \cdot \hat{u}_2, -1, 1))$:
+\[
+\vec{v}(t) = r(t) \cdot \left[ \frac{\sin((1 - t)\Omega)}{\sin \Omega} \hat{u}_1 + \frac{\sin(t\Omega)}{\sin \Omega} \hat{u}_2 \right]
+\]
+* *Antipodal Singularity Guard ($\Omega \approx \pi$)*: When $\hat{u}_1 \cdot \hat{u}_2 < -0.9999$, construct an orthogonal unit vector $\hat{n} \perp \hat{u}_1$ and rotate via Rodrigues' formula:
+  \[
+  \vec{v}(t) = r(t) \cdot [\cos(\pi t)\hat{u}_1 + \sin(\pi t)\hat{n}]
+  \]
+* *Collinear / Zero Guard ($\Omega \approx 0$ or $r_i \approx 0$)*: Falls back gracefully to normalized linear lerp.
+
+#### 2. Continuous Conformal & Circle-Preserving Cross-Projections (`computeContinuousProjection2D`)
+Transitions between 2D historical plates avoid point-wise Cartesian chord pulling by operating in continuous projection parameter space:
+1. **Stereographic $\longleftrightarrow$ Horizon Stereonet**:
+   Conformal circle preservation is maintained by continuous $SO(3)$ rotation of the observer reference frame on $S^2$:
+   \[
+   \phi(t) = 90^\circ - (90^\circ - \phi_{\text{user}}) \cdot t, \quad \theta_{\text{LST}}(t) = \theta_{\text{LST}} \cdot t
+   \]
+   Transforming $\vec{P}_{\text{eq}} \to \vec{P}_{\text{horiz}}(t)$ and projecting conformally onto the stereographic plane:
+   \[
+   x(t) = R_0 \frac{x_{\text{rot}}(t)}{R_0 + z_{\text{rot}}(t)}, \quad y(t) = R_0 \frac{y_{\text{rot}}(t)}{R_0 + z_{\text{rot}}(t)}
+   \]
+   Because stereographic projection is conformal at every $\phi(t)$, **every circle on $S^2$ remains an exact circle or line throughout the transition**.
+
+2. **Stereographic $\longleftrightarrow$ Rojas Orthographic**:
+   Continuous transformation from the equatorial plane ($y=0$) to the solstitial colure plane ($z=0$) via $X$-axis rotation $\alpha(t) = t \cdot 90^\circ$ combined with dynamic optical perspective focal pull $d(t) \in [R_0, \infty)$:
+   \[
+   \begin{pmatrix} x_t \\ y_t \\ z_t \end{pmatrix} = \begin{pmatrix} x \\ y \cos\alpha(t) - z \sin\alpha(t) \\ y \sin\alpha(t) + z \cos\alpha(t) \end{pmatrix}, \quad \text{focalScale}(t) = \frac{R_0}{\max(0.1, R_0 + y_t(1 - t))}
+   \]
+   \[
+   x(t) = x_t \cdot \text{focalScale}(t), \quad y(t) = z_t \cdot \text{focalScale}(t)
+   \]
+
+3. **Continuous Almucantars (`generateContinuousAlmucantars`)**:
+   Altitude circles transition continuously between eccentric stereographic circles and concentric horizon stereonet circles:
+   \[
+   y_c(t) = (1 - t) y_{c,\text{stereo}} + t \cdot 0, \quad r_a(t) = (1 - t) r_{a,\text{stereo}} + t \left[ R_0 \tan\left(\frac{90^\circ - a}{2}\right) \right]
+   \]
+
+#### 3. Staged $SO(3)$ Camera Alignment Choreography
+When transitioning between 3D spherical modes ($\lambda = 0$) and 2D astrolabe plates ($\lambda = 1$), camera Euler angles $(\psi, \theta)$ smoothly reorient to canonical projection poles:
+* `stereographic` & `horizon`: $(\psi_{\text{canon}}, \theta_{\text{canon}}) = (90^\circ, 0^\circ)$ (Zenith / North Pole overhead view).
+* `rojas`: $(\psi_{\text{canon}}, \theta_{\text{canon}}) = (0^\circ, 0^\circ)$ (Solstitial colure side-on view).
+* `heliocentric` & `geocentric`: Restores the user's custom saved 3D camera angles.
+Interpolation uses ease-out cubic spring physics with shortest-angular-delta yaw unwrapping:
+\[
+\theta(t) = \theta_0 + (\Delta\theta_{\text{shortest}}) \cdot E(t), \quad E(t) = 1 - (1 - t)^3
+\]
+Staged choreography orchestrates camera alignment ($\lambda \in [0.0, 0.4]$), geometric unwrapping ($\lambda \in [0.2, 0.8]$), and progressive plate materialization ($\lambda \in [0.15, 1.0]$).
 
 ### G. Free Rete Spinning & Analog Solar Time Solver
 When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{free}}$:

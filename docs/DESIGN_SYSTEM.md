@@ -30,14 +30,18 @@ To maximize information density without adding text clutter, orbital loops and c
 
 ### A. Gyro-Morph Armillary Multi-Model Continuum & SED Astrolabe Styling
 * **5 Unified Framework Modes**: `[☉ Orbit | ⊕ Apparent | 🧭 Rete | 📐 Rojas | 🔭 Horizon]`.
-* **SED Hairline Double-Grooved Bezel**: Precision concentric outer rings (`stroke="#b45309"` outer, `stroke="#78350f"` inner, `strokeWidth="0.75"`), $0.5\text{px}-0.75\text{px}$ micro-ticks, and delicate monospace Roman numeral micro-labels (`text-[8px] font-mono fill-amber-300/80`).
+* **Circle-Preserving Geometry**: All coordinate rings (Equator, Ecliptic, Tropics, Almucantars) maintain strict circularity during 3D unrolling and 2D cross-projection morphs without peanut distortion or vertex pulling.
+* **Progressive Radial Expansion**:
+  - **Outer Double-Grooved Brass Bezel**: Expands radially (`transform="scale(0.94 + 0.06 * opacity)"`, `#b45309`/`#78350f`, $0.75\text{px}$) with $0.5\text{px}-0.75\text{px}$ micro-ticks and delicate monospace Roman numeral micro-labels (`text-[8px] font-mono fill-amber-300/80`).
+  - **Tympan Altitude Arcs (Almucantars)**: Smoothly glide from eccentric stereographic circles to concentric horizon stereonet rings (`transform="scale(0.94 + 0.06 * progress)"`, `#06b6d4` for horizon, `#64748b` dashed for altitudes).
+  - **Alidade Sighting Arm**: Expands radially (`transform="scale(0.92 + 0.08 * opacity)"`) from the center pivot reticle pin.
 * **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: **Solid Stroke** with full opacity (`opacity="0.9"`) representing the celestial sphere facing the viewer.
 * **Back Hemisphere ($z_{\text{cam}} < 0$)**: **Dashed Stroke** (`stroke-dasharray="3 2"`, `opacity="0.35"`) representing the far side of the celestial sphere.
-* **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 glowing milestone halo nodes (Perihelion `#a855f7`, Solstices `#38bdf8`/`#f43f5e`, Equinoxes `#34d399`/`#fbbf24`, Aphelion `#818cf8`) featuring interactive hover popovers.
+* **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 glowing milestone halo nodes (Perihelion `#a855f7`, Solstices `#38bdf8`/`#f43f5e`, Equinoxes `#34d399`/`#fbbf24`, Aphelion `#818cf8`) featuring geodesic spherical SLERP trajectories.
 * **Earth Bead**: Sky blue core (`#0284c7`, `#38bdf8`) with atmospheric glow and $23.44^\circ$ axial tilt vector.
 * **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$) or freely in Astrolabe Solver Mode.
 * **Navigational Astrolabe Stars**: Rendered as delicate diamond florets (`strokeWidth="0.6"`, `r="1.2-3.2px"`) with hairline dashed flame pointers and glowing magnitude halos.
-* **SED Hairline Alidade Sighting Arm**: Slim $1.6\text{px}$ brass ruler body with dark wood inlay (`#78350f`, $0.75\text{px}$), cyan laser sightline (`#38bdf8`, $0.75\text{px}$ dashed), and central reticle pin.
+* **SED Hairline Alidade Sighting Arm**: Slim $1.6\text{px}$ brass ruler body with dark wood inlay (`#78350f`, $0.75\text{px}$), cyan laser sightline (`#38bdf8`, $0.75\text{px}$ dashed), dual pinhole pinnule sighting vanes, and central reticle pin.
 
 ### B. Lunar Orbit Segmentation (Dual Eclipse Demonstrator & Macro Orbit)
 * **Solid Stroke (`stroke-width="1.5"`)**: **Waxing Moon** ($0^\circ \to 180^\circ$ elongation).
@@ -97,3 +101,7 @@ The dashboard layout utilizes a flexible 12-column responsive CSS grid with dyna
 3. **Free Astrolabe Solver Mode**: Dragging the golden Rete bypasses clock lock to calculate apparent solar and sidereal time dynamically.
 4. **Cross-Card Hover Synchronization**: Hovering over timestamps or calendar dates in any widget propagates `hoverTime` and `hoverDate` across all mounted visualizers simultaneously.
 5. **Fluid Card Resizing**: Bottom-right resize thumbs allow non-destructive card expansion with a minimum height floor ($220\text{px}$).
+6. **Morph $\lambda$ Slider & Precision Controls**:
+   - Expanded $28\text{px}$ touch target container (`h-7`) with `touch-action: none`.
+   - Event propagation isolation (`e.stopPropagation()` on all pointer/drag lifecycles) to prevent canvas rotation bleed-through.
+   - High-contrast $18\text{px}$ amber slider thumb (`accent-amber-400`, `cursor-grab`) with active ring states and dynamic track progress gradient fill.
