@@ -13,7 +13,7 @@
     - *Phase A ($\lambda \in [0.0 \to 0.45]$)*: Reorients camera pitch and yaw to canonical projection poles ($\text{Pitch} = 90^\circ$ for Stereographic/Horizon, $\text{Pitch} = 0^\circ$ for Rojas; $\text{Yaw} \to 0^\circ$) using shortest geodesic angular delta while preserving 100% rigid 3D spherical geometry ($\lambda_{\text{geom}} = 0$).
     - *Phase B ($\lambda \in [0.45 \to 1.0]$)*: Camera remains locked overhead while continuous projective flattening and plate decorations materialize.
     - *Symmetric Reverse Transitions*: Folds 2D geometry back into 3D sphere first, then smoothly restores custom user viewing angles with zero drift.
-  - **Closed-Form Stereographic Conformal Projections**: True stereographic target geometry for the Ecliptic ring ($Y_c = -R_0\tan(\epsilon/2)$, $R_{\text{ecl}} = R_0/\cos\epsilon$) and celestial parallels (Equator $R=R_0$, Tropics $R=R_0\tan((90^\circ \mp \epsilon)/2)$), preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
+  - **Closed-Form Stereographic Conformal Projections**: True stereographic target geometry for the Ecliptic ring ($Y_c = -R_0\tan\epsilon$, $R_{\text{ecl}} = R_0/\cos\epsilon = R_0\sec\epsilon$) and celestial parallels (Equator $R=R_0$, Tropics $R=R_0\tan((90^\circ \mp \epsilon)/2)$), preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
   - **Continuous Depth-Split Stroke Unification**: Smoothly blends dashed back segments ($z < 0$) into solid paths over $\lambda \in [0.85, 1.0]$ with continuous opacity ($0.35 \to 1.0$), width matching front width, and dash gap closure.
   - **Continuous Conformal & Circle-Preserving Cross-Projections**: Smooth cross-projection transitions (`computeContinuousProjection2D`) with optical focal pulling ($d \in [R_0, \infty)$) and $SO(3)$ observer latitude rotation, ensuring celestial rings maintain their circularity without peanut distortion or vertex pulling.
   - **Progressive Almucantar & Bezel Materialization**: Smooth radial expansion ($94\% \to 100\%$) of the double-grooved brass bezel, progressive elevation curve fading from $\lambda = 0.15 \to 1.0$, and continuous sliding between eccentric stereographic almucantars and concentric horizon stereonet rings (`generateContinuousAlmucantars`).
@@ -139,14 +139,15 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 2. **Ergonomic Type Aliases for Presentation & UI**:
    - Coordinates, sliders, and timeline parameters (`Latitude`, `Longitude`, `HoursDecimal`, `DayOfYear`, `Pixels`) remain pure `number` type aliases.
    - This eliminates casting friction across React components, SVG viewports, and native `<input>` form handlers.
-3. **Conversion Gatekeepers**:
+3. **Conversion Gatekeepers & Boundary Contracts**:
    - Dedicated gatekeeper utility functions (`toRadians(deg: Degrees): Radians`, `toDegrees(rad: Radians): Degrees`, `julianDateToCenturies(jd: JulianDate): JulianCenturies`) serve as the verified, compile-time bridges between distinct unit spaces.
+   - When crossing from UI parameters (`Latitude`, `Longitude`) into trigonometric solvers, parameters are explicitly wrapped and converted via `toRadians(asDegrees(lat))` or dedicated helpers to ensure type safety without unsafe casts.
 
 ---
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, and asynchronous worker operations across 9 specialized domain suites:
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, and asynchronous worker operations across 9 specialized domain suites (**211 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -157,7 +158,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (13 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (19 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (7 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
-| **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (0 isolated errors) | Fault isolation, derived state error capture, and in-place module reset recovery |
+| **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (isolated module resilience) | Fault isolation, derived state error capture, and in-place module reset recovery |
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` (7 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 
 Run the full suite with:

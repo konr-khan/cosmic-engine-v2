@@ -64,7 +64,7 @@ The visualizer must satisfy three conflicting constraints:
     - Caches and restores the user's custom 3D viewing perspective in Heliocentric and Geocentric modes, completely eliminating diagonal axis shear during flattening.
 
 12. **Continuous Conformal & Closed-Form Circle-Preserving Projections (`computeContinuousProjection2D`)**:
-    - **Closed-Form Stereographic Conformal Orbit Target**: The Ecliptic ring projects directly as an eccentric circle with Center $Y_c = -R_0\tan(\epsilon/2)$ and Radius $R_{\text{ecl}} = R_0/\cos\epsilon = R_0\sec\epsilon$, preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
+    - **Closed-Form Stereographic Conformal Orbit Target**: The Ecliptic ring projects directly as an eccentric circle with Center $Y_c = -R_0\tan\epsilon$ and Radius $R_{\text{ecl}} = R_0/\cos\epsilon = R_0\sec\epsilon$, preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
     - Stereographic $\longleftrightarrow$ Horizon: Continuous $SO(3)$ observer latitude rotation $\phi(t) = 90^\circ - (90^\circ - \phi) \cdot t$ and $LST(t)$ before applying conformal stereographic projection, mathematically guaranteeing that every celestial circle remains an exact circle throughout the transition.
     - Stereographic $\longleftrightarrow$ Rojas: Continuous optical perspective focal pull $d(t) \in [R_0, \infty)$ combined with $90^\circ$ solstitial colure rotation, transforming circles into Rojas parallel chords without vertex pinching.
 

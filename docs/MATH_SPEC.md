@@ -280,7 +280,7 @@ x = R_0 \cos\delta \cos\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delt
      - **Celestial Equator ($\delta = 0^\circ$)**: Concentric circle with radius $R = R_0$.
      - **Tropic of Cancer ($\delta = +\epsilon$)**: Concentric circle with radius $R_{\text{Can}} = R_0 \tan\left(\frac{90^\circ - \epsilon}{2}\right)$.
      - **Tropic of Capricorn ($\delta = -\epsilon$)**: Concentric circle with radius $R_{\text{Cap}} = R_0 \tan\left(\frac{90^\circ + \epsilon}{2}\right)$.
-     - **Ecliptic Great Circle (inclined by $\epsilon = 23.439^\circ$)**: Eccentric circle with Center $(X_c, Y_c) = (0, -R_0 \tan(\epsilon/2))$ and Radius $R_{\text{ecl}} = \frac{R_0}{\cos\epsilon} = R_0 \sec\epsilon$. In screen coordinates where $Y$ is inverted, the center is $(0, +R_0 \tan\epsilon)$.
+     - **Ecliptic Great Circle (inclined by $\epsilon = 23.439^\circ$)**: Eccentric circle with Center $(X_c, Y_c) = (0, -R_0 \tan\epsilon)$ and Radius $R_{\text{ecl}} = \frac{R_0}{\cos\epsilon} = R_0 \sec\epsilon$. In screen coordinates where $Y$ is inverted, the center is $(0, +R_0 \tan\epsilon)$.
      - **Almucantar (Altitude $a$) Circles**: Center $y_c = R_0 \frac{\cos\phi}{\sin\phi + \sin a}$, Radius $r_a = R_0 \frac{\cos a}{\sin\phi + \sin a}$.
 
 2. **Universal Rojas Orthographic Projection (Solstitial Colure Plane)**:

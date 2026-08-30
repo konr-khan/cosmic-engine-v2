@@ -37,7 +37,7 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Closed-Form Stereographic Conformal Orbit Target**:
   - **Celestial Equator**: Concentric circle of radius $R_0$.
   - **Tropics of Cancer & Capricorn**: Concentric circles of radii $R_0 \tan((90^\circ \mp \epsilon)/2)$.
-  - **Ecliptic Great Circle**: Eccentric circle with Center $(0, -R_0 \tan(\epsilon/2))$ and Radius $R_{\text{ecl}} = R_0 / \cos\epsilon = R_0 \sec\epsilon$, preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
+  - **Ecliptic Great Circle**: Eccentric circle with Center $(0, -R_0 \tan\epsilon)$ and Radius $R_{\text{ecl}} = R_0 / \cos\epsilon = R_0 \sec\epsilon$, preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial decay.
 * **Continuous Depth-Split Stroke Unification**:
   - **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: Solid stroke (`frontStrokeWidth = 2.0-2.2px`, `opacity = 0.9-1.0`).
   - **Back Hemisphere ($z_{\text{cam}} < 0$)**: Dashed stroke (`strokeDasharray = "3,2"`, `backStrokeWidth = 1.0px`, `opacity = 0.35`).
