@@ -1417,11 +1417,14 @@ describe('cosmicMath utilities', () => {
       const stereo2D = computeProjection2D(p3d, 'stereographic', 100, 47.06, 0);
       const rojas2D = computeProjection2D(p3d, 'rojas', 100, 47.06, 0);
 
-      // Verify continuous projection endpoints
+      // Verify continuous projection endpoints & zero endpoint snapping (t -> 1.0-)
       const projStart = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 0.0, 100, 47.06, 0);
+      const projNearEnd = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 0.999, 100, 47.06, 0);
       const projEnd = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 1.0, 100, 47.06, 0);
       expect(projStart.x).toBeCloseTo(stereo2D.x, 3);
       expect(projStart.y).toBeCloseTo(stereo2D.y, 3);
+      expect(projNearEnd.x).toBeCloseTo(rojas2D.x, 0);
+      expect(projNearEnd.y).toBeCloseTo(rojas2D.y, 0);
       expect(projEnd.x).toBeCloseTo(rojas2D.x, 3);
       expect(projEnd.y).toBeCloseTo(rojas2D.y, 3);
 

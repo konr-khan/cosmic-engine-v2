@@ -134,17 +134,18 @@ export function computeContinuousProjection2D(
     const cosT = Math.cos(thetaRad);
     const sinT = Math.sin(thetaRad);
 
-    // Rotate around X axis
-    const yt = p3d.y * cosT + p3d.z * sinT;
-    const zt = -p3d.y * sinT + p3d.z * cosT;
+    // Depth component for stereographic perspective (approaches 0 weight as currentT -> 1)
+    const yDepth = p3d.y * cosT - p3d.z * sinT;
+    // Projected vertical axis: transitions smoothly from p3d.z (stereographic) to p3d.y (rojas)
+    const yTarget = p3d.z * cosT + p3d.y * sinT;
 
     // Continuous perspective focal scaling (d = R0 -> infinity)
     const stereoWeight = 1 - currentT;
-    const denom = Math.max(0.1, r0 + yt * stereoWeight);
+    const denom = Math.max(0.1, r0 + yDepth * stereoWeight);
     const focalScale = (r0 * stereoWeight + denom * (1 - stereoWeight)) / denom;
 
     const xProj = p3d.x * focalScale;
-    const yProj = (1 - currentT) * (zt * (r0 / denom)) + currentT * yt;
+    const yProj = yTarget * focalScale;
 
     return { x: xProj, y: yProj };
   }

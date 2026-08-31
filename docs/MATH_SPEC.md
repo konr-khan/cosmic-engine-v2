@@ -330,10 +330,11 @@ Transitions between 2D historical plates avoid point-wise Cartesian chord pullin
 2. **Stereographic $\longleftrightarrow$ Rojas Orthographic**:
    Continuous transformation from the equatorial plane ($y=0$) to the solstitial colure plane ($z=0$) via $X$-axis rotation $\alpha(t) = t \cdot 90^\circ$ combined with dynamic optical perspective focal pull $d(t) \in [R_0, \infty)$:
    \[
-   \begin{pmatrix} x_t \\ y_t \\ z_t \end{pmatrix} = \begin{pmatrix} x \\ y \cos\alpha(t) - z \sin\alpha(t) \\ y \sin\alpha(t) + z \cos\alpha(t) \end{pmatrix}, \quad \text{focalScale}(t) = \frac{R_0}{\max(0.1, R_0 + y_t(1 - t))}
+   \begin{pmatrix} x_t \\ y_{\text{depth}}(t) \\ y_{\text{target}}(t) \end{pmatrix} = \begin{pmatrix} x \\ y \cos\alpha(t) - z \sin\alpha(t) \\ z \cos\alpha(t) + y \sin\alpha(t) \end{pmatrix}, \quad \text{focalScale}(t) = \frac{R_0(1 - t) + \text{denom}(t) \cdot t}{\text{denom}(t)}
    \]
+   where $\text{denom}(t) = \max(0.1, R_0 + y_{\text{depth}}(t)(1 - t))$, yielding:
    \[
-   x(t) = x_t \cdot \text{focalScale}(t), \quad y(t) = z_t \cdot \text{focalScale}(t)
+   x(t) = x_t \cdot \text{focalScale}(t), \quad y(t) = y_{\text{target}}(t) \cdot \text{focalScale}(t)
    \]
 
 3. **Continuous Almucantars (`generateContinuousAlmucantars`)**:
