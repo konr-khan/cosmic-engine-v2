@@ -677,4 +677,35 @@ Each camera projection transforms 3D scene objects into 2D SVG screen coordinate
    * If $\mu \le -1$: Complete closed circular terminator ellipse on front face.
    * If $|\mu| < 1$: Terminator circle intersects the limb at $\phi_0 = \arcsin\mu$, generating smooth, non-tearing arc paths joined continuously along the planetary limb rim.
 
+### G. 3D Rotational Vector Continent Projection & Limb Clipping
+
+Given geographic coordinates $(\lambda_{\text{geo}}, \phi_{\text{geo}})$ and local solar hour angle $h = 15^\circ(t_{\text{tod}} - 12) + \lambda_{\text{geo}}$:
+1. **Equatorial Body Frame**:
+   \[
+   \vec{P}_{\text{eq}} = \begin{pmatrix} \cos\phi_{\text{geo}} \cos h \\ \cos\phi_{\text{geo}} \sin h \\ \sin\phi_{\text{geo}} \end{pmatrix}
+   \]
+2. **Camera / Ecliptic Transformation**:
+   * **`euler3d`**: $\vec{P}_{\text{cam}} = \mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll}) \vec{P}_{\text{eq}}$.
+   * **`topdown`**: $\vec{P}_{\text{ecl}} = (x_b, y_b \cos\varepsilon - z_b \sin\varepsilon, y_b \sin\varepsilon + z_b \cos\varepsilon)$ where $(x_b, y_b, z_b) = (\cos\phi \sin h, \cos\phi \cos h, \sin\phi)$.
+   * **`transverse`** / **`axial`**: Transformed along syzygy frame matching `calculateEarthSideGeometry` and `calculateEarthAxialGeometry`.
+3. **Front-Hemisphere Edge Clipping ($z \ge 0$)**:
+   For each polygon edge $\vec{v}_1 \to \vec{v}_2$ crossing $z = 0$, the zero-crossing parameter $t_0 = \frac{-v_{1, z}}{v_{2, z} - v_{1, z}} \in [0, 1]$ yields horizon intersection point $\vec{v}_{\text{cross}} = (1 - t_0)\vec{v}_1 + t_0 \vec{v}_2$. Normalizing $\hat{v} = \vec{v}_{\text{cross}} / \|\vec{v}_{\text{cross}}\|$ guarantees exact limb boundary alignment $(R \hat{v}_x, -R \hat{v}_y)$ with zero polygon chord-cutting.
+
+### H. Parametric Celestial Ring Blooming Across Continuum
+
+During transition from Copernican heliocentric orbit to geocentric/plate frames ($t_{\text{geo}} = 1 - t_{\text{helio}} \in [0, 1]$):
+1. **Ring Center Trajectory**:
+   \[
+   \vec{C}_{\text{bloom}}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \cdot \vec{P}_{\text{earth}}(t) + t_{\text{geo}} \cdot (0, 0, 0)
+   \]
+2. **Ring Radius Expansion**:
+   \[
+   R_{\text{bloom}}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \cdot r_{\text{globe}} + t_{\text{geo}} \cdot R_0 \quad (r_{\text{globe}} \approx 14\text{px}, R_0 = 100\text{px})
+   \]
+3. **Ring Opacity Blending**:
+   \[
+   \text{Opacity}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \cdot 0.0 + t_{\text{geo}} \cdot \text{baseOpacity}
+   \]
+   expanding celestial parallels (Equator, Tropics, Horizon, Colure) and Rete stars smoothly from the Earth MiniGlobe into full celestial scale.
+
 

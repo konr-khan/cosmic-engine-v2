@@ -75,6 +75,7 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 │ 6. Specular Planetary Limb Rim (#60a5fa 1.2px / #93c5fd)    │
 │ 5. Polar Axis Line (23.44° tilt, Ice Blue #93c5fd dashed)   │
 │ 4. Parallels (Equator #38bdf8, Tropics #64748b dashed)       │
+│ 3b. World Continents (Emerald #10b981 / Sage #34d399)       │
 │ 3. Daylight & Twilight Bands (Ocean #2563eb / Civil #1e40af)│
 │ 2. Nighttime Base Disc (Deep Space Slate #020617)           │
 │ 1. Outer Atmospheric Halo (Cyan #38bdf8 radial gradient)    │
@@ -89,7 +90,8 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 | **1. Atmosphere** | Outer Halo | `#38bdf8` (35%) $\to$ `#0284c7` (15%) $\to$ `#0369a1` (0%) | Radial glow extending to $1.35\times$ radius |
 | **2. Night Base** | Night Disc | `#020617` (Deep Space Slate) | Base sphere fill behind daylight terminator |
 | **3. Daylight** | Sunlit Semicircle / 3D Patch | `#60a5fa` $\to$ `#2563eb` $\to$ `#1d4ed8` | Ocean core radial gradient clipped to subsolar vector |
-| **3b. Twilight** | Twilight Bands | Civil `#1e40af` ($-6^\circ$), Nautical `#1e293b` ($-12^\circ$) | Smooth non-tearing spherical limb arcs |
+| **3. Twilight** | Twilight Bands | Civil `#1e40af` ($-6^\circ$), Nautical `#1e293b` ($-12^\circ$) | Smooth non-tearing spherical limb arcs |
+| **3b. Continents** | Living Marble Landmasses | Emerald `#10b981` (35% fill, `#34d399` stroke $0.4\text{px}$) | Rotational 3D vector continents with sidereal spin and front-hemisphere clipping |
 | **4. Parallels** | Equator / Tropics | Equator `#38bdf8` (`strokeWidth="0.75"`, dashed `2 1.5`); Tropics `#64748b` (`strokeWidth="0.5"`, dashed `2 1.5`) | $0^\circ$ Celestial Equator and $\pm 23.44^\circ$ Solstice Tropics |
 | **5. Polar Axis** | 23.44° Rotational Axis | `#93c5fd` (`strokeWidth="0.85"`, dashed `2.5 1.5`, opacity `0.75`) | Rotated rotational axis passing through poles |
 | **6. Limb Rim** | Outer Rim | `#60a5fa` (`strokeWidth="1.2"`, opacity `0.8`) + inner `#93c5fd` (`strokeWidth="0.4"`) | Dual-layer specular spherical limb boundary |

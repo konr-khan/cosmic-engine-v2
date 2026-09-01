@@ -15,6 +15,7 @@ import { Degrees, Latitude, Longitude, HoursDecimal, toRadians } from '../../typ
 import { Vector3D } from '../../types/coordinates';
 import { calculateEarthSideGeometry, calculateEarthAxialGeometry } from '../../utils/cosmicMath/projection';
 import { rotatePointEuler3D } from '../../utils/cosmicMath/scene/transforms';
+import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
 
 export type MiniGlobeViewMode = 
   | 'topdown'
@@ -71,6 +72,7 @@ export interface MiniGlobeProps {
   /** Layer visibility toggles */
   showTerminator?: boolean;     // Day/Night illuminated hemisphere (default: true)
   showTwilightBands?: boolean;  // Civil, Nautical, Astronomical twilight bands (default: true in euler3d)
+  showContinents?: boolean;     // 3D Rotational vector world continents (default: true)
   showParallels?: boolean;      // Equator and Tropics of Cancer/Capricorn (default: true)
   showPolarAxis?: boolean;      // 23.44° Rotational polar axis line (default: true)
   showObserverPin?: boolean;    // Observer location pin "YOU" (default: true)
@@ -84,6 +86,136 @@ export interface MiniGlobeProps {
   onPointerEnter?: (e: React.PointerEvent<SVGGElement>) => void;
   onPointerLeave?: (e: React.PointerEvent<SVGGElement>) => void;
   onClick?: (e: React.MouseEvent<SVGGElement>) => void;
+}
+
+/**
+ * Projects 2D geographic landmass polygons onto 3D Earth sphere and clips to visible front hemisphere.
+ */
+export function projectContinentLandmasses(
+  landmasses: [number, number][][],
+  radius: number,
+  viewMode: MiniGlobeViewMode,
+  todVal: number,
+  epsRad: number,
+  sunLambdaVal: number,
+  camera?: MiniGlobeCamera
+): string[] {
+  if (radius <= 0 || viewMode === 'flat') return [];
+
+  const paths: string[] = [];
+
+  for (const poly of landmasses) {
+    if (poly.length < 3) continue;
+
+    // 1. Transform each vertex to 3D unit coordinates in camera frame
+    const vertices3D: Vector3D[] = poly.map(([lonDeg, latDeg]) => {
+      const latRad = toRadians(latDeg);
+      const hourAngleDeg = ((todVal - 12) * 15) + lonDeg;
+      const hRad = toRadians(hourAngleDeg);
+
+      if (viewMode === 'euler3d') {
+        const pitch = Number.isFinite(Number(camera?.pitch)) ? Number(camera?.pitch) : 0;
+        const yaw = Number.isFinite(Number(camera?.yaw)) ? Number(camera?.yaw) : 0;
+        const roll = Number.isFinite(Number(camera?.roll)) ? Number(camera?.roll) : 0;
+
+        const pEq: Vector3D = {
+          x: Math.cos(latRad) * Math.cos(hRad),
+          y: Math.cos(latRad) * Math.sin(hRad),
+          z: Math.sin(latRad)
+        };
+        return rotatePointEuler3D(pEq, pitch, yaw, roll);
+      }
+
+      if (viewMode === 'topdown') {
+        const xb = Math.cos(latRad) * Math.sin(hRad);
+        const yb = Math.cos(latRad) * Math.cos(hRad);
+        const zb = Math.sin(latRad);
+
+        const xecl = xb;
+        const yecl = yb * Math.cos(epsRad) - zb * Math.sin(epsRad);
+        const zecl = yb * Math.sin(epsRad) + zb * Math.cos(epsRad);
+        return { x: xecl, y: yecl, z: zecl };
+      }
+
+      if (viewMode === 'transverse') {
+        const sunLambdaRad = toRadians(sunLambdaVal);
+        const thetaSide = epsRad * Math.sin(sunLambdaRad);
+        const xBody = -Math.cos(latRad) * Math.cos(hRad);
+        const yBody = Math.sin(latRad);
+        const zBody = Math.cos(latRad) * Math.sin(hRad);
+
+        const xProj = xBody * Math.cos(thetaSide) - yBody * Math.sin(thetaSide);
+        const yProj = xBody * Math.sin(thetaSide) + yBody * Math.cos(thetaSide);
+        const zProj = -zBody;
+        return { x: xProj, y: yProj, z: zProj };
+      }
+
+      if (viewMode === 'axial') {
+        const sunLambdaRad = toRadians(sunLambdaVal);
+        const nx = -Math.sin(epsRad) * Math.cos(sunLambdaRad);
+        const ny = Math.cos(epsRad);
+        const nz = -Math.sin(epsRad) * Math.sin(sunLambdaRad);
+        const nLen = Math.sqrt(nx * nx + ny * ny) || 1;
+
+        const ux = ny / nLen;
+        const uy = -nx / nLen;
+        const vx = (nx * nz) / nLen;
+        const vy = (ny * nz) / nLen;
+
+        const xBody = Math.cos(latRad) * Math.cos(hRad);
+        const yBody = Math.cos(latRad) * Math.sin(hRad);
+        const zBody = Math.sin(latRad);
+
+        const xProj = xBody * ux + yBody * vx + zBody * (nx / nLen);
+        const yProj = xBody * uy + yBody * vy + zBody * (ny / nLen);
+        const zProj = -yBody * nLen + zBody * (nz / nLen);
+        return { x: xProj, y: yProj, z: zProj };
+      }
+
+      return { x: 0, y: 0, z: 0 };
+    });
+
+    // 2. Clip edges to front hemisphere (z >= -0.02)
+    const clippedPts: { x: number; y: number }[] = [];
+    const n = vertices3D.length;
+
+    for (let i = 0; i < n; i++) {
+      const curr = vertices3D[i];
+      const next = vertices3D[(i + 1) % n];
+
+      const currIn = curr.z >= -0.02;
+      const nextIn = next.z >= -0.02;
+
+      if (currIn) {
+        clippedPts.push({ x: radius * curr.x, y: -radius * curr.y });
+      }
+
+      if (currIn !== nextIn) {
+        const dz = next.z - curr.z;
+        if (Math.abs(dz) > 1e-6) {
+          const t = (-0.02 - curr.z) / dz;
+          if (t >= 0 && t <= 1) {
+            const ix = (1 - t) * curr.x + t * next.x;
+            const iy = (1 - t) * curr.y + t * next.y;
+            const iz = (1 - t) * curr.z + t * next.z;
+            const len = Math.hypot(ix, iy, iz) || 1;
+            clippedPts.push({ x: radius * (ix / len), y: -radius * (iy / len) });
+          }
+        }
+      }
+    }
+
+    if (clippedPts.length >= 3) {
+      let d = `M ${clippedPts[0].x.toFixed(2)} ${clippedPts[0].y.toFixed(2)} `;
+      for (let k = 1; k < clippedPts.length; k++) {
+        d += `L ${clippedPts[k].x.toFixed(2)} ${clippedPts[k].y.toFixed(2)} `;
+      }
+      d += 'Z';
+      paths.push(d);
+    }
+  }
+
+  return paths;
 }
 
 /**
@@ -224,6 +356,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   obliquityDeg = 23.439281,
   showTerminator = true,
   showTwilightBands = true,
+  showContinents = true,
   showParallels = true,
   showPolarAxis = true,
   showObserverPin = true,
@@ -394,6 +527,20 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
     };
   }, [viewMode, camera, subsolarVector, declination, rightAscension, safeRadius, showTwilightBands, latVal, lonVal, todVal]);
 
+  // 5. 3D Rotational Vector World Continents (Living Marble Earth)
+  const continentPaths = useMemo(() => {
+    if (!showContinents || safeRadius <= 0 || viewMode === 'flat') return [];
+    return projectContinentLandmasses(
+      WORLD_LANDMASSES,
+      safeRadius,
+      viewMode,
+      todVal,
+      epsRad,
+      sunLambdaVal,
+      camera
+    );
+  }, [showContinents, safeRadius, viewMode, todVal, epsRad, sunLambdaVal, camera]);
+
   return (
     <g 
       transform={`translate(${cx}, ${cy})`} 
@@ -487,6 +634,24 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
                   )}
                 </g>
               )}
+            </g>
+          )}
+
+          {/* Layer 3b: World Continents Landmasses (Living Marble Earth) */}
+          {showContinents && safeRadius > 0 && continentPaths.length > 0 && (
+            <g className="miniglobe-continents pointer-events-none" clipPath={`url(#${clipPathId})`}>
+              {continentPaths.map((d, idx) => (
+                <path 
+                  key={idx} 
+                  d={d} 
+                  fill="#10b981" 
+                  fillOpacity="0.35" 
+                  stroke="#34d399" 
+                  strokeWidth="0.4" 
+                  strokeOpacity="0.55" 
+                  strokeLinejoin="round" 
+                />
+              ))}
             </g>
           )}
 

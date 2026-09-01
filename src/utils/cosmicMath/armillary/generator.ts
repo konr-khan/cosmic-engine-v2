@@ -408,6 +408,16 @@ export function generateArmillaryModel(params: {
     )
   );
 
+  // Blooming parameters for celestial sphere rings (expand from Earth globe r=14px to R0=100px)
+  const tGeo = 1.0 - isHelioT;
+  const rGlobe = 14;
+  const rBloom = (1.0 - tGeo) * rGlobe + tGeo * r0;
+  const cBloom: Vector3D = {
+    x: (1.0 - tGeo) * blendedEarth3D.x,
+    y: (1.0 - tGeo) * blendedEarth3D.y,
+    z: (1.0 - tGeo) * blendedEarth3D.z
+  };
+
   // 2. Celestial Equator Ring (Dec = 0°)
   rings.push(
     generateParametricRing3D(
@@ -418,7 +428,10 @@ export function generateArmillaryModel(params: {
         frontStrokeWidth: 2.0,
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => equatorialToCartesian3D(t * 360, 0, r0)
+        samplePoint: (t) => {
+          const p = equatorialToCartesian3D(t * 360, 0, rBloom);
+          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
+        }
       },
       transformVertex
     )
@@ -436,10 +449,11 @@ export function generateArmillaryModel(params: {
         sampleCount: NUM_SAMPLES,
         samplePoint: (t) => {
           const lRad = toRadians(t * 360);
-          const xBase = r0 * Math.cos(lRad);
-          const yBase = r0 * Math.sin(lRad) * Math.sin(epsRad);
-          const zBase = r0 * Math.sin(lRad) * Math.cos(epsRad);
-          return rotateEuler3D({ x: xBase, y: yBase, z: zBase }, 0, reteOffset, 0);
+          const xBase = rBloom * Math.cos(lRad);
+          const yBase = rBloom * Math.sin(lRad) * Math.sin(epsRad);
+          const zBase = rBloom * Math.sin(lRad) * Math.cos(epsRad);
+          const p = rotateEuler3D({ x: xBase, y: yBase, z: zBase }, 0, reteOffset, 0);
+          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
         }
       },
       transformVertex
@@ -456,7 +470,10 @@ export function generateArmillaryModel(params: {
         frontStrokeWidth: 0.9,
         backStrokeWidth: 0.5,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => equatorialToCartesian3D(t * 360, obliquity, r0)
+        samplePoint: (t) => {
+          const p = equatorialToCartesian3D(t * 360, obliquity, rBloom);
+          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
+        }
       },
       transformVertex
     )
@@ -472,7 +489,10 @@ export function generateArmillaryModel(params: {
         frontStrokeWidth: 0.9,
         backStrokeWidth: 0.5,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => equatorialToCartesian3D(t * 360, -obliquity, r0)
+        samplePoint: (t) => {
+          const p = equatorialToCartesian3D(t * 360, -obliquity, rBloom);
+          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
+        }
       },
       transformVertex
     )
@@ -489,8 +509,9 @@ export function generateArmillaryModel(params: {
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
         samplePoint: (t) => {
-          const p3dHoriz = horizontalToCartesian3D(0, t * 360, r0);
-          return rotateEuler3D(p3dHoriz, -(90 - latitude), 0, 0);
+          const p3dHoriz = horizontalToCartesian3D(0, t * 360, rBloom);
+          const p = rotateEuler3D(p3dHoriz, -(90 - latitude), 0, 0);
+          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
         }
       },
       transformVertex
@@ -510,9 +531,9 @@ export function generateArmillaryModel(params: {
         samplePoint: (t) => {
           const theta = t * 2 * Math.PI;
           return {
-            x: 0,
-            y: r0 * Math.sin(theta),
-            z: r0 * Math.cos(theta)
+            x: cBloom.x,
+            y: cBloom.y + rBloom * Math.sin(theta),
+            z: cBloom.z + rBloom * Math.cos(theta)
           };
         }
       },
@@ -522,13 +543,18 @@ export function generateArmillaryModel(params: {
 
   // 8. Celestial Navigational Stars (Rotates with Rete)
   const stars = ASTROLABE_STARS.map((s) => {
-    const p3dBase = equatorialToCartesian3D(s.raDeg, s.decDeg, r0);
+    const p3dBase = equatorialToCartesian3D(s.raDeg, s.decDeg, rBloom);
     const p3dRotated = rotateEuler3D(p3dBase, 0, reteOffset, 0);
-    const v = transformVertex(p3dRotated);
+    const p3dOffset: Vector3D = {
+      x: cBloom.x + p3dRotated.x,
+      y: cBloom.y + p3dRotated.y,
+      z: cBloom.z + p3dRotated.z
+    };
+    const v = transformVertex(p3dOffset);
     const horiz = equatorialToHorizontal(s.raDeg, s.decDeg, latitude, lstDeg);
     return {
       ...s,
-      p3d: p3dRotated,
+      p3d: p3dOffset,
       pCam: v.pCam,
       pProj: v.pProj,
       screenPos: v.screenPos,
