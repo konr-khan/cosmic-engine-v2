@@ -202,7 +202,9 @@ export function useHeliocentricScene(
 
   const scaleFactor = orbitalRadius / 200;
   const bRatio = scene3D.foci ? (scene3D.foci.semiMinorAxis / scene3D.foci.semiMajorAxis) : 1.0;
-  const focus2X = scene3D.foci ? scene3D.foci.f2.x * scaleFactor : 0;
+  const focus2X = scene3D.foci 
+    ? (scene3D.scaleMode === 'true' ? scene3D.foci.f2.x * orbitalRadius : scene3D.foci.f2.x * scaleFactor)
+    : 0;
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
     ?? ((scene3D.earth.heliocentricLongitude + 180) % 360);
   const axialTiltDeg = toDegrees(scene3D.earth.obliquity);
@@ -212,12 +214,13 @@ export function useHeliocentricScene(
   }, [julianDate]);
 
   const milestones = useMemo(() => {
+    const posScale = scene3D.scaleMode === 'true' ? orbitalRadius : scaleFactor;
     return scene3D.milestones.map(m => ({
       ...m,
-      x: m.position.x * scaleFactor,
-      y: m.position.y * scaleFactor
+      x: m.position.x * posScale,
+      y: m.position.y * posScale
     }));
-  }, [scene3D.milestones, scaleFactor]);
+  }, [scene3D.milestones, scene3D.scaleMode, orbitalRadius, scaleFactor]);
 
   return {
     julianDate,

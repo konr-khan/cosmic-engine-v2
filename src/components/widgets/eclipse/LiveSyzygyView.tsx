@@ -95,12 +95,68 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       <line x1="50" y1="82" x2="310" y2="92" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
       <line x1="50" y1="138" x2="310" y2="128" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
 
-      {/* Strict Side-On Projected Lunar Orbital Ring */}
+      {/* 4. BACK LUNAR ORBIT (Waning: Dashed stroke, behind Earth) */}
+      <g className="pointer-events-none">
+        {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
+        {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
+      </g>
+
+      {/* Line connecting Earth and Moon (Back) */}
+      {!isWaxing && (
+        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
+      )}
+
+      {/* DYNAMIC MOON BODY (When behind Earth / Waning) */}
+      {!isWaxing && (
+        <g 
+          transform={`translate(${liveMoonX}, ${liveMoonY})`} 
+          className="cursor-pointer"
+          onPointerEnter={() => setHoveredEntity('moon')}
+          onPointerLeave={() => setHoveredEntity(null)}
+        >
+          <circle
+            r="8"
+            fill={eclipse.isEclipseActive ? '#f43f5e' : '#475569'}
+            fillOpacity={eclipse.isEclipseActive ? 1 : 0.75}
+            stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')}
+            strokeWidth="2"
+            strokeDasharray="3 2"
+            className="drop-shadow"
+          />
+          <text
+            x={liveMoonX > liveEarthX ? 12 : -12}
+            y="4"
+            textAnchor={liveMoonX > liveEarthX ? 'start' : 'end'}
+            className="text-[9px] font-mono font-bold fill-emerald-300 select-none pointer-events-none"
+          >
+            MOON ({phaseDeg}° Elong)
+          </text>
+        </g>
+      )}
+
+      {/* 5. HIGH-PRECISION EARTH MINI-GLOBE WITH 23.44° AXIAL TILT, EQUATOR & OBSERVER PIN */}
+      <MiniGlobe
+        cx={liveEarthX}
+        cy={liveEarthY}
+        radius={18}
+        viewMode="transverse"
+        sunLambdaDeg={sunLambdaDeg}
+        latitude={latitude}
+        longitude={longitude}
+        timeOfDay={timeOfDay}
+        showTerminator={true}
+        showParallels={true}
+        showPolarAxis={true}
+        showObserverPin={true}
+        showAtmosphereGlow={true}
+        onPointerEnter={() => setHoveredEntity('earth')}
+        onPointerLeave={() => setHoveredEntity(null)}
+      />
+
+      {/* 6. FRONT LUNAR ORBIT (Waxing: Solid stroke, in front of Earth) */}
       <g className="pointer-events-none">
         {waxAsc.length > 0 && <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" opacity="0.9" />}
         {waxDesc.length > 0 && <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" opacity="0.9" />}
-        {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
-        {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
 
         {/* Ascending Node Marker (☊) */}
         <circle cx={ascNodeX} cy={ascNodeY} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
@@ -125,53 +181,37 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
         </text>
       </g>
 
-      {/* 2. HIGH-PRECISION EARTH MINI-GLOBE WITH 23.44° AXIAL TILT, EQUATOR & OBSERVER PIN */}
-      <MiniGlobe
-        cx={liveEarthX}
-        cy={liveEarthY}
-        radius={18}
-        viewMode="transverse"
-        sunLambdaDeg={sunLambdaDeg}
-        latitude={latitude}
-        longitude={longitude}
-        timeOfDay={timeOfDay}
-        showTerminator={true}
-        showParallels={true}
-        showPolarAxis={true}
-        showObserverPin={true}
-        showAtmosphereGlow={true}
-        onPointerEnter={() => setHoveredEntity('earth')}
-        onPointerLeave={() => setHoveredEntity(null)}
-      />
+      {/* Line connecting Earth and Moon (Front) */}
+      {isWaxing && (
+        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
+      )}
 
-      {/* Line connecting Earth and Moon */}
-      <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
-
-      {/* DYNAMIC MOON BODY positioned at exact live phase angle & ecliptic latitude */}
-      <g 
-        transform={`translate(${liveMoonX}, ${liveMoonY})`} 
-        className="cursor-pointer"
-        onPointerEnter={() => setHoveredEntity('moon')}
-        onPointerLeave={() => setHoveredEntity(null)}
-      >
-        <circle
-          r="8"
-          fill={eclipse.isEclipseActive ? '#f43f5e' : (isWaxing ? '#94a3b8' : '#475569')}
-          fillOpacity={!eclipse.isEclipseActive && !isWaxing ? 0.75 : 1}
-          stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')}
-          strokeWidth="2"
-          strokeDasharray={!eclipse.isEclipseActive && !isWaxing ? "3 2" : undefined}
-          className="drop-shadow"
-        />
-        <text
-          x={liveMoonX > liveEarthX ? 12 : -12}
-          y="4"
-          textAnchor={liveMoonX > liveEarthX ? 'start' : 'end'}
-          className="text-[9px] font-mono font-bold fill-emerald-300 select-none pointer-events-none"
+      {/* DYNAMIC MOON BODY (When in front of Earth / Waxing) */}
+      {isWaxing && (
+        <g 
+          transform={`translate(${liveMoonX}, ${liveMoonY})`} 
+          className="cursor-pointer"
+          onPointerEnter={() => setHoveredEntity('moon')}
+          onPointerLeave={() => setHoveredEntity(null)}
         >
-          MOON ({phaseDeg}° Elong)
-        </text>
-      </g>
+          <circle
+            r="8"
+            fill={eclipse.isEclipseActive ? '#f43f5e' : '#94a3b8'}
+            fillOpacity={1}
+            stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')}
+            strokeWidth="2"
+            className="drop-shadow"
+          />
+          <text
+            x={liveMoonX > liveEarthX ? 12 : -12}
+            y="4"
+            textAnchor={liveMoonX > liveEarthX ? 'start' : 'end'}
+            className="text-[9px] font-mono font-bold fill-emerald-300 select-none pointer-events-none"
+          >
+            MOON ({phaseDeg}° Elong)
+          </text>
+        </g>
+      )}
     </g>
   );
 };

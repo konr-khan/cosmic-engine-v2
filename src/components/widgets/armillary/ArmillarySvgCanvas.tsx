@@ -107,7 +107,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   } = model;
 
   const isOrbital = projectionMode === 'heliocentric';
-  const is3D = projectionMode === 'geocentric' || (morphLambda <= 0.05 && !isOrbital);
+  const is3D = projectionMode === 'geocentric' || projectionMode === 'heliocentric' || morphLambda <= 0.05;
   const isTympanVisible = (projectionMode === 'stereographic' || projectionMode === 'horizon') && morphLambda >= 0.15;
 
   // Calculate live Alidade sighting telemetry

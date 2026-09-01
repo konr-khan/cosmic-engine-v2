@@ -144,7 +144,71 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
           {/* Umbra Shadow Core */}
           <circle cx={centerX} cy={centerY} r="15" fill="#020617" stroke="#f43f5e" strokeWidth="1" />
           
-          {/* 3. 3D OPEN ELLIPTICAL LUNAR ORBITAL LOOP AROUND EARTH */}
+          {/* 3. BACK LUNAR ORBITAL LOOP AROUND EARTH (Waning: Dashed stroke, behind Earth) */}
+          <g className="pointer-events-none">
+            {/* Waning Ascending: Dashed Sky Blue */}
+            {wanAsc.length > 0 && (
+              <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
+            )}
+            {/* Waning Descending: Dashed Crimson Red */}
+            {wanDesc.length > 0 && (
+              <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
+            )}
+          </g>
+
+          {/* DYNAMIC MOON DISC (When behind Earth / Waning) */}
+          {!isWaxing && (
+            <g transform={`translate(${moonX}, ${moonY})`}>
+              <circle 
+                r={axialMoonRadius} 
+                fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#475569'} 
+                fillOpacity={eclipse.isEclipseActive ? 1 : 0.75} 
+                stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
+                strokeWidth="2" 
+                strokeDasharray="3 2"
+                className="drop-shadow"
+              />
+              <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
+              <text 
+                x={moonX > centerX ? 10 : -10} 
+                y="-3" 
+                textAnchor={moonX > centerX ? 'start' : 'end'} 
+                className={`text-[8px] font-mono font-bold ${
+                  eclipse.isEclipseActive ? 'fill-rose-300' : (isAscending ? 'fill-sky-300' : 'fill-rose-300')
+                }`}
+              >
+                MOON ({moonAngularDiamArcmin.toFixed(1)}')
+              </text>
+              <text 
+                x={moonX > centerX ? 10 : -10} 
+                y="7" 
+                textAnchor={moonX > centerX ? 'start' : 'end'} 
+                className="text-[7px] font-mono fill-slate-400 select-none"
+              >
+                [Waning / Dashed]
+              </text>
+            </g>
+          )}
+
+          {/* 4. HIGH-PRECISION EARTH MINI-GLOBE IN AXIAL PROJECTION (At center of lunar orbit) */}
+          <MiniGlobe
+            cx={centerX}
+            cy={centerY}
+            radius={20}
+            viewMode="axial"
+            sunLambdaDeg={sunLambdaDeg}
+            latitude={latitude}
+            longitude={longitude}
+            timeOfDay={timeOfDay}
+            showTerminator={true}
+            showParallels={true}
+            showPolarAxis={true}
+            showObserverPin={true}
+            showAtmosphereGlow={true}
+            showLabel={true}
+          />
+
+          {/* 5. FRONT LUNAR ORBITAL LOOP AROUND EARTH (Waxing: Solid stroke, in front of Earth) */}
           <g className="pointer-events-none">
             {/* Waxing Ascending: Solid Sky Blue */}
             {waxAsc.length > 0 && (
@@ -153,14 +217,6 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
             {/* Waxing Descending: Solid Crimson Red */}
             {waxDesc.length > 0 && (
               <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" opacity="0.9" />
-            )}
-            {/* Waning Ascending: Dashed Sky Blue */}
-            {wanAsc.length > 0 && (
-              <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
-            )}
-            {/* Waning Descending: Dashed Crimson Red */}
-            {wanDesc.length > 0 && (
-              <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />
             )}
 
             {/* Ascending Node Marker (☊) */}
@@ -186,55 +242,38 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
             </text>
           </g>
 
-          {/* 4. HIGH-PRECISION EARTH MINI-GLOBE IN AXIAL PROJECTION */}
-          <MiniGlobe
-            cx={centerX}
-            cy={centerY}
-            radius={20}
-            viewMode="axial"
-            sunLambdaDeg={sunLambdaDeg}
-            latitude={latitude}
-            longitude={longitude}
-            timeOfDay={timeOfDay}
-            showTerminator={true}
-            showParallels={true}
-            showPolarAxis={true}
-            showObserverPin={true}
-            showAtmosphereGlow={true}
-            showLabel={true}
-          />
-
-          {/* 5. DYNAMIC MOON DISC IN REAL-TIME ORBIT */}
-          <g transform={`translate(${moonX}, ${moonY})`}>
-            <circle 
-              r={axialMoonRadius} 
-              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : (isWaxing ? '#0f172a' : '#475569')} 
-              fillOpacity={!eclipse.isEclipseActive && !isWaxing ? 0.75 : 0.9} 
-              stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
-              strokeWidth="2" 
-              strokeDasharray={!eclipse.isEclipseActive && !isWaxing ? "3 2" : undefined}
-              className="drop-shadow"
-            />
-            <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
-            <text 
-              x={moonX > centerX ? 10 : -10} 
-              y="-3" 
-              textAnchor={moonX > centerX ? 'start' : 'end'} 
-              className={`text-[8px] font-mono font-bold ${
-                eclipse.isEclipseActive ? 'fill-rose-300' : (isAscending ? 'fill-sky-300' : 'fill-rose-300')
-              }`}
-            >
-              MOON ({moonAngularDiamArcmin.toFixed(1)}')
-            </text>
-            <text 
-              x={moonX > centerX ? 10 : -10} 
-              y="7" 
-              textAnchor={moonX > centerX ? 'start' : 'end'} 
-              className="text-[7px] font-mono fill-slate-400 select-none"
-            >
-              [{isWaxing ? 'Waxing / Solid' : 'Waning / Dashed'}]
-            </text>
-          </g>
+          {/* DYNAMIC MOON DISC (When in front of Earth / Waxing) */}
+          {isWaxing && (
+            <g transform={`translate(${moonX}, ${moonY})`}>
+              <circle 
+                r={axialMoonRadius} 
+                fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#0f172a'} 
+                fillOpacity={0.9} 
+                stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
+                strokeWidth="2" 
+                className="drop-shadow"
+              />
+              <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
+              <text 
+                x={moonX > centerX ? 10 : -10} 
+                y="-3" 
+                textAnchor={moonX > centerX ? 'start' : 'end'} 
+                className={`text-[8px] font-mono font-bold ${
+                  eclipse.isEclipseActive ? 'fill-rose-300' : (isAscending ? 'fill-sky-300' : 'fill-rose-300')
+                }`}
+              >
+                MOON ({moonAngularDiamArcmin.toFixed(1)}')
+              </text>
+              <text 
+                x={moonX > centerX ? 10 : -10} 
+                y="7" 
+                textAnchor={moonX > centerX ? 'start' : 'end'} 
+                className="text-[7px] font-mono fill-slate-400 select-none"
+              >
+                [Waxing / Solid]
+              </text>
+            </g>
+          )}
         </svg>
       </div>
 

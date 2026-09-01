@@ -114,9 +114,13 @@ export function projectHeliocentricTopDown(
   // Closed elliptical SVG path centered at (cx, cy)
   const orbitPath = `M ${cx - rx} ${cy} a ${rx} ${ry} 0 1 0 ${2 * rx} 0 a ${rx} ${ry} 0 1 0 ${-2 * rx} 0 Z`;
 
+  // Position scaling: In true scale mode, 3D scene coordinates are in Astronomical Units (AU ~ 1.0),
+  // so multiply by a = 200 to map 1 AU -> 200px display orbit. In exaggerated mode, coordinates are already in pixels.
+  const posScale = scene.scaleMode === 'true' ? a * s : s;
+
   // 2. Projected Sun Element (at focus F1)
-  const sunX = cx + scene.sun.position.x * s;
-  const sunY = cy + scene.sun.position.y * s;
+  const sunX = cx + scene.sun.position.x * posScale;
+  const sunY = cy + scene.sun.position.y * posScale;
   const sun: ProjectedBody2D = {
     x: sunX,
     y: sunY,
@@ -126,8 +130,8 @@ export function projectHeliocentricTopDown(
   };
 
   // 3. Projected Earth Element (on Keplerian ellipse)
-  const earthX = cx + scene.earth.position.x * s;
-  const earthY = cy + scene.earth.position.y * s;
+  const earthX = cx + scene.earth.position.x * posScale;
+  const earthY = cy + scene.earth.position.y * posScale;
   const earth: ProjectedEarth2D = {
     x: earthX,
     y: earthY,
@@ -140,8 +144,8 @@ export function projectHeliocentricTopDown(
 
   // 4. Projected Moon Element & Circular Orbit Path
   const moonOrbitRadius = 24 * s;
-  const moonX = earthX + (scene.moon.position.x - scene.earth.position.x) * s;
-  const moonY = earthY + (scene.moon.position.y - scene.earth.position.y) * s;
+  const moonX = earthX + (scene.moon.position.x - scene.earth.position.x) * posScale;
+  const moonY = earthY + (scene.moon.position.y - scene.earth.position.y) * posScale;
   const moon: ProjectedBody2D = {
     x: moonX,
     y: moonY,
@@ -163,8 +167,8 @@ export function projectHeliocentricTopDown(
     textDx: m.textDx,
     textDy: m.textDy,
     subDy: m.subDy,
-    x: cx + m.position.x * s,
-    y: cy + m.position.y * s,
+    x: cx + m.position.x * posScale,
+    y: cy + m.position.y * posScale,
     visible: true
   }));
 
