@@ -2,8 +2,16 @@ import React from 'react';
 import { CONFIG } from '../../../utils/cosmicMath';
 import { MILESTONES } from './milestones';
 import { OrbitSvgCanvasProps } from './types';
+import { MiniGlobe } from '../../common/MiniGlobe';
 
-export const OrbitSvgCanvas: React.FC<OrbitSvgCanvasProps> = ({
+export interface ExtendedOrbitSvgCanvasProps extends OrbitSvgCanvasProps {
+  sunLambdaDeg?: number;
+  latitude?: number;
+  longitude?: number;
+  timeOfDay?: number;
+}
+
+export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   renderSunX,
   renderSunY,
   renderEarthX,
@@ -16,8 +24,15 @@ export const OrbitSvgCanvas: React.FC<OrbitSvgCanvasProps> = ({
   exaggerateEccentricity,
   hoveredId,
   onHover,
-  milestones = MILESTONES
+  milestones = MILESTONES,
+  sunLambdaDeg = 0,
+  latitude = 47.06,
+  longitude = -122.81,
+  timeOfDay = 12.0
 }) => {
+  // In-plane solar illumination angle pointing from Earth toward Sun
+  const sunAngleDeg = Math.atan2(renderSunY - renderEarthY, renderSunX - renderEarthX) * (180 / Math.PI);
+
   return (
     <svg 
       viewBox="-290 -280 580 560" 
@@ -142,26 +157,49 @@ export const OrbitSvgCanvas: React.FC<OrbitSvgCanvasProps> = ({
         )}
       </g>
 
-      {/* Earth Body on Orbit */}
-      <g transform={`translate(${renderEarthX}, ${renderEarthY})`}>
-        {/* Moon Orbit Ring */}
-        <circle r={CONFIG.ORBIT.moonOrbitRadius} fill="none" stroke="#475569" strokeWidth="0.75" strokeDasharray="2 2" className="pointer-events-none" />
-        {/* Earth Body */}
-        <circle r="10" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" className="drop-shadow pointer-events-none" />
-        <text x="0" y="16" textAnchor="middle" className="text-[10px] font-mono font-bold fill-blue-300 select-none pointer-events-none">EARTH</text>
-        
-        {/* Stable Hit Target */}
-        <circle 
-          r="22" 
-          fill="transparent" 
-          className="cursor-pointer"
-          onPointerEnter={() => onHover('earth')}
-          onPointerLeave={() => onHover(null)}
-        />
-      </g>
+      {/* Moon Orbit Ring around Earth */}
+      <circle 
+        cx={renderEarthX} 
+        cy={renderEarthY} 
+        r={CONFIG.ORBIT.moonOrbitRadius} 
+        fill="none" 
+        stroke="#475569" 
+        strokeWidth="0.75" 
+        strokeDasharray="2 2" 
+        className="pointer-events-none" 
+      />
+
+      {/* High-Precision MiniGlobe with Sunward Terminator, 23.44° Axial Tilt & Parallels */}
+      <MiniGlobe
+        cx={renderEarthX}
+        cy={renderEarthY}
+        radius={11}
+        viewMode="topdown"
+        sunAngleDeg={sunAngleDeg}
+        sunLambdaDeg={sunLambdaDeg}
+        latitude={latitude}
+        longitude={longitude}
+        timeOfDay={timeOfDay}
+        showTerminator={true}
+        showParallels={true}
+        showPolarAxis={true}
+        showObserverPin={true}
+        showAtmosphereGlow={true}
+        showLabel={true}
+        onPointerEnter={() => onHover('earth')}
+        onPointerLeave={() => onHover(null)}
+      />
       
       {/* Moon Body */}
-      <circle cx={renderMoonX} cy={renderMoonY} r="4.5" fill="#f8fafc" stroke="#334155" strokeWidth="1" className="drop-shadow pointer-events-none" />
+      <circle 
+        cx={renderMoonX} 
+        cy={renderMoonY} 
+        r="4.5" 
+        fill="#f8fafc" 
+        stroke="#334155" 
+        strokeWidth="1" 
+        className="drop-shadow pointer-events-none" 
+      />
     </svg>
   );
 };

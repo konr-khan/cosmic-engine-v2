@@ -3,9 +3,10 @@ import {
   ArmillaryModelOutput, 
   ArmillaryProjectionMode, 
   ArmillaryMilestoneNode,
-  ArmillaryLunarNodes
+  ArmillaryLunarNodes,
+  ArmillaryCameraState
 } from '../types';
-import { toRadians } from '../../../../utils/cosmicMath';
+import { MiniGlobe } from '../../../common/MiniGlobe';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -13,11 +14,24 @@ export interface ArmillaryBeadsLayerProps {
   moon: ArmillaryModelOutput['moon'];
   milestones: ArmillaryMilestoneNode[];
   lunarNodes?: ArmillaryLunarNodes;
-  projectionMode: ArmillaryProjectionMode;
-  isOrbital: boolean;
-  orbitRingOpacity: number;
-  milestonesOpacity: number;
-  lunarOrbitOpacity: number;
+  projectionMode?: ArmillaryProjectionMode;
+  modelType?: 'orbit' | 'apparent' | 'rete' | 'rojas' | 'horizon' | 'heliocentric' | 'geocentric' | 'stereographic';
+  morphLambda?: number;
+  lambda?: number;
+  camera?: ArmillaryCameraState | { pitch?: number; yaw?: number; roll?: number };
+  pitch?: number;
+  yaw?: number;
+  roll?: number;
+  observerLat?: number;
+  observerLon?: number;
+  latitude?: number;
+  longitude?: number;
+  timeOfDay?: number;
+  sunLambdaDeg?: number;
+  isOrbital?: boolean;
+  orbitRingOpacity?: number;
+  milestonesOpacity?: number;
+  lunarOrbitOpacity?: number;
   onHoverBead: (bead: 'sun' | 'moon' | 'earth' | null) => void;
   onHoverMilestone: (m: ArmillaryMilestoneNode | null) => void;
   onHoverNode: (node: 'asc' | 'desc' | null) => void;
@@ -31,15 +45,64 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   milestones,
   lunarNodes,
   projectionMode,
-  isOrbital,
-  orbitRingOpacity,
-  milestonesOpacity,
-  lunarOrbitOpacity,
+  modelType,
+  morphLambda,
+  lambda,
+  camera,
+  pitch,
+  yaw,
+  roll,
+  observerLat,
+  observerLon,
+  latitude,
+  longitude,
+  timeOfDay = 12.0,
+  sunLambdaDeg,
+  isOrbital = false,
+  orbitRingOpacity = 1,
+  milestonesOpacity = 1,
+  lunarOrbitOpacity = 1,
   onHoverBead,
   onHoverMilestone,
   onHoverNode,
   onTargetClick
 }) => {
+  // Derive effective mode, morph progress lambda, and camera angles
+  const effectiveLambda = morphLambda !== undefined ? morphLambda : (lambda !== undefined ? lambda : 0);
+  const rawMode = modelType ?? projectionMode ?? 'apparent';
+
+  const isHeliocentric = rawMode === 'heliocentric' || rawMode === 'orbit' || !!isOrbital;
+  const isGeocentric = rawMode === 'geocentric' || rawMode === 'apparent';
+
+  // In 3D Apparent mode (modelType === 'apparent' / geocentric and lambda === 0), pass viewMode="euler3d"
+  // In 2D astrolabe plate modes ('rete', 'rojas', 'horizon', 'stereographic') or when morphing (lambda > 0), lock MiniGlobe viewMode="flat"
+  // In Heliocentric orbit mode, pass viewMode="topdown"
+  let miniGlobeViewMode: 'topdown' | 'euler3d' | 'flat';
+  if (isHeliocentric && effectiveLambda === 0) {
+    miniGlobeViewMode = 'topdown';
+  } else if (isGeocentric && effectiveLambda === 0) {
+    miniGlobeViewMode = 'euler3d';
+  } else {
+    miniGlobeViewMode = 'flat';
+  }
+
+  const cameraPitch = camera?.pitch ?? pitch ?? 0;
+  const cameraYaw = camera?.yaw ?? yaw ?? 0;
+  const cameraRoll = camera?.roll ?? roll ?? 0;
+
+  const lat = observerLat ?? latitude ?? 47.06;
+  const lon = observerLon ?? longitude ?? -122.81;
+  const sunLambda = sunLambdaDeg ?? (sun ? Number(sun.lambdaDeg ?? sun.raDeg ?? 0) : 0);
+
+  // Determine globe position and radius
+  // In plate modes or center geocentric mode, Earth is centered at (0, 0)
+  // In orbital mode, Earth is at earth.screenPos
+  const globeX = isHeliocentric ? earth.screenPos.x : (effectiveLambda > 0 ? 0 : earth.screenPos.x);
+  const globeY = isHeliocentric ? earth.screenPos.y : (effectiveLambda > 0 ? 0 : earth.screenPos.y);
+
+  // Radius matching plate proportions: flat mode uses 4.5px, 3D euler uses 4.8px, topdown uses 5.0px
+  const globeRadius = miniGlobeViewMode === 'flat' ? 4.5 : (miniGlobeViewMode === 'euler3d' ? 4.8 : 5.0);
+
   return (
     <>
       {/* 1. Earth-Sun Connection Line in Orbital Modes */}
@@ -110,60 +173,55 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         </g>
       ))}
 
-      {/* 3. Earth Bead (Heliocentric / Geocentric) */}
+      {/* 3. High-Precision Earth Mini-Globe with 3D Euler Orientation / 2D Flat Plate Pin */}
       <g
-        filter="url(#ringGlow)"
         className="cursor-pointer"
         style={{ touchAction: 'none' }}
         onPointerEnter={() => onHoverBead('earth')}
         onPointerLeave={() => onHoverBead(null)}
       >
-        {/* Invisible Touch Hitbox */}
-        <circle
-          cx={earth.screenPos.x}
-          cy={earth.screenPos.y}
-          r="10"
-          fill="transparent"
+        <MiniGlobe
+          cx={globeX}
+          cy={globeY}
+          radius={globeRadius}
+          viewMode={miniGlobeViewMode}
+          camera={{
+            pitch: cameraPitch,
+            yaw: cameraYaw,
+            roll: cameraRoll
+          }}
+          sunLambdaDeg={sunLambda}
+          declination={sun?.decDeg}
+          rightAscension={sun?.raDeg}
+          latitude={lat}
+          longitude={lon}
+          timeOfDay={timeOfDay}
+          showTerminator={miniGlobeViewMode !== 'flat'}
+          showTwilightBands={miniGlobeViewMode === 'euler3d'}
+          showParallels={miniGlobeViewMode !== 'flat'}
+          showPolarAxis={miniGlobeViewMode !== 'flat'}
+          showObserverPin={true}
+          showAtmosphereGlow={miniGlobeViewMode !== 'flat'}
+          showLabel={false}
+          onPointerEnter={() => onHoverBead('earth')}
+          onPointerLeave={() => onHoverBead(null)}
         />
-        {/* Earth Atmosphere Glow */}
-        <circle
-          cx={earth.screenPos.x}
-          cy={earth.screenPos.y}
-          r="4.8"
-          fill="#38bdf8"
-          fillOpacity="0.3"
-        />
-        {/* Earth Core */}
-        <circle
-          cx={earth.screenPos.x}
-          cy={earth.screenPos.y}
-          r="2.8"
-          fill="#0284c7"
-          stroke="#ffffff"
-          strokeWidth="0.8"
-        />
-        {/* Axial Tilt Marker (23.44°) */}
-        <line
-          x1={earth.screenPos.x - 3.5 * Math.sin(toRadians(23.44))}
-          y1={earth.screenPos.y - 3.5 * Math.cos(toRadians(23.44))}
-          x2={earth.screenPos.x + 3.5 * Math.sin(toRadians(23.44))}
-          y2={earth.screenPos.y + 3.5 * Math.cos(toRadians(23.44))}
-          stroke="#38bdf8"
-          strokeWidth="0.6"
-          opacity="0.85"
-        />
-        <text
-          x={earth.screenPos.x}
-          y={earth.screenPos.y + 7.0}
-          fontSize="3.2"
-          fill="#38bdf8"
-          fontFamily="monospace"
-          fontWeight="bold"
-          textAnchor="middle"
-          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
-        >
-          {projectionMode === 'geocentric' ? '⊕ EARTH (Center)' : '⊕ EARTH'}
-        </text>
+
+        {/* Monospace text label below globe */}
+        {miniGlobeViewMode !== 'flat' && (
+          <text
+            x={globeX}
+            y={globeY + 8.5}
+            fontSize="3.2"
+            fill="#38bdf8"
+            fontFamily="monospace"
+            fontWeight="bold"
+            textAnchor="middle"
+            className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+          >
+            {isGeocentric ? '⊕ EARTH (Center)' : '⊕ EARTH'}
+          </text>
+        )}
       </g>
 
       {/* 4. Lunar Ascending & Descending Nodes */}

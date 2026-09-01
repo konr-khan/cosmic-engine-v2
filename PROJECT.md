@@ -1,135 +1,240 @@
-# Project: Cosmic Engine V2.0 — Dynamic Armillary & Astrolabe Refinement
+# Project: Unified 3D Astronomical Scene Graph & Canonical Camera Rigs (Phase 1)
 
 ## Architecture
-The **Gyro-Morph Dynamic Armillary & Astrolabe** connects 5 continuous celestial models (`☉ Orbit`, `⊕ Apparent`, `🧭 Rete`, `📐 Rojas`, `🔭 Horizon`).
-The architecture cleanly decouples:
-1. **Mathematical Projection Core** (`src/utils/cosmicMath/armillary/`):
-   - Evaluates 3D celestial sphere geometry, SO(3) Euler rotations, stereographic conformal projections, Rojas orthographic projections, and topocentric horizon stereonets.
-   - Computes analytical closed forms for the Ecliptic ($Y_c = -R_0 \tan\epsilon$, $R_{\text{ecl}} = R_0 / \cos\epsilon$), celestial parallels (Equator, Cancer, Capricorn), Almucantars, and clamps the Sun bead $\vec{P}_\odot$ to the parametric Ecliptic track.
-   - Builds depth-sorted SVG paths with front ($z \ge 0$), back ($z < 0$), and unified paths.
-2. **UI & Viewport Coordinator** (`src/components/widgets/armillary/`):
-   - Coordinates user interaction, 5-mode preset spring snapping, and morph parameter $\lambda \in [0, 1]$.
-   - Enforces 2-phase $SO(3)$ camera staging: Phase A ($\lambda \in [0.0, 0.45]$) for camera pitch/yaw pole alignment, Phase B ($\lambda \in [0.45, 1.0]$) for canonical pole lock and projective unwrapping.
-   - Preserves and restores custom user 3D camera angles in `saved3DCameraRef`.
-   - Renders layered SVG canvas elements: Bezel, Almucantars, Laser Beacon, Observer Cone, Rings, Stars, Beads, and Alidade Sighting Arm.
-   - Unifies depth-split stroke dashing and opacity ($0.35 \to 1.0$) across $\lambda \in [0.85, 1.0]$.
-3. **Verification & Testing Layer** (`src/utils/cosmicMath.test.ts`, `src/components/widgets/widgets.test.ts`):
-   - Vitest unit tests verifying analytical circle invariants ($< 10^{-4}$ tolerance), chord-cutting prevention, 4-season Sun bead clamping, camera staging timing, and opacity transitions.
-   - Strict TypeScript nominal typing checks (`Degrees`, `Radians`, `JulianDate`).
+A unified, hierarchical 3D astronomical scene graph engine establishing a single geometric source of truth across Macro Orbit, Eclipse Demonstrator, and Gyro-Morph Armillary.
 
----
+```
+                  ┌──────────────────────────────────────────────┐
+                  │          Meeus Ephemeris Core                │
+                  │   (Solar / Lunar / Planetary Algorithms)     │
+                  └──────────────────────┬───────────────────────┘
+                                         │
+                                         ▼
+                  ┌──────────────────────────────────────────────┐
+                  │         generateCosmicScene(params)          │
+                  │   • Heliocentric Ecliptic Frame (J2000)      │
+                  │   • Geocentric Ecliptic Frame                │
+                  │   • Geocentric Equatorial & Inertial Tilt    │
+                  │   • Terrestrial Topocentric Frame            │
+                  │   • Scale Modes: 'true' (e=0.0167) vs        │
+                  │                  'exaggerated' (e=0.25)      │
+                  │   • 6 Seasonal Milestones & Lunar Orbit 5.14°│
+                  │   • Umbra / Penumbra Syzygy Shadow Cones     │
+                  └──────────────────────┬───────────────────────┘
+                                         │
+                   ┌─────────────────────┼─────────────────────┐
+                   ▼                     ▼                     ▼
+        ┌─────────────────────┐┌───────────────────┐┌───────────────────┐
+        │projectHeliocentric  ││projectGeocentric  ││projectGeocentric  │
+        │      TopDown        ││    Transverse     ││      Axial        │
+        │(Top-down Helioc.)   ││(Side-on Syzygy)   ││(Sightline Miss)   │
+        └──────────┬──────────┘└─────────┬─────────┘└─────────┬─────────┘
+                   │                     │                    │
+                   ▼                     ▼                    ▼
+        ┌──────────────────────────────────────────────────────────────┐
+        │             Reactive Scene Hook: useCosmicScene()            │
+        │   • useHeliocentricScene()                                   │
+        │   • useEclipseScene()                                        │
+        │   • useArmillaryScene()                                      │
+        └──────────────────────────────┬───────────────────────────────┘
+                                       │
+        ┌──────────────────────────────┼──────────────────────────────┐
+        ▼                              ▼                              ▼
+┌───────────────┐              ┌───────────────┐              ┌───────────────┐
+│Macro Orbit    │              │Eclipse        │              │Gyro-Morph     │
+│Widget         │              │Demonstrator   │              │Armillary      │
+│• OrbitSvg     │              │• LiveSyzygy   │              │• Armillary-   │
+│• MiniGlobe    │              │• NodalPlane   │              │  BeadsLayer   │
+│• Physics HUD  │              │• ShadowRays   │              │• MiniGlobe    │
+└───────────────┘              └───────────────┘              └───────────────┘
+```
 
 ## Feature Inventory
-
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| F1 | Stereographic Conformal Ecliptic Target | Evaluate Ecliptic target in Rete mode via exact eccentric circle closed form ($Y_c = -R_0 \tan\epsilon$, $R_{\text{ecl}} = R_0 / \cos\epsilon$) preserving true astronomical obliquity $\epsilon = 23.439^\circ$ without artificial $\alpha \to 0$ flattening. | M1 | ORIGINAL_REQUEST §R1 |
-| F2 | Continuous Conformal Ring Morphing | Evaluate all major celestial circles (Equator, Tropics, Horizon, Ecliptic) through `computeContinuousProjection2D` across morphing frames ($\lambda > 0$), guaranteeing conformal circle preservation without chord-cutting or vertex pulling. | M1 | ORIGINAL_REQUEST §R1 |
-| F3 | Parametric Ecliptic Sun Bead Clamping | Ensure Sun bead position $\vec{P}_\odot$ strictly coincides with the parametric Ecliptic track across all 4 astronomical seasons (Equinoxes, Solstices, Perihelion, Aphelion) and free Rete rotation. | M1 | ORIGINAL_REQUEST §R1 |
-| F4 | 2-Phase Staged Camera Choreography | In $3\text{D} \to 2\text{D}$ transitions: Phase A ($\lambda \in [0.0 \to 0.45]$) completes pitch/yaw alignment to canonical pole while geometry remains rigid 3D sphere ($\lambda_{\text{geom}} = 0$); Phase B ($\lambda \in [0.45 \to 1.0]$) locks camera at pole while projective unwrapping and plate decorations materialize. | M2 | ORIGINAL_REQUEST §R2 |
-| F5 | Symmetric Reverse Transitions & Camera Memory | Symmetric $2\text{D} \to 3\text{D}$ reverse execution: Phase B folds 2D plate back into 3D sphere under locked camera ($\lambda: 1.0 \to 0.45$), Phase A restores custom user viewing angles from `saved3DCameraRef` ($\lambda: 0.45 \to 0.0$). | M2 | ORIGINAL_REQUEST §R2 |
-| F6 | Seamless Depth Stroke Unification | Unify depth-split strokes (solid front $z \ge 0$, dashed back $z < 0$) into 100% solid opacity without flicker or double-drawing as $\lambda \ge 0.85$ (continuous scaling across $\lambda \in [0.85, 1.0]$). | M2 | ORIGINAL_REQUEST §R2 |
-| F7 | Analytical Projection & Tolerance Unit Tests | Unit tests verifying Ecliptic center ($Y_c = -R_0 \tan\epsilon$) and radius ($R_{\text{ecl}} = R_0 / \cos\epsilon$) within $< 10^{-4}$ tolerance, and absence of Cartesian chord-cutting artifacts across intermediate morphing frames. | M1, M3 | ORIGINAL_REQUEST §AC |
-| F8 | Staged Camera & Depth Unification Component Tests | Component tests verifying camera alignment completion at $\lambda = 0.45$, back stroke opacity unification at $\lambda \ge 0.85$, and user 3D angle restoration. | M2, M3 | ORIGINAL_REQUEST §AC |
-| F9 | Full Test Suite & Strict Typecheck Compliance | Execute full Vitest suite (`npm test -- --run`) ensuring all 223 tests across 10 suites pass and `npm run typecheck` passes with zero errors under strict branded nominal typing. | M3 | ORIGINAL_REQUEST §AC |
-
----
-
-## Refactoring Backlog & Architectural Roadmap
-
-| # | Target | Description | Status |
-|---|--------|-------------|--------|
-| R1 | Unified 3D $\to$ 2D Space-Curve Pipeline | Consolidate ring transformation, $SO(3)$ Euler projection, depth-splitting ($z_{\text{cam}} \gtrless 0$), and continuous dash blending across Equator, Tropics, Ecliptic, and Almucantars into `generateParametricRing3D`. | DONE |
-| R2 | Centralized `EphemerisFrame` Snapshot | Calculate solar/lunar ephemeris elements in one pass via `calculateEphemerisFrame` and distribute immutable frame slices across widgets to eliminate redundant per-frame calculations. | DONE |
-| R3 | Decoupled Camera Staging Hook (`useStagedCamera`) | Extract camera Euler angle interpolation and canonical pole snapping ($\lambda \in [0.0, 0.45]$) from `GyroArmillaryView.tsx` into a reusable custom hook `useStagedCamera`. | DONE |
-
----
+| F1 | `CosmicScene3D` Types & Interfaces | Comprehensive type definitions for 3D bodies, orbits, frames, shadow cones, and projected 2D elements | M1 | ORIGINAL_REQUEST §R1 |
+| F2 | Coordinate Frame Transforms | Vector math & matrix transforms: Heliocentric $\leftrightarrow$ Geocentric $\leftrightarrow$ Equatorial $\leftrightarrow$ Topocentric | M1 | ORIGINAL_REQUEST §R1 |
+| F3 | Scene Graph Generator | `generateCosmicScene(params)` with True Scale ($e=0.0167$) & Exaggerated ($e=0.25$) Keplerian orbits, 6 milestones, and $5.14^\circ$ lunar orbit | M1 | ORIGINAL_REQUEST §R1 |
+| F4 | Canonical Camera Rigs | `projectHeliocentricTopDown`, `projectGeocentricTransverse`, `projectGeocentricAxial`, and `projectEulerCamera` | M1 | ORIGINAL_REQUEST §R1 |
+| F5 | Scene Graph Math Tests | Unit tests in `src/utils/cosmicMath/scene/scene.test.ts` verifying coordinates, scale modes, shadow cones, and cameras | M1 | ORIGINAL_REQUEST §R1 |
+| F6 | `<MiniGlobe />` Component | Reusable SVG Earth mini-globe with $23.439^\circ$ inertial axial tilt, subsolar day/night terminator clipping, and equator/tropics | M2 | ORIGINAL_REQUEST §R2 |
+| F7 | MiniGlobe Component Tests | Comprehensive unit tests in `src/components/common/MiniGlobe.test.tsx` verifying view modes, illumination, and accessibility | M2 | ORIGINAL_REQUEST §R2 |
+| F8 | Reactive Scene Hook `useCosmicScene` | Memoized 60 FPS scene calculations and sub-hooks (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`) | M3 | ORIGINAL_REQUEST §R3 |
+| F9 | Macro Orbit Refactor | Migrate `MacroOrbitView` & `OrbitSvgCanvas` to `useHeliocentricScene()` and render `<MiniGlobe />` | M3 | ORIGINAL_REQUEST §R3 |
+| F10 | Eclipse Demonstrator Refactor | Migrate `EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer` to `useEclipseScene()` | M3 | ORIGINAL_REQUEST §R3 |
+| F11 | Reactive Scene Hook Tests | Unit tests in `src/hooks/useCosmicScene.test.ts` verifying memoization, subscriptions, and sub-hooks | M3 | ORIGINAL_REQUEST §R3 |
+| F12 | Armillary MiniGlobe Integration | Replace static central Earth bead in `ArmillaryBeadsLayer.tsx` with `<MiniGlobe />` | M4 | ORIGINAL_REQUEST §R4 |
+| F13 | Architecture Decision Record ADR-0004 | Document `docs/adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md` | M4 | ORIGINAL_REQUEST §R4 |
+| F14 | Technical Documentation Sync | Update `docs/MATH_SPEC.md`, `docs/DESIGN_SYSTEM.md`, and `AGENTS.md` | M4 | ORIGINAL_REQUEST §R4 |
+| F15 | Full Test Suite & Build Verification | Full regression run (223+ existing tests + new tests), TypeScript check, and production build | Final | ORIGINAL_REQUEST §Acceptance Criteria |
 
 ## Milestones
-
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Closed-Form Stereographic Conformal Ecliptic & Ring Morphing | Mathematical domain changes in `src/utils/cosmicMath/armillary/` (`generator.ts`, `projections.ts`, `paths.ts`) implementing F1, F2, F3, and analytical unit tests F7 in `src/utils/cosmicMath.test.ts`. | None | DONE |
-| M2 | Staged $SO(3)$ Camera Choreography & Seamless Depth Unification | UI component & layer updates in `src/components/widgets/armillary/` (`GyroArmillaryView.tsx`, `ArmillarySvgCanvas.tsx`, `canvas/ArmillaryRingsLayer.tsx`) implementing F4, F5, F6, and component tests F8 in `src/components/widgets/widgets.test.ts`. | M1 | DONE |
-| M3 | Comprehensive Acceptance Verification & Hardening | Full end-to-end test execution (`npm test -- --run`), strict typechecking (`npm run typecheck`), build verification (`npm run build`), and final audit handoff for F9. | M1, M2 | DONE |
-
----
+| M1 | Pure 3D Scene Graph & Coordinate Transforms | `src/utils/cosmicMath/scene/` (`types.ts`, `transforms.ts`, `cameras.ts`, `generator.ts`, `index.ts`, `scene.test.ts`) | none | DONE |
+| M2 | Reusable High-Precision `<MiniGlobe />` SVG Component | `src/components/common/MiniGlobe.tsx`, `src/components/common/MiniGlobe.test.tsx` | M1 | DONE |
+| M3 | Reactive Scene Hook & Widget Refactoring | `src/hooks/useCosmicScene.ts`, `src/hooks/useCosmicScene.test.ts`, `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `EclipseDemonstrator.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | M1, M2 | DONE |
+| M4 | Armillary Groundwork, Architecture Record & Documentation | `ArmillaryBeadsLayer.tsx`, `docs/adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md`, `docs/MATH_SPEC.md`, `docs/DESIGN_SYSTEM.md`, `AGENTS.md` | M1, M2, M3 | DONE |
+| Final | Final E2E Integration & Full Suite Verification | Comprehensive test execution (`npm test -- --run`), TypeScript validation (`npm run typecheck`), and production build (`npm run build`) | M1, M2, M3, M4 | DONE |
 
 ## Interface Contracts
 
-### 1. `generateArmillaryModel` (`src/utils/cosmicMath/armillary/generator.ts`)
+### `src/utils/cosmicMath/scene/types.ts`
 ```typescript
-export interface ArmillaryModelInput {
-  julianDate: number;
-  latitude: number;
-  longitude: number;
-  timeOfDay: number;
-  sunRaDeg: number;
-  sunDecDeg: number;
-  sunLambdaDeg: number;
-  moonRaDeg: number;
-  moonDecDeg: number;
-  moonLambdaDeg: number;
-  moonPhase: number;
-  morphLambda: number; // [0, 1] - 0: 3D, 1: 2D
-  projectionMode: ArmillaryProjectionMode;
-  fromProjectionMode?: ArmillaryProjectionMode;
-  projectionTransitionT?: number;
-  cameraPitch: number;
-  cameraYaw: number;
-  cameraRoll?: number;
-  r0?: number;
-  eccentricityMode?: 'true' | 'exaggerated';
-  isFreeReteMode?: boolean;
-  freeReteOffsetDeg?: number;
+export type ScaleMode = 'true' | 'exaggerated';
+
+export interface SceneBody3D {
+  position: Vector3D; // AU or astronomical units in current scale
+  radius: number;
+  velocity?: Vector3D;
+  orbitalElements?: {
+    semiMajorAxis: number;
+    eccentricity: number;
+    inclination: Radians;
+    longitudeOfAscendingNode: Radians;
+    argumentOfPeriapsis: Radians;
+    trueAnomaly: Radians;
+  };
+}
+
+export interface ShadowCones3D {
+  umbraApex: Vector3D;
+  umbraAngle: Radians;
+  penumbraApex: Vector3D;
+  penumbraAngle: Radians;
+  axisDirection: Vector3D;
+  moonCenter: Vector3D;
+  earthCenter: Vector3D;
+}
+
+export interface CosmicScene3D {
+  timestamp: Date;
+  scaleMode: ScaleMode;
+  sun: SceneBody3D;
+  earth: SceneBody3D & {
+    obliquity: Radians;
+    subsolarPoint: Vector3D; // Normalized direction to Sun in Earth body frame
+    axialTiltVector: Vector3D; // Inertial north pole vector
+  };
+  moon: SceneBody3D & {
+    eclipticLatitude: Degrees;
+    eclipticLongitude: Degrees;
+    ascendingNodeLongitude: Degrees;
+    descendingNodeLongitude: Degrees;
+    quadrant: 1 | 2 | 3 | 4;
+  };
+  milestones: Array<{
+    id: string;
+    label: string;
+    position: Vector3D;
+    longitude: Degrees;
+    date: string;
+  }>;
+  shadowCones: ShadowCones3D;
+}
+
+export interface ProjectedScene2D {
+  camera: {
+    name: 'topdown' | 'transverse' | 'axial' | 'euler3d' | 'custom';
+    viewport: { width: number; height: number; scale: number; centerX: number; centerY: number };
+  };
+  elements: {
+    sun: { x: number; y: number; r: number; visible: boolean; depth: number };
+    earth: { x: number; y: number; r: number; visible: boolean; depth: number; axialTiltAngle2D: number };
+    moon: { x: number; y: number; r: number; visible: boolean; depth: number };
+    orbitPath: string; // SVG path d-string
+    lunarOrbitPath?: string;
+    lunarOrbitSegments?: Array<{ path: string; stroke: string; strokeDasharray?: string; isFront: boolean }>;
+    shadowCones?: {
+      umbraPath: string;
+      penumbraPath: string;
+      axisLine: { x1: number; y1: number; x2: number; y2: number };
+    };
+    milestones: Array<{ id: string; label: string; x: number; y: number; visible: boolean }>;
+  };
 }
 ```
-- Geometry flattening progress $\lambda_{\text{geom}} = \text{clamp}((\lambda - 0.45) / 0.55, 0, 1)$ for 2D target modes (`stereographic`, `rojas`, `horizon`).
-- Depth boundary threshold `isFront = geomLambda >= 0.85 ? true : pCam.z >= 0`.
-- All vertices must have finite coordinates, smooth consecutive segment lengths ($0.01 < \Delta s < 35$), and exact closed-form stereographic conformal target coordinates.
 
-### 2. `ArmillaryRingsLayer` (`src/components/widgets/armillary/canvas/ArmillaryRingsLayer.tsx`)
+### `<MiniGlobe />` Props Contract (`src/components/common/MiniGlobe.tsx`)
 ```typescript
-export interface ArmillaryRingsLayerProps {
-  rings: ArmillaryRingPath[];
-  morphLambda: number;
-  orbitRingOpacity: number;
-  celestialRingsOpacity: number;
+export type MiniGlobeViewMode = 'topdown' | 'transverse' | 'axial' | 'euler3d' | 'flat';
+
+export interface MiniGlobeProps {
+  cx: number;
+  cy: number;
+  radius?: number; // default 14
+  viewMode: MiniGlobeViewMode;
+  obliquity?: Degrees; // default 23.439281
+  sunAngle?: Radians; // Angle of incoming sunlight in 2D projection
+  subsolarVector?: Vector3D; // 3D subsolar vector for spherical illumination
+  pitch?: Degrees; // Camera pitch for euler3d mode
+  yaw?: Degrees; // Camera yaw for euler3d mode
+  observerLat?: Latitude;
+  observerLon?: Longitude;
+  showObserverPin?: boolean;
+  showParallels?: boolean;
+  showPolarAxis?: boolean;
+  className?: string;
+  onClick?: () => void;
 }
 ```
-- Back segments scale opacity via $0.35 + 0.65 \cdot u$ where $u = \text{clamp}((\lambda - 0.85) / 0.15, 0, 1)$.
-- Back segments scale strokeWidth to match front width as $u \to 1$.
-- `strokeDasharray` transitions from `'3,2'` to `'none'` as $u \to 1$.
-- Front segments render `frontPathD` and back segments render `backPathD`, preventing duplicate path drawing.
 
-### 3. Camera Staging & Memory (`src/components/widgets/armillary/GyroArmillaryView.tsx`)
-- Phase A: $\lambda_{\text{cam}} = \text{clamp}(\lambda / 0.45, 0, 1)$.
-- Pitch/yaw interpolated along shortest angular geodesic.
-- `saved3DCameraRef.current` saved during 3D modes / $\lambda \le 0.05$ and restored when returning to 3D.
+### `useCosmicScene` Hook Contract (`src/hooks/useCosmicScene.ts`)
+```typescript
+export interface UseCosmicSceneOptions {
+  scaleMode?: ScaleMode;
+}
 
----
+export function useCosmicScene(options?: UseCosmicSceneOptions): {
+  scene: CosmicScene3D;
+  projectTopDown: (width: number, height: number, scale?: number) => ProjectedScene2D;
+  projectTransverse: (width: number, height: number, scale?: number) => ProjectedScene2D;
+  projectAxial: (width: number, height: number, scale?: number) => ProjectedScene2D;
+  projectEuler: (pitch: Degrees, yaw: Degrees, width: number, height: number, scale?: number) => ProjectedScene2D;
+};
+
+export function useHeliocentricScene(scaleMode?: ScaleMode): {
+  scene: CosmicScene3D;
+  projected: ProjectedScene2D;
+  scaleMode: ScaleMode;
+};
+
+export function useEclipseScene(): {
+  scene: CosmicScene3D;
+  transverse: ProjectedScene2D;
+  axial: ProjectedScene2D;
+};
+
+export function useArmillaryScene(): {
+  scene: CosmicScene3D;
+};
+```
 
 ## Code Layout
-
-```
-Cosmic Engine V2.0/
-├── src/
-│   ├── utils/
-│   │   ├── cosmicMath/
-│   │   │   ├── armillary/
-│   │   │   │   ├── generator.ts      # [M1] Armillary model generation & geom staging
-│   │   │   │   ├── projections.ts    # [M1] Stereographic conformal closed form
-│   │   │   │   ├── paths.ts          # [M1] SVG path generation & depth splitting
-│   │   │   │   ├── coordinates.ts    # [M1] Euler rotations & coordinate transforms
-│   │   │   │   └── types.ts          # [M1] Domain types & interfaces
-│   │   │   └── index.ts
-│   │   └── cosmicMath.test.ts        # [M1, M3] Analytical projection & invariant tests
-│   └── components/
-│       └── widgets/
-│           ├── armillary/
-│           │   ├── GyroArmillaryView.tsx      # [M2] Master armillary coordinator & camera staging
-│           │   ├── ArmillarySvgCanvas.tsx      # [M2] Interactive SVG canvas & pointer coordination
-│           │   └── canvas/
-│           │       └── ArmillaryRingsLayer.tsx # [M2] Depth-split stroke unification & glow layer
-│           └── widgets.test.ts                 # [M2, M3] Component & camera staging tests
-```
+- `src/utils/cosmicMath/scene/`
+  - `types.ts` — 3D scene interfaces, coordinate frames, camera parameters
+  - `transforms.ts` — Pure matrix & Euler rotation transformations
+  - `cameras.ts` — Canonical camera projection pipelines (TopDown, Transverse, Axial, Euler)
+  - `generator.ts` — `generateCosmicScene(params)` implementation
+  - `index.ts` — Barrel export for scene module
+  - `scene.test.ts` — Unit tests for scene generation & camera projections
+- `src/components/common/`
+  - `MiniGlobe.tsx` — Reusable SVG Earth mini-globe component
+  - `MiniGlobe.test.tsx` — Unit tests for MiniGlobe
+- `src/hooks/`
+  - `useCosmicScene.ts` — Reactive scene hook & specialized sub-hooks
+  - `useCosmicScene.test.ts` — Unit tests for reactive scene hook
+- `src/components/widgets/macro/`
+  - `MacroOrbitView.tsx` — Heliocentric Macro Orbit container
+  - `OrbitSvgCanvas.tsx` — SVG heliocentric viewport consuming `useHeliocentricScene`
+- `src/components/widgets/eclipse/`
+  - `EclipseDemonstrator.tsx` — Eclipse Demonstrator container
+  - `LiveSyzygyView.tsx` — Side-by-side syzygy visualizer consuming `useEclipseScene`
+  - `NodalPlaneVisualizer.tsx` — 5.14° nodal plane visualizer
+- `src/components/widgets/armillary/`
+  - `canvas/ArmillaryBeadsLayer.tsx` — Armillary beads layer rendering `<MiniGlobe />`
+- `docs/`
+  - `adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md` — ADR for scene graph architecture
+  - `MATH_SPEC.md` — Section 10 mathematical specification sync
+  - `DESIGN_SYSTEM.md` — MiniGlobe design tokens sync
+  - `AGENTS.md` — Agent architecture map sync

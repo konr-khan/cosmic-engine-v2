@@ -1,6 +1,7 @@
 import React from 'react';
 import { EclipseData } from '../../../types';
-import { calculateEarthSideGeometry, generateOrbitalSegments, toRadians } from '../../../utils/cosmicMath';
+import { generateOrbitalSegments, toRadians } from '../../../utils/cosmicMath';
+import { MiniGlobe } from '../../common/MiniGlobe';
 
 export interface LiveSyzygyViewProps {
   eclipse: EclipseData;
@@ -51,16 +52,6 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
   const ascNodeY = liveEarthY;
   const descNodeX = liveEarthX - (Math.cos(tDesc) * liveOrbitalRx);
   const descNodeY = liveEarthY;
-
-  const liveEarthGeom = calculateEarthSideGeometry(
-    liveEarthX,
-    liveEarthY,
-    18,
-    sunLambdaDeg,
-    latitude,
-    timeOfDay,
-    longitude
-  );
 
   return (
     <g>
@@ -134,55 +125,24 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
         </text>
       </g>
 
-      {/* 2. EARTH BODY WITH 23.44° AXIAL TILT, DASHED EQUATOR & OBSERVER PIN */}
-      <g 
-        className="cursor-pointer"
+      {/* 2. HIGH-PRECISION EARTH MINI-GLOBE WITH 23.44° AXIAL TILT, EQUATOR & OBSERVER PIN */}
+      <MiniGlobe
+        cx={liveEarthX}
+        cy={liveEarthY}
+        radius={18}
+        viewMode="transverse"
+        sunLambdaDeg={sunLambdaDeg}
+        latitude={latitude}
+        longitude={longitude}
+        timeOfDay={timeOfDay}
+        showTerminator={true}
+        showParallels={true}
+        showPolarAxis={true}
+        showObserverPin={true}
+        showAtmosphereGlow={true}
         onPointerEnter={() => setHoveredEntity('earth')}
         onPointerLeave={() => setHoveredEntity(null)}
-      >
-        <circle cx={liveEarthX} cy={liveEarthY} r={liveEarthGeom.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
-
-        {/* Projected 23.44° Polar Axis */}
-        <line 
-          x1={liveEarthX - liveEarthGeom.poleLineX} 
-          y1={liveEarthY + liveEarthGeom.poleLineY} 
-          x2={liveEarthX + liveEarthGeom.poleLineX} 
-          y2={liveEarthY - liveEarthGeom.poleLineY} 
-          stroke="#93c5fd" 
-          strokeWidth="0.85" 
-          strokeDasharray="2.5 1.5" 
-          opacity="0.65" 
-        />
-
-        {/* Dashed Blue Equator Line */}
-        <line 
-          x1={liveEarthGeom.eqX1} 
-          y1={liveEarthGeom.eqY1} 
-          x2={liveEarthGeom.eqX2} 
-          y2={liveEarthGeom.eqY2} 
-          stroke="#38bdf8" 
-          strokeWidth="0.85" 
-          strokeDasharray="2 1.5" 
-          opacity="0.65" 
-        />
-
-        {/* Observer Location Pin */}
-        <g transform={`translate(${liveEarthGeom.obsPx.toFixed(1)}, ${liveEarthGeom.obsPy.toFixed(1)})`}>
-          {liveEarthGeom.isDaylight && (
-            <circle r="4" fill="#38bdf8" opacity="0.25" className="animate-pulse pointer-events-none" />
-          )}
-          <circle 
-            r="2" 
-            fill={liveEarthGeom.isDaylight ? "#38bdf8" : "#64748b"} 
-            stroke="#ffffff" 
-            strokeWidth="0.75" 
-            opacity={liveEarthGeom.isDaylight ? 1 : 0.4}
-            className="cursor-pointer drop-shadow-sm"
-          >
-            <title>{`Observer (${Math.abs(latitude).toFixed(1)}°${latitude >= 0 ? 'N' : 'S'}, ${Math.abs(longitude).toFixed(1)}°${longitude >= 0 ? 'E' : 'W'}) — ${liveEarthGeom.isDaylight ? 'Daylight (Sunlit Face)' : 'Night (Earth Shadow/Night Face)'}`}</title>
-          </circle>
-        </g>
-      </g>
+      />
 
       {/* Line connecting Earth and Moon */}
       <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
@@ -215,3 +175,5 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
     </g>
   );
 };
+
+export default LiveSyzygyView;

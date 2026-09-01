@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Layers, Eye, Calendar } from 'lucide-react';
-import { calculateEclipseData, findUpcomingEclipses, getJulianDate } from '../../../utils/cosmicMath';
+import { findUpcomingEclipses } from '../../../utils/cosmicMath';
 import { EclipseStatusBadge } from './EclipseStatusBadge';
 import { ShadowRayDiagram } from './ShadowRayDiagram';
 import { NodalPlaneVisualizer } from './NodalPlaneVisualizer';
 import { SkyViewSimulator } from './SkyViewSimulator';
 import { EclipseScanner } from './EclipseScanner';
 import { OrbitalData, EclipseData } from '../../../types';
+import { useEclipseScene } from '../../../hooks/useCosmicScene';
 
 export interface EclipseDemonstratorProps {
   currentDate?: Date;
@@ -29,9 +30,17 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'geometry' | 'sky' | 'scanner'>('geometry');
 
+  // Consume unified 3D eclipse scene graph
+  const eclipseScene = useEclipseScene({
+    date: currentDate,
+    latitude,
+    longitude,
+    timeOfDay
+  });
+
   const eclipse: EclipseData = (orbitalData && orbitalData.eclipse) 
     ? orbitalData.eclipse 
-    : calculateEclipseData(currentDate ? getJulianDate(currentDate, 12) : 2451545.0);
+    : eclipseScene.eclipse;
 
   // Discover upcoming eclipses from current date
   const upcomingEclipses = useMemo(() => {
@@ -41,13 +50,13 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
   const handleSelectPreset = (preset: { date: Date; timeOfDay?: number } | Date) => {
     if (!onDateChange) return;
     const targetDate = preset instanceof Date ? preset : preset.date;
-    const timeOfDay = preset instanceof Date
+    const timeOfDayVal = preset instanceof Date
       ? (preset.getUTCHours() + preset.getUTCMinutes() / 60)
       : (preset.timeOfDay ?? (preset.date.getUTCHours() + preset.date.getUTCMinutes() / 60));
 
     onDateChange(new Date(targetDate));
-    if (onTimeChange && typeof timeOfDay === 'number') {
-      onTimeChange(timeOfDay);
+    if (onTimeChange && typeof timeOfDayVal === 'number') {
+      onTimeChange(timeOfDayVal);
     }
   };
 

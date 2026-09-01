@@ -63,6 +63,48 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Dashed Amber Line (`stroke="#fbbf24" strokeDasharray="3 2"`)**: Exact daylight terminator boundary curve ($h = -0.833^\circ$).
 * **Dashed Sky Blue Crosshair (`stroke="#38bdf8" strokeDasharray="4 2"`)**: User geographic latitude and centered prime meridian.
 
+### D. Reusable High-Precision `<MiniGlobe />` Visual Tokens & Layer Hierarchy
+
+The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies the graphical representation of planet Earth across all 2D and 3D visualizers. It renders a clean, non-tearing 9-layer SVG hierarchy with strict semantic tokens:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 9. Enlarged Touch Hit Target (r = 1.6R, cursor-pointer)     │
+│ 8. Monospace Label Overlay ("EARTH", drop-shadow-md)        │
+│ 7. Observer Pin ("YOU") (Pulsing #38bdf8 day / #64748b night│
+│ 6. Specular Planetary Limb Rim (#60a5fa 1.2px / #93c5fd)    │
+│ 5. Polar Axis Line (23.44° tilt, Ice Blue #93c5fd dashed)   │
+│ 4. Parallels (Equator #38bdf8, Tropics #64748b dashed)       │
+│ 3. Daylight & Twilight Bands (Ocean #2563eb / Civil #1e40af)│
+│ 2. Nighttime Base Disc (Deep Space Slate #020617)           │
+│ 1. Outer Atmospheric Halo (Cyan #38bdf8 radial gradient)    │
+│ 0. Unique SVG Defs & ClipPath (React useId() isolation)     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 1. Layer Tokens & Palette
+| Layer | Element | Styling & Color Tokens | Description |
+| :--- | :--- | :--- | :--- |
+| **0. Defs** | `<clipPath>` & `<radialGradient>` | `useId()` safe prefix | Guarantees zero ID collision across multiple mounted instances |
+| **1. Atmosphere** | Outer Halo | `#38bdf8` (35%) $\to$ `#0284c7` (15%) $\to$ `#0369a1` (0%) | Radial glow extending to $1.35\times$ radius |
+| **2. Night Base** | Night Disc | `#020617` (Deep Space Slate) | Base sphere fill behind daylight terminator |
+| **3. Daylight** | Sunlit Semicircle / 3D Patch | `#60a5fa` $\to$ `#2563eb` $\to$ `#1d4ed8` | Ocean core radial gradient clipped to subsolar vector |
+| **3b. Twilight** | Twilight Bands | Civil `#1e40af` ($-6^\circ$), Nautical `#1e293b` ($-12^\circ$) | Smooth non-tearing spherical limb arcs |
+| **4. Parallels** | Equator / Tropics | Equator `#38bdf8` (`strokeWidth="0.75"`, dashed `2 1.5`); Tropics `#64748b` (`strokeWidth="0.5"`, dashed `2 1.5`) | $0^\circ$ Celestial Equator and $\pm 23.44^\circ$ Solstice Tropics |
+| **5. Polar Axis** | 23.44° Rotational Axis | `#93c5fd` (`strokeWidth="0.85"`, dashed `2.5 1.5`, opacity `0.75`) | Rotated rotational axis passing through poles |
+| **6. Limb Rim** | Outer Rim | `#60a5fa` (`strokeWidth="1.2"`, opacity `0.8`) + inner `#93c5fd` (`strokeWidth="0.4"`) | Dual-layer specular spherical limb boundary |
+| **7. Observer Pin** | Observer Marker ("YOU") | Day: Sky Blue `#38bdf8` ($r=1.6-1.8\text{px}$) + white ring + pulse halo; Night: Muted Slate `#64748b` ($r=1.3-1.5\text{px}$) | True topocentric geographic observer pin |
+| **8. Label** | Monospace Tag | Monospace `text-[9px] font-mono font-bold fill-blue-300` | High-contrast label with dark drop shadow |
+| **9. Hit Target** | Pointer Target | `fill="transparent"`, $r = \max(16\text{px}, 1.6 R)$ | Generous hit area preventing hover flickering |
+
+#### 2. Canonical View Modes
+* **`topdown` (Heliocentric Macro Orbit)**: Renders Sunward daylight semicircle oriented dynamically toward Sun focus F1 (`sunAngleDeg`), with tilted $23.44^\circ$ polar axis and elliptical equator/tropics chords.
+* **`transverse` (Eclipse Left Pane — Side Profile)**: Renders side-on transverse profile with Sun on left ($X < cx$), tilted polar axis $\theta_{\text{side}} = \varepsilon \sin\lambda_\odot$, and dashed equator chord.
+* **`axial` (Eclipse Right Pane — Sightline View)**: Renders down-the-barrel sightline through Earth with curved 3D front equator arc and night-side viewer perspective.
+* **`euler3d` (Armillary 3D Apparent View)**: Renders 3D sphere rotating dynamically with user Euler camera dragging $(\text{Pitch}, \text{Yaw}, \text{Roll})$ in inertial space with analytical limb clipping.
+* **`flat` (Astrolabe 2D Plate Modes)**: Renders precision concentric brass pivot pin (`#b45309`/`#78350f`, $0.75\text{px}$) with dark core (`#0f172a`), pulsing Sky Blue center dot (`#38bdf8`), and fine crosshair reticle (`#78350f`, $0.5\text{px}$).
+
+
 ---
 
 ## 3. Glassmorphic Popover & HUD Hierarchy

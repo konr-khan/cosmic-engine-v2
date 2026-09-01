@@ -42,6 +42,11 @@
 - 🌍 **LivingMarble Globe Visualizer**: Analytical spherical limb intersection and evenodd annular cutout eliminating backside terminator tearing and preserving deep-night contrast.
 - 🎯 **Cross-Card Interactive Hover Sync**: Hovering over timestamps or calendar dates in any widget synchronizes time/elevation across all visible cards simultaneously.
 - ⚡ **Web Worker Ephemeris Offloading**: Asynchronous, off-main-thread computation for heavy Meeus lunar and syzygy shadow algorithms via an application-level singleton worker manager with request multiplexing and automatic synchronous fallback.
+- 🌐 **Unified 3D Astronomical Scene Graph & Canonical Camera Rigs**:
+  - **Single 3D Geometric Source of Truth**: Pure 3D inertial coordinates (`src/utils/cosmicMath/scene/`) uniting Heliocentric Keplerian orbits, Geocentric 5.14° inclined lunar orbit with continuous nodal precession $\Omega(t)$, physical $23.439^\circ$ Earth axial obliquity, and analytical Umbra/Penumbra syzygy shadow cones.
+  - **Reusable High-Precision `<MiniGlobe />` SVG Component**: Modular 9-layer SVG Earth sphere (`src/components/common/MiniGlobe.tsx`) with physical $23.439^\circ$ axial tilt rotation, analytical subsolar day/night terminator hemisphere clipping, civil/nautical/astronomical twilight bands, Equator/Tropics parallels, and pulsing topocentric observer pin across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`).
+  - **Canonical Camera Projection Pipelines**: Pure functional mathematical projections (`projectHeliocentricTopDown`, `projectGeocentricTransverse`, `projectGeocentricAxial`, `projectEulerCamera`) translating 3D scene geometry to 2D SVG canvas viewports.
+  - **Reactive 60 FPS Scene Hooks**: `useCosmicScene` master hook and specialized selectors (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`) memoizing 3D scene data and projection outputs with React 19 `useSyncExternalStore` subscription and `shallowEqual` protection.
 - ⏱️ **External Chronometer Store**: High-frequency animation loops powered by React 19 `useSyncExternalStore` and `requestAnimationFrame` for 60 FPS performance without React re-render thrashing.
 - 🛡️ **Fault-Tolerant Window Error Boundaries**: Dedicated React Error Boundaries wrap each visualization module, isolating rendering exceptions and providing an in-place module retry mechanism without crashing the dashboard.
 - 🪟 **Modular Window Grid & Workspace Presets**: Drag-and-drop column reordering, resizing, locking, maximize/minimize modes, and curated presets (*Master Observatory*, *Renaissance Horology Suite*, *Solar Observation Suite*, *Lunar & Tidal Suite*, *Eclipse Mechanics Suite*, *Ultrawide 21:9 Observatory*).
@@ -108,20 +113,21 @@ Cosmic Engine V2.0/
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001-0003)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001-0004)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
     ├── types/                   # Symbol-branded nominal units, coordinates & RPC contracts
-    ├── utils/cosmicMath/        # Pure astronomical mathematical algorithms & projections
+    ├── utils/cosmicMath/        # Pure astronomical mathematical algorithms, projections & scene graph
+    │   └── scene/               # Unified 3D Astronomical Scene Graph & Camera Projection Rigs
     ├── store/                   # High-frequency external chronometer store (60 FPS ticker)
     ├── workers/                 # Web Worker offloading for Meeus ephemeris & annual matrices
-    ├── hooks/                   # Custom domain hooks (engine, worker RPC, dashboard layout)
+    ├── hooks/                   # Custom domain hooks (engine, 3D scene, worker RPC, dashboard layout)
     └── components/              # Grouped visual component architecture
         ├── widgets/             # 8 core observatory subsystems (Armillary, Solar, Lunar, etc.)
         ├── controls/            # Interactive astrolabe dials, sliders & longitude selector
         ├── layout/              # Observatory navbar, window wrappers & chronometer dock
-        └── common/              # Shared error boundaries, globe visualizer & phase discs
+        └── common/              # Shared error boundaries, mini globe, LivingMarble & phase discs
 ```
 
 > [!TIP]
@@ -147,11 +153,16 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, and asynchronous worker operations across 10 specialized domain suites (**223 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 15 specialized domain suites (**326 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
 | **Cosmic Math** | `src/utils/cosmicMath.test.ts` (133 tests) | Polar daylight singularities ($\pm 90^\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, closed-form stereographic conformal ring invariants ($R_0 \sec\epsilon$), and 5-model Gyro-Morph continuum |
+| **3D Scene Graph Math** | `src/utils/cosmicMath/scene/scene.test.ts` (16 tests) | 3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\circ$ inclined lunar orbit with continuous nodal precession $\Omega(t)$, and 3D syzygy shadow cones |
+| **Scene Cameras Stress** | `src/utils/cosmicMath/scene/cameras.stress.test.ts` (6 tests) | Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts |
+| **Scene Coordinate Adversarial** | `src/utils/cosmicMath/scene/m1_adversarial.test.ts` (6 tests) | Coordinate frame invariants, axial tilt matrix preservation ($23.439^\circ$) in inertial space, and singular polar viewing angles |
+| **MiniGlobe SVG Component** | `src/components/common/MiniGlobe.test.tsx` (26 tests) | 9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping |
+| **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (14 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`), and `shallowEqual` protection |
 | **Observatory Widgets** | `src/components/widgets/widgets.test.ts` (24 tests) | Modular barrel exports, contract assertions, and integrated domain ephemeris across all 8 observatory window subsystems, including camera pole timing and depth stroke unification |
 | **Staged Camera Hook** | `src/components/widgets/armillary/useStagedCamera.test.ts` (9 tests) | 2-phase Euler angle interpolation ($\lambda \le 0.45$), canonical pole locking ($\lambda \ge 0.45$), memory angle retention, and reverse transition unwinding |
 | **Camera Staging Adversarial** | `src/components/widgets/armillary/m2_adversarial.test.ts` (6 tests) | Camera alignment timing ($0 \le \lambda \le 0.45$), canonical pole lock ($0.45 \le \lambda \le 1.0$), geodesic wrapping, and custom user 3D angle restoration |

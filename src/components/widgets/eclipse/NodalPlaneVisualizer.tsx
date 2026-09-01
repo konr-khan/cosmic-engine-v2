@@ -4,10 +4,10 @@ import {
   clamp, 
   calculateEarthOrbitalPhysics, 
   getJulianDate, 
-  calculateEarthAxialGeometry, 
   generateOrbitalSegments,
   toRadians
 } from '../../../utils/cosmicMath';
+import { MiniGlobe } from '../../common/MiniGlobe';
 
 export interface NodalPlaneVisualizerProps {
   eclipse?: EclipseData | null;
@@ -49,6 +49,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const axialSunRadius = 38;
   const axialMoonRadius = clamp(8.5 * (moonAngularDiamArcmin / 31.13), 7.0, 10.0);
   const isTotalCapable = moonAngularDiamArcmin >= sunAngularDiamArcmin;
+
   // --- Orbital Geometry in Axial Projection (3D Elliptical Orbital Loop) ---
   const centerX = 200;
   const centerY = 90;
@@ -64,19 +65,6 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   // Transverse displacement perpendicular to the Sun-Earth sightline:
   const moonX = centerX + (Math.sin(phaseRad) * 110);
   const moonY = centerY - (beta * 8.5);
-
-  // --- Earth Axial Geometry & Observer Location Pin ---
-  const earthGeometry = useMemo(() => {
-    return calculateEarthAxialGeometry(
-      centerX,
-      centerY,
-      20,
-      sunLambdaDeg,
-      latitude,
-      timeOfDay,
-      longitude
-    );
-  }, [sunLambdaDeg, latitude, timeOfDay, longitude, centerX, centerY]);
 
   // 3D Elliptical Orbital Loop: 4-Quadrant Paths (Waxing/Waning x Ascending/Descending)
   const { waxAsc, waxDesc, wanAsc, wanDesc } = generateOrbitalSegments(
@@ -198,60 +186,23 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
             </text>
           </g>
 
-          {/* 4. VECTOR EARTH BODY WITH 23.44° AXIAL TILT, DASHED EQUATOR & OBSERVER PIN */}
-          <g>
-            {/* Earth Base Disc */}
-            <circle cx={centerX} cy={centerY} r={earthGeometry.earthR} fill="#1e3a8a" stroke="#60a5fa" strokeWidth="1.5" />
-
-            {/* Projected 23.44° Polar Axis */}
-            <line 
-              x1={centerX - earthGeometry.poleLineX} 
-              y1={centerY + earthGeometry.poleLineY} 
-              x2={centerX + earthGeometry.poleLineX} 
-              y2={centerY - earthGeometry.poleLineY} 
-              stroke="#93c5fd" 
-              strokeWidth="0.85" 
-              strokeDasharray="2.5 1.5" 
-              opacity="0.65" 
-            />
-
-            {/* Dashed Blue Equator Chord */}
-            <path 
-              d={earthGeometry.equatorPathD} 
-              fill="none" 
-              stroke="#38bdf8" 
-              strokeWidth="0.85" 
-              strokeDasharray="2 1.5" 
-              opacity="0.65" 
-            />
-
-            {/* Earth Label (Offset if observer pin is near center) */}
-            <text 
-              x={centerX} 
-              y={centerY + (Math.abs(earthGeometry.obsPy - centerY) < 5 ? 12 : 3)} 
-              textAnchor="middle" 
-              className="text-[7.5px] font-mono font-bold fill-blue-300/80 select-none pointer-events-none"
-            >
-              EARTH
-            </text>
-
-            {/* Observer Location Pin */}
-            <g transform={`translate(${earthGeometry.obsPx.toFixed(1)}, ${earthGeometry.obsPy.toFixed(1)})`}>
-              {earthGeometry.isDaylight && (
-                <circle r="4" fill="#38bdf8" opacity="0.25" className="animate-pulse pointer-events-none" />
-              )}
-              <circle 
-                r="2" 
-                fill={earthGeometry.isDaylight ? "#38bdf8" : "#64748b"} 
-                stroke="#ffffff" 
-                strokeWidth="0.75" 
-                opacity={earthGeometry.isDaylight ? 1 : 0.4}
-                className="cursor-pointer drop-shadow-sm"
-              >
-                <title>{`Observer (${Math.abs(latitude).toFixed(1)}°${latitude >= 0 ? 'N' : 'S'}, ${Math.abs(longitude).toFixed(1)}°${longitude >= 0 ? 'E' : 'W'}) — ${earthGeometry.isDaylight ? 'Daylight (Sunlit Face)' : 'Night (Backside)'}`}</title>
-              </circle>
-            </g>
-          </g>
+          {/* 4. HIGH-PRECISION EARTH MINI-GLOBE IN AXIAL PROJECTION */}
+          <MiniGlobe
+            cx={centerX}
+            cy={centerY}
+            radius={20}
+            viewMode="axial"
+            sunLambdaDeg={sunLambdaDeg}
+            latitude={latitude}
+            longitude={longitude}
+            timeOfDay={timeOfDay}
+            showTerminator={true}
+            showParallels={true}
+            showPolarAxis={true}
+            showObserverPin={true}
+            showAtmosphereGlow={true}
+            showLabel={true}
+          />
 
           {/* 5. DYNAMIC MOON DISC IN REAL-TIME ORBIT */}
           <g transform={`translate(${moonX}, ${moonY})`}>

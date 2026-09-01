@@ -492,3 +492,189 @@ Given instantaneous geocentric lunar distance $d_{\text{km}} \in [356,400, 406,7
 * *Perigee ($356,400\text{ km}$)*: $\theta_{\text{moon}} \approx 33.57'$.
 * *Apogee ($406,700\text{ km}$)*: $\theta_{\text{moon}} \approx 29.42'$.
 
+---
+
+## 10. Unified 3D Astronomical Scene Graph & Canonical Camera Rigs
+
+Section 10 codifies the ground-truth mathematical models, matrix transformations, Keplerian scale modes, shadow cone geometry, and projection camera rigs implemented in `src/utils/cosmicMath/scene/`.
+
+### A. Coordinate Frames & Transformations
+
+1. **Heliocentric Ecliptic J2000 Frame ($\mathcal{F}_{\text{ecl}}$)**:
+   * Origin: Sun barycenter / Center of Focus F1 $(0, 0, 0)$.
+   * Fundamental Plane: Mean Ecliptic plane of epoch J2000.0 ($Z = 0$).
+   * $+X$-axis: Points toward the March Equinox ($\Upsilon$, ecliptic longitude $\lambda = 0^\circ$).
+   * $+Y$-axis: Points in the ecliptic plane toward $\lambda = 90^\circ$ (June Solstice direction).
+   * $+Z$-axis: Points toward the North Ecliptic Pole ($\beta = +90^\circ$).
+
+2. **Geocentric Equatorial J2000 Frame ($\mathcal{F}_{\text{eq}}$)**:
+   * Origin: Earth center $(0, 0, 0)$.
+   * Fundamental Plane: Earth celestial equator ($\delta = 0^\circ$).
+   * $+X$-axis: Points toward the March Equinox ($\alpha = 0^\circ, \delta = 0^\circ$).
+   * $+Y$-axis: Points in equatorial plane toward $\alpha = 90^\circ, \delta = 0^\circ$.
+   * $+Z$-axis: Points toward the North Celestial Pole ($\delta = +90^\circ$).
+
+3. **Frame Transformation Matrices**:
+   Given mean Earth obliquity $\varepsilon = 23.439281^\circ$:
+   \[
+   \mathbf{M}_{\text{ecl}\to\text{eq}} = \mathbf{R}_x(-\varepsilon) = \begin{pmatrix} 1 & 0 & 0 \\ 0 & \cos\varepsilon & -\sin\varepsilon \\ 0 & \sin\varepsilon & \cos\varepsilon \end{pmatrix}
+   \]
+   \[
+   \mathbf{M}_{\text{eq}\to\text{ecl}} = \mathbf{R}_x(+\varepsilon) = \begin{pmatrix} 1 & 0 & 0 \\ 0 & \cos\varepsilon & \sin\varepsilon \\ 0 & -\sin\varepsilon & \cos\varepsilon \end{pmatrix}
+   \]
+   For any 3D vector $\vec{v}_{\text{ecl}} \in \mathcal{F}_{\text{ecl}}$, its equatorial representation is $\vec{v}_{\text{eq}} = \mathbf{M}_{\text{ecl}\to\text{eq}} \vec{v}_{\text{ecl}}$.
+
+4. **Generalized $SO(3)$ Euler Camera Rotation Matrix**:
+   Given Pitch $\psi$, Yaw $\theta$, and Roll $\phi$:
+   \[
+   \mathbf{R}_{\text{cam}}(\psi, \theta, \phi) = \mathbf{R}_x(\psi) \mathbf{R}_y(\theta) \mathbf{R}_z(\phi)
+   \]
+   where:
+   \[
+   \mathbf{R}_x(\psi) = \begin{pmatrix} 1 & 0 & 0 \\ 0 & \cos\psi & -\sin\psi \\ 0 & \sin\psi & \cos\psi \end{pmatrix}, \quad
+   \mathbf{R}_y(\theta) = \begin{pmatrix} \cos\theta & 0 & \sin\theta \\ 0 & 1 & 0 \\ -\sin\theta & 0 & \cos\theta \end{pmatrix}, \quad
+   \mathbf{R}_z(\phi) = \begin{pmatrix} \cos\phi & -\sin\phi & 0 \\ \sin\phi & \cos\phi & 0 \\ 0 & 0 & 1 \end{pmatrix}
+   \]
+
+### B. Keplerian Scale Modes & Orbital Geometry
+
+Earth's heliocentric orbit is parameterized as a 3D conic section with semi-major axis $a$, eccentricity $e$, and true anomaly $\nu(t)$:
+
+1. **Scale Modes**:
+   * **True Scale ($e = 0.01671022$)**:
+     Semi-major axis $a = 1.0\text{ AU}$, linear eccentricity $c = a \cdot e = 0.01671\text{ AU}$.
+     Semi-minor axis $b = a\sqrt{1 - e^2} \approx 0.99986\text{ AU}$.
+   * **Exaggerated Scale ($e = 0.25$)**:
+     Semi-major axis $a = 1.0\text{ AU}$, linear eccentricity $c = 0.25\text{ AU}$.
+     Semi-minor axis $b = a\sqrt{1 - e^2} \approx 0.96825\text{ AU}$.
+
+2. **Keplerian Orbital Equation**:
+   Given true anomaly $\nu = \lambda_\odot - \varpi$ (where $\varpi = 102.94719^\circ$ is longitude of perihelion):
+   \[
+   r(\nu) = \frac{a(1 - e^2)}{1 + e \cos\nu}
+   \]
+   In the orbit plane with Focus F1 at $(0, 0, 0)$:
+   \[
+   x_{\text{orbit}} = r(\nu) \cos\nu - c, \quad y_{\text{orbit}} = r(\nu) \sin\nu, \quad z_{\text{orbit}} = 0
+   \]
+   The empty focus F2 is located at $(2c, 0, 0)$ relative to F1.
+
+3. **6 Seasonal Orbital Milestones**:
+   Each milestone node is evaluated at its exact astronomical true anomaly $\nu_i$:
+   * **Perihelion**: $\nu = 0^\circ$, $\lambda_\odot = 102.9^\circ$, $r = a(1 - e) = 0.9833\text{ AU}$, $v = 30.29\text{ km/s}$.
+   * **March Equinox**: $\lambda_\odot = 0^\circ$, $\nu = 257.05^\circ$, $r = 0.9960\text{ AU}$, $v = 29.84\text{ km/s}$.
+   * **June Solstice**: $\lambda_\odot = 90^\circ$, $\nu = 347.05^\circ$, $r = 1.0163\text{ AU}$, $v = 29.38\text{ km/s}$.
+   * **Aphelion**: $\nu = 180^\circ$, $\lambda_\odot = 282.9^\circ$, $r = a(1 + e) = 1.0167\text{ AU}$, $v = 29.29\text{ km/s}$.
+   * **September Equinox**: $\lambda_\odot = 180^\circ$, $\nu = 77.05^\circ$, $r = 1.0040\text{ AU}$, $v = 29.65\text{ km/s}$.
+   * **December Solstice**: $\lambda_\odot = 270^\circ$, $\nu = 167.05^\circ$, $r = 0.9837\text{ AU}$, $v = 30.27\text{ km/s}$.
+
+### C. Dynamic 3D Inclined Lunar Orbit & Nodal Regression
+
+The lunar orbit is modeled as an inclined ellipse ($i = 5.145^\circ$) with continuous nodal regression $\Omega(t) = 125.044555^\circ - 1934.136261^\circ T$:
+
+1. **Orbital Plane Rotation**:
+   For argument of latitude $u = \theta_{\text{moon}} - \Omega$:
+   \[
+   \vec{r}_{\text{moon, orbital}} = \begin{pmatrix} r_{\text{moon}} \cos u \\ r_{\text{moon}} \sin u \cos i \\ r_{\text{moon}} \sin u \sin i \end{pmatrix}
+   \]
+   Transforming by nodal longitude $\Omega$:
+   \[
+   \vec{r}_{\text{moon, ecl}} = \mathbf{R}_z(\Omega) \vec{r}_{\text{moon, orbital}}
+   \]
+2. **Ecliptic Latitude ($\beta$)**:
+   \[
+   \sin\beta = \sin i \sin(\lambda_{\text{moon}} - \Omega) \implies \beta = \arcsin(\sin i \sin(\lambda_{\text{moon}} - \Omega))
+   \]
+3. **4-Quadrant Depth & Node Stroke Encoding**:
+   * Quadrant 1 ($0^\circ \to 90^\circ$, Waxing Ascending): Solid Sky Blue (`#38bdf8`, $\beta \ge 0$).
+   * Quadrant 2 ($90^\circ \to 180^\circ$, Waxing Descending): Solid Rose (`#f43f5e`, $\beta < 0$).
+   * Quadrant 3 ($180^\circ \to 270^\circ$, Waning Descending): Dashed Rose (`#f43f5e`, $\beta < 0$).
+   * Quadrant 4 ($270^\circ \to 360^\circ$, Waning Ascending): Dashed Sky Blue (`#38bdf8`, $\beta \ge 0$).
+
+### D. Analytical 3D Syzygy Shadow Cones
+
+Given physical radii $R_\odot = 696,340\text{ km}$, $R_\oplus = 6,378.137\text{ km}$, $R_{\text{moon}} = 1,737.4\text{ km}$ and Earth-Sun distance $d_{\odot}$:
+
+1. **Umbra Shadow Cone (Total/Annular Shadow)**:
+   * Apex Distance from Earth center:
+     \[
+     L_{\text{umbra}} = \frac{R_\oplus \cdot d_\odot}{R_\odot - R_\oplus} \approx 1,384,000\text{ km} \approx 217 R_\oplus
+     \]
+   * Half-angle of Umbra cone:
+     \[
+     \alpha_{\text{umbra}} = \arcsin\left(\frac{R_\odot - R_\oplus}{d_\odot}\right) \approx 0.264^\circ
+     \]
+   * Umbra Radius at Lunar Distance ($d_{\text{moon}} \approx 384,400\text{ km}$):
+     \[
+     r_{\text{umbra}}(d_{\text{moon}}) = R_\oplus - d_{\text{moon}} \tan\alpha_{\text{umbra}} \approx 4,600\text{ km}
+     \]
+
+2. **Penumbra Shadow Cone (Partial Shadow)**:
+   * Apex Distance (between Sun and Earth):
+     \[
+     L_{\text{penumbra}} = \frac{R_\oplus \cdot d_\odot}{R_\odot + R_\oplus} \approx 1,358,000\text{ km}
+     \]
+   * Half-angle of Penumbra cone:
+     \[
+     \alpha_{\text{penumbra}} = \arcsin\left(\frac{R_\odot + R_\oplus}{d_\odot}\right) \approx 0.269^\circ
+     \]
+   * Penumbra Radius at Lunar Distance:
+     \[
+     r_{\text{penumbra}}(d_{\text{moon}}) = R_\oplus + d_{\text{moon}} \tan\alpha_{\text{penumbra}} \approx 8,180\text{ km}
+     \]
+
+### E. Canonical Camera Projection Pipelines
+
+Each camera projection transforms 3D scene objects into 2D SVG screen coordinates $(x_s, y_s)$:
+
+1. **`projectHeliocentricTopDown` (Macro Orbit View)**:
+   * View direction: Along $-Z_{\text{ecl}}$ (looking from North Ecliptic Pole down onto $XY$ plane).
+   * Projection:
+     \[
+     x_s = x_{\text{center}} + x_{\text{ecl}} \cdot \text{scale}, \quad y_s = y_{\text{center}} - y_{\text{ecl}} \cdot \text{scale} \cdot b/a
+     \]
+2. **`projectGeocentricTransverse` (Eclipse Left Pane — Side Profile)**:
+   * View direction: Perpendicular to Sun-Earth syzygy axis (along $-Y_{\text{syzygy}}$).
+   * Projection:
+     \[
+     x_s = x_{\text{center}} - \cos(\text{elongation}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y
+     \]
+3. **`projectGeocentricAxial` (Eclipse Right Pane — Sightline View)**:
+   * View direction: Along Sun-Earth axis through Earth (looking toward Moon).
+   * Projection:
+     \[
+     x_s = x_{\text{center}} - \sin(\text{elongation}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y
+     \]
+4. **`projectEulerCamera` (Armillary 3D Apparent View)**:
+   * View transformation: $\vec{P}_{\text{cam}} = \mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll}) \vec{P}_{3D}$.
+   * Orthographic projection with SVG invert-$Y$:
+     \[
+     x_s = x_{\text{center}} + P_{\text{cam}, x} \cdot \text{scale}, \quad y_s = y_{\text{center}} - P_{\text{cam}, y} \cdot \text{scale}
+     \]
+   * Depth sorting criterion: $P_{\text{cam}, z} \ge 0 \implies \text{Front (solid stroke)}$, $P_{\text{cam}, z} < 0 \implies \text{Back (dashed stroke)}$.
+
+### F. Earth Inertial 3D Axial Tilt & Analytical Spherical Limb Clipping
+
+1. **Inertial Axial Tilt Vector**:
+   In J2000 ecliptic coordinates, Earth's North Pole unit vector $\vec{N}_{\text{ecl}}$ is tilted by obliquity $\varepsilon = 23.439281^\circ$ toward $\lambda = 90^\circ$ (June Solstice):
+   \[
+   \vec{N}_{\text{ecl}} = (0, \sin\varepsilon, \cos\varepsilon) \approx (0, 0.397777, 0.917482)
+   \]
+   Under Euler camera rotation $\mathbf{R}_{\text{cam}}$:
+   \[
+   \vec{N}_{\text{cam}} = \mathbf{R}_{\text{cam}} \vec{N}_{\text{ecl}}
+   \]
+2. **Subsolar Illumination Vector**:
+   Given solar declination $\delta_\odot$ and right ascension $\alpha_\odot$:
+   \[
+   \vec{S}_{\text{eq}} = \begin{pmatrix} \cos\delta_\odot \cos\alpha_\odot \\ \cos\delta_\odot \sin\alpha_\odot \\ \sin\delta_\odot \end{pmatrix}, \quad
+   \vec{S}_{\text{cam}} = \mathbf{R}_{\text{cam}} \vec{S}_{\text{eq}}
+   \]
+3. **Analytical Spherical Limb Clipping**:
+   For twilight angle threshold $h_0 \in \{0^\circ, -6^\circ, -12^\circ, -18^\circ\}$ and camera subsolar vector $(s_x, s_y, s_z)$:
+   * Tangent parameter $\mu = \frac{-\sin h_0 \cdot s_z}{\cos h_0 \cdot \sqrt{s_x^2 + s_y^2}}$.
+   * If $\mu \ge 1$: Full night (or full day if $s_z \ge \sin h_0$).
+   * If $\mu \le -1$: Complete closed circular terminator ellipse on front face.
+   * If $|\mu| < 1$: Terminator circle intersects the limb at $\phi_0 = \arcsin\mu$, generating smooth, non-tearing arc paths joined continuously along the planetary limb rim.
+
+

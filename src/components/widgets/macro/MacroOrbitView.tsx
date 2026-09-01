@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
-import { SolarPositionFull } from '../../../types';
 import { MILESTONES } from './milestones';
 import { OrbitHeaderControls } from './OrbitHeaderControls';
 import { OrbitHoverHud } from './OrbitHoverHud';
 import { OrbitSvgCanvas } from './OrbitSvgCanvas';
 import { OrbitPhysicsHud } from './OrbitPhysicsHud';
 import { MacroOrbitViewProps, MacroOrbitHoverData } from './types';
+import { useHeliocentricScene } from '../../../hooks/useCosmicScene';
+import { useChronometerStore } from '../../../store/cosmicStore';
 
 export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({ 
-  positions, 
+  positions: _positions, 
   eclipse, 
   solarData: _solarData, 
   currentDate = new Date() 
@@ -17,12 +17,36 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const { earth = { x: 200, y: 0 }, moon = { x: 260, y: 0 } } = positions || {};
-  const isEclipse = Boolean(eclipse && eclipse.isEclipseActive);
+  // Synchronize observer geographic coordinates and time from store
+  const storeState = useChronometerStore(s => ({
+    latitude: s.latitude,
+    longitude: s.longitude,
+    timeOfDay: s.timeOfDay
+  }));
 
-  // Calculate live Keplerian orbital physics
-  const julianDate = getJulianDate(currentDate, 12);
-  const physics: SolarPositionFull = calculateEarthOrbitalPhysics(julianDate);
+  // Consume unified 3D heliocentric scene graph
+  const helioScene = useHeliocentricScene(
+    exaggerateEccentricity ? 'exaggerated' : 'true',
+    {
+      date: currentDate,
+      orbitalRadius: 200,
+      latitude: storeState.latitude,
+      longitude: storeState.longitude,
+      timeOfDay: storeState.timeOfDay
+    }
+  );
+
+  const {
+    sun,
+    earth,
+    moon,
+    focus2X,
+    bRatio,
+    orbitalRadius,
+    sunLambdaDeg
+  } = helioScene;
+
+  const isEclipse = Boolean(eclipse && eclipse.isEclipseActive);
 
   const {
     distanceAU = 1.00,
@@ -30,37 +54,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
     orbitalSpeedKms = 29.78,
     solarIrradiancePercent = 100.0,
     sunAngularDiameterArcmin = 32.0
-  } = physics;
-
-  // Compute visual Earth coordinates if exaggerated eccentricity (e = 0.25) is turned on
-  const orbitalRadius = 200;
-  let renderEarthX = earth.x;
-  let renderEarthY = earth.y;
-  let renderSunX = 0;
-  let renderSunY = 0;
-  let focus2X = 0;
-
-  if (exaggerateEccentricity) {
-    const e = 0.25;
-    const a = orbitalRadius;
-    const b = a * Math.sqrt(1 - e * e);
-    const c = a * e; // Focal distance = 50px
-    renderSunX = -c; // Sun at Focus F1 (-50, 0)
-    focus2X = c;     // Empty Focus F2 (+50, 0)
-
-    // Convert Earth angle relative to orbital center
-    const angleRad = Math.atan2(earth.y, earth.x);
-    renderEarthX = a * Math.cos(angleRad);
-    renderEarthY = b * Math.sin(angleRad);
-  }
-
-  // Calculate Moon position relative to Earth
-  const moonDx = moon.x - earth.x;
-  const moonDy = moon.y - earth.y;
-  const renderMoonX = renderEarthX + moonDx;
-  const renderMoonY = renderEarthY + moonDy;
-
-  const bRatio = exaggerateEccentricity ? Math.sqrt(1 - 0.25 * 0.25) : 1;
+  } = earth.physics;
 
   // Lookup active hovered node details smoothly without recreating state
   const activeHoverData: MacroOrbitHoverData | null = useMemo(() => {
@@ -72,7 +66,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
         distanceAU,
         distanceKm,
         speedKms: orbitalSpeedKms,
-        description: `Live Keplerian orbital position. Distance: ${distanceAU} AU (${(distanceKm / 1e6).toFixed(1)}M km), Speed: ${orbitalSpeedKms} km/s, Irradiance: ${solarIrradiancePercent}% of mean.`
+        description: `Live Keplerian orbital position. Distance: ${distanceAU.toFixed(3)} AU (${(distanceKm / 1e6).toFixed(1)}M km), Speed: ${orbitalSpeedKms.toFixed(2)} km/s, Irradiance: ${solarIrradiancePercent.toFixed(1)}% of mean.`
       };
     }
     const found = MILESTONES.find(m => m.id === hoveredId);
@@ -100,18 +94,22 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
         <OrbitHoverHud hoverData={activeHoverData} />
         
         <OrbitSvgCanvas
-          renderSunX={renderSunX}
-          renderSunY={renderSunY}
-          renderEarthX={renderEarthX}
-          renderEarthY={renderEarthY}
-          renderMoonX={renderMoonX}
-          renderMoonY={renderMoonY}
+          renderSunX={sun.x}
+          renderSunY={sun.y}
+          renderEarthX={earth.x}
+          renderEarthY={earth.y}
+          renderMoonX={moon.x}
+          renderMoonY={moon.y}
           orbitalRadius={orbitalRadius}
           bRatio={bRatio}
           focus2X={focus2X}
           exaggerateEccentricity={exaggerateEccentricity}
           hoveredId={hoveredId}
           onHover={setHoveredId}
+          sunLambdaDeg={sunLambdaDeg}
+          latitude={storeState.latitude}
+          longitude={storeState.longitude}
+          timeOfDay={storeState.timeOfDay}
         />
       </div>
 

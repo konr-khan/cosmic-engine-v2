@@ -39,6 +39,11 @@ Key capabilities include:
   - **Real-Time Annual Nodal Seasons**: Annual dynamic modulation of the orbital plane tilt driven by the Sun-Earth-Node angle ($\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$) and dynamically gliding Ascending ($\Omega$) and Descending ($\mho$) nodes.
   - **Exact Peak UTC Eclipse Presets**: Direct snapping to exact fractional UTC peak hours of greatest eclipse for 5 historical and future presets (Apr 2024, Oct 2024, Mar 2025 Blood Moon, Aug 2026, Aug 2027 Luxor).
   - **Terrestrial & Lunar POV Sky View**: Dynamic perspective switching between Earth observer sky (Totality Corona, Baily's Beads, Diamond Ring) and the astronaut Lunar Surface perspective (Earth eclipsing the Sun with the atmospheric crimson "Blood Ring").
+- **Unified 3D Astronomical Scene Graph & Canonical Camera Rigs**:
+  - **Single 3D Geometric Source of Truth**: Pure 3D inertial coordinates (`src/utils/cosmicMath/scene/`) uniting Heliocentric Keplerian orbits, Geocentric 5.14° inclined lunar orbit with continuous nodal precession $\Omega(t)$, physical $23.439^\circ$ Earth axial obliquity, and analytical Umbra/Penumbra syzygy shadow cones.
+  - **Reusable High-Precision `<MiniGlobe />` SVG Component**: Modular 9-layer SVG Earth sphere (`src/components/common/MiniGlobe.tsx`) with physical $23.439^\circ$ axial tilt rotation, analytical subsolar day/night terminator hemisphere clipping, civil/nautical/astronomical twilight bands, Equator/Tropics parallels, and pulsing topocentric observer pin across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`).
+  - **Canonical Camera Projection Pipelines**: Pure functional mathematical projections (`projectHeliocentricTopDown`, `projectGeocentricTransverse`, `projectGeocentricAxial`, `projectEulerCamera`) translating 3D scene geometry to 2D SVG canvas viewports.
+  - **Reactive 60 FPS Scene Hooks**: `useCosmicScene` master hook and specialized selectors (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`) memoizing 3D scene data and projection outputs with React 19 `useSyncExternalStore` subscription and `shallowEqual` protection.
 - **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct dragging of date (with full year tooltip), time, longitude, and linear latitude slider, with fast season jumps and direct military/time string parser.
 - **Daylight Terminator Map**: Real-time Earth map with centered observer meridian, unified **Sky Blue (`#38bdf8`) observer location pin** with coordinate crosshairs, glowing Subsolar Point (Sun Zenith) and Sublunar Point (Moon Zenith) with **dynamic orbital distance and apparent diameter scaling** ($0.983\text{ AU} \to 1.017\text{ AU}$, $356,400\text{ km} \to 406,700\text{ km}$), and unclosed horizon boundary curves dividing daylight from civil, nautical, and astronomical twilight shadows with interactive glassmorphic HUD popovers.
 - **Solar System Macro Orbit**: Heliocentric Keplerian planetary orbit view with **segmented True Scale vs. Exaggerated toggle controls**, persistent glowing translucent halo nodes (Perihelion, Solstices, Equinoxes, Aphelion), 1 AU orbital physics HUD with collision-free diagonal arc labeling, and live syzygy indicators.
@@ -55,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 10 modules, 223 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 15 modules, 326 tests)
 
 ### Essential Commands
 
@@ -90,7 +95,8 @@ Cosmic Engine V2.0/
 │   └── adr/                     # Architecture Decision Records (ADRs)
 │       ├── 0001-external-store-and-worker-architecture.md
 │       ├── 0002-branded-nominal-unit-typing.md
-│       └── 0003-gyro-morph-armillary-projections.md
+│       ├── 0003-gyro-morph-armillary-projections.md
+│       └── 0004-hierarchical-3d-scene-graph-and-camera-rigs.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -111,6 +117,15 @@ Cosmic Engine V2.0/
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
+│   │   │   ├── scene/           # Unified 3D Astronomical Scene Graph & Camera Rigs
+│   │   │   │   ├── index.ts          # Barrel re-export
+│   │   │   │   ├── types.ts          # 3D Scene Graph contracts & body definitions
+│   │   │   │   ├── transforms.ts     # Frame transforms, 3x3 matrices, axial tilt & subsolar vectors
+│   │   │   │   ├── generator.ts      # generateCosmicScene with Keplerian & lunar orbit geometry
+│   │   │   │   ├── cameras.ts        # TopDown, Transverse, Axial & Euler camera rigs
+│   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (16 tests)
+│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (6 tests)
+│   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (6 tests)
 │   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
 │   │   │   │   ├── index.ts          # Barrel re-export
 │   │   │   │   ├── types.ts          # Armillary domain types & 5-model continuum definitions
@@ -136,6 +151,8 @@ Cosmic Engine V2.0/
 │   ├── hooks/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
 │   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests: state transitions & polar edge cases)
+│   │   ├── useCosmicScene.ts    # Reactive 3D scene hook & specialized projection selectors
+│   │   ├── useCosmicScene.test.ts # Vitest hook tests for scene selectors (14 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
 │   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (19 tests: worker integration, coalescing, matrix caching & fallback)
 │   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
@@ -228,6 +245,8 @@ Cosmic Engine V2.0/
 │       └── common/              # Shared visual components
 │           ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
 │           ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
+│           ├── MiniGlobe.tsx                   # High-precision multi-mode SVG Earth globe
+│           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (26 tests)
 │           ├── LivingMarble.tsx                # Non-tearing 3D Earth globe visualizer
 │           └── PhaseVisual.tsx                 # Lunar phase disc with parallactic tilt
 ```

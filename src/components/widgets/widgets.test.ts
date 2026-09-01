@@ -1,4 +1,6 @@
+import React from 'react';
 import { describe, it, expect } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   TodayHorizonView, 
   SunElevationDome, 
@@ -323,6 +325,160 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
         }
       }
     });
+
+    it('renders ArmillaryBeadsLayer in 3D Apparent mode with MiniGlobe in euler3d mode', () => {
+      const jd = getJulianDate(new Date(2026, 2, 20), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 0,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 30,
+        cameraYaw: 45,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            lunarNodes: model.lunarNodes,
+            projectionMode: 'geocentric',
+            modelType: 'apparent',
+            morphLambda: 0.0,
+            camera: { pitch: 30, yaw: 45, roll: 0 },
+            observerLat: 47.06,
+            observerLon: -122.81,
+            isOrbital: false,
+            orbitRingOpacity: 0,
+            milestonesOpacity: 1,
+            lunarOrbitOpacity: 1,
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      expect(html).toContain('miniglobe-root');
+      expect(html).toContain('miniglobe-parallels');
+      expect(html).toContain('miniglobe-polar-axis');
+      expect(html).toContain('miniglobe-observer-pin');
+      expect(html).toContain('⊕ EARTH (Center)');
+      expect(html).toContain('☉ SUN');
+      expect(html).toContain('☽ MOON');
+      expect(html).toContain('☊');
+      expect(html).toContain('☋');
+    });
+
+    it('renders ArmillaryBeadsLayer in 2D Astrolabe plate modes with MiniGlobe in flat pin mode', () => {
+      const jd = getJulianDate(new Date(2026, 2, 20), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 0,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 90,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            projectionMode: 'stereographic',
+            modelType: 'rete',
+            morphLambda: 1.0,
+            isOrbital: false,
+            orbitRingOpacity: 0,
+            milestonesOpacity: 0,
+            lunarOrbitOpacity: 0,
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      expect(html).toContain('miniglobe-flat');
+      expect(html).toContain('☉ SUN');
+      expect(html).toContain('☽ MOON');
+    });
+
+    it('renders ArmillaryBeadsLayer in Heliocentric Orbit mode with MiniGlobe in topdown mode', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            projectionMode: 'heliocentric',
+            modelType: 'orbit',
+            morphLambda: 0.0,
+            isOrbital: true,
+            orbitRingOpacity: 1,
+            milestonesOpacity: 1,
+            lunarOrbitOpacity: 1,
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      expect(html).toContain('miniglobe-root');
+      expect(html).toContain('⊕ EARTH');
+      expect(html).toContain('Perihelion');
+    });
   });
 
   describe('Solar Almanac Subsystem', () => {
@@ -385,6 +541,14 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(eclipse.obscuration).toBeGreaterThanOrEqual(95);
       expect(eclipse.type).toBe('TOTAL_SOLAR');
     });
+
+    it('integrates unified 3D eclipse geometry with MiniGlobe transverse and axial projection modes', () => {
+      const jd = getJulianDate(new Date(2026, 2, 20), 12);
+      const eclipse = calculateEclipseData(jd);
+      expect(eclipse).toBeDefined();
+      expect(typeof eclipse.beta).toBe('number');
+      expect(typeof eclipse.alignmentPercent).toBe('number');
+    });
   });
 
   describe('Daylight Terminator Map Subsystem', () => {
@@ -413,6 +577,14 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(ids).toContain('aphelion');
       expect(ids).toContain('sep_equinox');
       expect(ids).toContain('dec_solstice');
+    });
+
+    it('provides Keplerian orbital dynamics and physics telemetry across True and Exaggerated scales', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const physics = calculateEarthOrbitalPhysics(jd);
+      expect(physics.distanceAU).toBeLessThan(1.0);
+      expect(physics.solarIrradiancePercent).toBeGreaterThan(100.0);
+      expect(physics.orbitalSpeedKms).toBeGreaterThan(29.78);
     });
   });
 

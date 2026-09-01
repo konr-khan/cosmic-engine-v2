@@ -7,3 +7,4 @@ export * from './projection';
 export * from './geoData';
 export * from './armillary';
 export * from './frame';
+export * from './scene';
