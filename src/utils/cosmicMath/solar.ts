@@ -1,4 +1,11 @@
 import { CONFIG } from './constants';
+import { 
+  J2000_JD, 
+  ASTRONOMICAL_UNIT_KM, 
+  EARTH_ORBITAL_SPEED_MEAN_KMS, 
+  SOLAR_IRRADIANCE_1AU_WM2, 
+  SUN_ANGULAR_DIAMETER_1AU_ARCMIN 
+} from './astroConstants';
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees } from '../../types/units';
 import { SolarPosition, SolarPositionFull, AnnualSolarMatrixItem } from '../../types/astronomy';
@@ -11,7 +18,7 @@ export type { SolarPositionFull, AnnualSolarMatrixItem };
  * @returns Solar position and orbital metrics
  */
 export const calculateSolarPosition = (julianDate: JulianDate | number): SolarPositionFull => {
-  const n = julianDate - 2451545.0;
+  const n = julianDate - J2000_JD;
   let L = (280.460 + 0.9856474 * n) % 360;
   if (L < 0) L += 360;
   
@@ -38,11 +45,11 @@ export const calculateSolarPosition = (julianDate: JulianDate | number): SolarPo
   
   // Keplerian Earth Orbital Distance & Dynamics (e = 0.01671)
   const distanceAU = 1.00014 - 0.01671 * Math.cos(gRad) - 0.00014 * Math.cos(2 * gRad);
-  const distanceKm = distanceAU * 149597870.7;
-  const orbitalSpeedKms = 29.7847 * Math.sqrt(Math.max(0.1, (2.0 / distanceAU) - 1.0));
-  const solarIrradianceWm2 = 1361.0 / (distanceAU * distanceAU);
+  const distanceKm = distanceAU * ASTRONOMICAL_UNIT_KM;
+  const orbitalSpeedKms = EARTH_ORBITAL_SPEED_MEAN_KMS * Math.sqrt(Math.max(0.1, (2.0 / distanceAU) - 1.0));
+  const solarIrradianceWm2 = SOLAR_IRRADIANCE_1AU_WM2 / (distanceAU * distanceAU);
   const solarIrradiancePercent = (1.0 / (distanceAU * distanceAU)) * 100.0;
-  const sunAngularDiameterArcmin = 31.986 / distanceAU;
+  const sunAngularDiameterArcmin = SUN_ANGULAR_DIAMETER_1AU_ARCMIN / distanceAU;
   const isPerihelion = distanceAU < 0.985;
   const isAphelion = distanceAU > 1.015;
   

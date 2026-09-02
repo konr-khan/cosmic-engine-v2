@@ -60,7 +60,18 @@ import {
   calculateEphemerisFrame,
   ArmillaryProjectionMode,
   ASTROLABE_STARS,
-  ZODIAC_SIGNS
+  ZODIAC_SIGNS,
+  J2000_JD,
+  ASTRONOMICAL_UNIT_KM,
+  EARTH_RADIUS_WGS84_KM,
+  MOON_RADIUS_MEAN_KM,
+  MOON_DIAMETER_KM,
+  EARTH_ORBITAL_SPEED_MEAN_KMS,
+  SOLAR_IRRADIANCE_1AU_WM2,
+  SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG,
+  LUNAR_PERIGEE_THRESHOLD_KM,
+  LUNAR_APOGEE_THRESHOLD_KM
 } from './cosmicMath';
 import { 
   Vector2D, 
@@ -2511,6 +2522,26 @@ describe('cosmicMath utilities', () => {
           expect(frame.sublunarPoint.lon).toBeLessThanOrEqual(180);
         });
       });
+    });
+  });
+
+  describe('Astronomical Physical Constants (astroConstants)', () => {
+    it('defines standard J2000 epoch and IAU units with correct numerical values', () => {
+      expect(J2000_JD).toBe(2451545.0);
+      expect(ASTRONOMICAL_UNIT_KM).toBeCloseTo(149597870.7, 1);
+      expect(EARTH_RADIUS_WGS84_KM).toBeCloseTo(6378.137, 3);
+      expect(MOON_RADIUS_MEAN_KM).toBeCloseTo(1737.4, 1);
+      expect(MOON_DIAMETER_KM).toBe(3474.0);
+      expect(EARTH_ORBITAL_SPEED_MEAN_KMS).toBeCloseTo(29.7847, 4);
+      expect(SOLAR_IRRADIANCE_1AU_WM2).toBe(1361.0);
+      expect(SUN_ANGULAR_DIAMETER_1AU_ARCMIN).toBeCloseTo(31.986, 3);
+      expect(EARTH_AXIAL_OBLIQUITY_J2000_DEG).toBeCloseTo(23.439281, 6);
+      expect(LUNAR_PERIGEE_THRESHOLD_KM).toBe(365000);
+      expect(LUNAR_APOGEE_THRESHOLD_KM).toBe(400000);
+    });
+
+    it('consistently relates Moon radius and diameter', () => {
+      expect(MOON_DIAMETER_KM).toBe(MOON_RADIUS_MEAN_KM * 2 - 0.8); // 3474 vs 2*1737.4 = 3474.8 (standard truncated diameter)
     });
   });
 

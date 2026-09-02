@@ -1,4 +1,5 @@
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
+import { LUNAR_PERIGEE_THRESHOLD_KM, LUNAR_APOGEE_THRESHOLD_KM } from './astroConstants';
 import { calculateSolarPosition } from './solar';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees, HoursDecimal, julianDateToCenturies } from '../../types/units';
 import { 
@@ -193,6 +194,32 @@ export const calculateLunarEvents = (
   const decRadTransit = toRadians(lunarNow.declination);
   const cosH0 = (sinAlt - sinLat * Math.sin(decRadTransit)) / (cosLat * Math.cos(decRadTransit));
 
+/**
+ * Refines a candidate lunar rise or set event timestamp using topocentric coordinate recalculation.
+ */
+function refineLunarEventHour(
+  julianDate: number,
+  estHour: number,
+  transitUTC: number,
+  sinAlt: number,
+  sinLat: number,
+  cosLat: number,
+  isRise: boolean
+): number | null {
+  const jdEvent = julianDate + (estHour / 24.0);
+  const lunarPos = calculateLunarPosition(jdEvent);
+  const decRad = toRadians(lunarPos.declination);
+  const cosH = (sinAlt - sinLat * Math.sin(decRad)) / (cosLat * Math.cos(decRad));
+
+  if (cosH >= -1 && cosH <= 1) {
+    const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;
+    return isRise
+      ? (transitUTC - halfDayHours + 24) % 24
+      : (transitUTC + halfDayHours + 24) % 24;
+  }
+  return null;
+}
+
   let moonriseUTC: number | null = null;
   let moonsetUTC: number | null = null;
 
@@ -201,31 +228,13 @@ export const calculateLunarEvents = (
     const estRise = (transitUTC - halfDayHours0 + 24) % 24;
     const estSet = (transitUTC + halfDayHours0 + 24) % 24;
 
-    // Step 2: Refine candidate rise time using lunar coordinates at estimated rise
-    const jdRise = julianDate + (estRise / 24.0);
-    const lunarRise = calculateLunarPosition(jdRise);
-    const decRadRise = toRadians(lunarRise.declination);
-    const cosHRise = (sinAlt - sinLat * Math.sin(decRadRise)) / (cosLat * Math.cos(decRadRise));
-
-    if (cosHRise >= -1 && cosHRise <= 1) {
-      const halfDayHoursRise = (toDegrees(Math.acos(clamp(cosHRise, -1, 1))) / 15) * 1.035;
-      moonriseUTC = (transitUTC - halfDayHoursRise + 24) % 24;
-    }
-
-    // Step 2: Refine candidate set time using lunar coordinates at estimated set
-    const jdSet = julianDate + (estSet / 24.0);
-    const lunarSet = calculateLunarPosition(jdSet);
-    const decRadSet = toRadians(lunarSet.declination);
-    const cosHSet = (sinAlt - sinLat * Math.sin(decRadSet)) / (cosLat * Math.cos(decRadSet));
-
-    if (cosHSet >= -1 && cosHSet <= 1) {
-      const halfDayHoursSet = (toDegrees(Math.acos(clamp(cosHSet, -1, 1))) / 15) * 1.035;
-      moonsetUTC = (transitUTC + halfDayHoursSet + 24) % 24;
-    }
+    // Step 2: Refine candidate rise and set times using lunar coordinates at estimated events
+    moonriseUTC = refineLunarEventHour(julianDate, estRise, transitUTC, sinAlt, sinLat, cosLat, true);
+    moonsetUTC = refineLunarEventHour(julianDate, estSet, transitUTC, sinAlt, sinLat, cosLat, false);
   }
 
-  const isPerigee = lunarNow.distanceKm < 365000;
-  const isApogee = lunarNow.distanceKm > 400000;
+  const isPerigee = lunarNow.distanceKm < LUNAR_PERIGEE_THRESHOLD_KM;
+  const isApogee = lunarNow.distanceKm > LUNAR_APOGEE_THRESHOLD_KM;
 
   // Calculate parallactic angle for current time & location
   const parallacticAngle = calculateParallacticAngle(lat, lon, julianDateExact, lunarNow.declination, lunarNow.rightAscension);
