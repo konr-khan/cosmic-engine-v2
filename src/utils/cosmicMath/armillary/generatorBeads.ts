@@ -166,40 +166,67 @@ export function computeArmillaryObserverCone(params: {
   const obsV = transformVertex(pObs3D);
   const zenithV = transformVertex(pZenith3D);
 
-  // Tangent horizon disc (circle of radius 12 perpendicular to zenith)
+  // Coordinate frame perpendicular to zenith vector
   const uRaw = Math.abs(nzY) < 0.99 ? { x: -nzZ, y: 0, z: nzX } : { x: 1, y: 0, z: 0 };
   const uLen = Math.sqrt(uRaw.x * uRaw.x + uRaw.y * uRaw.y + uRaw.z * uRaw.z) || 1;
   const u = { x: uRaw.x / uLen, y: uRaw.y / uLen, z: uRaw.z / uLen };
   const w = { x: nzY * u.z - nzZ * u.y, y: nzZ * u.x - nzX * u.z, z: nzX * u.y - nzY * u.x };
 
-  const discPoints: Vector2D[] = [];
+  // 1. Expanding celestial canopy base in outer space (radius 20 around zenith tip)
+  const canopyPoints: Vector2D[] = [];
   const NUM_DISC_SAMPLES = 24;
+  const rCanopy = 20;
   for (let i = 0; i <= NUM_DISC_SAMPLES; i++) {
     const aRad = (i / NUM_DISC_SAMPLES) * 2 * Math.PI;
-    const rDisc = 12;
     const pt3D: Vector3D = {
-      x: pObs3D.x + rDisc * (u.x * Math.cos(aRad) + w.x * Math.sin(aRad)),
-      y: pObs3D.y + rDisc * (u.y * Math.cos(aRad) + w.y * Math.sin(aRad)),
-      z: pObs3D.z + rDisc * (u.z * Math.cos(aRad) + w.z * Math.sin(aRad))
+      x: pZenith3D.x + rCanopy * (u.x * Math.cos(aRad) + w.x * Math.sin(aRad)),
+      y: pZenith3D.y + rCanopy * (u.y * Math.cos(aRad) + w.y * Math.sin(aRad)),
+      z: pZenith3D.z + rCanopy * (u.z * Math.cos(aRad) + w.z * Math.sin(aRad))
     };
-    discPoints.push(transformVertex(pt3D).screenPos);
+    canopyPoints.push(transformVertex(pt3D).screenPos);
   }
 
+  // Circular rim disc in the sky
   let horizonDiscPathD = '';
-  if (discPoints.length > 0) {
-    horizonDiscPathD = `M ${discPoints[0].x.toFixed(1)} ${discPoints[0].y.toFixed(1)} `;
-    for (let i = 1; i < discPoints.length; i++) {
-      horizonDiscPathD += `L ${discPoints[i].x.toFixed(1)} ${discPoints[i].y.toFixed(1)} `;
+  if (canopyPoints.length > 0) {
+    horizonDiscPathD = `M ${canopyPoints[0].x.toFixed(1)} ${canopyPoints[0].y.toFixed(1)} `;
+    for (let i = 1; i < canopyPoints.length; i++) {
+      horizonDiscPathD += `L ${canopyPoints[i].x.toFixed(1)} ${canopyPoints[i].y.toFixed(1)} `;
     }
     horizonDiscPathD += 'Z';
   }
 
-  // Cone envelope polygon (connecting observer to outer rim and zenith)
+  // 2. Compute the two extreme silhouette tangent points on the celestial canopy as seen from the observer
+  const zDirX = zenithV.screenPos.x - obsV.screenPos.x;
+  const zDirY = zenithV.screenPos.y - obsV.screenPos.y;
+  let minCross = Infinity;
+  let maxCross = -Infinity;
+  let pLeft = canopyPoints[0] || obsV.screenPos;
+  let pRight = canopyPoints[0] || obsV.screenPos;
+
+  for (const pt of canopyPoints) {
+    const vx = pt.x - obsV.screenPos.x;
+    const vy = pt.y - obsV.screenPos.y;
+    const cross = zDirX * vy - zDirY * vx;
+    if (cross < minCross) {
+      minCross = cross;
+      pLeft = pt;
+    }
+    if (cross > maxCross) {
+      maxCross = cross;
+      pRight = pt;
+    }
+  }
+
+  // Symmetrical silhouette rays connecting observer to both outer edges of the sky canopy circle
+  const silhouetteLinesPathD = `M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} L ${pLeft.x.toFixed(1)} ${pLeft.y.toFixed(1)} M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} L ${pRight.x.toFixed(1)} ${pRight.y.toFixed(1)}`;
+
+  // 3. Volumetric conical fill envelope connecting observer to outer rim
   let conePathD = `M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} `;
-  for (const pt of discPoints) {
+  for (const pt of canopyPoints) {
     conePathD += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
   }
-  conePathD += `L ${zenithV.screenPos.x.toFixed(1)} ${zenithV.screenPos.y.toFixed(1)} Z`;
+  conePathD += `L ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} Z`;
 
   // Solar elevation angle for observer
   const sunDir = {
@@ -217,6 +244,7 @@ export function computeArmillaryObserverCone(params: {
     zenithScreenPos: zenithV.screenPos,
     horizonDiscPathD,
     conePathD,
+    silhouetteLinesPathD,
     zenithRay: { start: obsV.screenPos, end: zenithV.screenPos },
     isDaytime,
     sunElevationDeg: parseFloat(sunElevationDeg.toFixed(1)),

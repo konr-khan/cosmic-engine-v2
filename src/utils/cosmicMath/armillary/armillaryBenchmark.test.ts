@@ -208,4 +208,43 @@ describe('Performance Benchmark & Frame Budget Guardrails', () => {
     expect(geo.milestones.length).toBe(6);
     expect(geo.physics).toBeDefined();
   });
+
+  it('keeps navigational stars on outer celestial sphere (r0) and inverts observer cone to fan out into space', () => {
+    const helio = generateArmillaryModel({
+      julianDate: jd,
+      latitude: 47.06,
+      longitude: -122.81,
+      timeOfDay: 12,
+      sunRaDeg: 90,
+      sunDecDeg: 23.44,
+      sunLambdaDeg: 90,
+      moonRaDeg: 120,
+      moonDecDeg: 15,
+      moonLambdaDeg: 120,
+      moonPhase: 0.5,
+      morphLambda: 0.0,
+      projectionMode: 'heliocentric',
+      cameraPitch: 20,
+      cameraYaw: 45,
+      r0: 120
+    });
+
+    // 1. Stars must remain on the outer celestial sphere at radius r0 = 120, not collapsed to 14px
+    expect(helio.stars.length).toBe(12);
+    for (const star of helio.stars) {
+      // 2D distance from origin on screen should reflect outer projection (not clustered within 14px)
+      const dist = Math.hypot(star.screenPos.x, star.screenPos.y);
+      expect(dist).toBeGreaterThan(25);
+    }
+
+    // 2. Observer cone must be defined with expanding celestial canopy base and cone envelope
+    expect(helio.observerCone).toBeDefined();
+    expect(helio.observerCone?.conePathD).toBeDefined();
+    expect(helio.observerCone?.horizonDiscPathD).toBeDefined();
+    expect(helio.observerCone?.zenithRay).toBeDefined();
+    // Verify cone envelope path starts and ends at observerScreenPos
+    const obsPosStr = `${helio.observerCone!.observerScreenPos.x.toFixed(1)} ${helio.observerCone!.observerScreenPos.y.toFixed(1)}`;
+    expect(helio.observerCone?.conePathD.startsWith(`M ${obsPosStr}`)).toBe(true);
+    expect(helio.observerCone?.conePathD.endsWith(`L ${obsPosStr} Z`)).toBe(true);
+  });
 });

@@ -48,6 +48,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   } = useStagedCamera();
 
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState<boolean>(false);
+  const [showObserverCone, setShowObserverCone] = useState<boolean>(true);
   const [showRays, setShowRays] = useState<boolean>(false);
   const [showStars, setShowStars] = useState<boolean>(true);
   const [showTympan, setShowTympan] = useState<boolean>(true);
@@ -205,6 +206,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         onToggleTympan={() => setShowTympan(!showTympan)}
         showRule={showRule}
         onToggleRule={() => setShowRule(!showRule)}
+        showObserverCone={showObserverCone}
+        onToggleObserverCone={setShowObserverCone}
         onResetCamera={handleResetCamera}
         onSnapToPreset={handleSnapToPreset}
         isFreeReteMode={isFreeReteMode}
@@ -225,6 +228,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
           showStars={showStars}
           showTympan={showTympan}
           showRule={showRule}
+          showObserverCone={showObserverCone}
           camera={camera}
           onCameraChange={handleCameraChange}
           r0={100}

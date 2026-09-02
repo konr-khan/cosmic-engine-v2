@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 370 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 373 tests)
 
 ### Essential Commands
 
@@ -151,7 +151,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generatorGeometry.ts # Decomposed continuum geometry, rings & plate curves
 │   │   │   │   ├── generatorBeads.ts    # Decomposed beads, Sun clamping, milestones & lunar nodes
 │   │   │   │   ├── generator.ts      # generateArmillaryModel pipeline orchestrator
-│   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (4 tests)
+│   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (4 tests)
 │   │   │   └── armillary.ts     # Re-export bridge to ./armillary
 │   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (125 tests)
@@ -173,7 +173,7 @@ Cosmic Engine V2.0/
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (30 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (32 tests)
 │       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (11 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
 │       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook

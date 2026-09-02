@@ -36,6 +36,7 @@ export interface ArmillarySvgCanvasProps {
   latitude?: number;
   longitude?: number;
   timeOfDay?: number;
+  showObserverCone?: boolean;
   isFreeReteMode?: boolean;
   onFreeReteRotate?: (deltaDeg: number) => void;
   ruleAngleDeg?: number;
@@ -51,6 +52,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   showStars,
   showTympan,
   showRule,
+  showObserverCone = true,
   camera,
   onCameraChange,
   r0 = 100,
@@ -288,6 +290,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         <ArmillaryObserverConeLayer
           observerCone={observerCone}
           orbitRingOpacity={orbitRingOpacity}
+          showObserverCone={showObserverCone}
           onHoverBead={(b) => setHoveredBead(b)}
         />
 
@@ -305,6 +308,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           rings={rings}
           is3D={is3D}
           morphLambda={morphLambda}
+          cameraPitch={camera.pitch}
           orbitRingOpacity={orbitRingOpacity}
           celestialRingsOpacity={celestialRingsOpacity}
         />
@@ -380,6 +384,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         longitude={longitude}
         timeOfDay={timeOfDay}
         sunLambdaDeg={sun?.lambdaDeg ?? sun?.raDeg ?? 0}
+        declination={sun?.decDeg}
+        rightAscension={sun?.raDeg}
         projectionMode={projectionMode}
         morphLambda={morphLambda}
         onCameraChange={onCameraChange}

@@ -496,7 +496,7 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       );
 
       expect(html).toContain('TERRA · LIVING MARBLE');
-      expect(html).toContain('23.4° TILT');
+      expect(html).toContain('DRAG ROTATE 3D');
       expect(html).toContain('GMST SYNC');
       expect(html).toContain('miniglobe-root');
       expect(html).toContain('miniglobe-continents');
@@ -522,6 +522,94 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
         })
       );
       expect(htmlGeocentric).toBe('');
+    });
+
+    it('renders segmented True/Exaggerated Scale toggle and POV Cone toggle in ArmillaryHeaderControls', () => {
+      const html = renderToStaticMarkup(
+        React.createElement(ArmillaryHeaderControls, {
+          projectionMode: 'heliocentric',
+          onSelectMode: () => {},
+          morphLambda: 0.0,
+          onMorphChange: () => {},
+          showRays: false,
+          onToggleRays: () => {},
+          showStars: true,
+          onToggleStars: () => {},
+          showTympan: false,
+          onToggleTympan: () => {},
+          showRule: false,
+          onToggleRule: () => {},
+          showObserverCone: true,
+          onToggleObserverCone: () => {},
+          onResetCamera: () => {},
+          onSnapToPreset: () => {},
+          exaggerateEccentricity: false,
+          onToggleEccentricity: () => {}
+        })
+      );
+
+      // Verify segmented Scale toggle with both options
+      expect(html).toContain('1× True');
+      expect(html).toContain('Exaggerated');
+      // Verify POV Cone toggle
+      expect(html).toContain('POV Cone');
+    });
+
+    it('unifies Earth orbit ring to fully solid path in top-down view (pitch = ±90°)', () => {
+      const ring: import('./armillary/types').ArmillaryRingPath = {
+        id: 'orbit_path',
+        label: 'Earth Orbit',
+        color: '#fbbf24',
+        frontStrokeWidth: 1.2,
+        backStrokeWidth: 0.6,
+        frontPathD: 'M 10 0 A 10 10 0 0 1 -10 0',
+        backPathD: 'M -10 0 A 10 10 0 0 1 10 0',
+        fullPathD: 'M 10 0 A 10 10 0 1 1 -10 0 A 10 10 0 1 1 10 0 Z',
+        vertices: []
+      };
+
+      // 1. Tilted view (pitch = 20°): back segment is dashed, front is solid
+      const tiltedHtml = renderToStaticMarkup(
+        React.createElement(ArmillaryRingsLayer, {
+          rings: [ring],
+          is3D: true,
+          morphLambda: 0.0,
+          cameraPitch: 20,
+          orbitRingOpacity: 1.0,
+          celestialRingsOpacity: 1.0
+        })
+      );
+      expect(tiltedHtml).toContain('stroke-dasharray="3,2"');
+      expect(tiltedHtml).toContain(ring.backPathD);
+
+      // 2. Top-down view (pitch = 90°): back segment is omitted, fullPathD is rendered solid
+      const topDownHtml = renderToStaticMarkup(
+        React.createElement(ArmillaryRingsLayer, {
+          rings: [ring],
+          is3D: true,
+          morphLambda: 0.0,
+          cameraPitch: 90,
+          orbitRingOpacity: 1.0,
+          celestialRingsOpacity: 1.0
+        })
+      );
+      expect(topDownHtml).not.toContain('stroke-dasharray');
+      expect(topDownHtml).not.toContain(ring.backPathD);
+      expect(topDownHtml).toContain(ring.fullPathD);
+
+      // 3. Bottom-up view (pitch = -90°): fullPathD is also rendered solid
+      const bottomUpHtml = renderToStaticMarkup(
+        React.createElement(ArmillaryRingsLayer, {
+          rings: [ring],
+          is3D: true,
+          morphLambda: 0.0,
+          cameraPitch: -90,
+          orbitRingOpacity: 1.0,
+          celestialRingsOpacity: 1.0
+        })
+      );
+      expect(bottomUpHtml).not.toContain('stroke-dasharray');
+      expect(bottomUpHtml).toContain(ring.fullPathD);
     });
   });
 

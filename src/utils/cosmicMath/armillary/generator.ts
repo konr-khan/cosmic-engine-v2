@@ -443,18 +443,9 @@ export function generateArmillaryModel(params: {
     transformVertex
   });
 
-  // Blooming center and radius for star sphere
-  const isTargetHelio = projectionMode === 'heliocentric';
-  const isSourceHelio = fromProjectionMode === 'heliocentric';
-  const isHelioT = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
-  const tGeo = 1.0 - isHelioT;
-  const rGlobe = 14;
-  const rBloom = (1.0 - tGeo) * rGlobe + tGeo * r0;
-  const cBloom: Vector3D = {
-    x: (1.0 - tGeo) * blendedEarth3D.x,
-    y: (1.0 - tGeo) * blendedEarth3D.y,
-    z: (1.0 - tGeo) * blendedEarth3D.z
-  };
+  // Navigational stars reside on the outer celestial sphere at radius r0 centered at the origin
+  const rBloom = r0;
+  const cBloom: Vector3D = { x: 0, y: 0, z: 0 };
 
   // Navigational Stars
   const stars = computeArmillaryStars({

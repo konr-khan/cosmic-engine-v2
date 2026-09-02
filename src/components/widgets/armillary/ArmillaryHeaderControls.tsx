@@ -35,6 +35,8 @@ export interface ArmillaryHeaderControlsProps {
   apparentSolarHours?: number;
   exaggerateEccentricity?: boolean;
   onToggleEccentricity?: (val: boolean) => void;
+  showObserverCone?: boolean;
+  onToggleObserverCone?: (show: boolean) => void;
 }
 
 export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = ({
@@ -49,6 +51,8 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
   onToggleTympan,
   showRule,
   onToggleRule,
+  showObserverCone = true,
+  onToggleObserverCone,
   onResetCamera,
   onSnapToPreset,
   isFreeReteMode = false,
@@ -155,21 +159,48 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
           </button>
         </div>
 
-        {/* Exaggerated vs True Scale toggle when in orbital heliocentric mode */}
+        {/* True Scale vs Exaggerated Eccentricity Segmented Toggle */}
         {isOrbital && onToggleEccentricity && (
-          <div className="flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800/80 text-xs font-mono">
+          <div className="flex items-center bg-slate-950/90 p-0.5 rounded-xl border border-slate-800/80 text-[11px] font-mono">
             <button
-              onClick={() => onToggleEccentricity(!exaggerateEccentricity)}
-              className={`px-2 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${
-                exaggerateEccentricity 
-                  ? 'bg-indigo-600 text-white font-bold' 
-                  : 'bg-slate-900 text-slate-400 hover:text-slate-200'
+              onClick={() => onToggleEccentricity(false)}
+              className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                !exaggerateEccentricity
+                  ? 'bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Toggle True Scale (e=0.0167) vs Exaggerated Eccentricity (e=0.25)"
+              title="True Orbital Scale (e=0.0167)"
             >
-              {exaggerateEccentricity ? 'Exaggerated (e=0.25)' : 'True Scale (1x)'}
+              1× True
+            </button>
+            <button
+              onClick={() => onToggleEccentricity(true)}
+              className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                exaggerateEccentricity
+                  ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Exaggerated Eccentricity (e=0.25)"
+            >
+              Exaggerated
             </button>
           </div>
+        )}
+
+        {/* Observer POV Sky Cone Toggle */}
+        {isOrbital && onToggleObserverCone && (
+          <button
+            onClick={() => onToggleObserverCone(!showObserverCone)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-mono transition-all cursor-pointer ${
+              showObserverCone
+                ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 font-semibold'
+                : 'bg-slate-950/90 text-slate-500 border-slate-800/80 hover:text-slate-300'
+            }`}
+            title="Toggle Topocentric Observer Sky Cone in Orbit View"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${showObserverCone ? 'bg-sky-400 animate-pulse' : 'bg-slate-600'}`} />
+            <span>POV Cone</span>
+          </button>
         )}
 
         {/* Morph Slider Bar */}

@@ -88,6 +88,7 @@ export interface ArmillaryObserverCone {
   zenithScreenPos: Vector2D;
   horizonDiscPathD: string;
   conePathD: string;
+  silhouetteLinesPathD?: string;
   zenithRay: { start: Vector2D; end: Vector2D };
   isDaytime: boolean;
   sunElevationDeg: number;

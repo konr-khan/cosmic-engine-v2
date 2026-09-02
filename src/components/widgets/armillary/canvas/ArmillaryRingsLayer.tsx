@@ -6,6 +6,7 @@ export interface ArmillaryRingsLayerProps {
   rings: ArmillaryRingPath[];
   is3D?: boolean;
   morphLambda?: number;
+  cameraPitch?: number;
   orbitRingOpacity: number;
   celestialRingsOpacity: number;
 }
@@ -14,14 +15,18 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
   rings,
   is3D = true,
   morphLambda,
+  cameraPitch,
   orbitRingOpacity,
   celestialRingsOpacity
 }) => {
   const lambda = morphLambda !== undefined ? morphLambda : (is3D ? 0.0 : 1.0);
-  const u = Math.max(0, Math.min(1, (lambda - 0.85) / 0.15));
-  const backOpacityFactor = 0.35 + 0.65 * u;
-  const dashGap = 2 * (1 - u);
-  const strokeDasharray = u >= 0.99 ? 'none' : (u <= 0.01 ? '3,2' : `3,${parseFloat(dashGap.toFixed(2))}`);
+  const uMorph = Math.max(0, Math.min(1, (lambda - 0.85) / 0.15));
+
+  // Top-down / bottom-up pitch unification factor:
+  // As pitch approaches ±90° (|pitch| >= 65° up to 80°),
+  // Earth's orbital path (and ecliptic rings) smoothly fuse from dashed back segments into fully solid strokes
+  const absPitch = Math.abs(cameraPitch ?? 0);
+  const uPitch = Math.max(0, Math.min(1, (absPitch - 65) / 15));
 
   return (
     <>
@@ -32,6 +37,15 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
           const ringOpacity = isOrbitPath ? orbitRingOpacity : celestialRingsOpacity;
           if (ringOpacity <= 0.01 || !ring.backPathD) return null;
 
+          const u = isOrbitPath || ring.id === 'ecliptic' ? Math.max(uMorph, uPitch) : uMorph;
+          if (u >= 0.99) {
+            // When fully unified (top-down pitch or 2D plate), fullPathD is rendered in the front group
+            return null;
+          }
+
+          const backOpacityFactor = 0.35 + 0.65 * u;
+          const dashGap = 2 * (1 - u);
+          const strokeDasharray = u <= 0.01 ? '3,2' : `3,${parseFloat(dashGap.toFixed(2))}`;
           const strokeWidth = ring.backStrokeWidth + (ring.frontStrokeWidth - ring.backStrokeWidth) * u;
 
           return (
@@ -48,17 +62,22 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
         })}
       </g>
 
-      {/* Front Ring Segments (Depth Sorted: zCam >= 0) */}
+      {/* Front Ring Segments (Depth Sorted: zCam >= 0, or full path when unified) */}
       <g filter="url(#ringGlow)">
         {rings.map((ring) => {
           const isOrbitPath = ring.id === 'orbit_path';
           const ringOpacity = isOrbitPath ? orbitRingOpacity : celestialRingsOpacity;
-          if (ringOpacity <= 0.01 || !ring.frontPathD) return null;
+          if (ringOpacity <= 0.01) return null;
+
+          const u = isOrbitPath || ring.id === 'ecliptic' ? Math.max(uMorph, uPitch) : uMorph;
+          const isUnified = u >= 0.99;
+          const pathD = isUnified && ring.fullPathD ? ring.fullPathD : ring.frontPathD;
+          if (!pathD) return null;
 
           return (
             <path
               key={`front-${ring.id}`}
-              d={ring.frontPathD}
+              d={pathD}
               fill="none"
               stroke={ring.color}
               strokeWidth={ring.frontStrokeWidth}

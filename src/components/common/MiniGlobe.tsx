@@ -11,7 +11,7 @@
  */
 
 import React, { useId, useMemo } from 'react';
-import { Degrees, Latitude, Longitude, HoursDecimal, toRadians } from '../../types/units';
+import { Degrees, Latitude, Longitude, HoursDecimal, toRadians, toDegrees } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
 import { calculateEarthSideGeometry, calculateEarthAxialGeometry } from '../../utils/cosmicMath/projection';
 import { rotateEuler3D } from '../../utils/cosmicMath/armillary/coordinates';
@@ -226,17 +226,19 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
     const yaw = Number.isFinite(Number(camera?.yaw)) ? Number(camera?.yaw) : 0;
     const roll = Number.isFinite(Number(camera?.roll)) ? Number(camera?.roll) : 0;
 
-    // Subsolar vector in Equatorial coordinates
+    // Subsolar vector in Earth-body frame (hour angle = 0 at the subsolar meridian)
     let sEq: Vector3D;
     if (subsolarVector) {
       sEq = subsolarVector;
     } else {
-      const decRad = toRadians(Number.isFinite(Number(declination)) ? Number(declination) : 0);
-      const raRad = toRadians(Number.isFinite(Number(rightAscension)) ? Number(rightAscension) : 0);
+      const decVal = Number.isFinite(Number(declination))
+        ? Number(declination)
+        : (sunLambdaVal ? toDegrees(Math.asin(Math.sin(toRadians(23.439281)) * Math.sin(toRadians(sunLambdaVal)))) : 0);
+      const decRad = toRadians(decVal);
       sEq = {
-        x: Math.cos(decRad) * Math.sin(raRad),
+        x: 0,
         y: Math.sin(decRad),
-        z: Math.cos(decRad) * Math.cos(raRad)
+        z: Math.cos(decRad)
       };
     }
 

@@ -103,6 +103,12 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   // Radius matching plate proportions: flat mode uses 4.5px, 3D euler & topdown orbit modes use 4.8px
   const globeRadius = miniGlobeViewMode === 'flat' ? 4.5 : 4.8;
 
+  // Dynamic light direction for Earth bead in Heliocentric Orbit mode:
+  // The illuminated daylight crescent on the 2D globe must always point directly toward the central Sun on screen
+  const sunAngleDeg = isHeliocentric
+    ? ((Math.atan2(sun.screenPos.y - earth.screenPos.y, sun.screenPos.x - earth.screenPos.x) * 180) / Math.PI + 360) % 360
+    : undefined;
+
   return (
     <>
       {/* 1. Earth-Sun Connection Line in Orbital Modes */}
@@ -173,7 +179,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         </g>
       ))}
 
-      {/* 3. High-Precision Earth Mini-Globe with 3D Euler Orientation / 2D Flat Plate Pin */}
+      {/* 4. High-Precision Earth Mini-Globe with 3D Euler Orientation / 2D Flat Plate Pin */}
       <g
         className="cursor-pointer"
         style={{ touchAction: 'none' }}
@@ -190,6 +196,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
             yaw: cameraYaw,
             roll: cameraRoll
           }}
+          sunAngleDeg={sunAngleDeg}
           sunLambdaDeg={sunLambda}
           declination={sun?.decDeg}
           rightAscension={sun?.raDeg}

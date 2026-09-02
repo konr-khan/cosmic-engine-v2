@@ -4,15 +4,17 @@ import { ArmillaryObserverCone } from '../types';
 export interface ArmillaryObserverConeLayerProps {
   observerCone?: ArmillaryObserverCone;
   orbitRingOpacity: number;
+  showObserverCone?: boolean;
   onHoverBead: (bead: 'observer' | null) => void;
 }
 
 export const ArmillaryObserverConeLayer: React.FC<ArmillaryObserverConeLayerProps> = ({
   observerCone,
   orbitRingOpacity,
+  showObserverCone = true,
   onHoverBead
 }) => {
-  if (!observerCone || orbitRingOpacity <= 0.05) return null;
+  if (!showObserverCone || !observerCone || orbitRingOpacity <= 0.05) return null;
 
   return (
     <>
@@ -30,14 +32,24 @@ export const ArmillaryObserverConeLayer: React.FC<ArmillaryObserverConeLayerProp
           />
         )}
 
-        {/* Translucent Observer Sky Cone Envelope */}
+        {/* Translucent Observer Sky Cone Fill Envelope */}
         {observerCone.conePathD && (
           <path
             d={observerCone.conePathD}
             fill={observerCone.isDaytime ? '#38bdf8' : '#818cf8'}
-            fillOpacity="0.18"
+            fillOpacity="0.16"
+            stroke="none"
+            opacity="0.85"
+          />
+        )}
+
+        {/* Symmetrical Left and Right Cone Silhouette Rays */}
+        {observerCone.silhouetteLinesPathD && (
+          <path
+            d={observerCone.silhouetteLinesPathD}
+            fill="none"
             stroke={observerCone.isDaytime ? '#38bdf8' : '#818cf8'}
-            strokeWidth="0.5"
+            strokeWidth="0.6"
             strokeDasharray="3 2"
             opacity="0.85"
           />
