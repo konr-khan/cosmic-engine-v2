@@ -82,6 +82,17 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       expect(scene.earth.distanceAU).toBeCloseTo(earthDistAU, 3);
     });
 
+    it('is completely pure and deterministic, defaulting to J2000 epoch when parameters are omitted', () => {
+      const sceneDefault = generateCosmicScene();
+      const sceneExplicit = generateCosmicScene({ julianDate: 2451545.0 });
+
+      expect(sceneDefault.julianDate).toBe(2451545.0);
+      expect(sceneDefault.earth.position.x).toBeCloseTo(sceneExplicit.earth.position.x, 8);
+      expect(sceneDefault.earth.position.y).toBeCloseTo(sceneExplicit.earth.position.y, 8);
+      expect(sceneDefault.earth.position.z).toBeCloseTo(sceneExplicit.earth.position.z, 8);
+      expect(sceneDefault.timestamp.getTime()).toBe(sceneExplicit.timestamp.getTime());
+    });
+
     it('evaluates Earth orbital physics with exact Keplerian velocity and solar irradiance at perihelion and aphelion', () => {
       // Perihelion ~ Jan 3 (JD 2451547.0), Aphelion ~ Jul 4 (JD 2451729.0)
       const perihelionScene = generateCosmicScene({ julianDate: 2451547.0, scaleMode: 'true' });

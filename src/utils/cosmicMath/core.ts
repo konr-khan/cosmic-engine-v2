@@ -120,6 +120,43 @@ export const getJulianDate = (date: Date, timeOfDay: number = 12): JulianDate =>
 };
 
 /**
+ * Converts a JavaScript Date into an exact Astronomical Julian Date (JD) evaluated in UTC.
+ * @param date - JavaScript Date instance
+ * @returns Julian Date (JD)
+ */
+export const dateToJulianDate = (date: Date): JulianDate => {
+  const hours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600 + date.getUTCMilliseconds() / 3600000;
+  return getJulianDate(date, hours);
+};
+
+/**
+ * Converts an Astronomical Julian Date (JD) into a JavaScript Date anchored to UTC.
+ * Follows standard Meeus algorithm with integer calendar day extraction.
+ * @param jd - Julian Date
+ * @returns Date object in UTC
+ */
+export const julianDateToDate = (jd: JulianDate | number): Date => {
+  const z = Math.floor(jd + 0.5);
+  const f = (jd + 0.5) - z;
+  const alpha = Math.floor((z - 1867216.25) / 36524.25);
+  const a = z + 1 + alpha - Math.floor(alpha / 4);
+  const b = a + 1524;
+  const c = Math.floor((b - 122.1) / 365.25);
+  const d = Math.floor(365.25 * c);
+  const e = Math.floor((b - d) / 30.6001);
+  const day = b - d - Math.floor(30.6001 * e) + f;
+  const month = e < 14 ? e - 1 : e - 13;
+  const year = month > 2 ? c - 4716 : c - 4715;
+  const dayInt = Math.floor(day);
+  const dayFrac = day - dayInt;
+  const totalSecs = Math.round(dayFrac * 86400);
+  const hours = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  return new Date(Date.UTC(year, month - 1, dayInt, hours, mins, secs));
+};
+
+/**
  * Formats a Date object as a YYYY-MM-DD string using UTC calendar components.
  * @param date - JavaScript Date object
  * @returns Formatted YYYY-MM-DD date string

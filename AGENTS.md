@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 17 modules, 322 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 17 modules, 324 tests)
 
 ### Essential Commands
 
@@ -128,7 +128,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── transforms.ts     # Frame transforms, 3x3 matrices, axial tilt & subsolar vectors
 │   │   │   │   ├── generator.ts      # generateCosmicScene with Keplerian & lunar orbit geometry
 │   │   │   │   ├── cameras.ts        # TopDown, Transverse, Axial & Euler camera rigs
-│   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (32 tests)
+│   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (33 tests)
 │   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (16 tests)
 │   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (16 tests)
 │   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
@@ -146,7 +146,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   ├── geoData.ts       # World landmass continent outline polygons
 │   │   │   └── frame.ts         # Centralized EphemerisFrame snapshot generator
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (119 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (120 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)

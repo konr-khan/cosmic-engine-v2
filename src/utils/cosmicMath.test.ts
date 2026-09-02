@@ -8,6 +8,8 @@ import {
   formatYMD,
   getSectorPath,
   getJulianDate,
+  dateToJulianDate,
+  julianDateToDate,
   createUTCDate,
   getDayOfYear,
   isLeapYear,
@@ -246,6 +248,26 @@ describe('cosmicMath utilities', () => {
       const j2000Date = createUTCDate(2000, 1, 1);
       const jd = getJulianDate(j2000Date, 0);
       expect(jd).toBe(2451544.5);
+    });
+
+    it('performs bijective conversion between JavaScript Date and Julian Date via dateToJulianDate and julianDateToDate', () => {
+      const j2000Utc = new Date(Date.UTC(2000, 0, 1, 12, 0, 0, 0));
+      const jd = dateToJulianDate(j2000Utc);
+      expect(jd).toBe(2451545.0);
+
+      const recoveredDate = julianDateToDate(jd);
+      expect(recoveredDate.getUTCFullYear()).toBe(2000);
+      expect(recoveredDate.getUTCMonth()).toBe(0);
+      expect(recoveredDate.getUTCDate()).toBe(1);
+      expect(recoveredDate.getUTCHours()).toBe(12);
+      expect(recoveredDate.getUTCMinutes()).toBe(0);
+      expect(recoveredDate.getUTCSeconds()).toBe(0);
+
+      // Fractional day round-trip check
+      const d1 = new Date(Date.UTC(2026, 6, 21, 15, 30, 0));
+      const jd1 = dateToJulianDate(d1);
+      const rec1 = julianDateToDate(jd1);
+      expect(rec1.getTime()).toBe(d1.getTime());
     });
 
     it('identifies leap years correctly', () => {

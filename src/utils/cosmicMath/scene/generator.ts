@@ -8,6 +8,14 @@
 
 import { Degrees, Radians, JulianDate, asDegrees, asRadians, asJulianDate, toRadians } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
+import { dateToJulianDate, julianDateToDate } from '../core';
+import { 
+  J2000_JD, 
+  ASTRONOMICAL_UNIT_KM, 
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG, 
+  EARTH_ECCENTRICITY_TRUE, 
+  EARTH_ECCENTRICITY_EXAGGERATED 
+} from '../astroConstants';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics } from '../solar';
 import { calculateLunarPosition } from '../lunar';
 import { calculateEclipseData } from '../eclipse';
@@ -45,48 +53,14 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
 
   if (jdInput instanceof Date) {
     timestamp = jdInput;
-    const year = timestamp.getUTCFullYear();
-    const month = timestamp.getUTCMonth();
-    const day = timestamp.getUTCDate();
-    const hours = timestamp.getUTCHours() + timestamp.getUTCMinutes() / 60 + timestamp.getUTCSeconds() / 3600;
-    const a = Math.floor((14 - (month + 1)) / 12);
-    const y = year + 4800 - a;
-    const m = (month + 1) + 12 * a - 3;
-    const jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
-    jd = jdn - 0.5 + hours / 24.0;
+    jd = dateToJulianDate(timestamp);
   } else if (typeof jdInput === 'number') {
     jd = jdInput;
-    // Convert Julian Date to UTC Date
-    const z = Math.floor(jd + 0.5);
-    const f = (jd + 0.5) - z;
-    const alpha = Math.floor((z - 1867216.25) / 36524.25);
-    const a = z + 1 + alpha - Math.floor(alpha / 4);
-    const b = a + 1524;
-    const c = Math.floor((b - 122.1) / 365.25);
-    const d = Math.floor(365.25 * c);
-    const e = Math.floor((b - d) / 30.6001);
-    const day = b - d - Math.floor(30.6001 * e) + f;
-    const month = e < 14 ? e - 1 : e - 13;
-    const year = month > 2 ? c - 4716 : c - 4715;
-    const dayInt = Math.floor(day);
-    const dayFrac = day - dayInt;
-    const totalSecs = Math.round(dayFrac * 86400);
-    const hours = Math.floor(totalSecs / 3600);
-    const mins = Math.floor((totalSecs % 3600) / 60);
-    const secs = totalSecs % 60;
-    timestamp = new Date(Date.UTC(year, month - 1, dayInt, hours, mins, secs));
+    timestamp = julianDateToDate(jd);
   } else {
-    // Default to current time
-    timestamp = new Date();
-    const year = timestamp.getUTCFullYear();
-    const month = timestamp.getUTCMonth();
-    const day = timestamp.getUTCDate();
-    const hours = timestamp.getUTCHours() + timestamp.getUTCMinutes() / 60 + timestamp.getUTCSeconds() / 3600;
-    const a = Math.floor((14 - (month + 1)) / 12);
-    const y = year + 4800 - a;
-    const m = (month + 1) + 12 * a - 3;
-    const jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
-    jd = jdn - 0.5 + hours / 24.0;
+    // Default deterministically to J2000.0 epoch (pure function contract)
+    jd = J2000_JD;
+    timestamp = julianDateToDate(jd);
   }
 
   // 2. Pure Ephemeris Calculations
@@ -94,7 +68,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const lunarPos = calculateLunarPosition(jd);
   const eclipse = calculateEclipseData(jd);
 
-  const obliquityDeg = 23.439281 - 0.0000004 * (jd - 2451545.0);
+  const obliquityDeg = EARTH_AXIAL_OBLIQUITY_J2000_DEG - 0.0000004 * (jd - J2000_JD);
   const obliquityRad = toRadians(obliquityDeg);
 
   const sunLambdaDeg = solarPhysics.lambda ?? solarPhysics.eclipticLongitude ?? 0;
@@ -103,13 +77,13 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const earthLambdaRad = toRadians(earthLambdaDeg);
 
   const distAU = solarPhysics.distanceAU || 1.0;
-  const distKm = solarPhysics.distanceKm || 149597870.7;
+  const distKm = solarPhysics.distanceKm || ASTRONOMICAL_UNIT_KM;
 
   // 3. Scale Mode Evaluation
   const isExag = scaleMode === 'exaggerated';
-  const e = isExag ? 0.25 : 0.01671022;
+  const e = isExag ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
   const a = isExag ? r0 : 1.0;
-  const bRatio = isExag ? Math.sqrt(1 - 0.25 * 0.25) : Math.sqrt(1 - e * e);
+  const bRatio = isExag ? Math.sqrt(1 - EARTH_ECCENTRICITY_EXAGGERATED * EARTH_ECCENTRICITY_EXAGGERATED) : Math.sqrt(1 - e * e);
   const b = a * bRatio;
   const c = a * e;
 
