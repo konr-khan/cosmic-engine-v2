@@ -20,6 +20,7 @@ import {
   ArmillaryBeadsLayer,
   ArmillaryAlidadeLayer
 } from './canvas';
+import { ArmillaryEarthPip } from './ArmillaryEarthPip';
 
 export interface ArmillarySvgCanvasProps {
   model: ArmillaryModelOutput;
@@ -34,6 +35,7 @@ export interface ArmillarySvgCanvasProps {
   r0?: number;
   latitude?: number;
   longitude?: number;
+  timeOfDay?: number;
   isFreeReteMode?: boolean;
   onFreeReteRotate?: (deltaDeg: number) => void;
   ruleAngleDeg?: number;
@@ -54,6 +56,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   r0 = 100,
   latitude = 47.06,
   longitude = 15.44,
+  timeOfDay = 12.0,
   isFreeReteMode = false,
   onFreeReteRotate,
   ruleAngleDeg: controlledRuleAngle,
@@ -368,6 +371,18 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         observerCone={observerCone}
         latitude={latitude}
         longitude={longitude}
+      />
+
+      {/* Picture-in-Picture Living Marble Inset in Heliocentric Orbit Mode */}
+      <ArmillaryEarthPip
+        camera={camera}
+        latitude={latitude}
+        longitude={longitude}
+        timeOfDay={timeOfDay}
+        sunLambdaDeg={sun?.lambdaDeg ?? sun?.raDeg ?? 0}
+        projectionMode={projectionMode}
+        morphLambda={morphLambda}
+        onCameraChange={onCameraChange}
       />
     </div>
   );

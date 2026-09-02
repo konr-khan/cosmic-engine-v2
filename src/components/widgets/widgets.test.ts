@@ -44,7 +44,8 @@ import {
   ArmillaryRingsLayer,
   ArmillaryStarsLayer,
   ArmillaryBeadsLayer,
-  ArmillaryAlidadeLayer
+  ArmillaryAlidadeLayer,
+  ArmillaryEarthPip
 } from './index';
 import { computeStagedCamera, type ArmillaryCameraState } from './armillary';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData, generateArmillaryModel } from '../../utils/cosmicMath';
@@ -478,6 +479,49 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html).toContain('miniglobe-root');
       expect(html).toContain('⊕ EARTH');
       expect(html).toContain('Perihelion');
+    });
+
+    it('renders ArmillaryEarthPip in Heliocentric Orbit mode with 3D Living Marble MiniGlobe and GMST sync', () => {
+      const html = renderToStaticMarkup(
+        React.createElement(ArmillaryEarthPip, {
+          camera: { pitch: 25, yaw: 45, roll: 0 },
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12.0,
+          sunLambdaDeg: 280,
+          projectionMode: 'heliocentric',
+          morphLambda: 0.0,
+          onCameraChange: () => {}
+        })
+      );
+
+      expect(html).toContain('TERRA · LIVING MARBLE');
+      expect(html).toContain('23.4° TILT');
+      expect(html).toContain('GMST SYNC');
+      expect(html).toContain('miniglobe-root');
+      expect(html).toContain('miniglobe-continents');
+    });
+
+    it('hides ArmillaryEarthPip when morphLambda > 0.15 or in geocentric/plate modes', () => {
+      const htmlMorphed = renderToStaticMarkup(
+        React.createElement(ArmillaryEarthPip, {
+          camera: { pitch: 90, yaw: 0, roll: 0 },
+          projectionMode: 'heliocentric',
+          morphLambda: 0.2,
+          onCameraChange: () => {}
+        })
+      );
+      expect(htmlMorphed).toBe('');
+
+      const htmlGeocentric = renderToStaticMarkup(
+        React.createElement(ArmillaryEarthPip, {
+          camera: { pitch: 0, yaw: 0, roll: 0 },
+          projectionMode: 'geocentric',
+          morphLambda: 0.0,
+          onCameraChange: () => {}
+        })
+      );
+      expect(htmlGeocentric).toBe('');
     });
   });
 

@@ -100,8 +100,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const globeX = isHeliocentric ? earth.screenPos.x : (effectiveLambda > 0 ? 0 : earth.screenPos.x);
   const globeY = isHeliocentric ? earth.screenPos.y : (effectiveLambda > 0 ? 0 : earth.screenPos.y);
 
-  // Radius matching plate proportions: flat mode uses 4.5px, 3D euler uses 4.8px, topdown orbit mode uses 14.0px for continent inspection
-  const globeRadius = miniGlobeViewMode === 'topdown' ? 14.0 : (miniGlobeViewMode === 'flat' ? 4.5 : 4.8);
+  // Radius matching plate proportions: flat mode uses 4.5px, 3D euler & topdown orbit modes use 4.8px
+  const globeRadius = miniGlobeViewMode === 'flat' ? 4.5 : 4.8;
 
   return (
     <>

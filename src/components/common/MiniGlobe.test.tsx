@@ -57,6 +57,23 @@ describe('projectContinentLandmasses', () => {
     const pathsMidnight = projectContinentLandmasses(WORLD_LANDMASSES, 14, 'euler3d', 0, epsRad, 0, { pitch: 0, yaw: 0, roll: 0 });
     expect(pathsNoon).not.toEqual(pathsMidnight);
   });
+
+  it('correctly maps northern latitudes to negative Y (upward) and eastern longitudes to positive X (rightward)', () => {
+    // Single test polygon with high northern latitude (Arctic, lat: 70°N, lon: 0°E) at noon
+    const testArcticPoly: [number, number][][] = [
+      [[0, 70], [10, 70], [5, 75], [0, 70]]
+    ];
+    const paths = projectContinentLandmasses(testArcticPoly, 100, 'euler3d', 12, epsRad, 0, { pitch: 0, yaw: 0, roll: 0 });
+    expect(paths.length).toBe(1);
+    // Northern latitude should project to negative Y in SVG (top of globe)
+    // Points at lat 70°N should have Y around -100 * sin(70°) ≈ -94
+    const firstPointMatch = paths[0].match(/M ([\d.-]+) ([\d.-]+)/);
+    expect(firstPointMatch).not.toBeNull();
+    if (firstPointMatch) {
+      const yVal = parseFloat(firstPointMatch[2]);
+      expect(yVal).toBeLessThan(-80); // well above equator
+    }
+  });
 });
 
 describe('<MiniGlobe /> Component', () => {

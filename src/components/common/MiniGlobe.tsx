@@ -14,6 +14,7 @@ import React, { useId, useMemo } from 'react';
 import { Degrees, Latitude, Longitude, HoursDecimal, toRadians } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
 import { calculateEarthSideGeometry, calculateEarthAxialGeometry } from '../../utils/cosmicMath/projection';
+import { rotateEuler3D } from '../../utils/cosmicMath/armillary/coordinates';
 import { rotatePointEuler3D } from '../../utils/cosmicMath/scene/transforms';
 import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
 
@@ -118,12 +119,11 @@ export function projectContinentLandmasses(
         const yaw = Number.isFinite(Number(camera?.yaw)) ? Number(camera?.yaw) : 0;
         const roll = Number.isFinite(Number(camera?.roll)) ? Number(camera?.roll) : 0;
 
-        const pEq: Vector3D = {
-          x: Math.cos(latRad) * Math.cos(hRad),
-          y: Math.cos(latRad) * Math.sin(hRad),
-          z: Math.sin(latRad)
-        };
-        return rotatePointEuler3D(pEq, pitch, yaw, roll);
+        const xBody = Math.cos(latRad) * Math.sin(hRad);
+        const yBody = Math.sin(latRad);
+        const zBody = Math.cos(latRad) * Math.cos(hRad);
+
+        return rotateEuler3D({ x: xBody, y: yBody, z: zBody }, pitch, yaw, roll);
       }
 
       if (viewMode === 'topdown') {
@@ -146,7 +146,7 @@ export function projectContinentLandmasses(
 
         const xProj = xBody * Math.cos(thetaSide) - yBody * Math.sin(thetaSide);
         const yProj = xBody * Math.sin(thetaSide) + yBody * Math.cos(thetaSide);
-        const zProj = -zBody;
+        const zProj = zBody;
         return { x: xProj, y: yProj, z: zProj };
       }
 
@@ -162,13 +162,13 @@ export function projectContinentLandmasses(
         const vx = (nx * nz) / nLen;
         const vy = (ny * nz) / nLen;
 
-        const xBody = Math.cos(latRad) * Math.cos(hRad);
-        const yBody = Math.cos(latRad) * Math.sin(hRad);
-        const zBody = Math.sin(latRad);
+        const xBody = Math.cos(latRad) * Math.sin(hRad);
+        const yBody = Math.sin(latRad);
+        const zBody = Math.cos(latRad) * Math.cos(hRad);
 
-        const xProj = xBody * ux + yBody * vx + zBody * (nx / nLen);
-        const yProj = xBody * uy + yBody * vy + zBody * (ny / nLen);
-        const zProj = -yBody * nLen + zBody * (nz / nLen);
+        const xProj = xBody * ux + yBody * nx - zBody * vx;
+        const yProj = xBody * uy + yBody * ny - zBody * vy;
+        const zProj = yBody * nz + zBody * nLen;
         return { x: xProj, y: yProj, z: zProj };
       }
 
@@ -481,35 +481,35 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
       const decRad = toRadians(Number.isFinite(Number(declination)) ? Number(declination) : 0);
       const raRad = toRadians(Number.isFinite(Number(rightAscension)) ? Number(rightAscension) : 0);
       sEq = {
-        x: Math.cos(decRad) * Math.cos(raRad),
-        y: Math.cos(decRad) * Math.sin(raRad),
-        z: Math.sin(decRad)
+        x: Math.cos(decRad) * Math.sin(raRad),
+        y: Math.sin(decRad),
+        z: Math.cos(decRad) * Math.cos(raRad)
       };
     }
 
     // Transform subsolar vector to camera coordinates
-    const sCam = rotatePointEuler3D(sEq, pitch, yaw, roll);
+    const sCam = rotateEuler3D(sEq, pitch, yaw, roll);
 
     const dayPath = generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, 0);
     const civilPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -6) : '';
     const nauticalPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -12) : '';
 
-    // Rotated Polar Axis
-    const poleCam = rotatePointEuler3D({ x: 0, y: 0, z: 1 }, pitch, yaw, roll);
+    // Rotated Polar Axis (North Pole is at Y = +1)
+    const poleCam = rotateEuler3D({ x: 0, y: 1, z: 0 }, pitch, yaw, roll);
     const poleLen = Math.hypot(poleCam.x, poleCam.y);
     const polePx = poleLen > 1e-4 ? (poleCam.x / poleLen) * safeRadius : 0;
     const polePy = poleLen > 1e-4 ? -(poleCam.y / poleLen) * safeRadius : -safeRadius;
 
-    // Observer Pin
+    // Observer Pin (matching vertical North frame)
     const latRad = toRadians(latVal);
     const hourAngleDeg = ((todVal - 12) * 15) + lonVal;
     const hRad = toRadians(hourAngleDeg);
     const pObsEq: Vector3D = {
-      x: Math.cos(latRad) * Math.cos(hRad),
-      y: Math.cos(latRad) * Math.sin(hRad),
-      z: Math.sin(latRad)
+      x: Math.cos(latRad) * Math.sin(hRad),
+      y: Math.sin(latRad),
+      z: Math.cos(latRad) * Math.cos(hRad)
     };
-    const pObsCam = rotatePointEuler3D(pObsEq, pitch, yaw, roll);
+    const pObsCam = rotateEuler3D(pObsEq, pitch, yaw, roll);
     const obsPx = safeRadius * pObsCam.x;
     const obsPy = -safeRadius * pObsCam.y;
     const isObsDay = (pObsCam.x * sCam.x + pObsCam.y * sCam.y + pObsCam.z * sCam.z) > 0;
