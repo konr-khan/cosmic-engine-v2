@@ -51,12 +51,45 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
     Math.cos(toRadians(latitude)) * Math.cos(toRadians(sunDeclination as number)) * Math.cos(toRadians(sunHourAngle));
   const currentSunElevation = toDegrees(Math.asin(clamp(sinSunAlt, -1, 1)));
 
-  // Sun Arc Coordinates (SVG: 200x90)
-  const elR = 62;
-  const elCx = 100;
-  const elCy = 70;
+  // Sun Arc Coordinates (SVG: 260x120 - upsized by ~50%)
+  const elR = 92;
+  const elCx = 130;
+  const elCy = 104;
   const sunX = elCx + elR * Math.sin(toRadians(sunHourAngle));
   const sunY = elCy - elR * Math.sin(toRadians(currentSunElevation));
+
+  // --- Solstice Peaks & Zenith Cap Math ---
+  const OBLIQUITY = 23.439281;
+  const absLat = Math.abs(latitude);
+  const isTropical = absLat <= OBLIQUITY;
+
+  // Maximum annual noon elevation ceiling (Zenith Cap boundary)
+  const maxAnnualNoon = isTropical ? 90 : (90 - absLat + OBLIQUITY);
+  const summerSolsticeNoon = latitude >= 0
+    ? (90 - Math.abs(latitude - OBLIQUITY))
+    : (90 - Math.abs(latitude + OBLIQUITY));
+  const winterSolsticeNoon = latitude >= 0
+    ? (90 - Math.abs(latitude + OBLIQUITY))
+    : (90 - Math.abs(latitude - OBLIQUITY));
+
+  // Zenith Cap geometry (unreachable sector when latitude is outside tropics)
+  let capPathD = '';
+  if (!isTropical && maxAnnualNoon < 89.5) {
+    const yCap = elCy - elR * Math.sin(toRadians(maxAnnualNoon));
+    const xCapL = elCx - elR * Math.cos(toRadians(maxAnnualNoon));
+    const xCapR = elCx + elR * Math.cos(toRadians(maxAnnualNoon));
+    capPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${elR} ${elR} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
+  }
+
+  // Summer Solstice Chord Line
+  const summerY = elCy - elR * Math.sin(toRadians(summerSolsticeNoon));
+  const summerXL = elCx - elR * Math.cos(toRadians(summerSolsticeNoon));
+  const summerXR = elCx + elR * Math.cos(toRadians(summerSolsticeNoon));
+
+  // Winter Solstice Chord Line
+  const winterY = winterSolsticeNoon > 0 ? elCy - elR * Math.sin(toRadians(winterSolsticeNoon)) : elCy;
+  const winterXL = winterSolsticeNoon > 0 ? elCx - elR * Math.cos(toRadians(winterSolsticeNoon)) : elCx - elR;
+  const winterXR = winterSolsticeNoon > 0 ? elCx + elR * Math.cos(toRadians(winterSolsticeNoon)) : elCx + elR;
 
   return (
     <div className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative">
@@ -71,13 +104,13 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
         </div>
       </div>
 
-      {/* Semicircular Sun Dome SVG */}
+      {/* Semicircular Sun Dome SVG (Upsized 50%) */}
       <div className="relative w-full py-1 flex items-center justify-center">
-        <svg viewBox="0 0 200 88" className="w-full max-h-[105px] overflow-visible" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox="0 0 260 120" className="w-full max-h-[155px] overflow-visible" preserveAspectRatio="xMidYMid meet">
           {/* Horizon Line (0°) */}
-          <line x1="20" y1={elCy} x2="180" y2={elCy} stroke="#334155" strokeWidth="0.75" strokeOpacity="0.7" />
-          <text x="18" y={elCy + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
-          <text x="182" y={elCy + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
+          <line x1="18" y1={elCy} x2="242" y2={elCy} stroke="#334155" strokeWidth="0.75" strokeOpacity="0.7" />
+          <text x="16" y={elCy + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
+          <text x="244" y={elCy + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
 
           {/* Semicircular Elevation Arc Dome */}
           <path
@@ -88,6 +121,66 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
             strokeDasharray="4 3"
             strokeOpacity="0.6"
           />
+
+          {/* Unreachable Zenith Cap (Outside Tropics) */}
+          {capPathD && (
+            <path
+              d={capPathD}
+              fill="#020617"
+              fillOpacity="0.6"
+              stroke="#475569"
+              strokeWidth="0.6"
+              strokeDasharray="2 2"
+            />
+          )}
+
+          {/* Summer Solstice Noon Peak Reference Line */}
+          {summerSolsticeNoon > 0 && summerSolsticeNoon < 89.5 && (
+            <g>
+              <line
+                x1={summerXL}
+                y1={summerY}
+                x2={summerXR}
+                y2={summerY}
+                stroke="#fbbf24"
+                strokeWidth="0.7"
+                strokeDasharray="3 2"
+                strokeOpacity="0.7"
+              />
+              <text
+                x={summerXR + 3}
+                y={summerY + 2.5}
+                className="text-[6.5px] font-mono fill-amber-400/90 font-medium pointer-events-none select-none"
+              >
+                {summerSolsticeNoon.toFixed(0)}°
+              </text>
+              <title>{`Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}°`}</title>
+            </g>
+          )}
+
+          {/* Winter Solstice Noon Peak Reference Line */}
+          {winterSolsticeNoon > 0 && (
+            <g>
+              <line
+                x1={winterXL}
+                y1={winterY}
+                x2={winterXR}
+                y2={winterY}
+                stroke="#d97706"
+                strokeWidth="0.7"
+                strokeDasharray="3 2"
+                strokeOpacity="0.7"
+              />
+              <text
+                x={winterXR + 3}
+                y={winterY + 2.5}
+                className="text-[6.5px] font-mono fill-amber-600/90 font-medium pointer-events-none select-none"
+              >
+                {winterSolsticeNoon.toFixed(0)}°
+              </text>
+              <title>{`Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}°`}</title>
+            </g>
+          )}
 
           {/* Zenith Marker (90°) */}
           <line x1={elCx} y1={elCy - elR - 3} x2={elCx} y2={elCy - elR + 3} stroke="#475569" strokeWidth="0.75" />
@@ -193,6 +286,29 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
               {sunDistanceAU < 0.99 ? 'Perihelion' : sunDistanceAU > 1.01 ? 'Aphelion' : 'Mean 1 AU'}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Solstice Noon Limits & Zenith Cap Stats Strip (Below Solar Orbit) */}
+      <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span className="text-slate-400">Summer Sol:</span>
+          <strong className="text-amber-300 font-semibold">{summerSolsticeNoon.toFixed(1)}°</strong>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+          <span className="text-slate-400">Winter Sol:</span>
+          <strong className="text-amber-500 font-semibold">
+            {winterSolsticeNoon > 0 ? `${winterSolsticeNoon.toFixed(1)}°` : 'Below 0°'}
+          </strong>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-400">Zenith Cap:</span>
+          <strong className={isTropical ? 'text-emerald-400 font-semibold' : 'text-slate-300 font-semibold'}>
+            {isTropical ? 'None (90°)' : `>${maxAnnualNoon.toFixed(1)}°`}
+          </strong>
         </div>
       </div>
 

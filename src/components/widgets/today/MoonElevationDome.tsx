@@ -65,12 +65,41 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     Math.cos(toRadians(latitude)) * Math.cos(toRadians(moonDeclination as number));
   const transitPeakElevation = toDegrees(Math.asin(clamp(sinMoonPeak, -1, 1)));
 
-  // Moon Arc Coordinates (SVG: 200x90)
-  const elR = 62;
-  const elCx = 100;
-  const elCy = 70;
+  // Moon Arc Coordinates (SVG: 260x120 - upsized by ~50%)
+  const elR = 92;
+  const elCx = 130;
+  const elCy = 104;
   const moonX = elCx + elR * Math.sin(toRadians(moonHourAngle));
   const moonY = elCy - elR * Math.sin(toRadians(currentMoonElevation));
+
+  // --- Lunar Altitude Bounds & Zenith Cap Math ---
+  // Major lunar standstill declination: 23.439° (obliquity) + 5.145° (lunar inclination) = 28.584°
+  const LUNAR_MAX_DEC = 28.584;
+  const absLat = Math.abs(latitude);
+  const isLunarTropical = absLat <= LUNAR_MAX_DEC;
+
+  // Maximum possible lunar transit elevation across all 18.6-year nodal cycles
+  const maxAnnualMoonNoon = isLunarTropical ? 90 : (90 - absLat + LUNAR_MAX_DEC);
+  const minAnnualMoonNoon = 90 - absLat - LUNAR_MAX_DEC;
+
+  // Lunar Zenith Cap geometry (unreachable sector when latitude is outside lunar tropics)
+  let lunarCapPathD = '';
+  if (!isLunarTropical && maxAnnualMoonNoon < 89.5) {
+    const yCap = elCy - elR * Math.sin(toRadians(maxAnnualMoonNoon));
+    const xCapL = elCx - elR * Math.cos(toRadians(maxAnnualMoonNoon));
+    const xCapR = elCx + elR * Math.cos(toRadians(maxAnnualMoonNoon));
+    lunarCapPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${elR} ${elR} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
+  }
+
+  // Max Lunar Altitude Chord Line
+  const maxMoonY = elCy - elR * Math.sin(toRadians(maxAnnualMoonNoon));
+  const maxMoonXL = elCx - elR * Math.cos(toRadians(maxAnnualMoonNoon));
+  const maxMoonXR = elCx + elR * Math.cos(toRadians(maxAnnualMoonNoon));
+
+  // Min Lunar Altitude Chord Line (if above horizon)
+  const minMoonY = minAnnualMoonNoon > 0 ? elCy - elR * Math.sin(toRadians(minAnnualMoonNoon)) : elCy;
+  const minMoonXL = minAnnualMoonNoon > 0 ? elCx - elR * Math.cos(toRadians(minAnnualMoonNoon)) : elCx - elR;
+  const minMoonXR = minAnnualMoonNoon > 0 ? elCx + elR * Math.cos(toRadians(minAnnualMoonNoon)) : elCx + elR;
 
   return (
     <div className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative">
@@ -85,13 +114,13 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
         </div>
       </div>
 
-      {/* Semicircular Moon Dome SVG */}
+      {/* Semicircular Moon Dome SVG (Upsized 50%) */}
       <div className="relative w-full py-1 flex items-center justify-center">
-        <svg viewBox="0 0 200 88" className="w-full max-h-[105px] overflow-visible" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox="0 0 260 120" className="w-full max-h-[155px] overflow-visible" preserveAspectRatio="xMidYMid meet">
           {/* Horizon Line (0°) */}
-          <line x1="20" y1={elCy} x2="180" y2={elCy} stroke="#334155" strokeWidth="0.75" strokeOpacity="0.7" />
-          <text x="18" y={elCy + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
-          <text x="182" y={elCy + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
+          <line x1="18" y1={elCy} x2="242" y2={elCy} stroke="#334155" strokeWidth="0.75" strokeOpacity="0.7" />
+          <text x="16" y={elCy + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
+          <text x="244" y={elCy + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
 
           {/* Semicircular Elevation Arc Dome */}
           <path
@@ -103,6 +132,66 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
             strokeOpacity="0.6"
           />
 
+          {/* Lunar Zenith Cap (Outside Lunar Tropics) */}
+          {lunarCapPathD && (
+            <path
+              d={lunarCapPathD}
+              fill="#020617"
+              fillOpacity="0.6"
+              stroke="#475569"
+              strokeWidth="0.6"
+              strokeDasharray="2 2"
+            />
+          )}
+
+          {/* Max Lunar Standstill Transit Reference Line */}
+          {maxAnnualMoonNoon > 0 && maxAnnualMoonNoon < 89.5 && (
+            <g>
+              <line
+                x1={maxMoonXL}
+                y1={maxMoonY}
+                x2={maxMoonXR}
+                y2={maxMoonY}
+                stroke="#94a3b8"
+                strokeWidth="0.7"
+                strokeDasharray="3 2"
+                strokeOpacity="0.75"
+              />
+              <text
+                x={maxMoonXR + 3}
+                y={maxMoonY + 2.5}
+                className="text-[6.5px] font-mono fill-slate-400 font-medium pointer-events-none select-none"
+              >
+                {maxAnnualMoonNoon.toFixed(0)}°
+              </text>
+              <title>{`Max Possible Lunar Altitude: ${maxAnnualMoonNoon.toFixed(1)}°`}</title>
+            </g>
+          )}
+
+          {/* Min Lunar Standstill Transit Reference Line */}
+          {minAnnualMoonNoon > 0 && (
+            <g>
+              <line
+                x1={minMoonXL}
+                y1={minMoonY}
+                x2={minMoonXR}
+                y2={minMoonY}
+                stroke="#64748b"
+                strokeWidth="0.7"
+                strokeDasharray="3 2"
+                strokeOpacity="0.7"
+              />
+              <text
+                x={minMoonXR + 3}
+                y={minMoonY + 2.5}
+                className="text-[6.5px] font-mono fill-slate-500 font-medium pointer-events-none select-none"
+              >
+                {minAnnualMoonNoon.toFixed(0)}°
+              </text>
+              <title>{`Min Possible Lunar Altitude: ${minAnnualMoonNoon.toFixed(1)}°`}</title>
+            </g>
+          )}
+
           {/* Zenith Marker (90°) */}
           <line x1={elCx} y1={elCy - elR - 3} x2={elCx} y2={elCy - elR + 3} stroke="#475569" strokeWidth="0.75" />
           <text x={elCx} y={elCy - elR - 5} textAnchor="middle" className="text-[8px] font-mono fill-slate-500 font-medium">+90°</text>
@@ -110,7 +199,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
           {/* Observer Horizon Center Origin */}
           <circle cx={elCx} cy={elCy} r="2" fill="#475569" />
 
-          {/* Moon Elevation Vector & Disc */}
+          {/* Moon Elevation Vector & Miniature Phase Disc */}
           {currentMoonElevation > -18 && (
             <g>
               <line
@@ -123,15 +212,43 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
                 strokeDasharray="2 2"
                 opacity="0.8"
               />
-              <circle
-                cx={moonX}
-                cy={moonY}
-                r="5"
-                fill={currentMoonElevation >= 0 ? '#f8fafc' : '#475569'}
-                stroke="#334155"
-                strokeWidth="1.2"
-                className="drop-shadow"
-              />
+              {/* Miniature Moon Phase Disc with Parallactic Angle Orientation */}
+              <g
+                transform={`translate(${moonX}, ${moonY})`}
+                className="drop-shadow-md"
+                opacity={currentMoonElevation >= 0 ? 1.0 : 0.45}
+              >
+                {/* Dark Body Base Disc */}
+                <circle cx="0" cy="0" r="5.5" fill="#020617" stroke="#334155" strokeWidth="0.75" />
+
+                {/* Phase Illuminated Geometry */}
+                <g transform={`rotate(${parallacticAngle || 0})`}>
+                  {(() => {
+                    const pVal = phase.value ?? 0;
+                    if (pVal > 0.48 && pVal < 0.52) {
+                      return <circle cx="0" cy="0" r="5.5" fill="#f8fafc" />;
+                    }
+                    if (pVal > 0.02 && pVal < 0.98) {
+                      const isWaxing = pVal < 0.5;
+                      const startY = isWaxing ? -5.5 : 5.5;
+                      const endY = isWaxing ? 5.5 : -5.5;
+                      const rxAbs = Math.abs(5.5 * Math.cos(pVal * 2 * Math.PI));
+                      let termSweep: number;
+                      if (isWaxing) {
+                        termSweep = pVal < 0.25 ? 0 : 1;
+                      } else {
+                        termSweep = pVal < 0.75 ? 1 : 0;
+                      }
+                      const d = `M 0,${startY} A 5.5,5.5 0 0,1 0,${endY} A ${rxAbs.toFixed(2)},5.5 0 0,${termSweep} 0,${startY}`;
+                      return <path d={d} fill="#f8fafc" />;
+                    }
+                    return null;
+                  })()}
+                </g>
+
+                {/* Outer Specular Rim */}
+                <circle cx="0" cy="0" r="5.5" fill="none" stroke="#64748b" strokeWidth="0.5" strokeOpacity="0.6" />
+              </g>
             </g>
           )}
         </svg>
@@ -203,6 +320,29 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
               {isPerigee ? 'Perigee' : isApogee ? 'Apogee' : 'Mean Orbit'}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Lunar Standstill Limits & Zenith Cap Stats Strip (Below Moon Phase) */}
+      <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+          <span className="text-slate-400">Max Standstill:</span>
+          <strong className="text-slate-200 font-semibold">{maxAnnualMoonNoon.toFixed(1)}°</strong>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+          <span className="text-slate-400">Min Standstill:</span>
+          <strong className="text-slate-400 font-semibold">
+            {minAnnualMoonNoon > 0 ? `${minAnnualMoonNoon.toFixed(1)}°` : 'Below 0°'}
+          </strong>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-400">Zenith Cap:</span>
+          <strong className={isLunarTropical ? 'text-emerald-400 font-semibold' : 'text-slate-300 font-semibold'}>
+            {isLunarTropical ? 'None (90°)' : `>${maxAnnualMoonNoon.toFixed(1)}°`}
+          </strong>
         </div>
       </div>
 
