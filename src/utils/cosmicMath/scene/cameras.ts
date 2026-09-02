@@ -142,10 +142,13 @@ export function projectHeliocentricTopDown(
     axialTiltAngle2D: 90.0
   };
 
-  // 4. Projected Moon Element & Circular Orbit Path
-  const moonOrbitRadius = 24 * s;
-  const moonX = earthX + (scene.moon.position.x - scene.earth.position.x) * posScale;
-  const moonY = earthY + (scene.moon.position.y - scene.earth.position.y) * posScale;
+  // 4. Projected Moon Element & Circular Orbit Path (locked to visible 28px lunar orbit ring)
+  const moonOrbitRadius = 28 * s;
+  const dxRel = scene.moon.position.x - scene.earth.position.x;
+  const dyRel = scene.moon.position.y - scene.earth.position.y;
+  const distRel = Math.hypot(dxRel, dyRel) || 1;
+  const moonX = earthX + (dxRel / distRel) * moonOrbitRadius;
+  const moonY = earthY + (dyRel / distRel) * moonOrbitRadius;
   const moon: ProjectedBody2D = {
     x: moonX,
     y: moonY,

@@ -380,8 +380,8 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html).toContain('⊕ EARTH (Center)');
       expect(html).toContain('☉ SUN');
       expect(html).toContain('☽ MOON');
-      expect(html).toContain('☊');
-      expect(html).toContain('☋');
+      expect(html).not.toContain('☊');
+      expect(html).not.toContain('☋');
     });
 
     it('renders ArmillaryBeadsLayer in 2D Astrolabe plate modes with MiniGlobe in flat pin mode', () => {

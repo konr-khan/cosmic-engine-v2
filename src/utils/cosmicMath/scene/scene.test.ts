@@ -297,6 +297,26 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       expect(projected.elements.earth.axialTiltAngle2D).toBe(90.0);
     });
 
+    it('projects Moon position at exact 28px visual orbit distance from Earth in true and exaggerated scale', () => {
+      const sceneTrue = generateCosmicScene({ scaleMode: 'true' });
+      const projTrue = projectHeliocentricTopDown(sceneTrue, { width: 580, height: 560, scale: 1.0 });
+
+      const distTrue = Math.hypot(
+        projTrue.elements.moon.x - projTrue.elements.earth.x,
+        projTrue.elements.moon.y - projTrue.elements.earth.y
+      );
+      expect(distTrue).toBeCloseTo(28, 2);
+
+      const sceneExag = generateCosmicScene({ scaleMode: 'exaggerated' });
+      const projExag = projectHeliocentricTopDown(sceneExag, { width: 580, height: 560, scale: 1.0 });
+
+      const distExag = Math.hypot(
+        projExag.elements.moon.x - projExag.elements.earth.x,
+        projExag.elements.moon.y - projExag.elements.earth.y
+      );
+      expect(distExag).toBeCloseTo(28, 2);
+    });
+
     it('generates valid closed SVG ellipse path for Earth orbit matching semi-major and semi-minor axes', () => {
       const scene = generateCosmicScene({ scaleMode: 'exaggerated' });
       const projected = projectHeliocentricTopDown(scene, { width: 580, height: 560 });

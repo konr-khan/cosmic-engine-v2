@@ -9,6 +9,8 @@ export interface ExtendedOrbitSvgCanvasProps extends OrbitSvgCanvasProps {
   latitude?: number;
   longitude?: number;
   timeOfDay?: number;
+  lunarOrbitRadius?: number;
+  lunarOrbitPath?: string;
 }
 
 export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
@@ -28,7 +30,9 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   sunLambdaDeg = 0,
   latitude = 47.06,
   longitude = -122.81,
-  timeOfDay = 12.0
+  timeOfDay = 12.0,
+  lunarOrbitRadius,
+  lunarOrbitPath
 }) => {
   // In-plane solar illumination angle pointing from Earth toward Sun
   const sunAngleDeg = Math.atan2(renderSunY - renderEarthY, renderSunX - renderEarthX) * (180 / Math.PI);
@@ -158,16 +162,27 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
       </g>
 
       {/* Moon Orbit Ring around Earth */}
-      <circle 
-        cx={renderEarthX} 
-        cy={renderEarthY} 
-        r={CONFIG.ORBIT.moonOrbitRadius} 
-        fill="none" 
-        stroke="#475569" 
-        strokeWidth="0.75" 
-        strokeDasharray="2 2" 
-        className="pointer-events-none" 
-      />
+      {lunarOrbitPath ? (
+        <path
+          d={lunarOrbitPath}
+          fill="none"
+          stroke="#475569"
+          strokeWidth="0.75"
+          strokeDasharray="2 2"
+          className="pointer-events-none"
+        />
+      ) : (
+        <circle 
+          cx={renderEarthX} 
+          cy={renderEarthY} 
+          r={lunarOrbitRadius ?? 28} 
+          fill="none" 
+          stroke="#475569" 
+          strokeWidth="0.75" 
+          strokeDasharray="2 2" 
+          className="pointer-events-none" 
+        />
+      )}
 
       {/* High-Precision MiniGlobe with Sunward Terminator, 23.44° Axial Tilt & Parallels */}
       <MiniGlobe

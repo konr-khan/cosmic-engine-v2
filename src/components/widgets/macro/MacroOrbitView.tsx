@@ -110,6 +110,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           latitude={storeState.latitude}
           longitude={storeState.longitude}
           timeOfDay={storeState.timeOfDay}
+          lunarOrbitPath={helioScene.lunarOrbitPath}
         />
       </div>
 

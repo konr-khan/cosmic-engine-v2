@@ -150,27 +150,6 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
           </div>
         </div>
       )}
-
-      {/* Floating Lunar Node Hover Popover */}
-      {hoveredNode && (
-        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
-            <strong className={hoveredNode === 'asc' ? 'text-sky-400' : 'text-rose-400'}>
-              {hoveredNode === 'asc' ? '☊ Ascending Node (Northbound)' : '☋ Descending Node (Southbound)'}
-            </strong>
-          </div>
-          <div className="space-y-1 text-[11px]">
-            <div className="text-slate-300 leading-relaxed">
-              {hoveredNode === 'asc' 
-                ? "Point where Moon's 5.14° inclined orbit crosses the ecliptic plane moving North (β ≥ 0)."
-                : "Point where Moon's 5.14° inclined orbit crosses the ecliptic plane moving South (β < 0)."}
-            </div>
-            <div className="text-[10px] text-amber-400/80 pt-1 border-t border-slate-800">
-              Syzygy near nodes produces Solar and Lunar eclipses.
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
