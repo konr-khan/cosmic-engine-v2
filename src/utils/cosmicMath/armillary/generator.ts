@@ -14,9 +14,10 @@ import {
   calculateLST, 
   equatorialToCartesian3D, 
   horizontalToCartesian3D,
-  rotateEuler3D 
+  rotateEuler3D,
+  createEulerCameraRotator 
 } from './coordinates';
-import { computeContinuousProjection2D } from './projections';
+import { computeContinuousProjection2D, createContinuousProjectionResolver } from './projections';
 import { 
   generateContinuousAlmucantars,
   calculatePlanetaryHour, 
@@ -355,25 +356,38 @@ export function generateArmillaryModel(params: {
     sunAngularDiameterArcmin: physicsSolar.sunAngularDiameterArcmin ?? 32.0
   };
 
+  const rotateCamera = createEulerCameraRotator(cameraPitch, cameraYaw, 0);
+  const project2D = createContinuousProjectionResolver(
+    fromProjectionMode,
+    projectionMode,
+    transT,
+    r0,
+    latitude,
+    lstDeg
+  );
+
+  const is3DTarget = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
+  const isSource2D = fromProjectionMode === 'stereographic' || fromProjectionMode === 'rojas' || fromProjectionMode === 'horizon';
+  const isReverse3DTransition = is3DTarget && isSource2D && lambdaClamp > 0.001;
+
+  // Staged geometry flattening progress:
+  // - In 2D target mode: flattens over lambda in [0.45 -> 1.0]
+  // - In reverse transition (2D -> 3D): un-flattens back into 3D over lambda in [1.0 -> 0.45]
+  // - In static 3D mode (lambda = 0): geomLambda = 0
+  const geomLambda = (is3DTarget && !isReverse3DTransition) 
+    ? 0 
+    : clamp((lambdaClamp - 0.45) / 0.55, 0, 1);
+  const oneMinusGeom = 1 - geomLambda;
+  const isFrontFixed = geomLambda >= 0.85;
+
   // Helper to project a single 3D vector with staged morphing
   const transformVertex = (p3d: Vector3D): ArmillaryRingVertex => {
-    const pCam = rotateEuler3D(p3d, cameraPitch, cameraYaw, 0);
-    const pProj = computeContinuousProjection2D(
-      p3d,
-      fromProjectionMode,
-      projectionMode,
-      transT,
-      r0,
-      latitude,
-      lstDeg
-    );
+    const pCam = rotateCamera(p3d.x, p3d.y, p3d.z);
+    const pProj = project2D(p3d);
 
-    const is3DTarget = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
-    const geomLambda = is3DTarget ? 0 : clamp((lambdaClamp - 0.45) / 0.55, 0, 1);
-
-    const screenX = (1 - geomLambda) * pCam.x + geomLambda * pProj.x;
-    const screenY = (1 - geomLambda) * (-pCam.y) + geomLambda * (-pProj.y);
-    const isFront = geomLambda >= 0.85 ? true : pCam.z >= 0;
+    const screenX = oneMinusGeom * pCam.x + geomLambda * pProj.x;
+    const screenY = oneMinusGeom * (-pCam.y) + geomLambda * (-pProj.y);
+    const isFront = isFrontFixed ? true : pCam.z >= 0;
 
     return {
       p3d,

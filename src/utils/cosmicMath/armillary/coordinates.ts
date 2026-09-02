@@ -102,9 +102,15 @@ export function equatorialToHorizontal(
 }
 
 /**
- * Applies 3D Euler rotations for observer camera (pitch around X, yaw around Y, roll/tilt).
+ * Creates a specialized Euler camera rotator function.
+ * Pre-computes trigonometric coefficients (cos, sin) for camera pitch, yaw, and roll once,
+ * returning a fast function (x, y, z) => Vector3D for batch vertex transformations.
  */
-export function rotateEuler3D(p: Vector3D, pitchDeg: number, yawDeg: number, rollDeg: number = 0): Vector3D {
+export function createEulerCameraRotator(
+  pitchDeg: number,
+  yawDeg: number,
+  rollDeg: number = 0
+): (x: number, y: number, z: number) => Vector3D {
   const pitch = toRadians(pitchDeg);
   const yaw = toRadians(yawDeg);
   const roll = toRadians(rollDeg);
@@ -112,23 +118,38 @@ export function rotateEuler3D(p: Vector3D, pitchDeg: number, yawDeg: number, rol
   // 1. Roll around Z
   const cosR = Math.cos(roll);
   const sinR = Math.sin(roll);
-  const x1 = p.x * cosR - p.y * sinR;
-  const y1 = p.x * sinR + p.y * cosR;
-  const z1 = p.z;
 
   // 2. Yaw around Y
   const cosY = Math.cos(yaw);
   const sinY = Math.sin(yaw);
-  const x2 = x1 * cosY + z1 * sinY;
-  const y2 = y1;
-  const z2 = -x1 * sinY + z1 * cosY;
 
   // 3. Pitch around X
   const cosP = Math.cos(pitch);
   const sinP = Math.sin(pitch);
-  const x3 = x2;
-  const y3 = y2 * cosP - z2 * sinP;
-  const z3 = y2 * sinP + z2 * cosP;
 
-  return { x: x3, y: y3, z: z3 };
+  return (x: number, y: number, z: number): Vector3D => {
+    // 1. Roll around Z
+    const x1 = x * cosR - y * sinR;
+    const y1 = x * sinR + y * cosR;
+    const z1 = z;
+
+    // 2. Yaw around Y
+    const x2 = x1 * cosY + z1 * sinY;
+    const y2 = y1;
+    const z2 = -x1 * sinY + z1 * cosY;
+
+    // 3. Pitch around X
+    const x3 = x2;
+    const y3 = y2 * cosP - z2 * sinP;
+    const z3 = y2 * sinP + z2 * cosP;
+
+    return { x: x3, y: y3, z: z3 };
+  };
+}
+
+/**
+ * Applies 3D Euler rotations for observer camera (pitch around X, yaw around Y, roll/tilt).
+ */
+export function rotateEuler3D(p: Vector3D, pitchDeg: number, yawDeg: number, rollDeg: number = 0): Vector3D {
+  return createEulerCameraRotator(pitchDeg, yawDeg, rollDeg)(p.x, p.y, p.z);
 }

@@ -63,6 +63,18 @@ export function transformVector3D(m: Matrix3x3, v: Vector3D): Vector3D {
 }
 
 /**
+ * Multiplies a 3x3 matrix by scalar 3D coordinates: (x, y, z)_out = M * (x, y, z)_in.
+ * Eliminates intermediate vector allocation for high-frequency inner loops.
+ */
+export function transformCoords3D(m: Matrix3x3, x: number, y: number, z: number): Vector3D {
+  return {
+    x: m[0][0] * x + m[0][1] * y + m[0][2] * z,
+    y: m[1][0] * x + m[1][1] * y + m[1][2] * z,
+    z: m[2][0] * x + m[2][1] * y + m[2][2] * z
+  };
+}
+
+/**
  * Transposes a 3x3 matrix (for orthogonal rotation matrices, M^T = M^-1).
  */
 export function transposeMatrix3x3(m: Matrix3x3): Matrix3x3 {
@@ -416,6 +428,21 @@ export function rotatePointEuler3D(
 ): Vector3D {
   const m = createEulerRotationMatrix(pitchDeg, yawDeg, rollDeg);
   return transformVector3D(m, p);
+}
+
+/**
+ * Rotates raw 3D coordinates using camera pitch, yaw, and roll angles without requiring a Vector3D object input.
+ */
+export function rotatePointEuler3DCoords(
+  x: number,
+  y: number,
+  z: number,
+  pitchDeg: Degrees | number,
+  yawDeg: Degrees | number,
+  rollDeg: Degrees | number = 0
+): Vector3D {
+  const m = createEulerRotationMatrix(pitchDeg, yawDeg, rollDeg);
+  return transformCoords3D(m, x, y, z);
 }
 
 // ==========================================

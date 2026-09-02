@@ -21,7 +21,7 @@ import {
   LunarOrbitSegment2D, 
   ProjectedShadowCones2D 
 } from './types';
-import { rotatePointEuler3D } from './transforms';
+import { rotatePointEuler3D, createEulerRotationMatrix } from './transforms';
 import { generateOrbitalSegments } from '../projection';
 
 /** Options for standard 2D camera viewport configuration */
@@ -474,24 +474,33 @@ export function projectEulerCamera(
   const cx = vp.centerX;
   const cy = vp.centerY;
 
+  // Precompute Euler rotation matrix once for all camera points
+  const rotM = createEulerRotationMatrix(pitchDeg, yawDeg, rollDeg);
+  const m00 = rotM[0][0], m01 = rotM[0][1], m02 = rotM[0][2];
+  const m10 = rotM[1][0], m11 = rotM[1][1], m12 = rotM[1][2];
+  const m20 = rotM[2][0], m21 = rotM[2][1], m22 = rotM[2][2];
+
   // Project a 3D point into screen space
   const project3D = (p3d: Vector3D, radius: number = 0): { x: number; y: number; r: number; depth: number } => {
-    const pCam = rotatePointEuler3D(p3d, pitchDeg, yawDeg, rollDeg);
+    const camX = m00 * p3d.x + m01 * p3d.y + m02 * p3d.z;
+    const camY = m10 * p3d.x + m11 * p3d.y + m12 * p3d.z;
+    const camZ = m20 * p3d.x + m21 * p3d.y + m22 * p3d.z;
+
     if (isPerspective) {
-      const denom = Math.max(10, focalDistance + pCam.z);
+      const denom = Math.max(10, focalDistance + camZ);
       const factor = focalDistance / denom;
       return {
-        x: cx + pCam.x * factor * s,
-        y: cy - pCam.y * factor * s,
+        x: cx + camX * factor * s,
+        y: cy - camY * factor * s,
         r: radius * factor * s,
-        depth: pCam.z
+        depth: camZ
       };
     }
     return {
-      x: cx + pCam.x * s,
-      y: cy - pCam.y * s,
+      x: cx + camX * s,
+      y: cy - camY * s,
       r: radius * s,
-      depth: pCam.z
+      depth: camZ
     };
   };
 

@@ -1981,6 +1981,37 @@ describe('cosmicMath utilities', () => {
       expect(midModel.milestonesOpacity).toBeCloseTo(0.5, 2);
     });
 
+    it('smoothly executes symmetric reverse 3D transitions from 2D Stereographic plate to 3D Geocentric', () => {
+      // Halfway through Phase B reverse (lambda = 0.725)
+      const reverseMid = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.725,
+        fromProjectionMode: 'stereographic',
+        projectionMode: 'geocentric',
+        projectionTransitionT: 0.5,
+        cameraPitch: 90,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Opacities blend smoothly between 2D plate and 3D Apparent
+      expect(reverseMid.bezelOpacity).toBeGreaterThan(0);
+      expect(reverseMid.orbitRingOpacity).toBeCloseTo(0.5, 1);
+      expect(reverseMid.milestonesOpacity).toBeCloseTo(0.5, 1);
+      expect(reverseMid.rings.length).toBeGreaterThanOrEqual(6);
+      expect(reverseMid.sun.screenPos.x).not.toBeNaN();
+    });
+
     it('handles exaggerated eccentricity in Heliocentric mode with Sun displaced to focal point', () => {
       const exagModel = generateArmillaryModel({
         julianDate: 2451545.0,
