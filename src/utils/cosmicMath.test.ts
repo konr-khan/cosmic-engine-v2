@@ -54,6 +54,8 @@ import {
   generateContinuousAlmucantars,
   calculatePlanetaryHour,
   generateArmillaryModel,
+  computeRawModeGeometry,
+  computeArmillaryLunarNodes,
   computeProjection2D,
   computeContinuousProjection2D,
   calculateReteAngleToLST,
@@ -1435,6 +1437,48 @@ describe('cosmicMath utilities', () => {
       expect(ZODIAC_SIGNS.length).toBe(12);
       expect(ZODIAC_SIGNS[0].name).toBe('Aries');
       expect(ZODIAC_SIGNS[11].name).toBe('Pisces');
+    });
+
+    it('derives raw mode geometry and lunar nodes via decomposed sub-generators', () => {
+      const geomParams = {
+        r0: 100,
+        obliquity: 23.439,
+        sunLambdaDeg: 90,
+        moonLambdaDeg: 180,
+        moonRaDeg: 180,
+        moonDecDeg: 0,
+        exaggerateEccentricity: false,
+        reteOffset: 0,
+        lambdaClamp: 0
+      };
+
+      const helioGeom = computeRawModeGeometry('heliocentric', geomParams);
+      expect(helioGeom.celestialRingsOpacity).toBe(0.0);
+      expect(helioGeom.orbitRingOpacity).toBe(1.0);
+      expect(helioGeom.milestones3D.length).toBe(6);
+
+      const geoGeom = computeRawModeGeometry('geocentric', geomParams);
+      expect(geoGeom.celestialRingsOpacity).toBe(0.85);
+      expect(geoGeom.earth3D).toEqual({ x: 0, y: 0, z: 0 });
+
+      const stereoGeom = computeRawModeGeometry('stereographic', { ...geomParams, lambdaClamp: 1.0 });
+      expect(stereoGeom.celestialRingsOpacity).toBe(1.0);
+      expect(stereoGeom.bezelOpacity).toBe(1.0);
+
+      const dummyVertex = (p: Vector3D) => ({
+        p3d: p,
+        pCam: p,
+        pProj: { x: p.x, y: p.y },
+        screenPos: { x: p.x, y: p.y },
+        isFront: true
+      });
+      const nodes = computeArmillaryLunarNodes({
+        isHelioMode: true,
+        blendedEarth3D: { x: 100, y: 0, z: 0 },
+        transformVertex: dummyVertex
+      });
+      expect(nodes.ascendingNode.screenPos.x).toBe(116);
+      expect(nodes.descendingNode.screenPos.x).toBe(84);
     });
 
     it('generates full dynamic Gyro-Morph Armillary Model across 3D and 2D morph factors', () => {
