@@ -137,8 +137,14 @@ box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-2xl */
 The dashboard layout utilizes a flexible 12-column responsive CSS grid with dynamic per-card width toggle controls:
 
 * **2-Column Panoramic Windows (`col-span-12`)**: Full-width panoramic cards for high-detail instruments (Gyro-Morph Armillary, Today Horizon, Eclipse Demonstrator).
-* **1-Column Standard Cards (`col-span-12 2xl:col-span-6`)**: Half-width compact instruments (Solar Almanac, Lunar Almanac, Daylight Terminator Map, Macro Orbit).
+* **1-Column Standard Cards (`col-span-12 2xl:col-span-6`)**: Half-width compact instruments (Solar Almanac, Lunar Almanac, Daylight Terminator Map, Macro Orbit) spanning 6 columns on ultra-wide displays ($\ge 1536\text{px}$) and stacking to full width on narrower viewports.
 * **Interactive `1-Col / 2-Col` Header Toggle**: Every dashboard window includes a direct header toggle allowing users to dynamically expand any card to 2 columns or collapse to 1 column.
+* **HTML5 Drag-and-Drop Architecture & Drop-Target Tokens**:
+  * **Header Drag Handle**: `cursor-grab active:cursor-grabbing` on header bar; 6-dot grip icon (`text-slate-500 hover:text-slate-300`) indicates draggable state when unlocked.
+  * **Active Dragging State**: The dragging window preserves layout flow with `opacity-40 scale-[0.98]`.
+  * **Luminous Drop-Target Indicator**: Active drag-over hover displays an intense luminous ring and glow: `border-indigo-500 ring-2 ring-indigo-500/80 shadow-2xl shadow-indigo-500/20` (overriding default `border-slate-800/80 hover:border-slate-700/80`).
+  * **Header-Gated Pointer Down**: To prevent child input elements (sliders, dials, buttons, number inputs) from triggering native drag cancellation, drag capability is strictly gated via `canDragRef` armed only upon direct header bar pointer-down.
+  * **DataTransfer Protocol**: Explicitly asserts `e.dataTransfer.effectAllowed = 'move'` and `e.dataTransfer.dropEffect = 'move'` on drag lifecycles to guarantee clean cursor behavior.
 * **Bottom Astrolabe Dock**: Fixed to the bottom viewport (`fixed bottom-0 left-0 right-0 z-50`) with an accessible expand/collapse tab.
 
 ---

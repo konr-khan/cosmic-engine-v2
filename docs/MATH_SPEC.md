@@ -1,6 +1,6 @@
 # MATH_SPEC.md — Astronomical Mathematical Specification & Domain Models
 
-This document serves as the ground-truth mathematical reference for **Cosmic Engine V2.0**, codifying all coordinate transformations, ephemeris approximations, twilight thresholds, eclipse shadow geometry, and tidal vector mechanics.
+This document serves as the ground-truth mathematical reference for **Cosmic Engine V2.0**, codifying all coordinate transformations, ephemeris approximations, twilight thresholds, eclipse shadow geometry, and tidal vector mechanics. All physical constants and temporal epochs conform strictly to the centralized registry in [`src/utils/cosmicMath/astroConstants.ts`](../src/utils/cosmicMath/astroConstants.ts) (see Section 11).
 
 ---
 
@@ -671,7 +671,9 @@ Each camera projection transforms 3D scene objects into 2D SVG screen coordinate
      \]
    * Depth sorting criterion: $P_{\text{cam}, z} \ge 0 \implies \text{Front (solid stroke)}$, $P_{\text{cam}, z} < 0 \implies \text{Back (dashed stroke)}$.
 
-### F. Earth Inertial 3D Axial Tilt & Analytical Spherical Limb Clipping
+### F. Earth Inertial 3D Axial Tilt & Analytical Spherical Limb Clipping (`globe.ts`)
+
+Pure spherical limb intersection and continent landmass projection math is codified in [`src/utils/cosmicMath/globe.ts`](../src/utils/cosmicMath/globe.ts).
 
 1. **Inertial Axial Tilt Vector**:
    In J2000 ecliptic coordinates, Earth's North Pole unit vector $\vec{N}_{\text{ecl}}$ is tilted by obliquity $\varepsilon = 23.439281^\circ$ toward $\lambda = 90^\circ$ (June Solstice):
@@ -688,14 +690,26 @@ Each camera projection transforms 3D scene objects into 2D SVG screen coordinate
    \vec{S}_{\text{eq}} = \begin{pmatrix} \cos\delta_\odot \cos\alpha_\odot \\ \cos\delta_\odot \sin\alpha_\odot \\ \sin\delta_\odot \end{pmatrix}, \quad
    \vec{S}_{\text{cam}} = \mathbf{R}_{\text{cam}} \vec{S}_{\text{eq}}
    \]
-3. **Analytical Spherical Limb Clipping**:
-   For twilight angle threshold $h_0 \in \{0^\circ, -6^\circ, -12^\circ, -18^\circ\}$ and camera subsolar vector $(s_x, s_y, s_z)$:
-   * Tangent parameter $\mu = \frac{-\sin h_0 \cdot s_z}{\cos h_0 \cdot \sqrt{s_x^2 + s_y^2}}$.
-   * If $\mu \ge 1$: Full night (or full day if $s_z \ge \sin h_0$).
-   * If $\mu \le -1$: Complete closed circular terminator ellipse on front face.
-   * If $|\mu| < 1$: Terminator circle intersects the limb at $\phi_0 = \arcsin\mu$, generating smooth, non-tearing arc paths joined continuously along the planetary limb rim.
+3. **Analytical Spherical Limb Clipping Algorithm (`generateAnalyticalLimbPath`)**:
+   For twilight angle threshold $h_0 \in \{0^\circ, -6^\circ, -12^\circ, -18^\circ\}$ and camera subsolar vector $(s_x, s_y, s_z)$ with transverse magnitude $s_\perp = \sqrt{s_x^2 + s_y^2}$:
+   * **Camera Plane Orthonormal Basis**:
+     \[
+     \hat{u} = \left(-\frac{s_y}{s_\perp}, \; \frac{s_x}{s_\perp}\right), \quad \hat{v} = \left(-\frac{s_x s_z}{s_\perp}, \; -\frac{s_y s_z}{s_\perp}\right)
+     \]
+   * **Terminator Tangent Parameter**:
+     \[
+     \mu = \frac{-\sin h_0 \cdot s_z}{\cos h_0 \cdot s_\perp}
+     \]
+   * **Piecewise Boundary Regimes**:
+     * If $\mu \ge 1$: Full night (or full day if $s_z \ge \sin h_0$). Path evaluates to empty or full circle.
+     * If $\mu \le -1$: Complete closed circular terminator ellipse entirely on front face ($z > 0$).
+     * If $|\mu| < 1$: Terminator circle intersects the planetary limb ($x^2 + y^2 = R^2$) at two real roots:
+       \[
+       \phi_0 = \arcsin\mu \in [-\pi/2, \pi/2], \quad \phi_1 = \phi_0, \quad \phi_2 = \pi - \phi_0
+       \]
+       Generating smooth, continuous arc paths joined without triangular backside tearing or boundary gaps along the planetary limb rim.
 
-### G. 3D Rotational Vector Continent Projection & Limb Clipping
+### G. 3D Rotational Vector Continent Projection & Limb Clipping (`projectContinentLandmasses`)
 
 Given geographic coordinates $(\lambda_{\text{geo}}, \phi_{\text{geo}})$ and local solar hour angle $h = 15^\circ(t_{\text{tod}} - 12) + \lambda_{\text{geo}}$:
 1. **Equatorial Body Frame**:
@@ -725,5 +739,44 @@ During transition from Copernican heliocentric orbit to geocentric/plate frames 
    \text{Opacity}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \cdot 0.0 + t_{\text{geo}} \cdot \text{baseOpacity}
    \]
    expanding celestial parallels (Equator, Tropics, Horizon, Colure) and Rete stars smoothly from the Earth MiniGlobe into full celestial scale.
+
+---
+
+## 11. Centralized Physical Astronomical Constants & Temporal Purity (`astroConstants.ts`)
+
+All computational pipelines throughout Cosmic Engine V2.0 derive their physical constants and standard epochs directly from [`src/utils/cosmicMath/astroConstants.ts`](../src/utils/cosmicMath/astroConstants.ts).
+
+### A. Canonical Constants Table (IAU / WGS-84 / Meeus)
+
+| Symbol | Identifier | Canonical Value | Units | Provenance / Standard |
+| :--- | :--- | :--- | :--- | :--- |
+| $\text{JD}_{\text{J2000}}$ | `J2000_JD` | $2451545.0$ | $\text{days}$ | Standard J2000.0 Epoch (2000 Jan 1.5 TT) |
+| $T_{\text{century}}$ | `JULIAN_CENTURY_DAYS` | $36525.0$ | $\text{days}$ | Ephemeris days per Julian Century |
+| $Y_{\text{mean}}$ | `DAYS_IN_YEAR_MEAN` | $365.25$ | $\text{days}$ | Mean calendar days per Julian Year |
+| $M_{\text{synodic}}$ | `DAYS_IN_SYNODIC_MONTH` | $29.530589$ | $\text{days}$ | Mean synodic month period |
+| $1\text{ AU}$ | `ASTRONOMICAL_UNIT_KM` | $149,597,870.7$ | $\text{km}$ | IAU 2012 Definition |
+| $R_\oplus$ | `EARTH_RADIUS_WGS84_KM` | $6378.137$ | $\text{km}$ | WGS-84 Reference Ellipsoid Equatorial Radius |
+| $R_{\text{moon}}$ | `MOON_RADIUS_MEAN_KM` | $1737.4$ | $\text{km}$ | IAU Volumetric Mean Lunar Radius |
+| $D_{\text{moon}}$ | `MOON_DIAMETER_KM` | $3474.0$ | $\text{km}$ | Mean Lunar Diameter ($2 \cdot R_{\text{moon}}$) |
+| $v_{\oplus, \text{mean}}$ | `EARTH_ORBITAL_SPEED_MEAN_KMS` | $29.7847$ | $\text{km/s}$ | Mean Earth Orbital Speed at 1 AU |
+| $S_0$ | `SOLAR_IRRADIANCE_1AU_WM2` | $1361.0$ | $\text{W/m}^2$ | Solar Constant (Total Solar Irradiance at 1 AU) |
+| $\theta_\odot$ | `SUN_ANGULAR_DIAMETER_1AU_ARCMIN` | $31.986$ | $\text{arcmin}$ | Sun Apparent Angular Diameter at 1 AU |
+| $\varepsilon_0$ | `EARTH_AXIAL_OBLIQUITY_J2000_DEG` | $23.439281^\circ$ | $\text{Degrees}$ | IAU Mean Obliquity of Ecliptic at J2000.0 |
+| $i_{\text{moon}}$ | `MOON_ORBIT_INCLINATION_DEG` | $5.14^\circ$ | $\text{Degrees}$ | Mean Lunar Orbit Inclination to Ecliptic |
+| $d_{\text{perigee}}$ | `LUNAR_PERIGEE_THRESHOLD_KM` | $365,000$ | $\text{km}$ | Lunar Perigee Distance Threshold |
+| $d_{\text{apogee}}$ | `LUNAR_APOGEE_THRESHOLD_KM` | $400,000$ | $\text{km}$ | Lunar Apogee Distance Threshold |
+| $e_{\text{true}}$ | `EARTH_ECCENTRICITY_TRUE` | $0.01671022$ | dimensionless | Physical Earth Orbital Eccentricity |
+| $e_{\text{exagg}}$ | `EARTH_ECCENTRICITY_EXAGGERATED` | $0.25$ | dimensionless | Exaggerated Eccentricity for Visual Analysis |
+
+### B. Temporal Epoch Purity & Determinism Invariant
+
+To guarantee absolute mathematical reproducibility, eliminate runtime timezone leakage, and ensure test determinism across environments:
+1. **No Implicit `new Date()` Invocations**: Pure mathematical algorithms in `src/utils/cosmicMath/` and scene generators in `src/utils/cosmicMath/scene/` must never call unparameterized `new Date()` internally.
+2. **Explicit Temporal Injection**: Temporal epochs must be passed as branded `JulianDate` (or explicit `Date` objects) defaulting canonically to `J2000_JD` (`2451545.0`).
+3. **Pure Bridge Utilities**: Date conversions must flow through the verified pure functional helpers in `src/utils/cosmicMath/core.ts`:
+   * `dateToJulianDate(d: Date): JulianDate`
+   * `julianDateToDate(jd: JulianDate): Date`
+   * `createUTCDate(year, month, day, hours?, minutes?, seconds?, ms?): Date`
+
 
 
