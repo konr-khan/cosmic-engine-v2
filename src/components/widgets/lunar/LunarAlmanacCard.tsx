@@ -86,8 +86,8 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   }, [annualLunarData]);
 
   const getDayLabel = (dayNum: number): string => {
-    const d = new Date(year, 0, dayNum);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const d = new Date(Date.UTC(year, 0, dayNum, 12, 0, 0));
+    return d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
   };
 
   const activeData = annualLunarData[activeDay - 1] || { 
@@ -98,9 +98,14 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
     phaseValue: phase.value ?? 0.5 
   };
 
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
   const [timeMode, setTimeMode] = useState<'utc' | 'local'>('utc');
+  const [viewMode, setViewMode] = useState<'synodic' | 'annual'>('synodic');
 
-  const transitHour = activeData.transit ?? transit ?? 12;
+  const displayData = (hoveredDay && annualLunarData[hoveredDay - 1]) 
+    ? annualLunarData[hoveredDay - 1] 
+    : activeData;
+  const transitHour = displayData.transit ?? transit ?? 12;
   const decDeg = (orbitalData?.lunarPos?.declination ?? lunarEvents.declination ?? 0) as number;
 
   return (
@@ -109,11 +114,15 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
       {/* Top Inline Date Badge & Summary Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
         <p className="text-xs text-slate-400">
-          365-day 24h moonrise/moonset braided ribbon, ephemeris transit &amp; declination matrix
+          {viewMode === 'synodic' 
+            ? '30-day (±15d) high-resolution synodic moonrise/moonset ribbon & phase cycle' 
+            : '365-day 24h moonrise/moonset braided ribbon, ephemeris transit & declination matrix'}
         </p>
         <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/60">
           <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="font-semibold text-slate-200">{getDayLabel(activeDay)}</span>
+          <span className="font-semibold text-slate-200">
+            {hoveredDay ? `Inspect: ${getDayLabel(hoveredDay)}` : getDayLabel(activeDay)}
+          </span>
         </div>
       </div>
 
@@ -124,7 +133,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         onDayChange={onDayChange}
       />
 
-      {/* Upper Area: 365-Day 24h Moonrise / Moonset Braided Ribbon Chart */}
+      {/* Upper Area: Moonrise / Moonset Ribbon Chart (30-Day Synodic or 365-Day Annual) */}
       <LunarRibbonChart
         annualLunarData={annualLunarData}
         activeDay={activeDay}
@@ -132,22 +141,28 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         year={year}
         activeData={activeData}
         onDayChange={onDayChange}
+        hoverDate={hoverDate}
         onHoverDate={onHoverDate}
+        onHoverDayChange={setHoveredDay}
         getDayLabel={getDayLabel}
         hoverTime={hoverTime}
         onHoverTime={onHoverTime}
         longitude={longitude}
         timeMode={timeMode}
         onTimeModeChange={setTimeMode}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
       {/* Lower Area: Clean 3-Box Summary Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-2.5 font-mono">
         {/* Box 1 (Moonrise / Moonset) */}
         <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 flex flex-col items-center justify-center text-center shadow-inner">
-          <span className="text-[9px] text-slate-400 block uppercase font-sans font-medium">Moonrise / Moonset</span>
+          <span className="text-[9px] text-slate-400 block uppercase font-sans font-medium">
+            {hoveredDay ? 'Inspect Rise / Set' : 'Moonrise / Moonset'}
+          </span>
           <span className="text-slate-200 font-semibold text-xs mt-0.5 font-mono">
-            {activeData.moonrise !== null && activeData.moonrise !== undefined ? formatTime(activeData.moonrise).substring(0, 5) : '--:--'} / {activeData.moonset !== null && activeData.moonset !== undefined ? formatTime(activeData.moonset).substring(0, 5) : '--:--'}
+            {displayData.moonrise !== null && displayData.moonrise !== undefined ? formatTime(displayData.moonrise).substring(0, 5) : '--:--'} / {displayData.moonset !== null && displayData.moonset !== undefined ? formatTime(displayData.moonset).substring(0, 5) : '--:--'}
           </span>
         </div>
 

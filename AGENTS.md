@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 373 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 376 tests)
 
 ### Essential Commands
 
@@ -173,7 +173,7 @@ Cosmic Engine V2.0/
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (32 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (35 tests)
 │       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (11 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
 │       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook

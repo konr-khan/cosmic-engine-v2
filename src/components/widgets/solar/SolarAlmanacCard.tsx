@@ -17,6 +17,8 @@ export interface SolarAlmanacProps {
   currentTime?: number;
   hoverTime?: number | null;
   onHoverTime?: (time: number | null) => void;
+  hoverDate?: Date | null;
+  onHoverDate?: (date: Date | null) => void;
 }
 
 export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({ 
@@ -28,7 +30,9 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
   solarData,
   currentTime = 12,
   hoverTime, 
-  onHoverTime 
+  onHoverTime,
+  hoverDate,
+  onHoverDate
 }) => {
   const [timeMode, setTimeMode] = useState<'solar' | 'utc'>('solar');
 
@@ -58,8 +62,8 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
   }, [almanacData]);
 
   const getDayLabel = (dayNum: number): string => {
-    const d = new Date(year, 0, dayNum);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const d = new Date(Date.UTC(year, 0, dayNum, 12, 0, 0));
+    return d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
   };
 
   const activeData = almanacData[activeDay - 1] || almanacData[0] || { sunrise: 6, sunset: 18, dayLength: 12, solarNoon: 12 };
@@ -130,10 +134,13 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
           keyStats={keyStats}
           hoverTime={hoverTime}
           onHoverTime={onHoverTime}
+          hoverDate={hoverDate}
+          onHoverDate={onHoverDate}
           onDayChange={onDayChange}
           lonOffsetHours={lonOffsetHours}
           eotOffsetHours={eotOffsetHours}
           getDayLabel={getDayLabel}
+          year={year}
         />
 
         {/* Right Side (4 cols on XL): 24-Hour Polar Clock Dial */}

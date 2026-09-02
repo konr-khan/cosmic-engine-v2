@@ -736,6 +736,107 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(TidalWaveOscillator).toBeDefined();
       expect(LunarShortcutsRail).toBeDefined();
     });
+
+    it('renders SolarRibbonChart with interactive hover hairline and tooltip', () => {
+      const mockSolarData = Array.from({ length: 365 }, (_, i) => ({
+        day: i + 1,
+        sunrise: 7.0,
+        sunset: 17.0,
+        solarNoon: 12.0,
+        dayLength: 10.0,
+        declination: -20.0
+      })) as unknown as import('../../types').AnnualSolarMatrixItem[];
+
+      const solarHtml = renderToStaticMarkup(
+        React.createElement(SolarRibbonChart, {
+          almanacData: mockSolarData,
+          totalDays: 365,
+          activeDay: 1,
+          activeData: mockSolarData[0],
+          mirrorDayData: null,
+          keyStats: {
+            earliestSunrise: mockSolarData[170],
+            latestSunset: mockSolarData[190]
+          },
+          lonOffsetHours: 0,
+          eotOffsetHours: 0,
+          getDayLabel: (d: number) => `Jan ${d}`,
+          hoverDate: new Date(Date.UTC(2026, 0, 5, 12, 0, 0)),
+          year: 2026
+        })
+      );
+
+      expect(solarHtml).toContain('Jan 5');
+      expect(solarHtml).toContain('10.0h Day');
+      expect(solarHtml).toContain('Solar Noon:');
+      expect(solarHtml).toContain('Equiv:');
+    });
+
+    it('renders LunarRibbonChart in 30-Day Synodic mode with daily phase discs, day ticks, and hover tooltip', () => {
+      const mockLunarData: import('../../types').AnnualLunarMatrixItem[] = Array.from({ length: 365 }, (_, i) => ({
+        day: i + 1,
+        moonrise: 6.0,
+        transit: 12.0,
+        moonset: 18.0,
+        phaseValue: (i % 29.53) / 29.53,
+        isPerigee: i === 14,
+        isApogee: i === 28,
+        distanceKm: 384400
+      }));
+
+      const synodicHtml = renderToStaticMarkup(
+        React.createElement(LunarRibbonChart, {
+          annualLunarData: mockLunarData,
+          activeDay: 15,
+          totalDays: 365,
+          year: 2026,
+          activeData: mockLunarData[14],
+          getDayLabel: (d: number) => `Day ${d}`,
+          hoverDate: new Date(Date.UTC(2026, 0, 10, 12, 0, 0)),
+          viewMode: 'synodic',
+          onViewModeChange: () => {}
+        })
+      );
+
+      expect(synodicHtml).toContain('30-Day Synodic');
+      expect(synodicHtml).toContain('data-testid="lunar-readout-bar"');
+      expect(synodicHtml).toContain('Moonrise:');
+      expect(synodicHtml).toContain('Moonset:');
+      expect(synodicHtml).toContain('data-testid="synodic-phase-disc"');
+      expect(synodicHtml).toContain('data-testid="synodic-day-tick"');
+      expect(synodicHtml).toContain('Dist:');
+      expect(synodicHtml).toContain('384,400 km');
+    });
+
+    it('renders LunarRibbonChart in 365-Day Annual mode with month dividers', () => {
+      const mockLunarData: import('../../types').AnnualLunarMatrixItem[] = Array.from({ length: 365 }, (_, i) => ({
+        day: i + 1,
+        moonrise: 6.0,
+        transit: 12.0,
+        moonset: 18.0,
+        phaseValue: 0.5,
+        isPerigee: false,
+        isApogee: false,
+        distanceKm: 384400
+      }));
+
+      const annualHtml = renderToStaticMarkup(
+        React.createElement(LunarRibbonChart, {
+          annualLunarData: mockLunarData,
+          activeDay: 15,
+          totalDays: 365,
+          year: 2026,
+          activeData: mockLunarData[14],
+          getDayLabel: (d: number) => `Day ${d}`,
+          viewMode: 'annual',
+          onViewModeChange: () => {}
+        })
+      );
+
+      expect(annualHtml).toContain('365-Day Ribbon');
+      expect(annualHtml).toContain('Jan');
+      expect(annualHtml).toContain('Dec');
+    });
   });
 
   describe('Eclipse Demonstrator Subsystem', () => {

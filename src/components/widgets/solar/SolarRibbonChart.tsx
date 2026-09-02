@@ -1,5 +1,5 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { formatTime } from '../../../utils/cosmicMath';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
+import { formatTime, getDayOfYear } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem } from '../../../types';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -16,10 +16,13 @@ export interface SolarRibbonChartProps {
   };
   hoverTime?: number | null;
   onHoverTime?: (time: number | null) => void;
+  hoverDate?: Date | null;
+  onHoverDate?: (date: Date | null) => void;
   onDayChange?: (day: number) => void;
   lonOffsetHours: number;
   eotOffsetHours: number;
   getDayLabel: (dayNum: number) => string;
+  year?: number;
 }
 
 export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
@@ -31,10 +34,13 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
   keyStats,
   hoverTime,
   onHoverTime,
+  hoverDate,
+  onHoverDate,
   onDayChange,
   lonOffsetHours,
   eotOffsetHours,
   getDayLabel,
+  year = 2026,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -93,12 +99,21 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
     const day = xToDay(svgX);
     setHoverDay(day);
 
+    if (onHoverDate) {
+      const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
+      onHoverDate(d);
+    }
+
     // Calculate time from vertical Y position in Local Solar Time, then bridge to UTC
     const relY = svgY - paddingTop;
     if (relY >= 0 && relY <= chartH && onHoverTime) {
       const localChartTime = ((chartH - relY) / chartH) * 24;
       const utcHoverTime = ((localChartTime - lonOffsetHours - eotOffsetHours) % 24 + 24) % 24;
       onHoverTime(parseFloat(utcHoverTime.toFixed(3)));
+    }
+
+    if ((isDragging || e.type === 'pointerdown') && onDayChange) {
+      onDayChange(day);
     }
   };
 
@@ -119,8 +134,6 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
     if (hoverDay !== null && onDayChange) {
       onDayChange(hoverDay);
     }
-    setHoverDay(null);
-    if (onHoverTime) onHoverTime(null);
     if (svgRef.current) {
       try {
         svgRef.current.releasePointerCapture(e.pointerId);
@@ -133,6 +146,39 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
   const sunriseY = timeToY(activeData.sunrise);
   const sunsetY = timeToY(activeData.sunset);
 
+  const targetHoverDay = hoverDay !== null 
+    ? hoverDay 
+    : (hoverDate ? getDayOfYear(hoverDate) : null);
+  const hoverData = targetHoverDay && almanacData.length >= targetHoverDay 
+    ? almanacData[targetHoverDay - 1] 
+    : null;
+
+  const effectiveFocusDay = targetHoverDay ?? activeDay;
+  const effectiveFocusData = (targetHoverDay && almanacData.length >= targetHoverDay)
+    ? almanacData[targetHoverDay - 1]
+    : activeData;
+
+  const currentMirrorDayData = useMemo<AnnualSolarMatrixItem | null>(() => {
+    if (!almanacData.length) return null;
+    const targetLength = effectiveFocusData.dayLength;
+    
+    let bestDay: AnnualSolarMatrixItem | null = null;
+    let minDiff = 999;
+    
+    for (let i = 0; i < almanacData.length; i++) {
+      const d = almanacData[i];
+      if (Math.abs(d.day - effectiveFocusDay) > 5 && Math.abs(d.day - effectiveFocusDay) < (totalDays - 5)) {
+        const diff = Math.abs(d.dayLength - targetLength);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestDay = d;
+        }
+      }
+    }
+    
+    return bestDay ?? mirrorDayData;
+  }, [almanacData, effectiveFocusDay, effectiveFocusData.dayLength, totalDays, mirrorDayData]);
+
   return (
     <div className="xl:col-span-8 2xl:col-span-8 relative w-full h-full min-h-[300px] touch-none flex items-center">
       <svg 
@@ -142,7 +188,12 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerLeave={() => { setIsDragging(false); setHoverDay(null); if (onHoverTime) onHoverTime(null); }}
+        onPointerLeave={() => { 
+          setIsDragging(false); 
+          setHoverDay(null); 
+          if (onHoverTime) onHoverTime(null); 
+          if (onHoverDate) onHoverDate(null);
+        }}
         style={{ cursor: isDragging ? 'grabbing' : 'crosshair' }}
       >
         <defs>
@@ -283,21 +334,21 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
           </text>
         </g>
 
-        {/* Dynamic Solstice Mirrored Equivalent Daylight Vertical Guideline */}
-        {mirrorDayData && (
+        {/* Dynamic Solstice Mirrored Equivalent Daylight Vertical Guideline (glides on mouseover) */}
+        {currentMirrorDayData && (
           <g>
             <line 
-              x1={dayToX(mirrorDayData.day)} y1={paddingTop} 
-              x2={dayToX(mirrorDayData.day)} y2={paddingTop + chartH} 
-              stroke="#6366f1" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.8" 
+              x1={dayToX(currentMirrorDayData.day)} y1={paddingTop} 
+              x2={dayToX(currentMirrorDayData.day)} y2={paddingTop + chartH} 
+              stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 3" opacity={targetHoverDay !== null ? "0.95" : "0.8"} 
             />
             {/* Intersection Dots on Mirrored Day */}
-            <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunrise)} r="3" fill="#6366f1" stroke="white" strokeWidth="1.2" />
-            <circle cx={dayToX(mirrorDayData.day)} cy={timeToY(mirrorDayData.sunset)} r="3" fill="#6366f1" stroke="white" strokeWidth="1.2" />
+            <circle cx={dayToX(currentMirrorDayData.day)} cy={timeToY(currentMirrorDayData.sunrise)} r="3.5" fill="#6366f1" stroke="white" strokeWidth="1.2" />
+            <circle cx={dayToX(currentMirrorDayData.day)} cy={timeToY(currentMirrorDayData.sunset)} r="3.5" fill="#6366f1" stroke="white" strokeWidth="1.2" />
             {/* Top Mirrored Day Badge */}
-            <g transform={`translate(${dayToX(mirrorDayData.day)}, ${paddingTop - 8})`}>
-              <text textAnchor="middle" className="text-xs font-mono font-semibold fill-indigo-400">
-                Equiv: {getDayLabel(mirrorDayData.day)} ({mirrorDayData.dayLength.toFixed(1)}h)
+            <g transform={`translate(${dayToX(currentMirrorDayData.day)}, ${paddingTop - 8})`}>
+              <text textAnchor="middle" className="text-xs font-mono font-semibold fill-indigo-400 drop-shadow-sm">
+                Equiv: {getDayLabel(currentMirrorDayData.day)} ({currentMirrorDayData.dayLength.toFixed(1)}h)
               </text>
             </g>
           </g>
@@ -314,6 +365,80 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
         <circle cx={dayToX(activeDay)} cy={sunriseY} r="3.5" fill="#ef4444" stroke="white" strokeWidth="1.2" />
         <circle cx={dayToX(activeDay)} cy={sunsetY} r="3.5" fill="#ef4444" stroke="white" strokeWidth="1.2" />
         <circle cx={dayToX(activeDay)} cy={timeToY(activeData.solarNoon)} r="2.5" fill="#fbbf24" stroke="black" strokeWidth="1" />
+
+        {/* Interactive Hover Day Hairline, Curve Intersection Markers & Floating Tooltip */}
+        {targetHoverDay !== null && targetHoverDay !== activeDay && hoverData && (() => {
+          const hx = dayToX(targetHoverDay);
+          const hyRise = timeToY(hoverData.sunrise);
+          const hySet = timeToY(hoverData.sunset);
+          const hyNoon = timeToY(hoverData.solarNoon);
+
+          const tooltipW = 160;
+          const tooltipH = 58;
+          const tooltipX = hx > width - paddingRight - tooltipW - 10
+            ? hx - tooltipW - 12
+            : (hx < paddingLeft + 10 ? hx + 12 : hx + 12);
+          const tooltipY = paddingTop + 10;
+
+          return (
+            <g className="pointer-events-none">
+              {/* Vertical Guide Hairline */}
+              <line
+                x1={hx} y1={paddingTop}
+                x2={hx} y2={paddingTop + chartH}
+                stroke="#38bdf8"
+                strokeWidth="1.5"
+                strokeDasharray="3 2"
+                className="drop-shadow-sm"
+              />
+
+              {/* Curve Intersection Markers */}
+              <circle cx={hx} cy={hyRise} r="3.5" fill="#eab308" stroke="#ffffff" strokeWidth="1.5" />
+              <circle cx={hx} cy={hySet} r="3.5" fill="#f97316" stroke="#ffffff" strokeWidth="1.5" />
+              <circle cx={hx} cy={hyNoon} r="2.5" fill="#38bdf8" stroke="#000000" strokeWidth="1" />
+
+              {/* Floating Tooltip Card */}
+              <rect
+                x={tooltipX}
+                y={tooltipY}
+                width={tooltipW}
+                height={tooltipH}
+                rx="6"
+                fill="#020617"
+                fillOpacity="0.94"
+                stroke="#38bdf8"
+                strokeWidth="0.9"
+                className="drop-shadow-xl"
+              />
+              <text x={tooltipX + 8} y={tooltipY + 15} className="text-[11px] font-mono font-bold fill-sky-300">
+                {getDayLabel(targetHoverDay)}
+              </text>
+              <text x={tooltipX + tooltipW - 8} y={tooltipY + 15} textAnchor="end" className="text-[10px] font-mono font-semibold fill-amber-400">
+                {hoverData.dayLength.toFixed(1)}h Day
+              </text>
+              <line
+                x1={tooltipX + 8}
+                y1={tooltipY + 21}
+                x2={tooltipX + tooltipW - 8}
+                y2={tooltipY + 21}
+                stroke="#1e293b"
+                strokeWidth="0.75"
+              />
+              <text x={tooltipX + 8} y={tooltipY + 34} className="text-[9px] font-mono fill-slate-300">
+                Rise: <tspan className="font-bold fill-amber-300">{formatTime(hoverData.sunrise).substring(0, 5)}</tspan>
+              </text>
+              <text x={tooltipX + tooltipW - 8} y={tooltipY + 34} textAnchor="end" className="text-[9px] font-mono fill-slate-300">
+                Set: <tspan className="font-bold fill-amber-300">{formatTime(hoverData.sunset).substring(0, 5)}</tspan>
+              </text>
+              <text x={tooltipX + 8} y={tooltipY + 48} className="text-[9px] font-mono fill-slate-400">
+                Solar Noon: <tspan className="font-semibold fill-slate-200">{formatTime(hoverData.solarNoon).substring(0, 5)}</tspan>
+                {currentMirrorDayData && (
+                  <tspan className="fill-indigo-300 font-semibold"> · Equiv: {getDayLabel(currentMirrorDayData.day)}</tspan>
+                )}
+              </text>
+            </g>
+          );
+        })()}
       </svg>
     </div>
   );

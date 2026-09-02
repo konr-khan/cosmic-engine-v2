@@ -83,6 +83,8 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           currentTime={timeOfDay}
           hoverTime={hoverTime}
           onHoverTime={setHoverTime}
+          hoverDate={hoverDate}
+          onHoverDate={setHoverDate}
         />
       );
     case 'lunarAlmanac':
