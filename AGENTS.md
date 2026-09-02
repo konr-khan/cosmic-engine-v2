@@ -100,7 +100,8 @@ Cosmic Engine V2.0/
 │       ├── 0002-branded-nominal-unit-typing.md
 │       ├── 0003-gyro-morph-armillary-projections.md
 │       ├── 0004-hierarchical-3d-scene-graph-and-camera-rigs.md
-│       └── 0005-reusable-miniglobe-and-subsolar-projection.md
+│       ├── 0005-reusable-miniglobe-and-subsolar-projection.md
+│       └── 0006-armillary-hot-loop-optimization-and-latency-budget.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container

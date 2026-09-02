@@ -1,4 +1,8 @@
 # Dead Ends Log
 
-| Iteration | Approach Tried | Why It Failed | Files Touched |
-|-----------|---------------|---------------|---------------|
+| Iteration | Approach Tried | Why It Failed | Files Touched | Resolved Solution |
+| :--- | :--- | :--- | :--- | :--- |
+| **Window Drag-and-Drop** | Card-wide HTML5 `draggable={true}` on outer window container | Hijacked pointer events from child sliders, dials, and text inputs; browsers canceled drag or generated phantom ghost images. | `DashboardWindow.tsx`, `useDashboardLayout.ts` | Gated dragability to header bar pointer-down (`canDragRef`) with explicit `effectAllowed = 'move'`. |
+| **Spherical Continents** | Naive 2D planar arc clipping for rotating 3D world continents | Caused triangular backside tearing and chord-cutting near the planetary limb when rotating under 3D Euler angles. | `MiniGlobe.tsx`, `globe.ts` | Closed-form analytical limb intersection with orthonormal basis $(\hat{u}, \hat{v})$ and $z \ge 0$ edge clipping. |
+| **Hot-Loop Projections** | Per-vertex matrix allocation & multi-pass array concatenation in 60 FPS loops | High heap allocation churn triggered frequent GC stutter and frame latency spikes during continuous scrubbing. | `coordinates.ts`, `projections.ts`, `paths.ts` | Pre-computed closure-cached rotators (`createEulerCameraRotator`), cached 3x3 matrices, and single-pass SVG streaming. |
+| **Reverse 3D Astrolabe** | Coupled simultaneous un-flattening and camera rotation from 2D plates to 3D | Resulted in disorienting optical distortion and completely wiped out the user's custom 3D viewing angles. | `useStagedCamera.ts`, `generator.ts` | Decoupled 2-phase reverse choreography: restore 3D spherical geometry first ($\lambda \in [1 \to 0.45]$), then restore camera angles ($\lambda \in [0.45 \to 0]$). |

@@ -113,7 +113,7 @@ Cosmic Engine V2.0/
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001-0005)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001-0006)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container

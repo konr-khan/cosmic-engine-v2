@@ -7,12 +7,16 @@
 | M2: High-Precision <MiniGlobe /> | 1 | worker_m2 (5b1a4c93...) | reviewer_m2_1 (APPROVE) | (verified in review/test) | auditor_m2 (CLEAN) | **PASS** |
 | M3: Reactive Scene Hook & Widgets | 1 | worker_m3 (a1c820fc...) | reviewer_m3_1 (APPROVE) | (verified in review/test) | auditor_m3 (CLEAN) | **PASS** |
 | M4: Armillary & Documentation | 1 | worker_m4 (a4b94e25...) | reviewer_m4_1 (APPROVE) | (verified in review/test) | auditor_m4 (CLEAN) | **PASS** |
-| Final: Hygiene, Pruning & Pre-Merge | 1 | antigravity (746b01ad...) | orchestrator (APPROVE) | (verified in review/test) | auditor (CLEAN) | **PASS** |
+| M5: MiniGlobe Ecosystem & Tides | 1 | worker_m5 (e731b81c...) | reviewer_m5_1 (APPROVE) | (verified in review/test) | auditor_m5 (CLEAN) | **PASS** |
+| M6: Sub-Renderer & Math Decomposition | 1 | worker_m6 (81d13d73...) | reviewer_m6_1 (APPROVE) | (verified in review/test) | auditor_m6 (CLEAN) | **PASS** |
+| M7: Hot-Loop Latency Budget & Reverse 3D | 1 | worker_m7 (41e498a9...) | reviewer_m7_1 (APPROVE) | (verified in review/test) | auditor_m7 (CLEAN) | **PASS** |
+| M8: Controls & Layout Test Harness | 1 | worker_m8 (00b94421...) | reviewer_m8_1 (APPROVE) | (verified in review/test) | auditor_m8 (CLEAN) | **PASS** |
+| M9: Full Doc Review & ADR-0006 Formalization | 1 | antigravity (294acc38...) | orchestrator (APPROVE) | (verified in review/test) | auditor (CLEAN) | **PASS** |
 
-## Gate — Iteration 1 (Final Pre-Merge Gate)
+## Gate — Current Verification Status (Full Suite)
 | Agent | Role | Verdict | Source |
-|-------|------|---------|--------|
-| antigravity | orchestrator | DONE (320 tests pass, typecheck ok, build ok, AST unit-safety clean, hygiene pass complete) | walkthrough.md |
+|---|---|---|---|
+| antigravity | orchestrator | DONE (368 tests pass across 20 suites, typecheck ok, build ok, AST unit-safety clean, ADRs 0001-0006 formalized) | walkthrough.md |
 | reviewer | lead_architect | APPROVE | walkthrough.md |
 | auditor | code_auditor | CLEAN | walkthrough.md |
 

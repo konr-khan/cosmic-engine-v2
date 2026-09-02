@@ -76,7 +76,10 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M3 | Reactive Scene Hook & Widget Refactoring | `src/hooks/useCosmicScene.ts`, `src/hooks/useCosmicScene.test.ts`, `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `EclipseDemonstrator.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | M1, M2 | DONE |
 | M4 | Armillary Groundwork, Architecture Record & Documentation | `ArmillaryBeadsLayer.tsx`, `docs/adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md`, `docs/MATH_SPEC.md`, `docs/DESIGN_SYSTEM.md`, `AGENTS.md` | M1, M2, M3 | DONE |
 | M5 | MiniGlobe Ecosystem & Tidal Nodal Loops | `ArmillaryEarthPip.tsx`, `MicroTideView.tsx` (Nodal mode), ADR-0005, AST unit safety | M1, M2, M3, M4 | DONE |
-| Final | Hygiene, Pruning & Pre-Merge Verification | Dead props & types pruning, `EclipseDemonstrator` optimization, docs alignment | M1-M5 | DONE |
+| M6 | Sub-Renderer Decomposition & Math Extraction | `MiniGlobeFlat.tsx`, `MiniGlobeSphere.tsx`, `globe.ts`, `generatorGeometry.ts`, `generatorBeads.ts`, `astroConstants.ts` | M1-M5 | DONE |
+| M7 | Armillary Hot-Loop Performance & Latency Benchmark | Pre-computed Euler rotators, single-pass SVG streaming, `armillaryBenchmark.test.ts` (< 0.8ms), ADR-0006 | M6 | DONE |
+| M8 | Controls & Layout Test Harness | `controls.test.tsx` (19 tests), `DashboardWindow.test.tsx` (16 tests), header drag gating | M7 | DONE |
+| M9 | Complete Documentation Review & Alignment | Reconcile `AGENTS.md`, `README.md`, `MATH_SPEC.md` Section 11, `DESIGN_SYSTEM.md`, `DEAD_ENDS.md` | M1-M8 | DONE |
 
 ## Interface Contracts
 
