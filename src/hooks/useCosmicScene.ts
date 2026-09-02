@@ -28,9 +28,7 @@ import {
   getJulianDate, 
   calculateEphemerisFrame, 
   calculateEclipseData,
-  calculateEarthOrbitalPhysics,
-  calculateEarthSideGeometry,
-  calculateEarthAxialGeometry 
+  calculateEarthOrbitalPhysics
 } from '../utils/cosmicMath';
 import { 
   generateCosmicScene,
@@ -282,7 +280,6 @@ export interface EclipseSceneData {
     orbitalSegments: LunarOrbitSegment2D[];
     ascendingNode: { x: number; y: number };
     descendingNode: { x: number; y: number };
-    observerPin: { x: number; y: number; isDaylight: boolean };
   };
   axialSightline: {
     sun: { x: number; y: number; r: number };
@@ -291,7 +288,6 @@ export interface EclipseSceneData {
     orbitalSegments: LunarOrbitSegment2D[];
     ascendingNode: { x: number; y: number };
     descendingNode: { x: number; y: number };
-    observerPin: { x: number; y: number; isDaylight: boolean };
   };
 }
 
@@ -319,20 +315,6 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
 
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
     ?? ((scene3D.earth.heliocentricLongitude + 180) % 360);
-
-  const lat = options?.latitude ?? 47.06;
-  const lon = options?.longitude ?? -122.81;
-  const tod = options?.timeOfDay ?? 12.0;
-
-  const transverseObserver = useMemo(() => {
-    const geom = calculateEarthSideGeometry(310, 110, 18, sunLambdaDeg, lat, tod, lon);
-    return { x: geom.obsPx, y: geom.obsPy, isDaylight: geom.isDaylight };
-  }, [sunLambdaDeg, lat, tod, lon]);
-
-  const axialObserver = useMemo(() => {
-    const geom = calculateEarthAxialGeometry(200, 90, 20, sunLambdaDeg, lat, tod, lon);
-    return { x: geom.obsPx, y: geom.obsPy, isDaylight: geom.isDaylight };
-  }, [sunLambdaDeg, lat, tod, lon]);
 
   // Transverse Node Coordinates
   const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0));
@@ -387,8 +369,7 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
       axisLine: transverseProjected.elements.shadowCones?.axisLine ?? { x1: 50, y1: 110, x2: 510, y2: 110 },
       orbitalSegments: transverseProjected.elements.lunarOrbitSegments ?? [],
       ascendingNode: transAscNode,
-      descendingNode: transDescNode,
-      observerPin: transverseObserver
+      descendingNode: transDescNode
     },
     axialSightline: {
       sun: {
@@ -409,8 +390,7 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
       },
       orbitalSegments: axialProjected.elements.lunarOrbitSegments ?? [],
       ascendingNode: axialAscNode,
-      descendingNode: axialDescNode,
-      observerPin: axialObserver
+      descendingNode: axialDescNode
     }
   };
 }

@@ -15,7 +15,6 @@ import { Degrees, Latitude, Longitude, HoursDecimal, toRadians } from '../../typ
 import { Vector3D } from '../../types/coordinates';
 import { calculateEarthSideGeometry, calculateEarthAxialGeometry } from '../../utils/cosmicMath/projection';
 import { rotateEuler3D } from '../../utils/cosmicMath/armillary/coordinates';
-import { rotatePointEuler3D } from '../../utils/cosmicMath/scene/transforms';
 import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
 
 export type MiniGlobeViewMode = 

@@ -75,7 +75,8 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M2 | Reusable High-Precision `<MiniGlobe />` SVG Component | `src/components/common/MiniGlobe.tsx`, `src/components/common/MiniGlobe.test.tsx` | M1 | DONE |
 | M3 | Reactive Scene Hook & Widget Refactoring | `src/hooks/useCosmicScene.ts`, `src/hooks/useCosmicScene.test.ts`, `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `EclipseDemonstrator.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | M1, M2 | DONE |
 | M4 | Armillary Groundwork, Architecture Record & Documentation | `ArmillaryBeadsLayer.tsx`, `docs/adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md`, `docs/MATH_SPEC.md`, `docs/DESIGN_SYSTEM.md`, `AGENTS.md` | M1, M2, M3 | DONE |
-| Final | Final E2E Integration & Full Suite Verification | Comprehensive test execution (`npm test -- --run`), TypeScript validation (`npm run typecheck`), and production build (`npm run build`) | M1, M2, M3, M4 | DONE |
+| M5 | MiniGlobe Ecosystem & Tidal Nodal Loops | `ArmillaryEarthPip.tsx`, `MicroTideView.tsx` (Nodal mode), ADR-0005, AST unit safety | M1, M2, M3, M4 | DONE |
+| Final | Hygiene, Pruning & Pre-Merge Verification | Dead props & types pruning, `EclipseDemonstrator` optimization, docs alignment | M1-M5 | DONE |
 
 ## Interface Contracts
 
@@ -179,35 +180,30 @@ export interface MiniGlobeProps {
 }
 ```
 
-### `useCosmicScene` Hook Contract (`src/hooks/useCosmicScene.ts`)
+### `useCosmicScene` Hook Contracts (`src/hooks/useCosmicScene.ts`)
 ```typescript
 export interface UseCosmicSceneOptions {
+  date?: Date;
+  timeOfDay?: number;
+  latitude?: number;
+  longitude?: number;
   scaleMode?: ScaleMode;
 }
 
 export function useCosmicScene(options?: UseCosmicSceneOptions): {
-  scene: CosmicScene3D;
-  projectTopDown: (width: number, height: number, scale?: number) => ProjectedScene2D;
-  projectTransverse: (width: number, height: number, scale?: number) => ProjectedScene2D;
-  projectAxial: (width: number, height: number, scale?: number) => ProjectedScene2D;
-  projectEuler: (pitch: Degrees, yaw: Degrees, width: number, height: number, scale?: number) => ProjectedScene2D;
-};
-
-export function useHeliocentricScene(scaleMode?: ScaleMode): {
-  scene: CosmicScene3D;
-  projected: ProjectedScene2D;
+  julianDate: JulianDate;
+  scene3D: CosmicScene3D;
   scaleMode: ScaleMode;
+  ephemeris: EphemerisFrame;
+  projectTopDown: () => ProjectedScene2D;
+  projectTransverse: () => ProjectedScene2D;
+  projectAxial: () => ProjectedScene2D;
+  projectEuler: (pitch: Degrees, yaw: Degrees, roll?: Degrees) => ProjectedScene2D;
 };
 
-export function useEclipseScene(): {
-  scene: CosmicScene3D;
-  transverse: ProjectedScene2D;
-  axial: ProjectedScene2D;
-};
-
-export function useArmillaryScene(): {
-  scene: CosmicScene3D;
-};
+export function useHeliocentricScene(options?: UseHeliocentricOptions): HeliocentricSceneData;
+export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData;
+export function useArmillaryScene(options?: UseArmillaryOptions): ArmillarySceneData;
 ```
 
 ## Code Layout

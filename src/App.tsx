@@ -66,10 +66,8 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           orbitalData={orbitalData}
           currentTime={timeOfDay}
           latitude={latitude}
-          longitude={longitude}
           currentDate={date}
           hoverTime={hoverTime}
-          onHoverTime={setHoverTime}
           onSetTime={cosmicActions.setTimeOfDay}
         />
       );
@@ -130,9 +128,7 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
     case 'macroOrbit':
       return (
         <MacroOrbitView 
-          positions={orbitalData?.positions} 
           eclipse={orbitalData?.eclipse} 
-          solarData={solarData}
           currentDate={date}
         />
       );
@@ -156,17 +152,13 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
         <MicroTideView 
           tides={orbitalData?.tides} 
           angles={orbitalData?.angles} 
-          userRotation={orbitalData?.userRotation}
           localTideStatus={orbitalData?.localTideStatus}
-          hoverDate={hoverDate}
           phaseValue={orbitalData?.phase?.value}
           latitude={latitude}
           longitude={longitude}
           timeOfDay={timeOfDay}
           sunLambdaDeg={solarData?.lambda}
           nodeLongitude={orbitalData?.angles?.nodeLongitude ?? orbitalData?.nodeLongitude}
-          descendingNodeLongitude={orbitalData?.angles?.descendingNodeLongitude ?? orbitalData?.descendingNodeLongitude}
-          moonEclipticLatitude={orbitalData?.lunarPos?.eclipticLatitude}
         />
       );
     default:

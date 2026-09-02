@@ -24,7 +24,6 @@ import {
 } from './coordinates';
 import { computeProjection2D, computeContinuousProjection2D } from './projections';
 import { 
-  generateAlmucantars,
   generateContinuousAlmucantars,
   calculatePlanetaryHour, 
   calculateReteAngleToLST 

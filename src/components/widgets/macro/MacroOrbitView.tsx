@@ -9,9 +9,7 @@ import { useHeliocentricScene } from '../../../hooks/useCosmicScene';
 import { useChronometerStore } from '../../../store/cosmicStore';
 
 export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({ 
-  positions: _positions, 
   eclipse, 
-  solarData: _solarData, 
   currentDate = new Date() 
 }) => {
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState(false);

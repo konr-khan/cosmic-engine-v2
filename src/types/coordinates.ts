@@ -48,7 +48,10 @@ export interface Vector3D {
   z: number;
 }
 
-/** Planetary / Tri-Body positions in 2D orbital plane */
+/** 
+ * Planetary / Tri-Body positions in 2D orbital plane.
+ * @deprecated Superseded by Unified 3D Astronomical Scene Graph contracts (`CosmicScene3D`, `SceneEarth3D`, `SceneMoon3D`).
+ */
 export interface OrbitalPositions {
   sun: Vector2D;
   earth: Vector2D;

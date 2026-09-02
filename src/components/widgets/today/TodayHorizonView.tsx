@@ -8,10 +8,8 @@ export interface TodayHorizonViewProps {
   orbitalData?: OrbitalData | null;
   currentTime?: number;
   latitude?: number;
-  longitude?: number;
   currentDate?: Date;
   hoverTime?: number | null;
-  onHoverTime?: (time: number | null) => void;
   onSetTime?: (time: number) => void;
 }
 
@@ -20,10 +18,8 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
   orbitalData,
   currentTime = 12,
   latitude = 47.06,
-  longitude = -122.81,
   currentDate = new Date(),
   hoverTime,
-  onHoverTime,
   onSetTime,
 }) => {
   const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : currentTime;

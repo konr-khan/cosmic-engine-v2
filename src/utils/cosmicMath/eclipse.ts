@@ -2,7 +2,7 @@ import { getJulianDate, toRadians, toDegrees } from './core';
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
 import { JulianDate, asJulianDate } from '../../types/units';
-import { EclipseType, EclipseClassification, EclipseScannerPreset } from '../../types/astronomy';
+import { EclipseType, EclipseScannerPreset } from '../../types/astronomy';
 
 export interface EclipseCalculationResult {
   type: EclipseType;

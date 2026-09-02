@@ -150,7 +150,7 @@ describe('useCosmicScene Hook Suite', () => {
       expect(result.transverseProfile.orbitalSegments.length).toBe(4);
       expect(result.transverseProfile.ascendingNode).toBeDefined();
       expect(result.transverseProfile.descendingNode).toBeDefined();
-      expect(result.transverseProfile.observerPin).toBeDefined();
+      expect(result.transverseProjected.elements.lunarOrbitSegments).toBeDefined();
 
       // Axial Sightline Checks
       expect(result.axialSightline.sun.x).toBe(200);
@@ -159,7 +159,7 @@ describe('useCosmicScene Hook Suite', () => {
       expect(result.axialSightline.orbitalSegments.length).toBe(4);
       expect(result.axialSightline.ascendingNode).toBeDefined();
       expect(result.axialSightline.descendingNode).toBeDefined();
-      expect(result.axialSightline.observerPin).toBeDefined();
+      expect(result.axialProjected.elements.lunarOrbitSegments).toBeDefined();
     });
 
     it('accurately detects Blood Moon total lunar eclipse (Mar 14, 2025)', () => {

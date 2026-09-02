@@ -89,6 +89,9 @@ Cosmic Engine V2.0/
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & getting started
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
+├── scripts/                     # Build, linting & verification scripts
+│   ├── lintUnitSafety.mjs       # Babel AST unit-safety linter checking UI components
+│   └── syncDocMetrics.mjs       # Automated test metric synchronizer for docs
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Astronomical math specification & coordinate formulas
 │   ├── DESIGN_SYSTEM.md         # Visual tokens, color semantics & vector stroke encodings
@@ -96,7 +99,8 @@ Cosmic Engine V2.0/
 │       ├── 0001-external-store-and-worker-architecture.md
 │       ├── 0002-branded-nominal-unit-typing.md
 │       ├── 0003-gyro-morph-armillary-projections.md
-│       └── 0004-hierarchical-3d-scene-graph-and-camera-rigs.md
+│       ├── 0004-hierarchical-3d-scene-graph-and-camera-rigs.md
+│       └── 0005-reusable-miniglobe-and-subsolar-projection.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -104,6 +108,7 @@ Cosmic Engine V2.0/
 │   ├── index.css                # Global styles & Tailwind imports
 │   ├── types/                   # Foundational TypeScript domain models
 │   │   ├── units.ts             # Branded types (Degrees, Radians, JulianDate) & converters
+│   │   ├── unitSafety.test.ts   # AST unit safety guardrail tests (2 tests)
 │   │   ├── coordinates.ts       # Coordinate systems (AltAzimuth, Equatorial, Ecliptic, 2D/3D vectors)
 │   │   ├── astronomy.ts         # Astronomical models (SolarPosition, LunarPosition, EclipseData)
 │   │   ├── worker.ts            # Web Worker RPC contracts & serialization payloads
@@ -178,6 +183,7 @@ Cosmic Engine V2.0/
 │       │   │   │   ├── ArmillaryBeadsLayer.tsx # Earth, Sun (clamped), Moon, milestones, lunar nodes & connector
 │       │   │   │   └── ArmillaryAlidadeLayer.tsx # Hairline Alidade sighting rule, laser sightline & pinnules
 │       │   │   ├── ArmillarySvgCanvas.tsx      # Interactive 3D Euler SVG viewport coordinator
+│       │   │   ├── ArmillaryEarthPip.tsx       # Mini Living Marble Earth PiP viewport
 │       │   │   ├── ArmillaryHeaderControls.tsx # 5-mode pills, morph slider & spring-snap triggers
 │       │   │   ├── ArmillaryHoverHud.tsx       # Floating star, sun/moon & Alidade telemetry HUD
 │       │   │   ├── ArmillaryTelemetryHud.tsx  # 4-column horological telemetry footer
@@ -272,6 +278,8 @@ Cosmic Engine V2.0/
   - Run linters, type checks, and test suites inside the worker subagent sandbox to maintain a clean parent conversation thread.
 - **File Operation & Critical Path Guardrails**:
   - **Nominal Branded Units Guardrail**: Never modify `src/types/units.ts` without running the full test matrix (`npm test -- --run` and `npm run typecheck`). Branded nominal unit regressions silently cascade across all coordinate and ephemeris solvers. When crossing from presentation types (`Latitude`, `Longitude`) into core mathematical routines, explicitly bridge via `toRadians(asDegrees(lat))` or dedicated helper functions—never use raw force casts (`as unknown as Radians`).
+  - **UI Unit Safety AST Guardrail**: Presentation components under `src/components/**` must never call `asDegrees()` or `asRadians()`. Compile-time branded unit enforcement is validated via Babel AST parsing (`node scripts/lintUnitSafety.mjs` / `src/types/unitSafety.test.ts`).
+  - **Scene Graph vs Legacy Contracts**: `OrbitalPositions` and `OrbitalData.userRotation` / `positions` are deprecated in favor of the Unified 3D Scene Graph (`useCosmicScene` / `CosmicScene3D`). The `<MiniGlobe />` component self-contains its internal orientation, rotational continents, terminator, and topocentric observer pin.
   - **Barrel Export Integrity**: Never modify root or subsystem barrel exports (`index.ts`) without verifying that no circular dependencies or type-only export breaks are introduced.
   - **Mathematical Provenance Guardrail**: Agents must never delete, minify, or rewrite comments citing Jean Meeus chapter references or IAU standard models in `src/utils/cosmicMath/`.
 

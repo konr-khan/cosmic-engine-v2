@@ -133,7 +133,6 @@ export type LunarPhaseName =
 export interface LunarPosition {
   rightAscension: HoursDecimal | number;
   declination: Degrees | number;
-  distance?: number;
   distanceKm: number;
   distanceEarthRadii?: number;
   /** Normalized phase fraction [0.0..1.0] along mean elongation (0.0 = New Moon, 0.5 = Full Moon) */
@@ -223,15 +222,6 @@ export type EclipseType =
   | 'PENUMBRAL_LUNAR' 
   | 'NONE';
 
-export type EclipseClassification = 
-  | 'Total Solar'
-  | 'Annular Solar'
-  | 'Partial Solar'
-  | 'Total Lunar'
-  | 'Partial Lunar'
-  | 'Penumbral Lunar'
-  | 'None';
-
 /** Syzygy eclipse analysis metrics */
 export interface EclipseData {
   type: EclipseType;
@@ -248,15 +238,7 @@ export interface EclipseData {
   raDiff: number;
   elongation: number;
   phaseValue: number;
-  isEclipse?: boolean;
-  classification?: EclipseClassification | string;
-  target?: 'Solar' | 'Lunar' | 'None';
-  magnitude?: number;
-  nodeAlignment?: number;
   nodeAngleDeg?: number;
-  isWithinNodeCorridor?: boolean;
-  gamma?: number;
-  pathWidthKm?: number;
   argumentOfLatitude?: number;
   isAscendingHemisphere?: boolean;
   nodeLongitude?: number;
@@ -277,6 +259,7 @@ export interface EclipseScannerPreset {
 
 /** Orbital simulation data package */
 export interface OrbitalData {
+  /** @deprecated Superseded by Unified 3D Scene Graph contracts (useCosmicScene / CosmicScene3D). */
   positions: OrbitalPositions;
   angles: OrbitalAngles;
   nodeLongitude: number;
@@ -284,6 +267,7 @@ export interface OrbitalData {
   lunarPos: LunarPosition;
   phase: { value: number; name: LunarPhaseName };
   tides: TidalVectors;
+  /** @deprecated Topocentric observer pin and Earth rotation are now calculated internally by <MiniGlobe />. */
   userRotation: number;
   localTideStatus: 'High Tide' | 'Low Tide';
   lunarEvents: LunarEvents | null;

@@ -1,13 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { Layers, Eye, Calendar } from 'lucide-react';
-import { findUpcomingEclipses } from '../../../utils/cosmicMath';
+import { findUpcomingEclipses, calculateEclipseData, getJulianDate } from '../../../utils/cosmicMath';
 import { EclipseStatusBadge } from './EclipseStatusBadge';
 import { ShadowRayDiagram } from './ShadowRayDiagram';
 import { NodalPlaneVisualizer } from './NodalPlaneVisualizer';
 import { SkyViewSimulator } from './SkyViewSimulator';
 import { EclipseScanner } from './EclipseScanner';
 import { OrbitalData, EclipseData } from '../../../types';
-import { useEclipseScene } from '../../../hooks/useCosmicScene';
 
 export interface EclipseDemonstratorProps {
   currentDate?: Date;
@@ -30,17 +29,11 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'geometry' | 'sky' | 'scanner'>('geometry');
 
-  // Consume unified 3D eclipse scene graph
-  const eclipseScene = useEclipseScene({
-    date: currentDate,
-    latitude,
-    longitude,
-    timeOfDay
-  });
-
-  const eclipse: EclipseData = (orbitalData && orbitalData.eclipse) 
-    ? orbitalData.eclipse 
-    : eclipseScene.eclipse;
+  // Resolve eclipse syzygy data from props or canonical solver fallback
+  const eclipse: EclipseData = useMemo(() => {
+    if (orbitalData?.eclipse) return orbitalData.eclipse;
+    return calculateEclipseData(getJulianDate(currentDate, timeOfDay));
+  }, [orbitalData?.eclipse, currentDate, timeOfDay]);
 
   // Discover upcoming eclipses from current date
   const upcomingEclipses = useMemo(() => {

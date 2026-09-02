@@ -15,23 +15,18 @@ export interface MicroTideViewProps {
     nodeLongitude?: number;
     descendingNodeLongitude?: number;
   } | null;
-  userRotation?: number;
   localTideStatus?: "High Tide" | "Low Tide" | string;
-  hoverDate?: Date | null;
   phaseValue?: number;
   latitude?: number;
   longitude?: number;
   timeOfDay?: number;
   sunLambdaDeg?: number;
   nodeLongitude?: number;
-  descendingNodeLongitude?: number;
-  moonEclipticLatitude?: number;
 }
 
 export const MicroTideView: React.FC<MicroTideViewProps> = ({
   tides = { alignment: 0, rx: 16, ry: 12, type: 'Transitional' },
   angles = { sunDegrees: 0, moonDegrees: 0 },
-  userRotation = 0,
   localTideStatus = "Low Tide",
   phaseValue,
   latitude = 47.06,
@@ -39,8 +34,6 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   timeOfDay = 12.0,
   sunLambdaDeg = 0,
   nodeLongitude,
-  descendingNodeLongitude,
-  moonEclipticLatitude,
 }) => {
   const [orbitViewMode, setOrbitViewMode] = useState<'standard' | 'nodal'>('standard');
 

@@ -1,4 +1,4 @@
-import { EclipseData, SolarAlmanacData, OrbitalPositions } from '../../../types';
+import { EclipseData } from '../../../types';
 
 export interface MilestoneItem {
   id: string;
@@ -29,9 +29,7 @@ export interface MacroOrbitHoverData {
 }
 
 export interface MacroOrbitViewProps {
-  positions?: OrbitalPositions | null;
   eclipse?: EclipseData | null;
-  solarData?: SolarAlmanacData | null;
   currentDate?: Date;
 }
 
