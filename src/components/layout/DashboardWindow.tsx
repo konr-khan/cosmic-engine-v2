@@ -37,7 +37,9 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isDragOverTarget, setIsDragOverTarget] = useState(false);
   const windowRef = useRef<HTMLDivElement>(null);
+  const canDragRef = useRef(false);
 
   // Resize Pointer Event Handler
   const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -68,7 +70,9 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
 
   const containerClasses = isMaximized 
     ? "fixed inset-4 z-50 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/90 flex flex-col p-4 overflow-auto animate-in zoom-in-95 duration-200"
-    : `bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-lg border border-slate-800/80 hover:border-slate-700/80 flex flex-col transition-all relative ${
+    : `bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-lg border ${
+        isDragOverTarget ? 'border-indigo-500 ring-2 ring-indigo-500/80 shadow-2xl shadow-indigo-500/20' : 'border-slate-800/80 hover:border-slate-700/80'
+      } flex flex-col transition-all relative ${
         colSpan === 12 
           ? 'col-span-12' 
           : colSpan === 6 
@@ -90,17 +94,57 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
       draggable={!isLocked && !isMaximized}
       onDragStart={(e) => {
         const target = e.target as HTMLElement;
-        if (!target.closest('.window-header-bar') || target.closest('button') || target.closest('input') || target.closest('.window-body-content')) {
+        const isHeader = canDragRef.current || (target && typeof target.closest === 'function' && target.closest('.window-header-bar'));
+        const isExcluded = target && typeof target.closest === 'function' && (target.closest('button') || target.closest('input') || target.closest('.window-body-content'));
+
+        if (!isHeader || isExcluded) {
           e.preventDefault();
+          canDragRef.current = false;
           return;
         }
+
+        canDragRef.current = false;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', id);
         if (onDragStart) onDragStart(e, id);
       }}
-      onDragOver={(e) => onDragOver && onDragOver(e)}
-      onDrop={(e) => onDrop && onDrop(e, id)}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        if (!isLocked) setIsDragOverTarget(true);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (onDragOver) onDragOver(e);
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setIsDragOverTarget(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOverTarget(false);
+        canDragRef.current = false;
+        if (onDrop) onDrop(e, id);
+      }}
+      onDragEnd={() => {
+        canDragRef.current = false;
+        setIsDragOverTarget(false);
+      }}
     >
       {/* WINDOW HEADER BAR */}
-      <div className="window-header-bar flex items-center justify-between px-4 py-2.5 border-b border-slate-800/80 bg-slate-950/40 rounded-t-2xl select-none">
+      <div 
+        className="window-header-bar flex items-center justify-between px-4 py-2.5 border-b border-slate-800/80 bg-slate-950/40 rounded-t-2xl select-none cursor-grab active:cursor-grabbing"
+        onPointerDown={(e) => {
+          const target = e.target as HTMLElement;
+          if (!target.closest('button') && !target.closest('input')) {
+            canDragRef.current = true;
+          }
+        }}
+        onPointerUp={() => {
+          canDragRef.current = false;
+        }}
+      >
         <div className="flex items-center space-x-2.5">
           {!isLocked && (
             <div className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 p-1 -ml-1 rounded transition-colors" title="Drag to reorder card">

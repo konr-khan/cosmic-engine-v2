@@ -185,11 +185,13 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLElement>, id: string) => {
+    e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e: React.DragEvent<HTMLElement>, targetId: string) => {
