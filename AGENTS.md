@@ -113,15 +113,21 @@ Cosmic Engine V2.0/
 │   │   ├── astronomy.ts         # Astronomical models (SolarPosition, LunarPosition, EclipseData)
 │   │   ├── worker.ts            # Web Worker RPC contracts & serialization payloads
 │   │   ├── store.ts             # Store contracts & window layout types
+│   │   ├── unitSafety.test.ts   # Vitest tests for AST unit-safety guardrails (2 tests)
 │   │   └── index.ts             # Central re-export entry
 │   ├── utils/
 │   │   ├── cosmicMath/          # Pure astronomical math domain modules
 │   │   │   ├── index.ts         # Central re-export entry file
+│   │   │   ├── astroConstants.ts # Centralized IAU/WGS-84/Meeus physical constants & J2000 epoch
 │   │   │   ├── constants.ts     # Orbital radii, twilight thresholds & theme tokens
 │   │   │   ├── core.ts          # Julian dates, hour formatting & trig helpers
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
+│   │   │   ├── globe.ts         # Pure continent spherical projection & analytical limb clipping
+│   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
+│   │   │   ├── geoData.ts       # World landmass continent outline polygons
+│   │   │   ├── frame.ts         # Centralized EphemerisFrame snapshot generator
 │   │   │   ├── scene/           # Unified 3D Astronomical Scene Graph & Camera Rigs
 │   │   │   │   ├── index.ts          # Barrel re-export
 │   │   │   │   ├── types.ts          # 3D Scene Graph contracts & body definitions
@@ -141,11 +147,12 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── focalBeacon.ts    # Center of projection focal pole beacon & laser rays
 │   │   │   │   ├── alidade.ts        # Real-time Alidade sighting telemetry & snap-to-target solver
 │   │   │   │   ├── paths.ts          # Depth-sorted SVG path segment generator
-│   │   │   │   └── generator.ts      # generateArmillaryModel with staged morph & clamped Sun bead
-│   │   │   ├── armillary.ts     # Re-export bridge to ./armillary
-│   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
-│   │   │   ├── geoData.ts       # World landmass continent outline polygons
-│   │   │   └── frame.ts         # Centralized EphemerisFrame snapshot generator
+│   │   │   │   ├── generatorGeometry.ts # Decomposed continuum geometry, rings & plate curves
+│   │   │   │   ├── generatorBeads.ts    # Decomposed beads, Sun clamping, milestones & lunar nodes
+│   │   │   │   ├── generator.ts      # generateArmillaryModel pipeline orchestrator
+│   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (4 tests)
+│   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (4 tests)
+│   │   │   └── armillary.ts     # Re-export bridge to ./armillary
 │   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (125 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
@@ -238,10 +245,12 @@ Cosmic Engine V2.0/
 │       │   ├── BufferedInput.tsx          # Blur/Enter commit input wrapper
 │       │   ├── ControlRing.tsx            # Concentric drag ring
 │       │   ├── LatitudeSlider.tsx         # Latitude coordinate slider
-│       │   └── PolarLongitudeSelector.tsx # Polar stereographic longitude selector
+│       │   ├── PolarLongitudeSelector.tsx # Polar stereographic longitude selector
+│       │   └── controls.test.tsx          # Unit tests for interactive controls (19 tests)
 │       ├── layout/              # Container layout modules
 │       │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
 │       │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
+│       │   ├── DashboardWindow.test.tsx   # Unit tests for window layout & drag-and-drop (16 tests)
 │       │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
 │       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
 │       │       ├── AstrolabeDial.tsx           # 4-concentric interactive SVG astrolabe dial
@@ -251,8 +260,12 @@ Cosmic Engine V2.0/
 │       └── common/              # Shared visual components
 │           ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
 │           ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
-│           ├── MiniGlobe.tsx                   # High-precision multi-mode SVG Earth globe
+│           ├── MiniGlobe.tsx                   # High-precision multi-mode SVG Earth globe facade
 │           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (10 tests)
+│           ├── miniglobe/                      # Decomposed MiniGlobe sub-renderers
+│           │   ├── MiniGlobeFlat.tsx           # 2D flattened astrolabe plate pin
+│           │   ├── MiniGlobeSphere.tsx         # 9-layer 3D sphere with analytical limb clipping
+│           │   └── types.ts                    # MiniGlobe sub-renderer interfaces & geometry types
 │           ├── LivingMarble.tsx                # Non-tearing 3D Earth globe visualizer
 │           └── PhaseVisual.tsx                 # Lunar phase disc with parallactic tilt
 ```
@@ -282,6 +295,8 @@ Cosmic Engine V2.0/
   - **Scene Graph vs Legacy Contracts**: `OrbitalPositions` and `OrbitalData.userRotation` / `positions` are deprecated in favor of the Unified 3D Scene Graph (`useCosmicScene` / `CosmicScene3D`). The `<MiniGlobe />` component self-contains its internal orientation, rotational continents, terminator, and topocentric observer pin.
   - **Barrel Export Integrity**: Never modify root or subsystem barrel exports (`index.ts`) without verifying that no circular dependencies or type-only export breaks are introduced.
   - **Mathematical Provenance Guardrail**: Agents must never delete, minify, or rewrite comments citing Jean Meeus chapter references or IAU standard models in `src/utils/cosmicMath/`.
+  - **Temporal Purity & J2000 Standardization Guardrail**: Pure domain algorithms and generator functions in `src/utils/cosmicMath/` must never instantiate unparameterized `new Date()` internally. Temporal inputs must be explicitly supplied as `JulianDate` or `Date` and default to `J2000_JD` (`2451545.0`) to guarantee deterministic evaluation, timezone invariance, and repeatable unit test execution.
+  - **`< 0.8 ms` Hot-Loop Latency Budget Invariant**: Armillary model generation hot loops must compute frames in $< 0.8\text{ ms}$ on average across 1,000 continuous frames (enforced by `src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts`). Coordinate calculations in animation loops must reuse pre-computed Euler rotators (`createEulerCameraRotator`), cached 3x3 rotation matrices, and single-pass SVG path streaming in `paths.ts` without allocating temporary objects inside per-frame render loops.
 
 ### C. Mandatory Persistent Documentation Verification
 Before implementing or modifying code, all agents must proactively consult and verify alignment with the persistent specifications in `docs/`:

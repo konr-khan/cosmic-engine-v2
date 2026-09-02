@@ -65,6 +65,112 @@ const totalTests = metricsData.numTotalTests;
 
 console.log(`📊 Live Test Harness Metrics: ${totalFiles} test files, ${totalTests} total tests.`);
 
+/**
+ * Canonical test suite metadata registry for generating/updating documentation tables.
+ */
+const CANONICAL_SUITES = [
+  {
+    domain: 'Cosmic Math',
+    file: 'src/utils/cosmicMath.test.ts',
+    focus: 'Polar daylight singularities ($\\pm 90^\\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, closed-form stereographic conformal ring invariants ($R_0 \\sec\\epsilon$), and 5-model Gyro-Morph continuum'
+  },
+  {
+    domain: '3D Scene Graph Math',
+    file: 'src/utils/cosmicMath/scene/scene.test.ts',
+    focus: '3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\\circ$ inclined lunar orbit with continuous nodal precession $\\Omega(t)$, and 3D syzygy shadow cones'
+  },
+  {
+    domain: 'Scene Cameras Stress',
+    file: 'src/utils/cosmicMath/scene/cameras.stress.test.ts',
+    focus: 'Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts'
+  },
+  {
+    domain: 'Scene Coordinate Adversarial',
+    file: 'src/utils/cosmicMath/scene/m1_adversarial.test.ts',
+    focus: 'Coordinate frame invariants, axial tilt matrix preservation ($23.439^\\circ$) in inertial space, and singular polar viewing angles'
+  },
+  {
+    domain: 'MiniGlobe SVG Component',
+    file: 'src/components/common/MiniGlobe.test.tsx',
+    focus: '9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping'
+  },
+  {
+    domain: 'Cosmic Scene Hook',
+    file: 'src/hooks/useCosmicScene.test.ts',
+    focus: 'Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`), and `shallowEqual` protection'
+  },
+  {
+    domain: 'Observatory Widgets',
+    file: 'src/components/widgets/widgets.test.ts',
+    focus: 'Modular barrel exports, contract assertions, and integrated domain ephemeris across all 8 observatory window subsystems, including camera pole timing and depth stroke unification'
+  },
+  {
+    domain: 'Interactive Controls',
+    file: 'src/components/controls/controls.test.tsx',
+    focus: 'Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags'
+  },
+  {
+    domain: 'Dashboard Window Layout',
+    file: 'src/components/layout/DashboardWindow.test.tsx',
+    focus: 'Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts'
+  },
+  {
+    domain: 'Staged Camera Hook',
+    file: 'src/components/widgets/armillary/useStagedCamera.test.ts',
+    focus: '2-phase Euler angle interpolation ($\\lambda \\le 0.45$), canonical pole locking ($\\lambda \\ge 0.45$), memory angle retention, and reverse transition unwinding'
+  },
+  {
+    domain: 'Camera Staging Adversarial',
+    file: 'src/components/widgets/armillary/m2_adversarial.test.ts',
+    focus: 'Camera alignment timing ($0 \\le \\lambda \\le 0.45$), canonical pole lock ($0.45 \\le \\lambda \\le 1.0$), geodesic wrapping, and custom user 3D angle restoration'
+  },
+  {
+    domain: 'Armillary Adversarial',
+    file: 'src/utils/cosmicMath/armillary/m3_adversarial.test.ts',
+    focus: 'Analytical closed-form Stereographic Ecliptic invariant ($R_0\\sec\\epsilon$), Sun bead clamping residuals ($< 1.42 \\times 10^{-13}\\text{ px}$), and 10,000-sample randomized Monte Carlo transitions'
+  },
+  {
+    domain: 'Armillary Benchmark',
+    file: 'src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts',
+    focus: '1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation'
+  },
+  {
+    domain: 'Depth Stroke Unification',
+    file: 'src/components/widgets/depthUnificationStress.test.ts',
+    focus: 'Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\\lambda \\in [0.85, 1.0]$'
+  },
+  {
+    domain: 'Cosmic Engine Hook',
+    file: 'src/hooks/useCosmicEngine.test.ts',
+    focus: 'Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\\circ\\text{N}, -90^\\circ\\text{S}$)'
+  },
+  {
+    domain: 'Ephemeris Worker Hook',
+    file: 'src/hooks/useEphemerisWorker.test.ts',
+    focus: 'Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback'
+  },
+  {
+    domain: 'Dashboard Layout Hook',
+    file: 'src/hooks/useDashboardLayout.test.ts',
+    focus: 'Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset'
+  },
+  {
+    domain: 'Window Error Boundary',
+    file: 'src/components/common/WindowErrorBoundary.test.tsx',
+    focus: 'Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience'
+  },
+  {
+    domain: 'Cosmic State Store',
+    file: 'src/store/cosmicStore.test.ts',
+    focus: 'Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping'
+  },
+  {
+    domain: 'Unit-Safety AST Guardrails',
+    file: 'src/types/unitSafety.test.ts',
+    focus: 'Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), ensuring verified boundary conversion gatekeepers'
+  }
+];
+
 // ==========================================
 // 1. Synchronize AGENTS.md
 // ==========================================
@@ -89,23 +195,6 @@ if (fs.existsSync(agentsPath)) {
     }
   );
 
-  // C. Ensure m3_adversarial.test.ts and unitSafety.test.ts are in AGENTS.md tree
-  if (!agentsContent.includes('m3_adversarial.test.ts') && baseNameMap.has('m3_adversarial.test.ts')) {
-    const m3Count = baseNameMap.get('m3_adversarial.test.ts');
-    agentsContent = agentsContent.replace(
-      /(│   │   │   ├── generator\.ts      # generateArmillaryModel with staged morph & clamped Sun bead\n)/,
-      `$1│   │   │   ├── m3_adversarial.test.ts # Vitest tests for closed-form invariants (${m3Count} tests)\n`
-    );
-  }
-
-  if (!agentsContent.includes('unitSafety.test.ts') && baseNameMap.has('unitSafety.test.ts')) {
-    const unitCount = baseNameMap.get('unitSafety.test.ts');
-    agentsContent = agentsContent.replace(
-      /(│   │   ├── store\.ts             # Store contracts & window layout types\n)/,
-      `$1│   │   ├── unitSafety.test.ts   # Vitest tests for AST unit-safety guardrails (${unitCount} tests)\n`
-    );
-  }
-
   fs.writeFileSync(agentsPath, agentsContent, 'utf8');
   console.log('✔ AGENTS.md test metrics synchronized.');
 }
@@ -116,53 +205,30 @@ if (fs.existsSync(agentsPath)) {
 if (fs.existsSync(readmePath)) {
   let readmeContent = fs.readFileSync(readmePath, 'utf8');
 
-  // A. Summary line: "across 15 specialized domain suites (**326 tests**):"
+  // A. Summary line: "across 20 specialized domain suites (**368 tests**):"
   readmeContent = readmeContent.replace(
     /across \d+ specialized domain suites \(\*\*\d+ tests?\*\*\):/g,
     `across ${totalFiles} specialized domain suites (**${totalTests} tests**):`
   );
 
-  // B. Update existing rows `src/...test.ts` (X tests)
-  readmeContent = readmeContent.replace(
-    /(`src\/[^`]+?\.test\.[tj]sx?`)\s*\(\d+\s+tests?\)/g,
-    (match, codePath) => {
-      const cleanPath = codePath.replace(/`/g, '');
-      if (fileMap.has(cleanPath)) {
-        const liveCount = fileMap.get(cleanPath);
-        return `${codePath} (${liveCount} test${liveCount === 1 ? '' : 's'})`;
-      }
-      return match;
-    }
-  );
+  // B. Build canonical test table rows
+  const tableHeader = [
+    '| Domain Module | File | Focus Areas |',
+    '| :--- | :--- | :--- |'
+  ];
 
-  // C. Line-based insertion for any missing suites in table
-  const lines = readmeContent.split(/\r?\n/);
-  let linesModified = false;
+  const tableRows = CANONICAL_SUITES.map(suite => {
+    const liveCount = fileMap.get(suite.file) ?? baseNameMap.get(path.basename(suite.file)) ?? 0;
+    const countStr = `(${liveCount} test${liveCount === 1 ? '' : 's'})`;
+    return `| **${suite.domain}** | \`${suite.file}\` ${countStr} | ${suite.focus} |`;
+  });
 
-  const m2Idx = lines.findIndex(l => l.includes('m2_adversarial.test.ts'));
-  if (m2Idx !== -1 && !readmeContent.includes('m3_adversarial.test.ts') && fileMap.has('src/utils/cosmicMath/armillary/m3_adversarial.test.ts')) {
-    const m3Count = fileMap.get('src/utils/cosmicMath/armillary/m3_adversarial.test.ts');
-    lines.splice(
-      m2Idx + 1,
-      0,
-      `| **Armillary Adversarial** | \`src/utils/cosmicMath/armillary/m3_adversarial.test.ts\` (${m3Count} tests) | Analytical closed-form Stereographic Ecliptic invariant ($R_0\\sec\\epsilon$), Sun bead clamping residuals ($< 1.42 \\times 10^{-13}\\text{ px}$), and 10,000-sample randomized Monte Carlo transitions |`
-    );
-    linesModified = true;
-  }
+  const fullTableStr = [...tableHeader, ...tableRows].join('\n');
 
-  const storeIdx = lines.findIndex(l => l.includes('cosmicStore.test.ts'));
-  if (storeIdx !== -1 && !readmeContent.includes('unitSafety.test.ts') && fileMap.has('src/types/unitSafety.test.ts')) {
-    const unitCount = fileMap.get('src/types/unitSafety.test.ts');
-    lines.splice(
-      storeIdx + 1,
-      0,
-      `| **Unit-Safety AST Guardrails** | \`src/types/unitSafety.test.ts\` (${unitCount} tests) | Babel AST lint enforcement banning \`asDegrees()\` and \`asRadians()\` across all UI components (\`src/components/**\`), ensuring verified boundary conversion gatekeepers |`
-    );
-    linesModified = true;
-  }
-
-  if (linesModified) {
-    readmeContent = lines.join('\n');
+  // Replace existing table in README
+  const tableRegex = /\| Domain Module \| File \| Focus Areas \|\r?\n\| :--- \| :--- \| :--- \|\r?\n(?:\| .* \|\r?\n?)+/;
+  if (tableRegex.test(readmeContent)) {
+    readmeContent = readmeContent.replace(tableRegex, fullTableStr + '\n');
   }
 
   fs.writeFileSync(readmePath, readmeContent, 'utf8');
