@@ -38,6 +38,8 @@ import {
   calculateEarthAxialGeometry,
   generateOrbitalSegments,
   WORLD_LANDMASSES,
+  projectContinentLandmasses,
+  generateAnalyticalLimbPath,
   calculateGMST,
   calculateLST,
   equatorialToCartesian3D,
@@ -1235,6 +1237,50 @@ describe('cosmicMath utilities', () => {
             expect(lat).toBeLessThanOrEqual(90);
           });
         });
+      });
+    });
+
+    describe('globe.ts: projectContinentLandmasses & generateAnalyticalLimbPath', () => {
+      it('returns empty array when radius <= 0 or mode is flat', () => {
+        expect(projectContinentLandmasses(WORLD_LANDMASSES, 0, 'topdown', 12, 0.41, 0)).toEqual([]);
+        expect(projectContinentLandmasses(WORLD_LANDMASSES, -10, 'euler3d', 12, 0.41, 0)).toEqual([]);
+        expect(projectContinentLandmasses(WORLD_LANDMASSES, 100, 'flat', 12, 0.41, 0)).toEqual([]);
+      });
+
+      it('generates non-empty closed SVG polygon paths across all 3D view modes', () => {
+        const modes = ['topdown', 'transverse', 'axial', 'euler3d'] as const;
+        modes.forEach((mode) => {
+          const paths = projectContinentLandmasses(
+            WORLD_LANDMASSES,
+            50,
+            mode,
+            12.0,
+            0.409,
+            0.0,
+            { pitch: 20, yaw: 45, roll: 0 }
+          );
+          expect(paths.length).toBeGreaterThan(0);
+          paths.forEach((p) => {
+            expect(p.startsWith('M ')).toBe(true);
+            expect(p.trim().endsWith('Z')).toBe(true);
+          });
+        });
+      });
+
+      it('generates analytical spherical limb paths for daylight and twilight thresholds', () => {
+        // Oblique sun vector
+        const pathDay = generateAnalyticalLimbPath(50, 0.707, 0, 0.707, 0);
+        expect(pathDay.length).toBeGreaterThan(0);
+        expect(pathDay.startsWith('M ')).toBe(true);
+        expect(pathDay.endsWith('Z')).toBe(true);
+
+        const pathCivil = generateAnalyticalLimbPath(50, 0.707, 0, 0.707, -6);
+        expect(pathCivil.length).toBeGreaterThan(0);
+
+        // Degenerate/singular cases
+        expect(generateAnalyticalLimbPath(0, 0, 0, 1, 0)).toBe('');
+        const polarPath = generateAnalyticalLimbPath(50, 0, 0, 1, 0);
+        expect(polarPath).toContain('A 50 50');
       });
     });
   });
