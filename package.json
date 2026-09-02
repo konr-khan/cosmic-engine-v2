@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint:units": "node scripts/lintUnitSafety.mjs",
+    "sync:docs": "node scripts/syncDocMetrics.mjs"
   },
   "keywords": [],
   "author": "",

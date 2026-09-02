@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 16 modules, 313 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 17 modules, 320 tests)
 
 ### Essential Commands
 
@@ -123,9 +123,9 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── transforms.ts     # Frame transforms, 3x3 matrices, axial tilt & subsolar vectors
 │   │   │   │   ├── generator.ts      # generateCosmicScene with Keplerian & lunar orbit geometry
 │   │   │   │   ├── cameras.ts        # TopDown, Transverse, Axial & Euler camera rigs
-│   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (16 tests)
-│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (6 tests)
-│   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (6 tests)
+│   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (32 tests)
+│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (16 tests)
+│   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (16 tests)
 │   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
 │   │   │   │   ├── index.ts          # Barrel re-export
 │   │   │   │   ├── types.ts          # Armillary domain types & 5-model continuum definitions
@@ -141,7 +141,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   ├── geoData.ts       # World landmass continent outline polygons
 │   │   │   └── frame.ts         # Centralized EphemerisFrame snapshot generator
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (133 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (117 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -150,22 +150,22 @@ Cosmic Engine V2.0/
 │   │   └── ephemerisWorkerManager.ts # Application singleton worker manager, deduplication & matrix cache
 │   ├── hooks/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
-│   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (13 tests: state transitions & polar edge cases)
+│   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (19 tests: state transitions & polar edge cases)
 │   │   ├── useCosmicScene.ts    # Reactive 3D scene hook & specialized projection selectors
-│   │   ├── useCosmicScene.test.ts # Vitest hook tests for scene selectors (14 tests)
+│   │   ├── useCosmicScene.test.ts # Vitest hook tests for scene selectors (9 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (19 tests: worker integration, coalescing, matrix caching & fallback)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (17 tests: worker integration, coalescing, matrix caching & fallback)
 │   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
-│   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (7 tests)
+│   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (8 tests)
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (24 tests)
-│       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (5 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (28 tests)
+│       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (11 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
 │       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook
 │       │   │   ├── useStagedCamera.test.ts   # Vitest tests for camera staging & memory (9 tests)
-│       │   │   ├── m2_adversarial.test.ts    # Vitest tests for 2-phase camera staging & memory (6 tests)
+│       │   │   ├── m2_adversarial.test.ts    # Vitest tests for 2-phase camera staging & memory (9 tests)
 │       │   │   ├── canvas/                   # Modular SVG canvas layers
 │       │   │   │   ├── index.ts              # Canvas barrel export
 │       │   │   │   ├── ArmillaryDefs.tsx     # SVG gradients & glow filters
@@ -246,7 +246,7 @@ Cosmic Engine V2.0/
 │           ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
 │           ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
 │           ├── MiniGlobe.tsx                   # High-precision multi-mode SVG Earth globe
-│           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (26 tests)
+│           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (10 tests)
 │           ├── LivingMarble.tsx                # Non-tearing 3D Earth globe visualizer
 │           └── PhaseVisual.tsx                 # Lunar phase disc with parallactic tilt
 ```
