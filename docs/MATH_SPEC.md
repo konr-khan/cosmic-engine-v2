@@ -472,6 +472,24 @@ Given local observer diurnal rotation angle $\theta_{\text{user}} = ((t_{\text{U
 * **High Tide**: $\Delta\theta \in [0^\circ, 45^\circ] \cup [135^\circ, 225^\circ] \cup [315^\circ, 360^\circ]$ (Observer aligns with the sub-lunar or anti-lunar ocean tidal bulge).
 * **Low Tide**: $\Delta\theta \in (45^\circ, 135^\circ) \cup (225^\circ, 315^\circ)$ (Observer is positioned in the quadrature tidal trough).
 
+### D. Top-Down 4-Quadrant Nodal Orbit Decomposition
+In the toggleable `☊ Nodal Loop` mode of the Tidal Gravity Micro View, the circular top-down Moon orbit ($R_{\text{orbit}} = 60\text{ px}$) is mapped to the dynamic lunar nodal plane:
+1. **Ascending Node Angular Position ($\theta_\Omega$)**:
+   Given Sun direction angle $\theta_\odot$, solar ecliptic longitude $\lambda_\odot$, and true Ascending Node longitude $\Omega$:
+   \[
+   \theta_\Omega = (\theta_\odot + (\Omega - \lambda_\odot) + 360^\circ) \bmod 360^\circ, \quad \theta_\mho = (\theta_\Omega + 180^\circ) \bmod 360^\circ
+   \]
+2. **Ecliptic Latitude & Elongation Functions**:
+   For any orbit vertex at angle $\theta \in [0, 2\pi]$:
+   \[
+   E(\theta) = (\theta - \theta_\odot + 360^\circ) \bmod 360^\circ, \quad \beta(\theta) = 5.145^\circ \sin(\theta - \theta_\Omega)
+   \]
+3. **4-Quadrant Stroke Encodings**:
+   * *Waxing Ascending* ($E \le 180^\circ, \beta \ge 0$): Solid Sky Blue (`#38bdf8`, width $1.2\text{px}$).
+   * *Waxing Descending* ($E \le 180^\circ, \beta < 0$): Solid Rose Red (`#f43f5e`, width $1.2\text{px}$).
+   * *Waning Ascending* ($E > 180^\circ, \beta \ge 0$): Dashed Sky Blue (`#38bdf8`, dash `4 3`, width $1.2\text{px}$).
+   * *Waning Descending* ($E > 180^\circ, \beta < 0$): Dashed Rose Red (`#f43f5e`, dash `4 3`, width $1.2\text{px}$).
+
 ---
 
 ## 9. Dynamic Ephemeris Distance & Apparent Diameter Scaling

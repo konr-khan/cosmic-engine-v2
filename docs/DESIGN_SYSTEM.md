@@ -159,3 +159,27 @@ The dashboard layout utilizes a flexible 12-column responsive CSS grid with dyna
    - Expanded $28\text{px}$ touch target container (`h-7`) with `touch-action: none`.
    - Event propagation isolation (`e.stopPropagation()` on all pointer/drag lifecycles) to prevent canvas rotation bleed-through.
    - High-contrast $18\text{px}$ amber slider thumb (`accent-amber-400`, `cursor-grab`) with active ring states and dynamic track progress gradient fill.
+
+---
+
+## 6. Earth & Tidal Gravity Micro View Nodal Conventions
+
+The **Earth & Tidal Gravity Micro View** (`MicroTideView`) integrates the unified 9-layer `<MiniGlobe />` component and shares the universal 4-quadrant orbital stroke encodings from the Eclipse Demonstrator:
+
+* **Unified Mini-Globe Earth**:
+  - Integrated with `viewMode="topdown"` and `radius={12}`, displaying rotating 3D vector continents (`#10b981`), axial obliquity $\varepsilon = 23.44^\circ$, civil/nautical/astronomical twilight bands, and pulsing topocentric observer pin.
+  - The oceanic daylight hemisphere rotates smoothly with the live solar direction (`sunAngleDeg`).
+* **`[Standard | ☊ Nodal Loop]` Segmented Controls**:
+  - **Standard Mode**: Classic minimalist dashed gray circular lunar orbit (`stroke="#334155"`, `strokeDasharray="3 3"`).
+  - **☊ Nodal Loop Mode**: Decomposes the $R = 60\text{px}$ top-down lunar orbit into 4 color-coded, stroke-coded quadrants based on the Moon's elongation from the Sun and ecliptic latitude $\beta$:
+    1. **Waxing Ascending** ($E \in [0^\circ, 180^\circ], \beta \ge 0$): Solid Sky Blue (`#38bdf8`, `strokeWidth="1.2"`).
+    2. **Waxing Descending** ($E \in [0^\circ, 180^\circ], \beta < 0$): Solid Rose Red (`#f43f5e`, `strokeWidth="1.2"`).
+    3. **Waning Ascending** ($E \in [180^\circ, 360^\circ], \beta \ge 0$): Dashed Sky Blue (`#38bdf8`, `strokeDasharray="4 3"`).
+    4. **Waning Descending** ($E \in [180^\circ, 360^\circ], \beta < 0$): Dashed Rose Red (`#f43f5e`, `strokeDasharray="4 3"`).
+* **Dynamic Node Pins**:
+  - **Ascending Node ($\Omega / ☊$) Pin**: Placed at $\theta_{\Omega} = \theta_{\text{sun}} + (\Omega - \lambda_{\text{sun}})$, styled with a Sky Blue border and `☊` text label.
+  - **Descending Node ($\mho / ☋$) Pin**: Placed at $\theta_{\mho} = \theta_{\Omega} + 180^\circ$, styled with a Rose Red border and `☋` text label.
+* **Moon Body Nodal Indicator**:
+  - In Nodal Loop mode, the Moon body features an outer pulsing halo rim matching the Moon's active ecliptic hemisphere: Sky Blue for North ($\beta \ge 0$) or Rose Red for South ($\beta < 0$).
+* **Glassmorphic Nodal Legend**:
+  - Displays a compact floating overlay at `bottom-2.5 left-2.5` indicating node color semantics (`☊ Ascending (+β)`, `☋ Descending (-β)`) and stroke styling (`Solid: Waxing`, `Dashed: Waning`).

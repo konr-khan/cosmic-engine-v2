@@ -160,6 +160,13 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           localTideStatus={orbitalData?.localTideStatus}
           hoverDate={hoverDate}
           phaseValue={orbitalData?.phase?.value}
+          latitude={latitude}
+          longitude={longitude}
+          timeOfDay={timeOfDay}
+          sunLambdaDeg={solarData?.lambda}
+          nodeLongitude={orbitalData?.angles?.nodeLongitude ?? orbitalData?.nodeLongitude}
+          descendingNodeLongitude={orbitalData?.angles?.descendingNodeLongitude ?? orbitalData?.descendingNodeLongitude}
+          moonEclipticLatitude={orbitalData?.lunarPos?.eclipticLatitude}
         />
       );
     default:
