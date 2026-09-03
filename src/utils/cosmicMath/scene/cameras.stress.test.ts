@@ -234,6 +234,19 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
         }
       }
     });
+
+    it('C2.5: Transverse nodeMarkers coordinates and horizontal centerline placement', () => {
+      const scene = generateCosmicScene({ julianDate: EPOCHS.eclipseApr2024 });
+      const p = projectGeocentricTransverse(scene, { width: 520, height: 220, scale: 1.0 });
+
+      expect(p.elements.nodeMarkers).toBeDefined();
+      expect(p.elements.nodeMarkers!.asc.y).toBe(110);
+      expect(p.elements.nodeMarkers!.desc.y).toBe(110);
+      expect(Number.isFinite(p.elements.nodeMarkers!.asc.x)).toBe(true);
+      expect(Number.isFinite(p.elements.nodeMarkers!.desc.x)).toBe(true);
+      expect(p.elements.nodeMarkers!.asc.label).toBe('☊ Node');
+      expect(p.elements.nodeMarkers!.desc.label).toBe('☋ Node');
+    });
   });
 
   // =========================================================================

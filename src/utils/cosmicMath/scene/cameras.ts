@@ -306,6 +306,12 @@ export function projectGeocentricTransverse(
     }
   };
 
+  // 6. Node Markers (where transverse orbital loop crosses horizontal ecliptic plane cy)
+  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const ascNodeX = earthX - Math.cos(tAsc) * liveOrbitalRx;
+  const descNodeX = earthX - Math.cos(tDesc) * liveOrbitalRx;
+
   return {
     camera: {
       name: 'transverse',
@@ -318,6 +324,10 @@ export function projectGeocentricTransverse(
       orbitPath: `M 10 ${earthY} L 510 ${earthY}`, // Ecliptic reference centerline
       lunarOrbitSegments,
       shadowCones,
+      nodeMarkers: {
+        asc: { x: ascNodeX, y: earthY, label: '☊ Node' },
+        desc: { x: descNodeX, y: earthY, label: '☋ Node' }
+      },
       milestones: []
     }
   };

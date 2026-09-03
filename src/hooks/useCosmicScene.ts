@@ -326,11 +326,12 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
   const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
   const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
 
-  const transAscNode = {
+  // Transverse Node Coordinates
+  const transAscNode = transverseProjected.elements.nodeMarkers?.asc ?? {
     x: 310 - Math.cos(tAsc) * 85,
     y: 110
   };
-  const transDescNode = {
+  const transDescNode = transverseProjected.elements.nodeMarkers?.desc ?? {
     x: 310 - Math.cos(tDesc) * 85,
     y: 110
   };
