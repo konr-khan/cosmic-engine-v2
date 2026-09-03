@@ -233,16 +233,23 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       expect(ids).toContain('dec_solstice');
     });
 
-    it('verifies milestone celestial longitudes match cardinal astronomical markers (0°, 90°, 180°, 270°, 283°, 103°)', () => {
+    it('verifies milestone celestial longitudes match true heliocentric markers (180°, 270°, 0°, 90°, 102.94°, 282.94°)', () => {
       const scene = generateCosmicScene({ scaleMode: 'exaggerated' });
       const getMs = (id: string) => scene.milestones.find(m => m.id === id)!;
 
-      expect(getMs('mar_equinox').longitude).toBeCloseTo(0, 0);
-      expect(getMs('jun_solstice').longitude).toBeCloseTo(90, 0);
-      expect(getMs('sep_equinox').longitude).toBeCloseTo(180, 0);
-      expect(getMs('dec_solstice').longitude).toBeCloseTo(270, 0);
-      expect(getMs('perihelion').longitude).toBeCloseTo(283, 0);
-      expect(getMs('aphelion').longitude).toBeCloseTo(103, 0);
+      expect(getMs('mar_equinox').longitude).toBeCloseTo(180, 0);
+      expect(getMs('jun_solstice').longitude).toBeCloseTo(270, 0);
+      expect(getMs('sep_equinox').longitude).toBeCloseTo(0, 0);
+      expect(getMs('dec_solstice').longitude).toBeCloseTo(90, 0);
+      expect(getMs('perihelion').longitude).toBeCloseTo(102.94, 1);
+      expect(getMs('aphelion').longitude).toBeCloseTo(282.94, 1);
+
+      // Verify corresponding apparent Sun longitudes: (lambda_earth + 180) % 360
+      const sunApparentLon = (mId: string) => ((getMs(mId).longitude + 180) % 360);
+      expect(sunApparentLon('mar_equinox')).toBeCloseTo(0, 0);   // Sun at 0° Aries
+      expect(sunApparentLon('jun_solstice')).toBeCloseTo(90, 0);  // Sun at 90° Cancer
+      expect(sunApparentLon('sep_equinox')).toBeCloseTo(180, 0); // Sun at 180° Libra
+      expect(sunApparentLon('dec_solstice')).toBeCloseTo(270, 0); // Sun at 270° Capricorn
     });
 
     it('guarantees all 6 milestone 3D positions lie strictly on the orbital ellipse curve in both scale modes', () => {

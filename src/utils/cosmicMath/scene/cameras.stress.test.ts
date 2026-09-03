@@ -509,6 +509,31 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
       expect(dTheta).toBeLessThan(Math.PI);
     });
 
+    it('C6.1b: Top-down Heliocentric Rig: Moon prograde counter-clockwise orbital velocity around Earth dθ_moon/dt > 0', () => {
+      // Advancing time by +2 days increases Moon's orbital phase / longitude by ~26°
+      const jd1 = EPOCHS.j2000;
+      const jd2 = asJulianDate(jd1 + 2.0);
+
+      const scene1 = generateCosmicScene({ julianDate: jd1 });
+      const scene2 = generateCosmicScene({ julianDate: jd2 });
+
+      const p1 = projectHeliocentricTopDown(scene1);
+      const p2 = projectHeliocentricTopDown(scene2);
+
+      // Relative vector from Earth to Moon in screen coords
+      const dx1 = p1.elements.moon.x - p1.elements.earth.x;
+      const dy1 = p1.elements.moon.y - p1.elements.earth.y;
+      const dx2 = p2.elements.moon.x - p2.elements.earth.x;
+      const dy2 = p2.elements.moon.y - p2.elements.earth.y;
+
+      // In SVG canvas (where +Y is down), mathematical CCW angle is atan2(-dy, dx)
+      const angle1 = Math.atan2(-dy1, dx1);
+      const angle2 = Math.atan2(-dy2, dx2);
+      const dTheta = ((angle2 - angle1) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+      expect(dTheta).toBeGreaterThan(0);
+      expect(dTheta).toBeLessThan(Math.PI);
+    });
+
     it('C6.2: Transverse Geocentric Rig: Moon moves monotonically Left-to-Right (dX/dt > 0) from New to Full Moon', () => {
       // Step phase from 0.05 (just after New Moon, left near Sun) to 0.48 (approaching Full Moon, right into shadow)
       const baseScene = generateCosmicScene({ julianDate: EPOCHS.j2000 });

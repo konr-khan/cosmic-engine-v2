@@ -1,86 +1,8 @@
 import { Degrees, asDegrees } from '../../../types/units';
 import { ArmillaryStarData, ZodiacSignSegment } from './types';
+import { EARTH_MILESTONES } from '../milestones';
 
-export const ARMILLARY_MILESTONES_DATA = [
-  {
-    id: 'perihelion',
-    label: 'Perihelion',
-    date: 'Jan 3',
-    helioEclipticLon: 102.9,
-    color: '#ef4444',
-    textColor: 'text-rose-400',
-    fillColor: 'fill-rose-400',
-    distanceAU: 0.983,
-    distanceKm: 147098070,
-    speedKms: 30.29,
-    description: "Earth's closest approach to the Sun. Orbital velocity peaks according to Kepler's 2nd Law."
-  },
-  {
-    id: 'mar_equinox',
-    label: 'March Equinox',
-    date: 'Mar 20',
-    helioEclipticLon: 180.0,
-    color: '#c084fc',
-    textColor: 'text-purple-300',
-    fillColor: 'fill-purple-300',
-    distanceAU: 0.996,
-    distanceKm: 149000000,
-    speedKms: 29.84,
-    description: "Vernal Equinox. Sun crosses the celestial equator northbound; equal day and night worldwide."
-  },
-  {
-    id: 'jun_solstice',
-    label: 'June Solstice',
-    date: 'Jun 21',
-    helioEclipticLon: 270.0,
-    color: '#f59e0b',
-    textColor: 'text-amber-400',
-    fillColor: 'fill-amber-400',
-    distanceAU: 1.016,
-    distanceKm: 152000000,
-    speedKms: 29.31,
-    description: "Northern Summer Solstice. Earth's Northern Hemisphere reaches maximum +23.44° axial tilt toward the Sun."
-  },
-  {
-    id: 'aphelion',
-    label: 'Aphelion',
-    date: 'Jul 4',
-    helioEclipticLon: 282.9,
-    color: '#38bdf8',
-    textColor: 'text-sky-400',
-    fillColor: 'fill-sky-400',
-    distanceAU: 1.017,
-    distanceKm: 152097700,
-    speedKms: 29.29,
-    description: "Earth's furthest orbital point from the Sun. Orbital velocity reaches minimum speed."
-  },
-  {
-    id: 'sep_equinox',
-    label: 'September Equinox',
-    date: 'Sep 22',
-    helioEclipticLon: 0.0,
-    color: '#c084fc',
-    textColor: 'text-purple-300',
-    fillColor: 'fill-purple-300',
-    distanceAU: 1.003,
-    distanceKm: 150050000,
-    speedKms: 29.74,
-    description: "Autumnal Equinox. Sun crosses the celestial equator southbound; equal day and night worldwide."
-  },
-  {
-    id: 'dec_solstice',
-    label: 'December Solstice',
-    date: 'Dec 21',
-    helioEclipticLon: 90.0,
-    color: '#f59e0b',
-    textColor: 'text-amber-400',
-    fillColor: 'fill-amber-400',
-    distanceAU: 0.984,
-    distanceKm: 147100000,
-    speedKms: 30.27,
-    description: "Northern Winter Solstice. Earth's Northern Hemisphere reaches maximum -23.44° axial tilt away from the Sun."
-  }
-];
+export const ARMILLARY_MILESTONES_DATA = EARTH_MILESTONES;
 
 /**
  * 12 Bright Classical Navigational Astrolabe Stars (Epoch J2000.0)

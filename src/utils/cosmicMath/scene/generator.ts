@@ -20,7 +20,7 @@ import {
 import { calculateSolarPosition, calculateEarthOrbitalPhysics } from '../solar';
 import { calculateLunarPosition } from '../lunar';
 import { calculateEclipseData } from '../eclipse';
-import { EARTH_MILESTONES } from '../../../components/widgets/macro/milestones';
+import { EARTH_MILESTONES } from '../milestones';
 import { 
   GenerateCosmicSceneParams, 
   CosmicScene3D, 
@@ -137,15 +137,6 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   };
 
   // 6. 3D Seasonal Milestone Nodes (Heliocentric Longitudes of Earth)
-  const milestoneLongitudes: Record<string, number> = {
-    perihelion: 283,
-    mar_equinox: 0,
-    jun_solstice: 90,
-    aphelion: 103,
-    sep_equinox: 180,
-    dec_solstice: 270
-  };
-
   const milestones: MilestoneNode3D[] = EARTH_MILESTONES.map(m => {
     let pos: Vector3D;
     if (isExag) {
@@ -163,16 +154,12 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       };
     }
 
-    const assignedLon = milestoneLongitudes[m.id] !== undefined 
-      ? milestoneLongitudes[m.id] 
-      : m.rawX;
-
     return {
       id: m.id as SeasonalMilestoneId,
       label: m.label,
       date: m.date,
       position: pos,
-      longitude: asDegrees(assignedLon),
+      longitude: m.helioEclipticLon,
       distanceAU: m.distanceAU,
       distanceKm: m.distanceKm,
       speedKms: m.speedKms,
@@ -201,9 +188,9 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const lunarOrbitalRadiusAU = lunarDistKm / 149597870.7; // ~0.00257 AU
   const lunarVisualRadius = isExag ? 40 : lunarOrbitalRadiusAU;
 
-  // Moon position relative to Earth
+  // Moon position relative to Earth (prograde counter-clockwise orbit)
   const moonRelativePos: Vector3D = {
-    x: lunarVisualRadius * Math.cos(lunarLonRad) * Math.cos(lunarBetaRad),
+    x: -lunarVisualRadius * Math.cos(lunarLonRad) * Math.cos(lunarBetaRad),
     y: lunarVisualRadius * Math.sin(lunarLonRad) * Math.cos(lunarBetaRad),
     z: lunarVisualRadius * Math.sin(lunarBetaRad)
   };
