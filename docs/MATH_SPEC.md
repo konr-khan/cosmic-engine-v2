@@ -665,10 +665,10 @@ Earth's heliocentric orbit is parameterized as a 3D conic section with semi-majo
    Each milestone node is evaluated at its exact Earth heliocentric longitude $\lambda_\oplus = (\lambda_\odot + 180^\circ) \bmod 360^\circ$:
    * **March Equinox**: $\lambda_\odot = 0^\circ \implies \lambda_\oplus = 180^\circ$, placed at $(-200, 0)$ ($9\text{ o'clock}$, Left).
    * **June Solstice**: $\lambda_\odot = 90^\circ \implies \lambda_\oplus = 270^\circ$, placed at $(0, 200)$ ($6\text{ o'clock}$, Bottom).
-   * **Aphelion**: $\lambda_\odot = 282.94^\circ \implies \lambda_\oplus = 282.94^\circ$, placed at $(44.79, 194.92)$ ($\sim 5\text{:}30$).
+   * **Aphelion**: $\lambda_\odot = 102.94^\circ \implies \lambda_\oplus = 282.94^\circ$, placed at $(44.79, 194.92)$ ($\sim 5\text{:}30$).
    * **September Equinox**: $\lambda_\odot = 180^\circ \implies \lambda_\oplus = 0^\circ$, placed at $(200, 0)$ ($3\text{ o'clock}$, Right).
    * **December Solstice**: $\lambda_\odot = 270^\circ \implies \lambda_\oplus = 90^\circ$, placed at $(0, -200)$ ($12\text{ o'clock}$, Top).
-   * **Perihelion**: $\lambda_\odot = 102.94^\circ \implies \lambda_\oplus = 102.94^\circ$, placed at $(-44.79, -194.92)$ ($\sim 11\text{:}30$).
+   * **Perihelion**: $\lambda_\odot = 282.94^\circ \implies \lambda_\oplus = 102.94^\circ$, placed at $(-44.79, -194.92)$ ($\sim 11\text{:}30$).
 
 ### C. Dynamic 3D Inclined Lunar Orbit & Nodal Regression
 

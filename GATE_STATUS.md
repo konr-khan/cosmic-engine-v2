@@ -13,11 +13,13 @@
 | M8: Controls & Layout Test Harness | 1 | worker_m8 (00b94421...) | reviewer_m8_1 (APPROVE) | (verified in review/test) | auditor_m8 (CLEAN) | **PASS** |
 | M9: Full Doc Review & ADR-0006 Formalization | 1 | antigravity (294acc38...) | orchestrator (APPROVE) | (verified in review/test) | auditor (CLEAN) | **PASS** |
 | M10: Canonical Camera Alignment & Sky View Prograde Kinematics | 1 | antigravity (983d0cc5...) | orchestrator (APPROVE) | (verified in review/test) | auditor (CLEAN) | **PASS** |
+| M11: Ground-Truth Heliocentric & Geocentric Prograde Kinematics | 1 | antigravity (7bb8ccc...) | orchestrator (APPROVE) | (verified in review/test) | auditor (CLEAN) | **PASS** |
+| M12: Post-Kinematics Deadwood Purge & Prograde Model Harmonization | 1 | antigravity (active) | orchestrator (APPROVE) | (verified in review/test) | auditor (CLEAN) | **PASS** |
 
 ## Gate — Current Verification Status (Full Suite)
 | Agent | Role | Verdict | Source |
 |---|---|---|---|
-| antigravity | orchestrator | DONE (387 tests pass across 20 suites, typecheck ok, build ok, AST unit-safety clean, ADRs 0001-0008 formalized) | walkthrough.md |
+| antigravity | orchestrator | DONE (393 tests pass across 20 suites, typecheck ok, build ok, AST unit-safety clean, ADRs 0001-0009 formalized) | walkthrough.md |
 | reviewer | lead_architect | APPROVE | walkthrough.md |
 | auditor | code_auditor | CLEAN | walkthrough.md |
 
