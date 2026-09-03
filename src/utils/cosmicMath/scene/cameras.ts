@@ -341,8 +341,8 @@ export function projectGeocentricAxial(
   height?: number,
   scale?: number
 ): ProjectedScene2D {
-  // Default to NodalPlaneVisualizer canvas dimensions (viewBox="0 0 400 180")
-  const vp = resolveViewport(options, height, scale, 400, 180, 200, 90);
+  // Default to NodalPlaneVisualizer canvas dimensions (viewBox="0 0 520 220")
+  const vp = resolveViewport(options, height, scale, 520, 220, 260, 110);
   const s = vp.scale;
   const cx = vp.centerX;
   const cy = vp.centerY;
@@ -351,7 +351,7 @@ export function projectGeocentricAxial(
   const sun: ProjectedBody2D = {
     x: cx,
     y: cy,
-    r: 38 * s,
+    r: 46 * s,
     visible: true,
     depth: -1000
   };
@@ -371,7 +371,7 @@ export function projectGeocentricAxial(
   const earth: ProjectedEarth2D = {
     x: cx,
     y: cy,
-    r: 20 * s,
+    r: 24 * s,
     visible: true,
     depth: 0,
     axialTiltAngle2D
@@ -381,8 +381,8 @@ export function projectGeocentricAxial(
   const beta = scene.moon.eclipticLatitude;
   const phaseVal = scene.moon.phase ?? 0;
   const phaseRad = phaseVal * 2 * Math.PI;
-  const orbitalRx = 110 * s;
-  const scalePxPerDeg = 8.5 * s;
+  const orbitalRx = 150 * s;
+  const scalePxPerDeg = 10.5 * s;
 
   // Prograde West-to-East orbit: Waxing moves East (left, -X), Waning moves West (right, +X)
   const moonX = cx - Math.sin(phaseRad) * orbitalRx;
@@ -390,7 +390,7 @@ export function projectGeocentricAxial(
   const moon: ProjectedBody2D = {
     x: moonX,
     y: moonY,
-    r: 8.5 * s,
+    r: 10.5 * s,
     visible: true,
     depth: Math.cos(phaseRad) * orbitalRx
   };
@@ -419,6 +419,12 @@ export function projectGeocentricAxial(
     { path: wanDesc.join(' '), stroke: '#f43f5e', strokeDasharray: '4 3', isFront: false, isAscending: false }
   ].filter(seg => seg.path.length > 0);
 
+  // 5. Node Markers (where orbital loop crosses horizontal ecliptic plane cy)
+  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const ascNodeX = cx - Math.sin(tAsc) * orbitalRx;
+  const descNodeX = cx - Math.sin(tDesc) * orbitalRx;
+
   return {
     camera: {
       name: 'axial',
@@ -428,8 +434,12 @@ export function projectGeocentricAxial(
       sun,
       earth,
       moon,
-      orbitPath: `M 20 ${cy} L 380 ${cy}`, // Horizontal ecliptic plane (0 deg)
+      orbitPath: `M 20 ${cy} L 500 ${cy}`, // Horizontal ecliptic plane (0 deg)
       lunarOrbitSegments,
+      nodeMarkers: {
+        asc: { x: ascNodeX, y: cy, label: '☊ Node' },
+        desc: { x: descNodeX, y: cy, label: '☋ Node' }
+      },
       milestones: []
     }
   };

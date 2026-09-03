@@ -469,12 +469,12 @@ describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', ()
         const axial = projectGeocentricAxial(scene);
 
         // Vertical screen position delta relative to Earth center:
-        // Transverse Earth Y = 110, Axial Earth Y = 90
-        // Both scale at 8.5 px per degree of ecliptic latitude beta
+        // Transverse Earth Y = 110 (scale 8.5 px/deg), Axial Earth Y = 110 (scale 10.5 px/deg)
+        // Normalized by scale factor, both must recover identical ecliptic latitude -beta
         const transverseDeltaY = transverse.elements.moon.y - transverse.elements.earth.y;
         const axialDeltaY = axial.elements.moon.y - axial.elements.earth.y;
 
-        expect(transverseDeltaY).toBeCloseTo(axialDeltaY, 5);
+        expect(transverseDeltaY / 8.5).toBeCloseTo(axialDeltaY / 10.5, 5);
       }
     });
 

@@ -394,12 +394,12 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       const projected = projectGeocentricAxial(scene);
 
       expect(projected.camera.name).toBe('axial');
-      expect(projected.elements.sun.x).toBe(200); // Sun centered in background
-      expect(projected.elements.sun.y).toBe(90);
+      expect(projected.elements.sun.x).toBe(260); // Sun centered in background
+      expect(projected.elements.sun.y).toBe(110);
       expect(projected.elements.sun.depth).toBeLessThan(0); // behind Earth
 
-      expect(projected.elements.earth.x).toBe(200); // Earth centered in foreground
-      expect(projected.elements.earth.y).toBe(90);
+      expect(projected.elements.earth.x).toBe(260); // Earth centered in foreground
+      expect(projected.elements.earth.y).toBe(110);
       expect(projected.elements.earth.depth).toBe(0);
     });
 
@@ -412,7 +412,7 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       // Both projections should report identical beta offset in vertical coordinate
       const beta = eclipseScene.moon.eclipticLatitude;
       const expectedTransverseY = 110 - beta * 8.5;
-      const expectedAxialY = 90 - beta * 8.5;
+      const expectedAxialY = 110 - beta * 10.5;
 
       expect(transverse.elements.moon.y).toBeCloseTo(expectedTransverseY, 1);
       expect(axial.elements.moon.y).toBeCloseTo(expectedAxialY, 1);

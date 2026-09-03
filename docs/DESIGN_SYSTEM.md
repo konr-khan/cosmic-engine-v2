@@ -60,11 +60,25 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Rose Stroke (`#f43f5e`)**: Orbital segment is **South of Ecliptic** ($\beta < 0$, Descending hemisphere).
 * **Prograde Transit Direction (Axial Sightline)**: When looking toward the Sun with North UP, East is Left and West is Right. The lunar transit traverses from **Right to Left (West to East)** across the face of the Sun during solar eclipses ($s = -\sin(\text{phaseRad})$).
 
-### C. Map & Horizon Curves
+### C. Sky View Simulator & Perspectival Eclipse Tokens
+* **Central Path Sky Simulator (`viewBox="0 0 240 240"`, centered at $120, 120$)**:
+  - **Sky Baseline Circle**: Radius $R=100\text{px}$, `#020617` (Deep Space Slate fill), `#334155` stroke $1.0\text{px}$.
+  - **Sun Disc**: Radius $R=42\text{px}$, `#fbbf24` (Amber/Gold fill), `#ffffff` stroke $1.5\text{px}$.
+  - **Solar Corona Glowing Rays (Totality)**: 12 radial rays (`#fde047`, stroke $2.5\text{px}$, opacity $0.75$, `strokeLinecap="round"`, `animate-pulse`), radiating from $r=40\text{px}$ to $r=75\text{px}$.
+  - **Moon Disc**: Radius $R=42\text{px}$, `#020617` fill (silhouette), stroke `#334155` $1.0\text{px}$ (or `#fbbf24` $3\text{px}$ for Annular). Positioned at $X = 120 - \Delta\lambda \cdot 75, Y = 120 - \beta \cdot 8$.
+  - **Earth Umbra Shadow Disc (Lunar Eclipse)**: Radius $R=70\text{px}$, `#450a0a` (Deep Crimson fill, opacity $0.4$), stroke `#ef4444` dashed (`strokeDasharray="4 4"`).
+  - **Blood Moon Disc (Total Lunar)**: Radius $R=40\text{px}$, `#9f1239` fill, stroke `#f43f5e`, pulsing atmospheric halo `#fb7185`.
+* **Lunar Surface POV Simulator (`viewBox="0 0 520 220"`)**:
+  - **Lunar Horizon Landscape**: Base terrain `#1e293b` with `#334155` stroke along $Y=190$.
+  - **Sun in Lunar Sky**: Radius $R=26\text{px}$, `#fbbf24` with outer radial glow gradient to $R=32\text{px}$.
+  - **Earth Body**: Radius $R=44\text{px}$ ($1.9^\circ$ angular diameter, $3.7\times$ Sun size).
+  - **Atmospheric Blood Ring**: Multi-layered concentric rings ($R=46\text{px}, 48\text{px}, 54\text{px}$, `#f43f5e`/`#9f1239`/`#fbbf24`) glowing during terrestrial lunar eclipses.
+
+### D. Map & Horizon Curves
 * **Dashed Amber Line (`stroke="#fbbf24" strokeDasharray="3 2"`)**: Exact daylight terminator boundary curve ($h = -0.833^\circ$).
 * **Dashed Sky Blue Crosshair (`stroke="#38bdf8" strokeDasharray="4 2"`)**: User geographic latitude and centered prime meridian.
 
-### D. Reusable High-Precision `<MiniGlobe />` Visual Tokens & Layer Hierarchy
+### E. Reusable High-Precision `<MiniGlobe />` Visual Tokens & Layer Hierarchy
 
 The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies the graphical representation of planet Earth across all 2D and 3D visualizers. It renders a clean, non-tearing 9-layer SVG hierarchy with strict semantic tokens:
 

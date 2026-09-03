@@ -153,12 +153,14 @@ describe('useCosmicScene Hook Suite', () => {
       expect(result.transverseProjected.elements.lunarOrbitSegments).toBeDefined();
 
       // Axial Sightline Checks
-      expect(result.axialSightline.sun.x).toBe(200);
-      expect(result.axialSightline.earth.x).toBe(200);
-      expect(result.axialSightline.earth.y).toBe(90);
+      expect(result.axialSightline.sun.x).toBe(260);
+      expect(result.axialSightline.earth.x).toBe(260);
+      expect(result.axialSightline.earth.y).toBe(110);
       expect(result.axialSightline.orbitalSegments.length).toBe(4);
       expect(result.axialSightline.ascendingNode).toBeDefined();
+      expect(result.axialSightline.ascendingNode.y).toBe(110);
       expect(result.axialSightline.descendingNode).toBeDefined();
+      expect(result.axialSightline.descendingNode.y).toBe(110);
       expect(result.axialProjected.elements.lunarOrbitSegments).toBeDefined();
     });
 

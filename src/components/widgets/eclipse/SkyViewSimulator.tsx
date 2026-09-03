@@ -15,7 +15,7 @@ export const SkyViewSimulator: React.FC<SkyViewSimulatorProps> = ({ eclipse }) =
       {/* Top Inline Perspective Selector */}
       <div className="flex justify-between items-center w-full px-2 mb-1 text-xs font-mono">
         <span className="font-semibold text-slate-300 font-sans flex items-center gap-1.5">
-          {perspective === 'terrestrial' ? '🌍 Earth Observer Sky Simulator' : '🌕 Lunar Surface Sky Simulator'}
+          {perspective === 'terrestrial' ? '🌍 Central Path Sky Simulator (Totality Track)' : '🌕 Lunar Surface Sky Simulator'}
         </span>
         <div className="flex bg-slate-950/90 p-0.5 rounded-lg border border-slate-800/90 gap-0.5 text-[10px]">
           <button
@@ -24,7 +24,7 @@ export const SkyViewSimulator: React.FC<SkyViewSimulatorProps> = ({ eclipse }) =
               perspective === 'terrestrial' ? 'bg-indigo-600 text-white shadow-sm border border-indigo-500/50' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Earth Sky
+            Central Path Sky
           </button>
           <button
             onClick={() => setPerspective('lunar')}
@@ -70,13 +70,17 @@ export const SkyViewSimulator: React.FC<SkyViewSimulatorProps> = ({ eclipse }) =
                 {/* Sun Disk */}
                 <circle cx="120" cy="120" r="42" fill="#fbbf24" stroke="#ffffff" strokeWidth="1.5" />
 
-                {/* Moon Disk Overlap offset based on beta & obscuration */}
+                {/* Moon Disk: Prograde West-to-East Transit (Right to Left across the sky) */}
                 {(() => {
-                  const offset = (1 - eclipse.obscuration / 100) * 80;
+                  // Signed longitudinal separation along ecliptic (Moon - Sun) in degrees
+                  const dLon = ((eclipse.elongation + 180) % 360) - 180;
+                  // West is Right (-dLon > 0), East is Left (-dLon < 0). Scale: 75px per degree
+                  const moonX = 120 - (dLon * 75);
+                  const moonY = 120 - (eclipse.beta * 8); // North is UP (-Y in SVG)
                   return (
                     <circle 
-                      cx={120 + offset} 
-                      cy={120 + (eclipse.beta * 4)} 
+                      cx={moonX} 
+                      cy={moonY} 
                       r="42" 
                       fill="#020617" 
                       stroke={eclipse.type === 'ANNULAR_SOLAR' ? '#fbbf24' : '#334155'} 
@@ -94,18 +98,28 @@ export const SkyViewSimulator: React.FC<SkyViewSimulatorProps> = ({ eclipse }) =
                 <circle cx="120" cy="120" r="70" fill="#450a0a" opacity="0.4" stroke="#ef4444" strokeWidth="0.75" strokeDasharray="4 4" />
                 
                 {/* Moon Body in Umbra */}
-                <circle 
-                  cx="120" 
-                  cy={120 + (eclipse.beta * 8)} 
-                  r="40" 
-                  fill={eclipse.type === 'TOTAL_LUNAR' ? '#9f1239' : '#475569'} 
-                  stroke={eclipse.type === 'TOTAL_LUNAR' ? '#f43f5e' : '#cbd5e1'} 
-                  strokeWidth="1.5" 
-                  className="drop-shadow-lg" 
-                />
-                {eclipse.type === 'TOTAL_LUNAR' && (
-                  <circle cx="120" cy="120" r="40" fill="#fb7185" fillOpacity="0.2" className="animate-pulse" />
-                )}
+                {(() => {
+                  // Longitude difference from anti-solar point
+                  const dLonOpp = ((eclipse.elongation - 180 + 540) % 360) - 180;
+                  const moonX = 120 - (dLonOpp * 50);
+                  const moonY = 120 - (eclipse.beta * 8);
+                  return (
+                    <g>
+                      <circle 
+                        cx={moonX} 
+                        cy={moonY} 
+                        r="40" 
+                        fill={eclipse.type === 'TOTAL_LUNAR' ? '#9f1239' : '#475569'} 
+                        stroke={eclipse.type === 'TOTAL_LUNAR' ? '#f43f5e' : '#cbd5e1'} 
+                        strokeWidth="1.5" 
+                        className="drop-shadow-lg" 
+                      />
+                      {eclipse.type === 'TOTAL_LUNAR' && (
+                        <circle cx={moonX} cy={moonY} r="40" fill="#fb7185" fillOpacity="0.2" className="animate-pulse" />
+                      )}
+                    </g>
+                  );
+                })()}
               </g>
             )}
 
@@ -123,7 +137,10 @@ export const SkyViewSimulator: React.FC<SkyViewSimulatorProps> = ({ eclipse }) =
           {/* Viewport Overlay Label */}
           <div className="absolute bottom-2 left-2 right-2 bg-slate-950/90 backdrop-blur-sm p-2 rounded-xl border border-slate-800/80 text-center font-mono text-xs shadow-md">
             <span className="text-amber-400 font-bold">{eclipse.label}</span>
-            <span className="text-slate-400 ml-2">Obscuration: {eclipse.obscuration}%</span>
+            <span className="text-slate-400 ml-2">Central Path Obscuration: {eclipse.obscuration}%</span>
+            <div className="text-[9px] text-slate-500 mt-0.5">
+              Simulating central path perspective • Prograde transit West → East (Right → Left)
+            </div>
           </div>
         </div>
       )}

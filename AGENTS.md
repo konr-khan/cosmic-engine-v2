@@ -38,7 +38,7 @@ Key capabilities include:
   - **Color-Coded Nodes & 2D Stroke Encoding**: Subtle **Sky Blue** (`#38bdf8`) for Ascending ($\beta \ge 0$, North of ecliptic) vs. **Crimson Red** (`#f43f5e`) for Descending ($\beta < 0$, South of ecliptic), and **Solid stroke** for Waxing ($0^\circ \to 180^\circ$) vs. **Dashed stroke** for Waning ($180^\circ \to 360^\circ$).
   - **Real-Time Annual Nodal Seasons**: Annual dynamic modulation of the orbital plane tilt driven by the Sun-Earth-Node angle ($\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$) and dynamically gliding Ascending ($\Omega$) and Descending ($\mho$) nodes.
   - **Exact Peak UTC Eclipse Presets**: Direct snapping to exact fractional UTC peak hours of greatest eclipse for 5 historical and future presets (Apr 2024, Oct 2024, Mar 2025 Blood Moon, Aug 2026, Aug 2027 Luxor).
-  - **Terrestrial & Lunar POV Sky View**: Dynamic perspective switching between Earth observer sky (Totality Corona, Baily's Beads, Diamond Ring) and the astronaut Lunar Surface perspective (Earth eclipsing the Sun with the atmospheric crimson "Blood Ring").
+  - **Central Path & Lunar POV Sky View**: Dynamic perspective switching between central totality track sky (Totality Corona, Baily's Beads, signed prograde West-to-East $X = 120 - \Delta\lambda \cdot 75$ transit without bounce) and the astronaut Lunar Surface perspective (Earth eclipsing the Sun with the atmospheric crimson "Blood Ring").
 - **Unified 3D Astronomical Scene Graph & Canonical Camera Rigs**:
   - **Single 3D Geometric Source of Truth**: Pure 3D inertial coordinates (`src/utils/cosmicMath/scene/`) uniting Heliocentric Keplerian orbits, Geocentric 5.14° inclined lunar orbit with continuous nodal precession $\Omega(t)$, physical $23.439^\circ$ Earth axial obliquity, and analytical Umbra/Penumbra syzygy shadow cones.
   - **Reusable High-Precision `<MiniGlobe />` SVG Component**: Modular 9-layer SVG Earth sphere (`src/components/common/MiniGlobe.tsx`) with physical $23.439^\circ$ axial tilt rotation, analytical subsolar day/night terminator hemisphere clipping, civil/nautical/astronomical twilight bands, Equator/Tropics parallels, and pulsing topocentric observer pin across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`).
@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 383 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 387 tests)
 
 ### Essential Commands
 
@@ -102,7 +102,8 @@ Cosmic Engine V2.0/
 │       ├── 0004-hierarchical-3d-scene-graph-and-camera-rigs.md
 │       ├── 0005-reusable-miniglobe-and-subsolar-projection.md
 │       ├── 0006-armillary-hot-loop-optimization-and-latency-budget.md
-│       └── 0007-eclipse-axial-upsize-and-prograde-kinematics.md
+│       ├── 0007-eclipse-axial-upsize-and-prograde-kinematics.md
+│       └── 0008-canonical-camera-alignment-and-sky-view-prograde-kinematics.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -137,7 +138,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generator.ts      # generateCosmicScene with Keplerian & lunar orbit geometry
 │   │   │   │   ├── cameras.ts        # TopDown, Transverse, Axial & Euler camera rigs
 │   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (33 tests)
-│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (17 tests)
+│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (20 tests)
 │   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (16 tests)
 │   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
 │   │   │   │   ├── index.ts          # Barrel re-export
@@ -174,7 +175,7 @@ Cosmic Engine V2.0/
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (38 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (39 tests)
 │       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (11 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
 │       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook

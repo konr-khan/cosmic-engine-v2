@@ -331,13 +331,13 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
   };
 
   // Axial Node Coordinates
-  const axialAscNode = {
-    x: 200 + Math.sin(tAsc) * 110,
-    y: 90
+  const axialAscNode = axialProjected.elements.nodeMarkers?.asc ?? {
+    x: 260 - Math.sin(tAsc) * 150,
+    y: 110
   };
-  const axialDescNode = {
-    x: 200 + Math.sin(tDesc) * 110,
-    y: 90
+  const axialDescNode = axialProjected.elements.nodeMarkers?.desc ?? {
+    x: 260 - Math.sin(tDesc) * 150,
+    y: 110
   };
 
   return {

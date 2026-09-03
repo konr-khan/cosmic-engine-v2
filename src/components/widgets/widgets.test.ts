@@ -49,6 +49,7 @@ import {
 } from './index';
 import { computeStagedCamera, type ArmillaryCameraState } from './armillary';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData, generateArmillaryModel } from '../../utils/cosmicMath';
+import { EclipseData } from '../../types';
 
 describe('Observatory 8-Widget Architecture & Integration Tests', () => {
   
@@ -968,6 +969,42 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(nodalHtml).toContain('Axial Sightline (5.14° Tilt)');
       expect(nodalHtml).toContain('SUN');
       expect(nodalHtml).toContain('MOON');
+    });
+
+    it('renders SkyViewSimulator with prograde Right-to-Left transit across solar eclipse without bouncing', () => {
+      // 1. Pre-eclipse (elongation = 359 deg -> Moon West of Sun, Right of center)
+      const preEclipse: EclipseData = {
+        type: 'TOTAL_SOLAR',
+        category: 'SOLAR',
+        label: 'Total Solar Eclipse',
+        obscuration: 20,
+        beta: 0.1,
+        nodeProximityDeg: 0.1,
+        alignmentPercent: 98,
+        isEclipseActive: true,
+        distanceKm: 360000,
+        umbraRadiusKm: 18,
+        penumbraRadiusKm: 34,
+        raDiff: 359,
+        elongation: 359,
+        phaseValue: 359 / 360
+      };
+      const preHtml = renderToStaticMarkup(React.createElement(SkyViewSimulator, { eclipse: preEclipse }));
+      expect(preHtml).toContain('Central Path Sky Simulator (Totality Track)');
+      // At elongation = 359, dLon = -1 deg, moonX = 120 - (-1 * 75) = 195 (Right side)
+      expect(preHtml).toContain('cx="195"');
+
+      // 2. Central eclipse (elongation = 0 deg -> Moon directly centered)
+      const peakEclipse: EclipseData = { ...preEclipse, elongation: 0, obscuration: 100 };
+      const peakHtml = renderToStaticMarkup(React.createElement(SkyViewSimulator, { eclipse: peakEclipse }));
+      // At elongation = 0, dLon = 0 deg, moonX = 120 (Centered)
+      expect(peakHtml).toContain('cx="120"');
+
+      // 3. Post-eclipse (elongation = 1 deg -> Moon East of Sun, Left of center)
+      const postEclipse: EclipseData = { ...preEclipse, elongation: 1, obscuration: 20 };
+      const postHtml = renderToStaticMarkup(React.createElement(SkyViewSimulator, { eclipse: postEclipse }));
+      // At elongation = 1, dLon = +1 deg, moonX = 120 - (1 * 75) = 45 (Left side, does NOT bounce back to 195!)
+      expect(postHtml).toContain('cx="45"');
     });
   });
 

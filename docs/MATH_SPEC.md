@@ -261,6 +261,38 @@ The **Axial Sightline** demonstrator (`NodalPlaneVisualizer.tsx` and `projectGeo
    \]
    During eclipse seasons ($\Delta\Omega \approx 0^\circ$ or $180^\circ$), the node pins converge toward $X_c = 260$ directly within the central shadow target area.
 
+### E. Sky View Simulator Prograde Invariants & Perspectival Kinematics
+
+The **Sky View Simulator** (`SkyViewSimulator.tsx` and `LunarSurfacePovView.tsx`) visualizes syzygy alignment from two complementary vantage points:
+
+1. **Terrestrial Central Path Sky View (`SkyViewSimulator.tsx`)**:
+   Simulates the sky perspective of an observer positioned along the central path of the lunar umbra (greatest eclipse track), looking South toward the Sun ($R_{\odot} = 42\text{px}$, $R_{\text{moon}} = 42\text{px}$):
+   * **Signed Longitudinal Elongation**:
+     \[
+     \Delta \lambda = ((\text{elongation} + 180^\circ) \bmod 360^\circ) - 180^\circ
+     \]
+   * **Prograde West-to-East Screen Transit**:
+     In the sky with North pointing UP, **West is to the Right** ($\Delta \lambda < 0 \implies +X$) and **East is to the Left** ($\Delta \lambda > 0 \implies -X$):
+     \[
+     X_{\text{moon}} = X_c - (\Delta \lambda \cdot \text{scale}_x)
+     \]
+     \[
+     Y_{\text{moon}} = Y_c - (\beta \cdot \text{scale}_y)
+     \]
+     where $X_c = 120\text{px}, Y_c = 120\text{px}$, $\text{scale}_x = 75\text{px/deg}$, and $\text{scale}_y = 8\text{px/deg}$.
+   * **Monotonic Transit Guarantee**: Because $\Delta \lambda$ increases monotonically as the Moon orbits Earth prograde, $\frac{dX_{\text{moon}}}{dt} < 0$, moving the Moon continuously from **Right to Left (West to East)** across the Sun and exiting smoothly without bounce or reversal.
+
+2. **Lunar Surface POV Sky View (`LunarSurfacePovView.tsx`)**:
+   Simulates the vantage point of an astronaut standing on the near side of the Moon looking up at planet Earth ($R_{\text{earth}} = 44\text{px}, \approx 1.9^\circ$ angular diameter) eclipsing the background Sun ($R_{\odot} = 26\text{px}, \approx 0.53^\circ$):
+   * **Phase Displacement**:
+     \[
+     X_{\text{earth}} = \sin\left(\frac{(\text{phaseDeg} - 180^\circ)\pi}{180^\circ}\right) \cdot 140\text{px}
+     \]
+     \[
+     Y_{\text{earth}} = \beta \cdot 6\text{px/deg}
+     \]
+   * **Atmospheric Blood Ring**: During terrestrial total lunar eclipses (`category === 'LUNAR'`), Earth's atmosphere refracts sunlight, forming a glowing concentric crimson ring ($R = 46\text{px} \dots 54\text{px}$, `#f43f5e`/`#9f1239`) surrounding the dark nightside silhouette of Earth.
+
 ---
 
 ## 7. Gyro-Morph Armillary Multi-Model Unification & Astrolabe Projections

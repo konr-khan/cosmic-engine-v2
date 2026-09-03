@@ -19,7 +19,7 @@ import {
   vectorMagnitude,
   subtractVectors3D
 } from './index';
-import { asDegrees, toRadians, toDegrees } from '../../../types/units';
+import { asDegrees, asJulianDate, toRadians, toDegrees } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 
 describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
@@ -266,15 +266,15 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
         const scene = generateCosmicScene({ julianDate: ep.jd });
         const p = projectGeocentricAxial(scene);
 
-        const cx = 200;
-        const cy = 90;
+        const cx = 260;
+        const cy = 110;
         const beta = scene.moon.eclipticLatitude;
 
         // Near central eclipse, X is close to center (within small elongation delta)
         expect(Math.abs(p.elements.moon.x - cx)).toBeLessThan(15);
 
         // Y offset matches ecliptic latitude: cy - beta * scalePxPerDeg
-        const expectedY = cy - beta * 8.5;
+        const expectedY = cy - beta * 10.5;
         expect(p.elements.moon.y).toBeCloseTo(expectedY, 2);
       }
     });
@@ -288,7 +288,7 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
         moon: { ...baseScene.moon, phase: 0.25 }
       };
       const fq = projectGeocentricAxial(fqScene);
-      expect(fq.elements.moon.x).toBeLessThan(200); // cx = 200, moves Left
+      expect(fq.elements.moon.x).toBeLessThan(260); // cx = 260, moves Left
 
       // Third Quarter (phase = 0.75): Moon must be to the RIGHT (West of Sun, +X)
       const tqScene = {
@@ -296,7 +296,7 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
         moon: { ...baseScene.moon, phase: 0.75 }
       };
       const tq = projectGeocentricAxial(tqScene);
-      expect(tq.elements.moon.x).toBeGreaterThan(200); // cx = 200, moves Right
+      expect(tq.elements.moon.x).toBeGreaterThan(260); // cx = 260, moves Right
 
       // Monotonic transit across solar eclipse: from Waning crescent (Right) to Waxing crescent (Left)
       const preEclipseScene = { ...baseScene, moon: { ...baseScene.moon, phase: 0.98 } };
@@ -325,16 +325,19 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
       for (const jd of Object.values(EPOCHS)) {
         const scene = generateCosmicScene({ julianDate: jd });
         const trans = projectGeocentricTransverse(scene, { width: 520, height: 220, scale: 1.0 });
-        const axial = projectGeocentricAxial(scene, { width: 400, height: 180, scale: 1.0 });
+        const axialDefault = projectGeocentricAxial(scene);
+        const axialExplicit = projectGeocentricAxial(scene, { width: 400, height: 180, centerY: 90, scale: 1.0 });
 
         const beta = scene.moon.eclipticLatitude;
         const transDeltaY = 110 - trans.elements.moon.y;
-        const axialDeltaY = 90 - axial.elements.moon.y;
+        const axialDefaultDeltaY = 110 - axialDefault.elements.moon.y;
+        const axialExplicitDeltaY = 90 - axialExplicit.elements.moon.y;
 
-        // Both cameras must report identical vertical displacement from their respective centerlines
+        // Both cameras must report physical vertical displacement according to their scales
         expect(transDeltaY).toBeCloseTo(beta * 8.5, 4);
-        expect(axialDeltaY).toBeCloseTo(beta * 8.5, 4);
-        expect(transDeltaY).toBeCloseTo(axialDeltaY, 4);
+        expect(axialDefaultDeltaY).toBeCloseTo(beta * 10.5, 4);
+        expect(axialExplicitDeltaY).toBeCloseTo(beta * 10.5, 4);
+        expect(transDeltaY / 8.5).toBeCloseTo(axialDefaultDeltaY / 10.5, 4);
       }
     });
   });
@@ -461,6 +464,67 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
         expect(Number.isFinite(trans.elements.moon.x)).toBe(true);
         expect(Number.isFinite(axial.elements.moon.x)).toBe(true);
         expect(Number.isFinite(euler.elements.moon.x)).toBe(true);
+      }
+    });
+
+  });
+
+  // =========================================================================
+  // 6. Directional Derivative & Physical Invariant Tests (d/dt)
+  // =========================================================================
+  describe('Rig 6: Directional Derivative Invariants Across Time (d/dt)', () => {
+
+    it('C6.1: Top-down Heliocentric Rig: Earth prograde counter-clockwise orbital velocity dθ/dt > 0', () => {
+      // Advancing time by +5 days increases Earth heliocentric longitude
+      const jd1 = EPOCHS.j2000;
+      const jd2 = asJulianDate(jd1 + 5.0);
+
+      const scene1 = generateCosmicScene({ julianDate: jd1 });
+      const scene2 = generateCosmicScene({ julianDate: jd2 });
+
+      const p1 = projectHeliocentricTopDown(scene1);
+      const p2 = projectHeliocentricTopDown(scene2);
+
+      // Earth's heliocentric longitude increases prograde (+lambda)
+      expect(scene2.earth.heliocentricLongitude).toBeGreaterThan(scene1.earth.heliocentricLongitude);
+
+      // In SVG canvas (where +Y is down), counter-clockwise rotation corresponds to d(theta_svg)/dt where theta_svg = -theta_math
+      const angle1 = Math.atan2(p1.elements.earth.y, p1.elements.earth.x);
+      const angle2 = Math.atan2(p2.elements.earth.y, p2.elements.earth.x);
+      const dTheta = ((angle2 - angle1) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+      expect(dTheta).toBeGreaterThan(0);
+      expect(dTheta).toBeLessThan(Math.PI);
+    });
+
+    it('C6.2: Transverse Geocentric Rig: Moon moves monotonically Left-to-Right (dX/dt > 0) from New to Full Moon', () => {
+      // Step phase from 0.05 (just after New Moon, left near Sun) to 0.48 (approaching Full Moon, right into shadow)
+      const baseScene = generateCosmicScene({ julianDate: EPOCHS.j2000 });
+      let prevX = -Infinity;
+
+      for (let phase = 0.05; phase <= 0.48; phase += 0.05) {
+        const scene = { ...baseScene, moon: { ...baseScene.moon, phase } };
+        const p = projectGeocentricTransverse(scene, { width: 520, height: 220, scale: 1.0 });
+
+        expect(p.elements.moon.x).toBeGreaterThan(prevX);
+        prevX = p.elements.moon.x;
+      }
+    });
+
+    it('C6.3: Axial Geocentric Rig: Moon transits monotonically Right-to-Left (dX/dt < 0) across Solar Eclipse', () => {
+      // Apr 8, 2024 Great American Eclipse: Peak is ~18.283 UTC (JD ~2460409.2618)
+      // Step time from T0 - 1.5 hours to T0 + 1.5 hours in 15-minute steps
+      const peakJD = 2460409.2618;
+      const stepDays = (15 / 60) / 24; // 15 minutes
+      let prevX = Infinity;
+
+      for (let step = -6; step <= 6; step++) {
+        const jd = asJulianDate(peakJD + step * stepDays);
+        const scene = generateCosmicScene({ julianDate: jd });
+        const p = projectGeocentricAxial(scene);
+
+        // Moon must move monotonically from Right (+X, West) to Left (-X, East) across the face of the Sun
+        expect(p.elements.moon.x).toBeLessThan(prevX);
+        prevX = p.elements.moon.x;
       }
     });
 
