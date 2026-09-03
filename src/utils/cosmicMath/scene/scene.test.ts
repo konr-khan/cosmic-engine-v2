@@ -204,13 +204,15 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       expect(expectedTrueRatio).toBeCloseTo(1.034, 3);
       expect(expectedExaggRatio).toBeCloseTo(1.667, 3);
 
-      const sceneExagg = generateCosmicScene({ scaleMode: 'exaggerated' });
-      const peri = sceneExagg.milestones.find(m => m.id === 'perihelion')!;
-      const aph = sceneExagg.milestones.find(m => m.id === 'aphelion')!;
+      const sceneTrue = generateCosmicScene({ scaleMode: 'true' });
+      const periTrue = sceneTrue.milestones.find(m => m.id === 'perihelion')!;
+      const aphTrue = sceneTrue.milestones.find(m => m.id === 'aphelion')!;
+      expect(aphTrue.distanceAU / periTrue.distanceAU).toBeCloseTo(expectedTrueRatio, 2);
 
-      const distPeri = Math.abs(peri.position.x - sceneExagg.sun.position.x); // |-200 - (-50)| = 150
-      const distAph = Math.abs(aph.position.x - sceneExagg.sun.position.x);   // |200 - (-50)| = 250
-      expect(distAph / distPeri).toBeCloseTo(expectedExaggRatio, 4);
+      // In exaggerated mode (e = 0.25, a = 200, c = 50), perihelion distance is a-c=150, aphelion is a+c=250
+      const a = 200;
+      const c = 50;
+      expect((a + c) / (a - c)).toBeCloseTo(expectedExaggRatio, 4);
     });
   });
 

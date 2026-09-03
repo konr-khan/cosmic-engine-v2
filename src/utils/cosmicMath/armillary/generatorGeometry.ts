@@ -73,15 +73,15 @@ export function computeRawModeGeometry(
     const earth3D: Vector3D = {
       x: a * Math.cos(earthLonRad),
       y: 0,
-      z: b * Math.sin(earthLonRad)
+      z: -b * Math.sin(earthLonRad)
     };
 
-    // Moon relative to Earth
+    // Moon relative to Earth (prograde counter-clockwise orbit)
     const moonAngleRad = toRadians(moonLambdaDeg);
     const moon3D: Vector3D = {
       x: earth3D.x + 16 * Math.cos(moonAngleRad),
       y: earth3D.y + 16 * Math.sin(toRadians(5.14)) * Math.sin(moonAngleRad),
-      z: earth3D.z + 16 * Math.sin(moonAngleRad)
+      z: earth3D.z - 16 * Math.sin(moonAngleRad)
     };
 
     // Heliocentric milestones along Earth's orbit
@@ -92,7 +92,7 @@ export function computeRawModeGeometry(
         p3d: {
           x: a * Math.cos(lonRad),
           y: 0,
-          z: b * Math.sin(lonRad)
+          z: -b * Math.sin(lonRad)
         }
       };
     });

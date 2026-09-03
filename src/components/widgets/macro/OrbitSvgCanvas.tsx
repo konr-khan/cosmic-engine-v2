@@ -90,8 +90,8 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
 
       {/* Key Astronomical Orbital Milestones */}
       {milestones.map((m) => {
-        const mx = m.rawX;
-        const my = m.rawY * bRatio;
+        const mx = 'x' in m ? m.x : m.rawX;
+        const my = 'y' in m ? m.y : m.rawY * bRatio;
         const isHovered = hoveredId === m.id;
         return (
           <g key={m.id}>

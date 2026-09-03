@@ -41,7 +41,8 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
     focus2X,
     bRatio,
     orbitalRadius,
-    sunLambdaDeg
+    sunLambdaDeg,
+    milestones
   } = helioScene;
 
   const isEclipse = Boolean(eclipse && eclipse.isEclipseActive);
@@ -104,6 +105,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           exaggerateEccentricity={exaggerateEccentricity}
           hoveredId={hoveredId}
           onHover={setHoveredId}
+          milestones={milestones}
           sunLambdaDeg={sunLambdaDeg}
           latitude={storeState.latitude}
           longitude={storeState.longitude}

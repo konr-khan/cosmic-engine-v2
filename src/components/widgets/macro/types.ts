@@ -1,4 +1,5 @@
 import { EclipseData } from '../../../types';
+import { MilestoneNode3D } from '../../../utils/cosmicMath/scene/types';
 
 export interface MilestoneItem {
   id: string;
@@ -18,6 +19,8 @@ export interface MilestoneItem {
   textDy: number;
   subDy: number;
 }
+
+export type OrbitMilestoneInput = MilestoneItem | (MilestoneNode3D & { x: number; y: number });
 
 export interface MacroOrbitHoverData {
   label: string;
@@ -46,7 +49,7 @@ export interface OrbitSvgCanvasProps {
   exaggerateEccentricity: boolean;
   hoveredId: string | null;
   onHover: (id: string | null) => void;
-  milestones?: MilestoneItem[];
+  milestones?: OrbitMilestoneInput[];
 }
 
 export interface OrbitHeaderControlsProps {
