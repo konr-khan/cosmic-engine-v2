@@ -2549,9 +2549,9 @@ describe('cosmicMath utilities', () => {
               r0
             });
 
-            // In 3D Geocentric, Sun revolves on Ecliptic plane inclined at eps: normal = (0, cos(eps), -sin(eps))
+            // In 3D Geocentric, Sun revolves on Ecliptic plane inclined at eps: normal = (0, cos(eps), sin(eps))
             // Dot product P_sun . N must be identically 0
-            const dotWithNormal = model3D.sun.p3d.y * Math.cos(EPS_RAD) - model3D.sun.p3d.z * Math.sin(EPS_RAD);
+            const dotWithNormal = model3D.sun.p3d.y * Math.cos(EPS_RAD) + model3D.sun.p3d.z * Math.sin(EPS_RAD);
             expect(Math.abs(dotWithNormal)).toBeLessThan(1e-4);
             // Distance from Earth (origin) is 1.1 * r0
             expect(Math.hypot(model3D.sun.p3d.x, model3D.sun.p3d.y, model3D.sun.p3d.z)).toBeCloseTo(r0 * 1.1, 3);

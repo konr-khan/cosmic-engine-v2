@@ -39,6 +39,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
     earth,
     moon,
     focus2X,
+    focus2Y,
     bRatio,
     orbitalRadius,
     sunLambdaDeg,
@@ -102,6 +103,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           orbitalRadius={orbitalRadius}
           bRatio={bRatio}
           focus2X={focus2X}
+          focus2Y={focus2Y}
           exaggerateEccentricity={exaggerateEccentricity}
           hoveredId={hoveredId}
           onHover={setHoveredId}

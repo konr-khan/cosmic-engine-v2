@@ -142,10 +142,11 @@ function generateArmillaryRings(params: {
             ? zEcl
             : (-yEcl * Math.sin(epsRad) + zEcl * Math.cos(epsRad));
 
+          const isGeoApparent = projectionMode === 'geocentric';
           return {
             x: blendedEarth3D.x + xRel,
             y: blendedEarth3D.y + yRel,
-            z: blendedEarth3D.z + zRel
+            z: blendedEarth3D.z + (isGeoApparent ? -zRel : zRel)
           };
         }
       },
@@ -193,10 +194,11 @@ function generateArmillaryRings(params: {
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
         samplePoint: (t) => {
+          const isGeoApparent = projectionMode === 'geocentric';
           const lRad = toRadians(t * 360);
           const xBase = rBloom * Math.cos(lRad);
           const yBase = rBloom * Math.sin(lRad) * Math.sin(epsRad);
-          const zBase = rBloom * Math.sin(lRad) * Math.cos(epsRad);
+          const zBase = (isGeoApparent ? -1 : 1) * rBloom * Math.sin(lRad) * Math.cos(epsRad);
           const p = rotateEuler3D({ x: xBase, y: yBase, z: zBase }, 0, reteOffset, 0);
           return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
         }

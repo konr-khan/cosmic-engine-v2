@@ -121,6 +121,8 @@ describe('useCosmicScene Hook Suite', () => {
 
       expect(result.scaleMode).toBe('exaggerated');
       expect(result.focus2X).toBeCloseTo(50, 1); // c = a * e = 200 * 0.25 = 50
+      expect(result.focus2Y).toBeDefined();
+      expect(typeof result.focus2Y).toBe('number');
       expect(result.bRatio).toBeCloseTo(Math.sqrt(1 - 0.25 * 0.25), 3);
       expect(result.sun.x).toBeCloseTo(-50, 1);
     });

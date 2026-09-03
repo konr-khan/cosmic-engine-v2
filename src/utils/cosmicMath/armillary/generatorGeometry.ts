@@ -122,11 +122,16 @@ export function computeRawModeGeometry(
     const sun3D: Vector3D = {
       x: a * Math.cos(sunLonRad),
       y: a * Math.sin(sunLonRad) * Math.sin(epsRad),
-      z: a * Math.sin(sunLonRad) * Math.cos(epsRad)
+      z: -a * Math.sin(sunLonRad) * Math.cos(epsRad)
     };
 
-    // Geocentric Moon at physical orbit distance (26 px)
-    const moon3D = equatorialToCartesian3D(moonRaDeg, moonDecDeg, 26);
+    // Geocentric Moon at physical orbit distance (26 px, counter-clockwise prograde orbit)
+    const moonRaw = equatorialToCartesian3D(moonRaDeg, moonDecDeg, 26);
+    const moon3D: Vector3D = {
+      x: moonRaw.x,
+      y: moonRaw.y,
+      z: -moonRaw.z
+    };
 
     // Milestones along Sun's apparent ecliptic path (helioLon + 180°)
     const milestones3D = ARMILLARY_MILESTONES_DATA.map((m) => {
@@ -136,7 +141,7 @@ export function computeRawModeGeometry(
         p3d: {
           x: a * Math.cos(apparentSunLonRad),
           y: a * Math.sin(apparentSunLonRad) * Math.sin(epsRad),
-          z: a * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
+          z: -a * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
         }
       };
     });

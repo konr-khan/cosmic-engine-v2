@@ -46,6 +46,7 @@ export interface OrbitSvgCanvasProps {
   orbitalRadius: number;
   bRatio: number;
   focus2X: number;
+  focus2Y?: number;
   exaggerateEccentricity: boolean;
   hoveredId: string | null;
   onHover: (id: string | null) => void;

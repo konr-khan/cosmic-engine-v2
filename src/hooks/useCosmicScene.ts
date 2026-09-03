@@ -153,6 +153,7 @@ export interface HeliocentricSceneData {
   };
   moon: { x: number; y: number; radius: number };
   focus2X: number;
+  focus2Y: number;
   bRatio: number;
   orbitalRadius: number;
   milestones: Array<MilestoneNode3D & { x: number; y: number }>;
@@ -203,6 +204,9 @@ export function useHeliocentricScene(
   const focus2X = scene3D.foci 
     ? (scene3D.scaleMode === 'true' ? scene3D.foci.f2.x * orbitalRadius : scene3D.foci.f2.x * scaleFactor)
     : 0;
+  const focus2Y = scene3D.foci 
+    ? (scene3D.scaleMode === 'true' ? scene3D.foci.f2.y * orbitalRadius : scene3D.foci.f2.y * scaleFactor)
+    : 0;
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
     ?? ((scene3D.earth.heliocentricLongitude + 180) % 360);
   const axialTiltDeg = toDegrees(scene3D.earth.obliquity);
@@ -248,6 +252,7 @@ export function useHeliocentricScene(
       radius: projected2D.elements.moon.r
     },
     focus2X,
+    focus2Y,
     bRatio,
     orbitalRadius,
     milestones,

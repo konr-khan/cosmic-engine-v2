@@ -23,6 +23,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   orbitalRadius,
   bRatio,
   focus2X,
+  focus2Y = 0,
   exaggerateEccentricity,
   hoveredId,
   onHover,
@@ -69,7 +70,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
 
       {/* Kepler Empty Focus F2 indicator when exaggerated */}
       {exaggerateEccentricity && (
-        <g transform={`translate(${focus2X}, 0)`} className="pointer-events-none">
+        <g transform={`translate(${focus2X}, ${focus2Y})`} className="pointer-events-none">
           <circle r="3" fill="#64748b" stroke="#334155" strokeWidth="1" />
           <text x="0" y="-6" textAnchor="middle" className="text-[7px] font-mono fill-slate-500">Focus F2 (Empty)</text>
         </g>
