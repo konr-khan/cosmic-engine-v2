@@ -231,6 +231,118 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         )}
       </g>
 
+      {/* 3. Lunar Nodes (Ascending ☊ & Descending ☋ Pins on Inclined Orbit) */}
+      {lunarNodes && lunarOrbitOpacity > 0.05 && (
+        <g 
+          className="transition-opacity duration-200"
+          style={{ opacity: lunarOrbitOpacity }}
+        >
+          {/* Ascending Node ☊ (Northbound crossing into northern ecliptic hemisphere) */}
+          <g
+            className="cursor-pointer"
+            style={{ 
+              touchAction: 'none',
+              opacity: lunarNodes.ascendingNode.isFront ? 1.0 : 0.45 
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTargetClick('Ascending Node (☊)', lunarNodes.ascendingNode.screenPos);
+            }}
+            onPointerEnter={() => onHoverNode('asc')}
+            onPointerLeave={() => onHoverNode(null)}
+          >
+            {/* Touch Hitbox */}
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r="8"
+              fill="transparent"
+            />
+            {/* Outer Halo */}
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r="3.8"
+              fill="#38bdf8"
+              fillOpacity="0.25"
+            />
+            {/* Core Pin */}
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r="2.0"
+              fill="#38bdf8"
+              stroke="#ffffff"
+              strokeWidth="0.6"
+            />
+            <text
+              x={lunarNodes.ascendingNode.screenPos.x}
+              y={lunarNodes.ascendingNode.screenPos.y - 4.2}
+              fontSize="3.2"
+              fill="#38bdf8"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+            >
+              ☊
+            </text>
+          </g>
+
+          {/* Descending Node ☋ (Southbound crossing into southern ecliptic hemisphere) */}
+          <g
+            className="cursor-pointer"
+            style={{ 
+              touchAction: 'none',
+              opacity: lunarNodes.descendingNode.isFront ? 1.0 : 0.45 
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTargetClick('Descending Node (☋)', lunarNodes.descendingNode.screenPos);
+            }}
+            onPointerEnter={() => onHoverNode('desc')}
+            onPointerLeave={() => onHoverNode(null)}
+          >
+            {/* Touch Hitbox */}
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r="8"
+              fill="transparent"
+            />
+            {/* Outer Halo */}
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r="3.8"
+              fill="#f43f5e"
+              fillOpacity="0.25"
+            />
+            {/* Core Pin */}
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r="2.0"
+              fill="#f43f5e"
+              stroke="#ffffff"
+              strokeWidth="0.6"
+            />
+            <text
+              x={lunarNodes.descendingNode.screenPos.x}
+              y={lunarNodes.descendingNode.screenPos.y - 4.2}
+              fontSize="3.2"
+              fill="#f43f5e"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+            >
+              ☋
+            </text>
+          </g>
+        </g>
+      )}
+
       {/* 4. Sun Bead (Golden Orb with Radial Corona - Click to Snap) */}
       <g 
         filter="url(#sunGlow)"

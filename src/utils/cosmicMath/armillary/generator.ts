@@ -91,12 +91,13 @@ function generateArmillaryRings(params: {
         sampleCount: NUM_SAMPLES,
         samplePoint: (t) => {
           const angleRad = t * 2 * Math.PI;
-          const xOrb = aOrb * Math.cos(angleRad) + (exaggerateEccentricity ? -cOrb * 0.5 * isHelioT : 0);
-          const zOrb = (isHelioT * bOrb + (1 - isHelioT) * aOrb) * Math.sin(angleRad);
+          const xOrb = aOrb * Math.cos(angleRad);
+          const yOrb = (1 - isHelioT) * aOrb * Math.sin(angleRad) * Math.sin(tiltRad);
+          const zOrb = -(isHelioT * bOrb + (1 - isHelioT) * aOrb * Math.cos(tiltRad)) * Math.sin(angleRad);
           return {
             x: xOrb,
-            y: zOrb * Math.sin(tiltRad),
-            z: zOrb * Math.cos(tiltRad)
+            y: yOrb,
+            z: zOrb
           };
         }
       },
@@ -493,8 +494,10 @@ export function generateArmillaryModel(params: {
 
   // Lunar Nodes
   const isHelioMode = projectionMode === 'heliocentric';
+  const isGeoApparent = projectionMode === 'geocentric';
   const lunarNodes = computeArmillaryLunarNodes({
     isHelioMode,
+    isGeoApparent,
     blendedEarth3D,
     nodeLonDeg,
     obliquity,

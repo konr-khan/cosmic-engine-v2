@@ -110,60 +110,72 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
     const angle = getAngle(e.clientX, e.clientY, rect);
 
     if (activeRing === 'date' && onDateChange) {
-      const newDay = Math.max(1, Math.min(totalDays, Math.round((angle / 360) * totalDays)));
+      const newDay = Math.max(1, Math.min(totalDays, Math.round((angle / 360) * totalDays) || 1));
       const prevDay = prevDayRef.current;
-      const currentYear = date.getUTCFullYear();
+      if (newDay !== prevDay) {
+        const currentYear = date.getUTCFullYear();
 
-      // Year rollover detection when dragging across Jan 1 / Dec 31 boundary
-      if (prevDay >= totalDays - 15 && newDay <= 15) {
-        const nextYear = currentYear + 1;
-        const nextTotalDays = getDaysInYear(nextYear);
-        const adjustedDay = Math.min(newDay, nextTotalDays);
-        prevDayRef.current = adjustedDay;
-        onDateChange(new Date(Date.UTC(nextYear, 0, adjustedDay)));
-      } else if (prevDay <= 15 && newDay >= totalDays - 15) {
-        const prevYear = currentYear - 1;
-        const prevTotalDays = getDaysInYear(prevYear);
-        const adjustedDay = Math.min(newDay, prevTotalDays);
-        prevDayRef.current = adjustedDay;
-        onDateChange(new Date(Date.UTC(prevYear, 0, adjustedDay)));
-      } else {
-        prevDayRef.current = newDay;
-        onDateChange(new Date(Date.UTC(currentYear, 0, newDay)));
+        // Year rollover detection when dragging across Jan 1 / Dec 31 boundary
+        if (prevDay >= totalDays - 15 && newDay <= 15) {
+          const nextYear = currentYear + 1;
+          const nextTotalDays = getDaysInYear(nextYear);
+          const adjustedDay = Math.min(newDay, nextTotalDays);
+          prevDayRef.current = adjustedDay;
+          onDateChange(new Date(Date.UTC(nextYear, 0, adjustedDay)));
+        } else if (prevDay <= 15 && newDay >= totalDays - 15) {
+          const prevYear = currentYear - 1;
+          const prevTotalDays = getDaysInYear(prevYear);
+          const adjustedDay = Math.min(newDay, prevTotalDays);
+          prevDayRef.current = adjustedDay;
+          onDateChange(new Date(Date.UTC(prevYear, 0, adjustedDay)));
+        } else {
+          prevDayRef.current = newDay;
+          onDateChange(new Date(Date.UTC(currentYear, 0, newDay)));
+        }
       }
     } 
     else if (activeRing === 'time' && onTimeChange) {
       const newTime = parseFloat(((angle / 360) * 24).toFixed(3));
       const prevTime = prevTimeRef.current;
+      const isForwardRollover = prevTime >= 22 && newTime <= 2;
+      const isBackwardRollover = prevTime <= 2 && newTime >= 22;
+      const hasDelta = Math.abs(newTime - prevTime) >= 0.01;
 
-      // Day rollover detection when dragging across 00:00 / 24:00 boundary
-      if (onDateChange) {
-        if (prevTime >= 22 && newTime <= 2) {
-          const nextDate = new Date(date.getTime() + 86400000);
-          onDateChange(nextDate);
-        } else if (prevTime <= 2 && newTime >= 22) {
-          const prevDate = new Date(date.getTime() - 86400000);
-          onDateChange(prevDate);
+      if (hasDelta || isForwardRollover || isBackwardRollover) {
+        // Day rollover detection when dragging across 00:00 / 24:00 boundary
+        if (onDateChange) {
+          if (isForwardRollover) {
+            const nextDate = new Date(date.getTime() + 86400000);
+            onDateChange(nextDate);
+          } else if (isBackwardRollover) {
+            const prevDate = new Date(date.getTime() - 86400000);
+            onDateChange(prevDate);
+          }
         }
-      }
 
-      prevTimeRef.current = newTime;
-      onTimeChange(newTime);
+        prevTimeRef.current = newTime;
+        onTimeChange(newTime);
+      }
     } 
     else if (activeRing === 'lon' && onLonChange) {
       // Longitude: 0° Top (Greenwich), 90° East (Right), -90° West (Left), ±180° Bottom (IDL)
       let lon = angle;
       if (lon > 180) lon -= 360;
-      onLonChange(Math.round(lon));
+      const roundedLon = Math.round(lon);
+      if (roundedLon !== Math.round(longitude)) {
+        onLonChange(roundedLon);
+      }
     } 
     else if (activeRing === 'lat' && onLatChange) {
       // Latitude Armillary Rail on Left side (-90 to +90)
       const latY = dy / scale;
       const normalizedLat = -latY / 54;
-      const targetLat = Math.round(normalizedLat * 90);
-      onLatChange(Math.max(-90, Math.min(90, targetLat)));
+      const targetLat = Math.max(-90, Math.min(90, Math.round(normalizedLat * 90)));
+      if (targetLat !== Math.round(latitude)) {
+        onLatChange(targetLat);
+      }
     }
-  }, [activeRing, totalDays, date, onDateChange, onTimeChange, onLonChange, onLatChange]);
+  }, [activeRing, totalDays, date, longitude, latitude, onDateChange, onTimeChange, onLonChange, onLatChange]);
 
   const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
     setActiveRing(null);

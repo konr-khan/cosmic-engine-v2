@@ -366,6 +366,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         hoveredBead={hoveredBead}
         hoveredMilestone={hoveredMilestone}
         hoveredNode={hoveredNode}
+        lunarNodes={lunarNodes}
         showRule={showRule}
         sightingInfo={sightingInfo}
         sun={sun}

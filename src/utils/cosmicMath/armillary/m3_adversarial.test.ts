@@ -263,5 +263,92 @@ describe('Phase 2 M3 Adversarial Tests — Ring Blooming & Continuum Continuity'
       expect(model.lunarNodes!.ascendingNode.lonDeg).toBeCloseTo(nodeLon, 1);
       expect(model.lunarNodes!.descendingNode.lonDeg).toBeCloseTo((nodeLon + 180) % 360, 1);
     });
+
+    it('ensures Sun bead tracks strictly along the orbit_path ring in geocentric Apparent mode', () => {
+      const testLongitudes = [0, 45, 90, 135, 180, 225, 270, 315];
+
+      for (const lambda of testLongitudes) {
+        const epsRad = 23.439 * Math.PI / 180;
+        const lamRad = lambda * Math.PI / 180;
+        const sinDec = Math.sin(lamRad) * Math.sin(epsRad);
+        const decDeg = Math.asin(sinDec) * 180 / Math.PI;
+        const raDeg = ((Math.atan2(Math.sin(lamRad) * Math.cos(epsRad), Math.cos(lamRad)) * 180 / Math.PI) + 360) % 360;
+
+        const model = generateArmillaryModel({
+          julianDate: 2460482.5,
+          latitude: lat,
+          longitude: lon,
+          timeOfDay: 12,
+          sunRaDeg: raDeg,
+          sunDecDeg: decDeg,
+          sunLambdaDeg: lambda,
+          moonRaDeg: 120,
+          moonDecDeg: 15,
+          moonLambdaDeg: 120,
+          moonPhase: 0.5,
+          morphLambda: 0.0,
+          projectionMode: 'geocentric',
+          cameraPitch: 20,
+          cameraYaw: 30,
+          r0: 100
+        });
+
+        const orbitPath = model.rings.find((r) => r.id === 'orbit_path');
+        expect(orbitPath).toBeDefined();
+
+        // Find closest sample point on the orbit_path ring to the Sun's 3D position
+        let minDistance = Infinity;
+        for (const v of orbitPath!.vertices) {
+          const dx = v.p3d.x - model.sun.p3d.x;
+          const dy = v.p3d.y - model.sun.p3d.y;
+          const dz = v.p3d.z - model.sun.p3d.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist < minDistance) minDistance = dist;
+        }
+
+        // Assert Sun bead is clamped to the orbit curve with sub-pixel chord precision (< 0.5 px)
+        expect(minDistance).toBeLessThan(0.5);
+      }
+    });
+
+    it('ensures Earth bead tracks strictly along the orbit_path ring in heliocentric Orbit mode', () => {
+      const testLongitudes = [0, 60, 120, 180, 240, 300];
+
+      for (const lambda of testLongitudes) {
+        const model = generateArmillaryModel({
+          julianDate: 2460482.5,
+          latitude: lat,
+          longitude: lon,
+          timeOfDay: 12,
+          sunRaDeg: 0,
+          sunDecDeg: 0,
+          sunLambdaDeg: lambda,
+          moonRaDeg: 120,
+          moonDecDeg: 15,
+          moonLambdaDeg: 120,
+          moonPhase: 0.5,
+          morphLambda: 0.0,
+          projectionMode: 'heliocentric',
+          cameraPitch: 20,
+          cameraYaw: 30,
+          r0: 100
+        });
+
+        const orbitPath = model.rings.find((r) => r.id === 'orbit_path');
+        expect(orbitPath).toBeDefined();
+
+        let minDistance = Infinity;
+        for (const v of orbitPath!.vertices) {
+          const dx = v.p3d.x - model.earth.p3d.x;
+          const dy = v.p3d.y - model.earth.p3d.y;
+          const dz = v.p3d.z - model.earth.p3d.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist < minDistance) minDistance = dist;
+        }
+
+        // Assert Earth bead is clamped to the orbit curve with sub-pixel chord precision (< 0.5 px)
+        expect(minDistance).toBeLessThan(0.5);
+      }
+    });
   });
 });

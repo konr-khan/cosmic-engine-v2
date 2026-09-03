@@ -90,12 +90,13 @@ export function computeArmillaryMilestones(params: {
  */
 export function computeArmillaryLunarNodes(params: {
   isHelioMode: boolean;
+  isGeoApparent?: boolean;
   blendedEarth3D: Vector3D;
   nodeLonDeg?: number;
   obliquity?: number;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
 }): ArmillaryLunarNodes {
-  const { isHelioMode, blendedEarth3D, nodeLonDeg = 0, obliquity = 23.439, transformVertex } = params;
+  const { isHelioMode, isGeoApparent = false, blendedEarth3D, nodeLonDeg = 0, obliquity = 23.439, transformVertex } = params;
 
   const nodeDist = isHelioMode ? 16 : 26;
   const nodeRad = toRadians(nodeLonDeg);
@@ -110,17 +111,19 @@ export function computeArmillaryLunarNodes(params: {
   const yRelAsc = isHelioMode ? yEclAsc : (yEclAsc * Math.cos(epsRad) + zEclAsc * Math.sin(epsRad));
   const zRelAsc = isHelioMode ? zEclAsc : (-yEclAsc * Math.sin(epsRad) + zEclAsc * Math.cos(epsRad));
 
+  const zSigned = isGeoApparent ? -zRelAsc : zRelAsc;
+
   const ascNode3D: Vector3D = {
     x: blendedEarth3D.x + xRelAsc,
     y: blendedEarth3D.y + yRelAsc,
-    z: blendedEarth3D.z + zRelAsc
+    z: blendedEarth3D.z + zSigned
   };
 
   // Descending Node (opposite side through center)
   const descNode3D: Vector3D = {
     x: blendedEarth3D.x - xRelAsc,
     y: blendedEarth3D.y - yRelAsc,
-    z: blendedEarth3D.z - zRelAsc
+    z: blendedEarth3D.z - zSigned
   };
 
   const ascV = transformVertex(ascNode3D);

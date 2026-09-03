@@ -1,11 +1,12 @@
 import React from 'react';
-import { HoveredStarInfo, AlidadeSightingInfo, ArmillaryModelOutput, ArmillaryMilestoneNode } from './types';
+import { HoveredStarInfo, AlidadeSightingInfo, ArmillaryModelOutput, ArmillaryMilestoneNode, ArmillaryLunarNodes } from './types';
 
 export interface ArmillaryHoverHudProps {
   hoveredStar: HoveredStarInfo | null;
   hoveredBead: 'sun' | 'moon' | 'earth' | 'observer' | null;
   hoveredMilestone: ArmillaryMilestoneNode | null;
   hoveredNode?: 'asc' | 'desc' | null;
+  lunarNodes?: ArmillaryLunarNodes;
   showRule: boolean;
   sightingInfo: AlidadeSightingInfo | null;
   sun: ArmillaryModelOutput['sun'];
@@ -22,6 +23,7 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
   hoveredBead,
   hoveredMilestone,
   hoveredNode,
+  lunarNodes,
   showRule,
   sightingInfo,
   sun,
@@ -146,6 +148,31 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
             <div>Sun Elevation: <strong className={observerCone.sunElevationDeg >= 0 ? 'text-amber-300' : 'text-slate-400'}>{observerCone.sunElevationDeg >= 0 ? `+${observerCone.sunElevationDeg}°` : `${observerCone.sunElevationDeg}°`}</strong></div>
             <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
               Cone projects observer's visible sky hemisphere (Alt &gt; 0°) rotating with Earth's 24h diurnal cycle.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Lunar Node Hover Popover (Ascending ☊ / Descending ☋) */}
+      {hoveredNode && (
+        <div className={`absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border ${hoveredNode === 'asc' ? 'border-sky-400/60' : 'border-rose-400/60'} p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150`}>
+          <div className={`${hoveredNode === 'asc' ? 'text-sky-400' : 'text-rose-400'} font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between`}>
+            <span className="flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${hoveredNode === 'asc' ? 'bg-sky-400' : 'bg-rose-400'} animate-ping`} />
+              {hoveredNode === 'asc' ? '☊ Ascending Node (Caput)' : '☋ Descending Node (Cauda)'}
+            </span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${hoveredNode === 'asc' ? 'bg-sky-500/20 text-sky-300' : 'bg-rose-500/20 text-rose-300'}`}>
+              {hoveredNode === 'asc' ? 'NORTHBOUND' : 'SOUTHBOUND'}
+            </span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Crossing: <strong className="text-white">{hoveredNode === 'asc' ? 'South → North of Ecliptic' : 'North → South of Ecliptic'}</strong></div>
+            <div>Ecliptic Lat (β): <strong className="text-emerald-400">0.00°</strong></div>
+            {lunarNodes && (
+              <div>Ecliptic Lon (λ): <strong className="text-amber-300">{(hoveredNode === 'asc' ? lunarNodes.ascendingNode.lonDeg : lunarNodes.descendingNode.lonDeg).toFixed(2)}°</strong></div>
+            )}
+            <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
+              Orbital plane intersection with ecliptic (i = 5.14°). Eclipses can only occur when Sun and Moon align near these nodal points.
             </div>
           </div>
         </div>

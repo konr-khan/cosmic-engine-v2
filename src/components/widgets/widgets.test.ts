@@ -47,7 +47,7 @@ import {
   ArmillaryAlidadeLayer,
   ArmillaryEarthPip
 } from './index';
-import { computeStagedCamera, type ArmillaryCameraState } from './armillary';
+import { computeStagedCamera, type ArmillaryCameraState, type ArmillaryModelOutput } from './armillary';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData, generateArmillaryModel } from '../../utils/cosmicMath';
 import { EclipseData } from '../../types';
 
@@ -382,8 +382,8 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html).toContain('⊕ EARTH (Center)');
       expect(html).toContain('☉ SUN');
       expect(html).toContain('☽ MOON');
-      expect(html).not.toContain('☊');
-      expect(html).not.toContain('☋');
+      expect(html).toContain('☊');
+      expect(html).toContain('☋');
     });
 
     it('renders ArmillaryBeadsLayer in 2D Astrolabe plate modes with MiniGlobe in flat pin mode', () => {
@@ -611,6 +611,51 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       );
       expect(bottomUpHtml).not.toContain('stroke-dasharray');
       expect(bottomUpHtml).toContain(ring.fullPathD);
+    });
+
+    it('renders rich glassmorphic telemetry HUD popover for ascending and descending lunar nodes', () => {
+      const mockLunarNodes = {
+        ascendingNode: { screenPos: { x: 10, y: -20 }, isFront: true, lonDeg: 125.4 },
+        descendingNode: { screenPos: { x: -10, y: 20 }, isFront: false, lonDeg: 305.4 }
+      };
+
+      // 1. Hovering Ascending Node
+      const ascHtml = renderToStaticMarkup(
+        React.createElement(ArmillaryHoverHud, {
+          hoveredStar: null,
+          hoveredBead: null,
+          hoveredMilestone: null,
+          hoveredNode: 'asc',
+          lunarNodes: mockLunarNodes,
+          showRule: false,
+          sightingInfo: null,
+          sun: { screenPos: { x: 0, y: 0 }, isFront: true } as unknown as ArmillaryModelOutput['sun'],
+          moon: { screenPos: { x: 0, y: 0 }, isFront: true } as unknown as ArmillaryModelOutput['moon']
+        })
+      );
+      expect(ascHtml).toContain('☊ Ascending Node (Caput)');
+      expect(ascHtml).toContain('NORTHBOUND');
+      expect(ascHtml).toContain('125.40°');
+      expect(ascHtml).toContain('South → North of Ecliptic');
+
+      // 2. Hovering Descending Node
+      const descHtml = renderToStaticMarkup(
+        React.createElement(ArmillaryHoverHud, {
+          hoveredStar: null,
+          hoveredBead: null,
+          hoveredMilestone: null,
+          hoveredNode: 'desc',
+          lunarNodes: mockLunarNodes,
+          showRule: false,
+          sightingInfo: null,
+          sun: { screenPos: { x: 0, y: 0 }, isFront: true } as unknown as ArmillaryModelOutput['sun'],
+          moon: { screenPos: { x: 0, y: 0 }, isFront: true } as unknown as ArmillaryModelOutput['moon']
+        })
+      );
+      expect(descHtml).toContain('☋ Descending Node (Cauda)');
+      expect(descHtml).toContain('SOUTHBOUND');
+      expect(descHtml).toContain('305.40°');
+      expect(descHtml).toContain('North → South of Ecliptic');
     });
   });
 
