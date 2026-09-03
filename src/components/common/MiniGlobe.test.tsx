@@ -126,4 +126,27 @@ describe('<MiniGlobe /> Component', () => {
       expect(html).toContain('miniglobe-root');
     }
   });
+
+  it('renders solid observer pin in daylight and hollow observer pin at night (conforming across modes)', () => {
+    // Noon in Olympia, WA (-122.81°W, ~20:00 UTC) -> Daylight (Solid Sky Blue + pulsing halo)
+    const htmlNoon = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={24} viewMode="axial" latitude={47.06} longitude={-122.81} timeOfDay={20} showObserverPin={true} />
+      </svg>
+    );
+    expect(htmlNoon).toContain('class="miniglobe-observer-pin');
+    expect(htmlNoon).toContain('fill="#38bdf8"');
+    expect(htmlNoon).toContain('class="animate-pulse"');
+
+    // Midnight in Olympia, WA (-122.81°W, ~08:00 UTC) -> Night (Hollow fill="none" stroke="#94a3b8")
+    const htmlMidnight = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={24} viewMode="axial" latitude={47.06} longitude={-122.81} timeOfDay={8} showObserverPin={true} />
+      </svg>
+    );
+    expect(htmlMidnight).toContain('class="miniglobe-observer-pin');
+    expect(htmlMidnight).toContain('fill="none"');
+    expect(htmlMidnight).toContain('stroke="#94a3b8"');
+    expect(htmlMidnight).not.toContain('animate-pulse');
+  });
 });

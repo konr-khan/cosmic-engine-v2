@@ -172,7 +172,8 @@ export function calculateEarthAxialGeometry(
 
   const obsPx = centerX + obsEx;
   const obsPy = centerY - obsEy;
-  const isDaylight = obsEz >= 0;
+  const decRad = Math.asin(Math.sin(epsRad) * Math.sin(sunLambdaRad));
+  const isDaylight = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hRad) >= 0;
 
   return {
     earthR,

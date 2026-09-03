@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 382 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 383 tests)
 
 ### Essential Commands
 
@@ -263,7 +263,7 @@ Cosmic Engine V2.0/
 │           ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
 │           ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
 │           ├── MiniGlobe.tsx                   # High-precision multi-mode SVG Earth globe facade
-│           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (10 tests)
+│           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (11 tests)
 │           ├── miniglobe/                      # Decomposed MiniGlobe sub-renderers
 │           │   ├── MiniGlobeFlat.tsx           # 2D flattened astrolabe plate pin
 │           │   ├── MiniGlobeSphere.tsx         # 9-layer 3D sphere with analytical limb clipping

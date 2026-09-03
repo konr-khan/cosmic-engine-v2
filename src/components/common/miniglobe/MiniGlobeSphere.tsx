@@ -260,7 +260,7 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
                   <circle r="1.6" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.6" />
                 </>
               ) : (
-                <circle r="1.4" fill="#64748b" stroke="#94a3b8" strokeWidth="0.5" opacity="0.8" />
+                <circle r="1.5" fill="none" stroke="#94a3b8" strokeWidth="0.8" opacity="0.85" />
               )}
             </g>
           )}
@@ -274,7 +274,7 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
                   <circle r="1.8" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.75" />
                 </>
               ) : (
-                <circle r="1.5" fill="#64748b" stroke="#94a3b8" strokeWidth="0.5" opacity="0.8" />
+                <circle r="1.6" fill="none" stroke="#94a3b8" strokeWidth="0.8" opacity="0.85" />
               )}
             </g>
           )}
@@ -288,7 +288,7 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
                   <circle r="1.8" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.75" />
                 </>
               ) : (
-                <circle r="1.5" fill="#64748b" stroke="#94a3b8" strokeWidth="0.5" opacity="0.8" />
+                <circle r="1.6" fill="none" stroke="#94a3b8" strokeWidth="0.8" opacity="0.85" />
               )}
             </g>
           )}
@@ -302,7 +302,7 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
                   <circle r="1.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.6" />
                 </>
               ) : (
-                <circle r="1.3" fill="#64748b" stroke="#94a3b8" strokeWidth="0.5" opacity="0.8" />
+                <circle r="1.4" fill="none" stroke="#94a3b8" strokeWidth="0.75" opacity="0.85" />
               )}
             </g>
           )}

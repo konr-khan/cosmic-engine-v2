@@ -72,7 +72,7 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 ┌─────────────────────────────────────────────────────────────┐
 │ 9. Enlarged Touch Hit Target (r = 1.6R, cursor-pointer)     │
 │ 8. Monospace Label Overlay ("EARTH", drop-shadow-md)        │
-│ 7. Observer Pin ("YOU") (Pulsing #38bdf8 day / #64748b night│
+│ 7. Observer Pin ("YOU") (Solid #38bdf8 day / Hollow #94a3b8 night│
 │ 6. Specular Planetary Limb Rim (#60a5fa 1.2px / #93c5fd)    │
 │ 5. Polar Axis Line (23.44° tilt, Ice Blue #93c5fd dashed)   │
 │ 4. Parallels (Equator #38bdf8, Tropics #64748b dashed)       │
@@ -96,7 +96,7 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 | **4. Parallels** | Equator / Tropics | Equator `#38bdf8` (`strokeWidth="0.75"`, dashed `2 1.5`); Tropics `#64748b` (`strokeWidth="0.5"`, dashed `2 1.5`) | $0^\circ$ Celestial Equator and $\pm 23.44^\circ$ Solstice Tropics |
 | **5. Polar Axis** | 23.44° Rotational Axis | `#93c5fd` (`strokeWidth="0.85"`, dashed `2.5 1.5`, opacity `0.75`) | Rotated rotational axis passing through poles |
 | **6. Limb Rim** | Outer Rim | `#60a5fa` (`strokeWidth="1.2"`, opacity `0.8`) + inner `#93c5fd` (`strokeWidth="0.4"`) | Dual-layer specular spherical limb boundary |
-| **7. Observer Pin** | Observer Marker ("YOU") | Day: Sky Blue `#38bdf8` ($r=1.6-1.8\text{px}$) + white ring + pulse halo; Night: Muted Slate `#64748b` ($r=1.3-1.5\text{px}$) | True topocentric geographic observer pin |
+| **7. Observer Pin** | Observer Marker ("YOU") | Day: Solid Sky Blue `#38bdf8` ($r=1.6-1.8\text{px}$) + white ring + pulse halo; Night: Hollow Slate `#94a3b8` ring (`fill="none"`, `strokeWidth="0.8px"`, $r=1.4-1.6\text{px}$) | True topocentric geographic observer pin conforming to solid (day) vs. hollow (night) rule |
 | **8. Label** | Monospace Tag | Monospace `text-[9px] font-mono font-bold fill-blue-300` | High-contrast label with dark drop shadow |
 | **9. Hit Target** | Pointer Target | `fill="transparent"`, $r = \max(16\text{px}, 1.6 R)$ | Generous hit area preventing hover flickering |
 
