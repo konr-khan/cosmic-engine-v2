@@ -4,7 +4,7 @@
  */
 
 import { Degrees, HoursDecimal, JulianDate, Latitude, Longitude } from './units';
-import { OrbitalPositions, OrbitalAngles } from './coordinates';
+import { OrbitalAngles } from './coordinates';
 
 /**
  * High-performance immutable snapshot of instantaneous solar, lunar, and coordinate ephemeris.
@@ -261,8 +261,6 @@ export interface EclipseScannerPreset {
 
 /** Orbital simulation data package */
 export interface OrbitalData {
-  /** @deprecated Superseded by Unified 3D Scene Graph contracts (useCosmicScene / CosmicScene3D). */
-  positions: OrbitalPositions;
   angles: OrbitalAngles;
   nodeLongitude: number;
   descendingNodeLongitude: number;

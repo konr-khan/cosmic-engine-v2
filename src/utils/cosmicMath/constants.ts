@@ -24,12 +24,8 @@ export const CONFIG = {
     }
   },
   ORBIT: {
-    earthOrbitRadius: 200,
-    moonOrbitRadius: 60,
     earthRadius: 12,
-    moonRadius: 6,
-    daysInYear: 365.25,
-    daysInLunarCycle: 29.53
+    moonRadius: 6
   },
   DATES: [
     { day: 79, label: "Spring Equinox (Mar)", short: "Mar Eq" },

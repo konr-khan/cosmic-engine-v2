@@ -153,7 +153,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 20 specialized domain suites (**389 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 20 specialized domain suites (**390 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -171,7 +171,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Armillary Adversarial** | `src/utils/cosmicMath/armillary/m3_adversarial.test.ts` (5 tests) | Analytical closed-form Stereographic Ecliptic invariant ($R_0\sec\epsilon$), Sun bead clamping residuals ($< 1.42 \times 10^{-13}\text{ px}$), and 10,000-sample randomized Monte Carlo transitions |
 | **Armillary Benchmark** | `src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts` (5 tests) | 1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation |
 | **Depth Stroke Unification** | `src/components/widgets/depthUnificationStress.test.ts` (11 tests) | Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\lambda \in [0.85, 1.0]$ |
-| **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (19 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
+| **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (20 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (17 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (8 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (6 tests) | Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience |

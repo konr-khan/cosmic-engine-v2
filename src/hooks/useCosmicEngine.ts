@@ -5,8 +5,7 @@ import {
   calculateEphemerisFrame,
   calculateDaylightDurationPrecise,
   getPhaseName,
-  toRadians,
-  toDegrees
+  toRadians
 } from '../utils/cosmicMath';
 import { useChronometerStore } from '../store/cosmicStore';
 import { useEphemerisWorker } from './useEphemerisWorker';
@@ -108,33 +107,18 @@ export const useCosmicEngine = (
 
     if (isOrbitalActive) {
       const lunarPos = frame.lunarPos;
-      const { earthOrbitRadius, moonOrbitRadius, daysInYear, earthRadius } = CONFIG.ORBIT;
+      const sunDegrees = solarPos.lambda;
+      const moonDegrees = lunarPos.lambda;
+      const angleToSun = toRadians(sunDegrees);
+      const angleToMoon = toRadians(moonDegrees);
 
-      const earthTheta = (n / daysInYear) * 2 * Math.PI;
-      const earthPos = {
-        x: earthOrbitRadius * Math.cos(earthTheta),
-        y: earthOrbitRadius * Math.sin(earthTheta),
-      };
+      const phase0to1 = lunarPos.phase;
+      const elongationRad = toRadians(lunarPos.elongation ?? ((moonDegrees - sunDegrees + 360) % 360));
+      const alignmentFactor = Math.cos(2 * elongationRad);
 
-      const meanElongationDeg = 297.85 + (12.19075 * n);
-      const elongationRad = toRadians(meanElongationDeg);
-      const angleToSun = earthTheta + Math.PI;
-      const moonTheta = angleToSun + elongationRad;
-
-      const moonPos = {
-        x: earthPos.x + moonOrbitRadius * Math.cos(moonTheta),
-        y: earthPos.y + moonOrbitRadius * Math.sin(moonTheta),
-      };
-
-      const angleToMoon = Math.atan2(moonPos.y - earthPos.y, moonPos.x - earthPos.x);
-      let phaseRad = (angleToMoon - angleToSun) % (2 * Math.PI);
-      if (phaseRad < 0) phaseRad += 2 * Math.PI;
-      const phase0to1 = phaseRad / (2 * Math.PI);
-
-      const alignmentFactor = Math.cos(2 * (angleToMoon - angleToSun));
-      const baseOceanSize = earthRadius + 4;
+      const baseOceanSize = CONFIG.ORBIT.earthRadius + 4;
       const tideRx = baseOceanSize + 6 + (3 * alignmentFactor);
-      let tideType: TideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
+      const tideType: TideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
 
       const userRotation = ((timeOfDay - 12) * 15) + longitude;
       const moonPhaseAngleDeg = phase0to1 * 360;
@@ -148,12 +132,11 @@ export const useCosmicEngine = (
       }
 
       orbitalData = {
-        positions: { sun: { x: 0, y: 0 }, earth: earthPos, moon: moonPos },
         angles: { 
           toSun: angleToSun, 
           toMoon: angleToMoon, 
-          sunDegrees: toDegrees(Math.atan2(Math.sin(angleToSun), Math.cos(angleToSun))), 
-          moonDegrees: toDegrees(angleToMoon),
+          sunDegrees, 
+          moonDegrees,
           nodeLongitude: lunarPos.nodeLongitude,
           descendingNodeLongitude: lunarPos.descendingNodeLongitude
         },

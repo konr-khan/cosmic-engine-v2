@@ -210,10 +210,9 @@ describe('useCosmicEngine Hook Suite', () => {
                 expect(Number.isNaN(orbitalData.userRotation)).toBe(false);
                 expect(Number.isNaN(orbitalData.angles.toSun)).toBe(false);
                 expect(Number.isNaN(orbitalData.angles.toMoon)).toBe(false);
-                expect(Number.isNaN(orbitalData.positions.earth.x)).toBe(false);
-                expect(Number.isNaN(orbitalData.positions.earth.y)).toBe(false);
-                expect(Number.isNaN(orbitalData.positions.moon.x)).toBe(false);
-                expect(Number.isNaN(orbitalData.positions.moon.y)).toBe(false);
+                expect(Number.isNaN(orbitalData.angles.sunDegrees)).toBe(false);
+                expect(Number.isNaN(orbitalData.angles.moonDegrees)).toBe(false);
+                expect(Number.isNaN(orbitalData.phase.value)).toBe(false);
                 expect(Number.isNaN(orbitalData.tides.rx)).toBe(false);
                 expect(Number.isNaN(orbitalData.tides.alignment)).toBe(false);
                 expect(['High Tide', 'Low Tide']).toContain(orbitalData.localTideStatus);
@@ -249,6 +248,20 @@ describe('useCosmicEngine Hook Suite', () => {
       expect(['Spring Tide', 'Neap Tide', 'Transitional']).toContain(result.orbitalData!.tides.type);
       expect(['High Tide', 'Low Tide']).toContain(result.orbitalData!.localTideStatus);
       expect(result.orbitalData!.tides.rx).toBeGreaterThan(result.orbitalData!.tides.ry);
+    });
+
+    it('aligns angles.sunDegrees and angles.moonDegrees directly with canonical Meeus ephemeris', () => {
+      const testDate = new Date(2026, 5, 21); // June Solstice
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true);
+
+      expect(result.orbitalData).not.toBeNull();
+      // Sun at June Solstice is at ~90° ecliptic longitude
+      expect(result.orbitalData!.angles.sunDegrees).toBeCloseTo(result.solarData.lambda as number, 3);
+      expect(result.orbitalData!.angles.sunDegrees).toBeCloseTo(90, 0);
+      // Moon degrees match true Meeus lunar longitude
+      expect(result.orbitalData!.angles.moonDegrees).toBeCloseTo(result.orbitalData!.lunarPos.lambda as number, 3);
+      // Normalized phase matches Meeus phase
+      expect(result.orbitalData!.phase.value).toBeCloseTo(result.orbitalData!.lunarPos.phase, 3);
     });
   });
 });

@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 389 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 390 tests)
 
 ### Essential Commands
 
@@ -167,7 +167,7 @@ Cosmic Engine V2.0/
 │   │   └── ephemerisWorkerManager.ts # Application singleton worker manager, deduplication & matrix cache
 │   ├── hooks/
 │   │   ├── useCosmicEngine.ts   # Selective domain engine hook (solar, lunar, eclipse, tides)
-│   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (19 tests: state transitions & polar edge cases)
+│   │   ├── useCosmicEngine.test.ts # Vitest hook unit tests (20 tests: state transitions & polar edge cases)
 │   │   ├── useCosmicScene.ts    # Reactive 3D scene hook & specialized projection selectors
 │   │   ├── useCosmicScene.test.ts # Vitest hook tests for scene selectors (9 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
