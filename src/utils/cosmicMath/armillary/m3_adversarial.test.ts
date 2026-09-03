@@ -202,5 +202,66 @@ describe('Phase 2 M3 Adversarial Tests — Ring Blooming & Continuum Continuity'
         }
       }
     });
+
+    it('ensures Moon bead tracks strictly along the lunar_orbit ring in geocentric Apparent mode', () => {
+      // Calculate realistic Moon position at J2000+
+      const testJd = 2460482.5; // June 2024
+      const nodeLon = 15.0; // 15° ascending node
+      const moonLambda = 45.0; // 45° ecliptic longitude
+      // Orbital argument u = lambda - Omega = 30°
+      const incDeg = 5.145;
+      const betaDeg = Math.asin(Math.sin(30 * Math.PI / 180) * Math.sin(incDeg * Math.PI / 180)) * 180 / Math.PI;
+      
+      // Convert (lambda, beta) to (RA, Dec) with obliquity 23.439°
+      const epsRad = 23.439 * Math.PI / 180;
+      const lamRad = moonLambda * Math.PI / 180;
+      const betRad = betaDeg * Math.PI / 180;
+      const sinDec = Math.sin(betRad) * Math.cos(epsRad) + Math.cos(betRad) * Math.sin(epsRad) * Math.sin(lamRad);
+      const decDeg = Math.asin(sinDec) * 180 / Math.PI;
+      const yEq = Math.sin(lamRad) * Math.cos(epsRad) - Math.tan(betRad) * Math.sin(epsRad);
+      const xEq = Math.cos(lamRad);
+      const raDeg = ((Math.atan2(yEq, xEq) * 180 / Math.PI) + 360) % 360;
+
+      const model = generateArmillaryModel({
+        julianDate: testJd,
+        latitude: lat,
+        longitude: lon,
+        timeOfDay: 12,
+        sunRaDeg: 90,
+        sunDecDeg: 23.44,
+        sunLambdaDeg: 90,
+        moonRaDeg: raDeg,
+        moonDecDeg: decDeg,
+        moonLambdaDeg: moonLambda,
+        moonNodeLonDeg: nodeLon,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 20,
+        cameraYaw: 30,
+        r0: 100
+      });
+
+      const lunarOrbit = model.rings.find((r) => r.id === 'lunar_orbit');
+      expect(lunarOrbit).toBeDefined();
+
+      // Find closest sample point on the lunar orbit ring to the Moon's 3D position
+      let minDistance = Infinity;
+      for (const v of lunarOrbit!.vertices) {
+        const dx = v.p3d.x - model.moon.p3d.x;
+        const dy = v.p3d.y - model.moon.p3d.y;
+        const dz = v.p3d.z - model.moon.p3d.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist < minDistance) minDistance = dist;
+      }
+
+      // Assert Moon bead is clamped to the orbit curve with sub-pixel chord precision (< 0.5 px)
+      expect(minDistance).toBeLessThan(0.5);
+
+      // Verify lunar nodes exist and are located on the ring
+      expect(model.lunarNodes).toBeDefined();
+      expect(model.lunarNodes!.ascendingNode.lonDeg).toBeCloseTo(nodeLon, 1);
+      expect(model.lunarNodes!.descendingNode.lonDeg).toBeCloseTo((nodeLon + 180) % 360, 1);
+    });
   });
 });

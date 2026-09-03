@@ -521,6 +521,35 @@ describe('cosmicMath utilities', () => {
       }
     });
 
+    it('correctly classifies circumpolar_up and circumpolar_down lunar states at geographic poles', () => {
+      // Test 30 days across a full tropical month at the North Pole (90°N)
+      const baseDate = new Date('2026-03-01T12:00:00Z');
+      let upDays = 0;
+      let downDays = 0;
+
+      for (let d = 0; d < 30; d++) {
+        const currentDate = new Date(baseDate.getTime() + d * 86400000);
+        const jd = getJulianDate(currentDate, 12);
+        const events = calculateLunarEvents(90, 0, jd, 12);
+        
+        expect(events.polarState).toBeDefined();
+        if (events.polarState === 'circumpolar_up') {
+          upDays++;
+          expect(events.moonrise).toBe(0);
+          expect(events.moonset).toBe(24);
+        } else if (events.polarState === 'circumpolar_down') {
+          downDays++;
+          expect(events.moonrise).toBeNull();
+          expect(events.moonset).toBeNull();
+        }
+      }
+
+      // Over ~27.3 days, the Moon spends roughly half the month above and half below the horizon at 90°N
+      expect(upDays).toBeGreaterThanOrEqual(10);
+      expect(downDays).toBeGreaterThanOrEqual(10);
+      expect(upDays + downDays).toBeGreaterThanOrEqual(28);
+    });
+
     it('computes astronomical parallactic angle correctly and handles meridian transit and horizon azimuths', () => {
       const jd = getJulianDate(new Date(2026, 2, 20), 12);
       

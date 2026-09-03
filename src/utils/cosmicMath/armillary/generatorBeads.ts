@@ -91,20 +91,44 @@ export function computeArmillaryMilestones(params: {
 export function computeArmillaryLunarNodes(params: {
   isHelioMode: boolean;
   blendedEarth3D: Vector3D;
+  nodeLonDeg?: number;
+  obliquity?: number;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
 }): ArmillaryLunarNodes {
-  const { isHelioMode, blendedEarth3D, transformVertex } = params;
+  const { isHelioMode, blendedEarth3D, nodeLonDeg = 0, obliquity = 23.439, transformVertex } = params;
 
   const nodeDist = isHelioMode ? 16 : 26;
-  const ascNode3D: Vector3D = { x: blendedEarth3D.x + nodeDist, y: blendedEarth3D.y, z: blendedEarth3D.z };
-  const descNode3D: Vector3D = { x: blendedEarth3D.x - nodeDist, y: blendedEarth3D.y, z: blendedEarth3D.z };
+  const nodeRad = toRadians(nodeLonDeg);
+  const epsRad = toRadians(obliquity);
+
+  // Ascending Node (u = 0, beta = 0 on the ecliptic)
+  const xEclAsc = nodeDist * Math.cos(nodeRad);
+  const yEclAsc = 0;
+  const zEclAsc = nodeDist * Math.sin(nodeRad);
+
+  const xRelAsc = xEclAsc;
+  const yRelAsc = isHelioMode ? yEclAsc : (yEclAsc * Math.cos(epsRad) + zEclAsc * Math.sin(epsRad));
+  const zRelAsc = isHelioMode ? zEclAsc : (-yEclAsc * Math.sin(epsRad) + zEclAsc * Math.cos(epsRad));
+
+  const ascNode3D: Vector3D = {
+    x: blendedEarth3D.x + xRelAsc,
+    y: blendedEarth3D.y + yRelAsc,
+    z: blendedEarth3D.z + zRelAsc
+  };
+
+  // Descending Node (opposite side through center)
+  const descNode3D: Vector3D = {
+    x: blendedEarth3D.x - xRelAsc,
+    y: blendedEarth3D.y - yRelAsc,
+    z: blendedEarth3D.z - zRelAsc
+  };
 
   const ascV = transformVertex(ascNode3D);
   const descV = transformVertex(descNode3D);
 
   return {
-    ascendingNode: { screenPos: ascV.screenPos, isFront: ascV.isFront, lonDeg: 0 },
-    descendingNode: { screenPos: descV.screenPos, isFront: descV.isFront, lonDeg: 180 }
+    ascendingNode: { screenPos: ascV.screenPos, isFront: ascV.isFront, lonDeg: nodeLonDeg },
+    descendingNode: { screenPos: descV.screenPos, isFront: descV.isFront, lonDeg: (nodeLonDeg + 180) % 360 }
   };
 }
 

@@ -837,6 +837,64 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(annualHtml).toContain('Jan');
       expect(annualHtml).toContain('Dec');
     });
+
+    it('renders circumpolar 24h moonlight and down all day statuses in polar conditions', () => {
+      const mockPolarData: import('../../types').AnnualLunarMatrixItem[] = [
+        {
+          day: 1,
+          moonrise: 0,
+          moonset: 24,
+          transit: 12,
+          phaseValue: 0.5,
+          isPerigee: false,
+          isApogee: false,
+          distanceKm: 384400,
+          polarState: 'circumpolar_up'
+        },
+        {
+          day: 2,
+          moonrise: null,
+          moonset: null,
+          transit: 12,
+          phaseValue: 0.5,
+          isPerigee: false,
+          isApogee: false,
+          distanceKm: 384400,
+          polarState: 'circumpolar_down'
+        }
+      ];
+
+      const upHtml = renderToStaticMarkup(
+        React.createElement(LunarRibbonChart, {
+          annualLunarData: mockPolarData,
+          activeDay: 1,
+          totalDays: 2,
+          year: 2026,
+          activeData: mockPolarData[0],
+          getDayLabel: (d: number) => `Day ${d}`,
+          viewMode: 'synodic',
+          onViewModeChange: () => {}
+        })
+      );
+
+      expect(upHtml).toContain('Circumpolar:');
+      expect(upHtml).toContain('Up All Day (24h Moonlight)');
+
+      const downHtml = renderToStaticMarkup(
+        React.createElement(LunarRibbonChart, {
+          annualLunarData: mockPolarData,
+          activeDay: 2,
+          totalDays: 2,
+          year: 2026,
+          activeData: mockPolarData[1],
+          getDayLabel: (d: number) => `Day ${d}`,
+          viewMode: 'synodic',
+          onViewModeChange: () => {}
+        })
+      );
+
+      expect(downHtml).toContain('Moon Down All Day (Sub-Horizon)');
+    });
   });
 
   describe('Eclipse Demonstrator Subsystem', () => {

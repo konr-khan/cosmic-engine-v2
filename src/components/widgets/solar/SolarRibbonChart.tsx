@@ -89,13 +89,26 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
     return path;
   };
 
+  const getSvgCoordinates = (e: React.PointerEvent<SVGSVGElement>): { svgX: number; svgY: number } => {
+    if (!svgRef.current) return { svgX: 0, svgY: 0 };
+    const ctm = svgRef.current.getScreenCTM();
+    if (ctm) {
+      const pt = svgRef.current.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const transformed = pt.matrixTransform(ctm.inverse());
+      return { svgX: transformed.x, svgY: transformed.y };
+    }
+    const rect = svgRef.current.getBoundingClientRect();
+    return {
+      svgX: ((e.clientX - rect.left) / rect.width) * width,
+      svgY: ((e.clientY - rect.top) / rect.height) * height
+    };
+  };
+
   const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
-    const svgX = (clientX / rect.width) * width;
-    const svgY = (clientY / rect.height) * height;
+    const { svgX, svgY } = getSvgCoordinates(e);
     const day = xToDay(svgX);
     setHoverDay(day);
 

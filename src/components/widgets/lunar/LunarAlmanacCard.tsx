@@ -162,7 +162,13 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
             {hoveredDay ? 'Inspect Rise / Set' : 'Moonrise / Moonset'}
           </span>
           <span className="text-slate-200 font-semibold text-xs mt-0.5 font-mono">
-            {displayData.moonrise !== null && displayData.moonrise !== undefined ? formatTime(displayData.moonrise).substring(0, 5) : '--:--'} / {displayData.moonset !== null && displayData.moonset !== undefined ? formatTime(displayData.moonset).substring(0, 5) : '--:--'}
+            {displayData.polarState === 'circumpolar_up' || (displayData.moonrise === 0 && displayData.moonset === 24) ? (
+              <span className="text-emerald-400 font-bold">Up All Day (24h)</span>
+            ) : displayData.polarState === 'circumpolar_down' || (displayData.moonrise === null && displayData.moonset === null) ? (
+              <span className="text-slate-400">Down All Day</span>
+            ) : (
+              `${displayData.moonrise !== null && displayData.moonrise !== undefined ? formatTime(displayData.moonrise).substring(0, 5) : '--:--'} / ${displayData.moonset !== null && displayData.moonset !== undefined ? formatTime(displayData.moonset).substring(0, 5) : '--:--'}`
+            )}
           </span>
         </div>
 

@@ -116,11 +116,26 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     return ((time + lonOffsetHours) % 24 + 24) % 24;
   }, [timeMode, lonOffsetHours]);
 
+  const getSvgCoordinates = (e: React.PointerEvent<SVGSVGElement> | React.MouseEvent<SVGSVGElement>): { svgX: number; svgY: number } => {
+    if (!svgRef.current) return { svgX: 0, svgY: 0 };
+    const ctm = svgRef.current.getScreenCTM();
+    if (ctm) {
+      const pt = svgRef.current.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const transformed = pt.matrixTransform(ctm.inverse());
+      return { svgX: transformed.x, svgY: transformed.y };
+    }
+    const rect = svgRef.current.getBoundingClientRect();
+    return {
+      svgX: ((e.clientX - rect.left) / rect.width) * ribbonWidth,
+      svgY: ((e.clientY - rect.top) / rect.height) * ribbonHeight
+    };
+  };
+
   const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const clientX = e.clientX - rect.left;
-    const svgX = (clientX / rect.width) * ribbonWidth;
+    const { svgX, svgY } = getSvgCoordinates(e);
     const day = xToDay(svgX);
     setHoverDay(day);
     if (onHoverDayChange) onHoverDayChange(day);
@@ -133,8 +148,6 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         onHoverDate(d);
       }
 
-      const clientY = e.clientY - rect.top;
-      const svgY = (clientY / rect.height) * ribbonHeight;
       const relY = svgY - padTop;
       if (relY >= 0 && relY <= chartH && onHoverTime) {
         const chartTime = ((chartH - relY) / chartH) * 24;
@@ -168,10 +181,17 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     : null;
 
   const displayData = hoverData ?? activeData;
+  const isCircumpolarUp = displayData.polarState === 'circumpolar_up' || (displayData.moonrise === 0 && displayData.moonset === 24);
+  const isCircumpolarDown = displayData.polarState === 'circumpolar_down' || (displayData.moonrise === null && displayData.moonset === null);
+
   const displayRiseT = transformTime(displayData.moonrise);
   const displaySetT = transformTime(displayData.moonset);
-  const displayRiseStr = displayRiseT !== null ? formatTime(displayRiseT).substring(0, 5) : 'No Rise';
-  const displaySetStr = displaySetT !== null ? formatTime(displaySetT).substring(0, 5) : 'No Set';
+  const displayRiseStr = isCircumpolarUp
+    ? '24h Up'
+    : (isCircumpolarDown ? 'Down All Day' : (displayRiseT !== null ? formatTime(displayRiseT).substring(0, 5) : 'No Rise'));
+  const displaySetStr = isCircumpolarUp
+    ? '24h Up'
+    : (isCircumpolarDown ? 'Down All Day' : (displaySetT !== null ? formatTime(displaySetT).substring(0, 5) : 'No Set'));
   const displayTransitT = transformTime(displayData.transit);
   const displayTransitStr = displayTransitT !== null ? formatTime(displayTransitT).substring(0, 5) : '--:--';
   const displayPhasePct = Math.round(displayData.phaseValue * 100);
@@ -332,12 +352,24 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         </div>
         
         <div className="flex items-center gap-3">
-          <span className="text-slate-300">
-            Moonrise: <span className="font-bold text-sky-400">{displayRiseStr}</span>
-          </span>
-          <span className="text-slate-300">
-            Moonset: <span className="font-bold text-indigo-400">{displaySetStr}</span>
-          </span>
+          {isCircumpolarUp ? (
+            <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Circumpolar: <span className="underline decoration-emerald-500/50">Up All Day (24h Moonlight)</span>
+            </span>
+          ) : isCircumpolarDown ? (
+            <span className="text-slate-400 font-medium flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-slate-600" /> Moon Down All Day (Sub-Horizon)
+            </span>
+          ) : (
+            <>
+              <span className="text-slate-300">
+                Moonrise: <span className="font-bold text-sky-400">{displayRiseStr}</span>
+              </span>
+              <span className="text-slate-300">
+                Moonset: <span className="font-bold text-indigo-400">{displaySetStr}</span>
+              </span>
+            </>
+          )}
           {displayTransitT !== null && (
             <span className="text-slate-400 hidden sm:inline">
               Transit: <span className="font-semibold text-slate-200">{displayTransitStr}</span>
@@ -370,9 +402,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         }}
         onClick={(e) => {
           if (!svgRef.current) return;
-          const rect = svgRef.current.getBoundingClientRect();
-          const clientX = e.clientX - rect.left;
-          const svgX = (clientX / rect.width) * ribbonWidth;
+          const { svgX } = getSvgCoordinates(e);
           const day = xToDay(svgX);
           if (onDayChange) onDayChange(day);
         }}
@@ -494,8 +524,12 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
 
         {/* Render Daily Moonrise-to-Moonset Braided Lines / Pillars */}
         {visibleDays.map((d) => {
-          const riseT = transformTime(d.moonrise);
-          const setT = transformTime(d.moonset);
+          const isUp = d.polarState === 'circumpolar_up' || (d.moonrise === 0 && d.moonset === 24);
+          const isDown = d.polarState === 'circumpolar_down';
+          if (isDown) return null;
+
+          const riseT = isUp ? 0 : transformTime(d.moonrise);
+          const setT = isUp ? 24 : transformTime(d.moonset);
           if (riseT === null || setT === null) return null;
           const x = dayToX(d.day);
           const yRise = timeToY(riseT);
@@ -504,8 +538,8 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
           const isFull = Math.abs(d.phaseValue - 0.5) < 0.08;
           const isSuper = d.isPerigee;
           
-          const strokeColor = isSuper ? "#10b981" : (isFull ? "#f8fafc" : "#38bdf8");
-          const opacity = isSuper ? 0.9 : (isFull ? 0.85 : (isSynodic ? 0.7 : 0.4));
+          const strokeColor = isUp ? '#0ea5e9' : (isSuper ? "#10b981" : (isFull ? "#f8fafc" : "#38bdf8"));
+          const opacity = isUp ? 0.7 : (isSuper ? 0.9 : (isFull ? 0.85 : (isSynodic ? 0.7 : 0.4)));
           const strokeW = isSynodic ? (isSuper ? 6 : (isFull ? 5 : 4)) : (isSuper ? 2 : (isFull ? 1.6 : 1));
 
           return (
@@ -657,12 +691,24 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
                 stroke="#1e293b"
                 strokeWidth="0.75"
               />
-              <text x={tooltipX + 8} y={tooltipY + 34} className="text-[9px] font-mono fill-slate-300">
-                Rise: <tspan className="font-bold fill-sky-300">{riseStr}</tspan>
-              </text>
-              <text x={tooltipX + tooltipW - 8} y={tooltipY + 34} textAnchor="end" className="text-[9px] font-mono fill-slate-300">
-                Set: <tspan className="font-bold fill-indigo-300">{setStr}</tspan>
-              </text>
+              {hoverData.polarState === 'circumpolar_up' ? (
+                <text x={tooltipX + 8} y={tooltipY + 34} className="text-[9px] font-mono fill-emerald-300 font-bold">
+                  🌕 Up All Day (24h Moonlight)
+                </text>
+              ) : hoverData.polarState === 'circumpolar_down' ? (
+                <text x={tooltipX + 8} y={tooltipY + 34} className="text-[9px] font-mono fill-slate-400 font-medium">
+                  🌑 Down All Day (Sub-Horizon)
+                </text>
+              ) : (
+                <>
+                  <text x={tooltipX + 8} y={tooltipY + 34} className="text-[9px] font-mono fill-slate-300">
+                    Rise: <tspan className="font-bold fill-sky-300">{riseStr}</tspan>
+                  </text>
+                  <text x={tooltipX + tooltipW - 8} y={tooltipY + 34} textAnchor="end" className="text-[9px] font-mono fill-slate-300">
+                    Set: <tspan className="font-bold fill-indigo-300">{setStr}</tspan>
+                  </text>
+                </>
+              )}
               <text x={tooltipX + 8} y={tooltipY + 48} className="text-[9px] font-mono fill-slate-400">
                 Dist: <tspan className="font-semibold fill-slate-200">{Math.round(hoverData.distanceKm).toLocaleString()} km</tspan>
                 {hoverData.isPerigee && <tspan className="fill-emerald-400 font-bold"> · Perigee</tspan>}

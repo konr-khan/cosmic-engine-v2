@@ -50,6 +50,7 @@ function generateArmillaryRings(params: {
   fromProjectionMode?: ArmillaryProjectionMode;
   transT: number;
   blendedEarth3D: Vector3D;
+  nodeLonDeg: number;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
 }): ArmillaryRingPath[] {
   const {
@@ -62,6 +63,7 @@ function generateArmillaryRings(params: {
     fromProjectionMode,
     transT,
     blendedEarth3D,
+    nodeLonDeg,
     transformVertex
   } = params;
 
@@ -102,11 +104,12 @@ function generateArmillaryRings(params: {
     )
   );
 
-  // 1. Lunar Orbit Ring (5.14° Inclined around Earth)
+  // 1. Lunar Orbit Ring (5.145° Inclined around Earth, precessing node Omega)
   const isHelioMode = projectionMode === 'heliocentric';
   const lunarOrbitRadius = isHelioMode ? 16 : 26;
-  const incRad = toRadians(5.14);
+  const incRad = toRadians(5.145);
   const epsRad = toRadians(obliquity);
+  const nodeRad = toRadians(nodeLonDeg);
 
   rings.push(
     generateParametricRing3D(
@@ -118,17 +121,32 @@ function generateArmillaryRings(params: {
         backStrokeWidth: 0.6,
         sampleCount: NUM_SAMPLES,
         samplePoint: (t) => {
-          const angleRad = t * 2 * Math.PI;
-          const xRel = lunarOrbitRadius * Math.cos(angleRad);
-          const yRel = lunarOrbitRadius * Math.sin(angleRad) * Math.sin(incRad);
-          const zRel = lunarOrbitRadius * Math.sin(angleRad) * Math.cos(incRad);
-          return isHelioMode
-            ? { x: blendedEarth3D.x + xRel, y: blendedEarth3D.y + yRel, z: blendedEarth3D.z + zRel }
-            : {
-                x: blendedEarth3D.x + xRel,
-                y: blendedEarth3D.y + yRel * Math.cos(epsRad) - zRel * Math.sin(epsRad),
-                z: blendedEarth3D.z + yRel * Math.sin(epsRad) + zRel * Math.cos(epsRad)
-              };
+          // u is the orbital angle starting from the ascending node Omega
+          const u = t * 2 * Math.PI;
+          // In the orbital plane:
+          const xOrb = lunarOrbitRadius * Math.cos(u);
+          const yOrb = lunarOrbitRadius * Math.sin(u) * Math.sin(incRad);
+          const zOrb = lunarOrbitRadius * Math.sin(u) * Math.cos(incRad);
+          // Rotate in ecliptic plane by node longitude Omega:
+          const xEcl = xOrb * Math.cos(nodeRad) - zOrb * Math.sin(nodeRad);
+          const yEcl = yOrb;
+          const zEcl = xOrb * Math.sin(nodeRad) + zOrb * Math.cos(nodeRad);
+
+          // In Helio mode: already in ecliptic frame centered on Earth
+          // In Geocentric/Apparent mode: transform from Ecliptic to Equatorial frame via +obliquity
+          const xRel = xEcl;
+          const yRel = isHelioMode
+            ? yEcl
+            : (yEcl * Math.cos(epsRad) + zEcl * Math.sin(epsRad));
+          const zRel = isHelioMode
+            ? zEcl
+            : (-yEcl * Math.sin(epsRad) + zEcl * Math.cos(epsRad));
+
+          return {
+            x: blendedEarth3D.x + xRel,
+            y: blendedEarth3D.y + yRel,
+            z: blendedEarth3D.z + zRel
+          };
         }
       },
       transformVertex
@@ -292,6 +310,7 @@ export function generateArmillaryModel(params: {
   moonDecDeg: Degrees | number;
   moonLambdaDeg: Degrees | number;
   moonPhase: number;
+  moonNodeLonDeg?: number;
   morphLambda: number; // 0.0 (3D Sphere) to 1.0 (2D Astrolabe Plate)
   projectionMode: ArmillaryProjectionMode;
   fromProjectionMode?: ArmillaryProjectionMode;
@@ -318,6 +337,7 @@ export function generateArmillaryModel(params: {
     moonDecDeg,
     moonLambdaDeg,
     moonPhase,
+    moonNodeLonDeg,
     morphLambda,
     projectionMode,
     fromProjectionMode,
@@ -336,6 +356,9 @@ export function generateArmillaryModel(params: {
   const lambdaClamp = clamp(morphLambda, 0, 1);
   const transT = clamp(projectionTransitionT, 0, 1);
   const obliquity = 23.439;
+  const T = (julianDate - 2451545.0) / 36525;
+  const defaultNodeLon = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
+  const nodeLonDeg = moonNodeLonDeg ?? defaultNodeLon;
   const baseLstDeg = calculateLST(julianDate, longitude);
   const lstDeg = isFreeReteMode 
     ? asDegrees(((baseLstDeg + freeReteOffsetDeg) % 360 + 360) % 360)
@@ -440,6 +463,7 @@ export function generateArmillaryModel(params: {
     fromProjectionMode,
     transT,
     blendedEarth3D,
+    nodeLonDeg,
     transformVertex
   });
 
@@ -470,6 +494,8 @@ export function generateArmillaryModel(params: {
   const lunarNodes = computeArmillaryLunarNodes({
     isHelioMode,
     blendedEarth3D,
+    nodeLonDeg,
+    obliquity,
     transformVertex
   });
 

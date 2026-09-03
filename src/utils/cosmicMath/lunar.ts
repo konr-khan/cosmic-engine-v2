@@ -222,6 +222,7 @@ function refineLunarEventHour(
 
   let moonriseUTC: number | null = null;
   let moonsetUTC: number | null = null;
+  let polarState: 'circumpolar_up' | 'circumpolar_down' | 'regular' = 'regular';
 
   if (cosH0 >= -1 && cosH0 <= 1) {
     const halfDayHours0 = (toDegrees(Math.acos(clamp(cosH0, -1, 1))) / 15) * 1.035;
@@ -231,6 +232,17 @@ function refineLunarEventHour(
     // Step 2: Refine candidate rise and set times using lunar coordinates at estimated events
     moonriseUTC = refineLunarEventHour(julianDate, estRise, transitUTC, sinAlt, sinLat, cosLat, true);
     moonsetUTC = refineLunarEventHour(julianDate, estSet, transitUTC, sinAlt, sinLat, cosLat, false);
+    polarState = 'regular';
+  } else if (cosH0 < -1) {
+    // Moon is circumpolar: continuously above horizon all day (24h continuous moonlight)
+    polarState = 'circumpolar_up';
+    moonriseUTC = 0;
+    moonsetUTC = 24;
+  } else {
+    // Moon is continuously below horizon all day
+    polarState = 'circumpolar_down';
+    moonriseUTC = null;
+    moonsetUTC = null;
   }
 
   const isPerigee = lunarNow.distanceKm < LUNAR_PERIGEE_THRESHOLD_KM;
@@ -248,7 +260,8 @@ function refineLunarEventHour(
     isPerigee,
     isApogee,
     declination: lunarNow.declination,
-    parallacticAngle: parseFloat(parallacticAngle.toFixed(1))
+    parallacticAngle: parseFloat(parallacticAngle.toFixed(1)),
+    polarState
   };
 };
 
@@ -325,7 +338,8 @@ export const calculateAnnualLunarMatrix = (
       phaseValue: phaseVal,
       isPerigee: events.isPerigee,
       isApogee: events.isApogee,
-      distanceKm: events.distanceKm
+      distanceKm: events.distanceKm,
+      polarState: events.polarState
     });
   }
   return list;

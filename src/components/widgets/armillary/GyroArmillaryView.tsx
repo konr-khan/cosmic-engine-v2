@@ -75,6 +75,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   const moonDecDeg = orbitalData?.lunarEvents?.declination ?? fallbackFrame.lunarPos.declination ?? 0;
   const moonLambdaDeg = fallbackFrame.lunarPos.lambda ?? 0;
   const moonPhase = orbitalData?.phase?.value ?? fallbackFrame.lunarPos.phase ?? 0.5;
+  const moonNodeLonDeg = orbitalData?.lunarPos?.nodeLongitude ?? fallbackFrame.lunarPos.nodeLongitude;
 
   const dayOfWeek = activeDate.getUTCDay();
   const sunrise = solarData?.sunrise ?? fallbackFrame.sunrise;
@@ -94,6 +95,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       moonDecDeg,
       moonLambdaDeg,
       moonPhase,
+      moonNodeLonDeg,
       morphLambda,
       projectionMode,
       fromProjectionMode,

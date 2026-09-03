@@ -181,6 +181,7 @@ export interface LunarEvents {
   isApogee: boolean;
   declination: Degrees | number;
   parallacticAngle: number;
+  polarState?: 'circumpolar_up' | 'circumpolar_down' | 'regular';
 }
 
 /** Alias for lunar event metrics */
@@ -196,6 +197,7 @@ export interface AnnualLunarMatrixItem {
   isPerigee: boolean;
   isApogee: boolean;
   distanceKm: number;
+  polarState?: 'circumpolar_up' | 'circumpolar_down' | 'regular';
 }
 
 /** Alias for annual lunar matrix item record */
