@@ -1,8 +1,5 @@
 import { Degrees, asDegrees } from '../../../types/units';
 import { ArmillaryStarData, ZodiacSignSegment } from './types';
-import { EARTH_MILESTONES } from '../milestones';
-
-export const ARMILLARY_MILESTONES_DATA = EARTH_MILESTONES;
 
 /**
  * 12 Bright Classical Navigational Astrolabe Stars (Epoch J2000.0)

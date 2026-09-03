@@ -5,7 +5,7 @@
 
 import { Vector3D } from '../../../types/coordinates';
 import { toRadians, clamp } from '../core';
-import { ARMILLARY_MILESTONES_DATA } from './constants';
+import { EARTH_MILESTONES } from '../milestones';
 import { equatorialToCartesian3D, rotateEuler3D } from './coordinates';
 import { ArmillaryModelMode } from './types';
 
@@ -85,7 +85,7 @@ export function computeRawModeGeometry(
     };
 
     // Heliocentric milestones along Earth's orbit
-    const milestones3D = ARMILLARY_MILESTONES_DATA.map((m) => {
+    const milestones3D = EARTH_MILESTONES.map((m) => {
       const lonRad = toRadians(m.helioEclipticLon);
       return {
         id: m.id,
@@ -134,7 +134,7 @@ export function computeRawModeGeometry(
     };
 
     // Milestones along Sun's apparent ecliptic path (helioLon + 180°)
-    const milestones3D = ARMILLARY_MILESTONES_DATA.map((m) => {
+    const milestones3D = EARTH_MILESTONES.map((m) => {
       const apparentSunLonRad = toRadians((m.helioEclipticLon + 180) % 360);
       return {
         id: m.id,
@@ -178,7 +178,7 @@ export function computeRawModeGeometry(
   const moon3DBase = equatorialToCartesian3D(moonRaDeg, moonDecDeg, r0);
   const moon3D = rotateEuler3D(moon3DBase, 0, reteOffset, 0);
 
-  const milestones3D = ARMILLARY_MILESTONES_DATA.map((m) => {
+  const milestones3D = EARTH_MILESTONES.map((m) => {
     const apparentSunLonRad = toRadians((m.helioEclipticLon + 180) % 360);
     return {
       id: m.id,

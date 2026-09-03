@@ -7,7 +7,8 @@
 import { Degrees, Latitude, Longitude, asDegrees } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
 import { toRadians, toDegrees, clamp, slerp3D } from '../core';
-import { ARMILLARY_MILESTONES_DATA, ASTROLABE_STARS } from './constants';
+import { EARTH_MILESTONES } from '../milestones';
+import { ASTROLABE_STARS } from './constants';
 import { equatorialToCartesian3D, equatorialToHorizontal, rotateEuler3D } from './coordinates';
 import { 
   ArmillaryRingVertex, 
@@ -70,7 +71,7 @@ export function computeArmillaryMilestones(params: {
 }): ArmillaryMilestoneNode[] {
   const { sourceMilestones3D, targetMilestones3D, transT, transformVertex } = params;
 
-  return ARMILLARY_MILESTONES_DATA.map((m, idx) => {
+  return EARTH_MILESTONES.map((m, idx) => {
     const targetM3D = targetMilestones3D[idx]?.p3d || { x: 0, y: 0, z: 0 };
     const sourceM3D = sourceMilestones3D[idx]?.p3d || targetM3D;
     const blendedM3D: Vector3D = slerp3D(sourceM3D, targetM3D, transT);

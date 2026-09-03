@@ -7,7 +7,7 @@ export * from './eclipse';
 export * from './projection';
 export * from './globe';
 export * from './geoData';
-export * from './armillary';
+export * from './armillary/index';
 export * from './milestones';
 export * from './frame';
 export * from './scene';

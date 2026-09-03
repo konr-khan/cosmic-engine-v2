@@ -1,24 +1,8 @@
 import { EclipseData } from '../../../types';
 import { MilestoneNode3D } from '../../../utils/cosmicMath/scene/types';
+import type { MilestoneItem } from '../../../utils/cosmicMath/milestones';
 
-export interface MilestoneItem {
-  id: string;
-  label: string;
-  date: string;
-  rawX: number;
-  rawY: number;
-  color: string;
-  textColor: string;
-  fillColor: string;
-  distanceAU: number;
-  distanceKm: number;
-  speedKms: number;
-  description: string;
-  textAnchor: 'start' | 'middle' | 'end';
-  textDx: number;
-  textDy: number;
-  subDy: number;
-}
+export type { MilestoneItem };
 
 export type OrbitMilestoneInput = MilestoneItem | (MilestoneNode3D & { x: number; y: number });
 
