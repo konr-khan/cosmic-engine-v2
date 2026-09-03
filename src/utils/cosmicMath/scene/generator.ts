@@ -14,7 +14,8 @@ import {
   ASTRONOMICAL_UNIT_KM, 
   EARTH_AXIAL_OBLIQUITY_J2000_DEG, 
   EARTH_ECCENTRICITY_TRUE, 
-  EARTH_ECCENTRICITY_EXAGGERATED 
+  EARTH_ECCENTRICITY_EXAGGERATED,
+  EARTH_PERIHELION_LONGITUDE_DEG
 } from '../astroConstants';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics } from '../solar';
 import { calculateLunarPosition } from '../lunar';
@@ -93,25 +94,31 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   let f1: Vector3D;
   let f2: Vector3D;
 
+  const perihelionLonRad = toRadians(EARTH_PERIHELION_LONGITUDE_DEG);
+
   if (isExag) {
     // Exaggerated Scale: Sun at Focus F1 (-c, 0, 0), Empty Focus F2 (+c, 0, 0)
     f1 = { x: -c, y: 0, z: 0 };
     f2 = { x: c, y: 0, z: 0 };
     sunPos = { x: -c, y: 0, z: 0 };
-    // Earth positioned along exaggerated Kepler ellipse
+    // Earth positioned along exaggerated Kepler ellipse (prograde counter-clockwise)
     earthPos = {
       x: -a * Math.cos(sunLambdaRad),
-      y: -b * Math.sin(sunLambdaRad),
+      y: b * Math.sin(sunLambdaRad),
       z: 0
     };
   } else {
     // True Scale: Sun at (0, 0, 0)
     f1 = { x: 0, y: 0, z: 0 };
-    f2 = { x: -2 * c * Math.cos(toRadians(102.94)), y: -2 * c * Math.sin(toRadians(102.94)), z: 0 };
+    f2 = { 
+      x: -2 * c * Math.cos(perihelionLonRad), 
+      y: -2 * c * Math.sin(perihelionLonRad), 
+      z: 0 
+    };
     sunPos = { x: 0, y: 0, z: 0 };
     earthPos = {
-      x: distAU * Math.cos(earthLambdaRad),
-      y: distAU * Math.sin(earthLambdaRad),
+      x: -distAU * Math.cos(sunLambdaRad),
+      y: distAU * Math.sin(sunLambdaRad),
       z: 0
     };
   }
@@ -129,7 +136,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
     z: Math.sin(sunLambdaRad) * Math.cos(obliquityRad)
   };
 
-  // 6. 3D Seasonal Milestone Nodes
+  // 6. 3D Seasonal Milestone Nodes (Heliocentric Longitudes of Earth)
   const milestoneLongitudes: Record<string, number> = {
     perihelion: 283,
     mar_equinox: 0,

@@ -148,7 +148,7 @@ export function projectHeliocentricTopDown(
   const dyRel = scene.moon.position.y - scene.earth.position.y;
   const distRel = Math.hypot(dxRel, dyRel) || 1;
   const moonX = earthX + (dxRel / distRel) * moonOrbitRadius;
-  const moonY = earthY + (dyRel / distRel) * moonOrbitRadius;
+  const moonY = earthY - (dyRel / distRel) * moonOrbitRadius;
   const moon: ProjectedBody2D = {
     x: moonX,
     y: moonY,

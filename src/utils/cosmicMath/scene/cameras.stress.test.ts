@@ -488,9 +488,9 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
       // Earth's heliocentric longitude increases prograde (+lambda)
       expect(scene2.earth.heliocentricLongitude).toBeGreaterThan(scene1.earth.heliocentricLongitude);
 
-      // In SVG canvas (where +Y is down), counter-clockwise rotation corresponds to d(theta_svg)/dt where theta_svg = -theta_math
-      const angle1 = Math.atan2(p1.elements.earth.y, p1.elements.earth.x);
-      const angle2 = Math.atan2(p2.elements.earth.y, p2.elements.earth.x);
+      // In SVG canvas (where +Y is down), counter-clockwise rotation corresponds to d(theta_math)/dt > 0 where theta_math = atan2(-y, x)
+      const angle1 = Math.atan2(-p1.elements.earth.y, p1.elements.earth.x);
+      const angle2 = Math.atan2(-p2.elements.earth.y, p2.elements.earth.x);
       const dTheta = ((angle2 - angle1) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
       expect(dTheta).toBeGreaterThan(0);
       expect(dTheta).toBeLessThan(Math.PI);

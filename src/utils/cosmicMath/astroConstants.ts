@@ -90,3 +90,8 @@ export const EARTH_ECCENTRICITY_TRUE = 0.01671022;
  * Earth orbital eccentricity in exaggerated visual mode.
  */
 export const EARTH_ECCENTRICITY_EXAGGERATED = 0.25;
+
+/**
+ * Earth heliocentric longitude of perihelion at epoch J2000.0 in degrees (~102.937°).
+ */
+export const EARTH_PERIHELION_LONGITUDE_DEG: Degrees = asDegrees(102.937);
