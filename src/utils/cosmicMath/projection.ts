@@ -228,9 +228,9 @@ export function generateOrbitalSegments(
       x2 = centerX - Math.cos(t2) * rx;
       y2 = centerY - Math.sin(t2 + nodeAngleRad) * 5.145 * scalePxPerDeg;
     } else {
-      x1 = centerX + Math.sin(t1) * rx;
+      x1 = centerX - Math.sin(t1) * rx;
       y1 = centerY - Math.sin(t1 + nodeAngleRad) * 5.145 * scalePxPerDeg;
-      x2 = centerX + Math.sin(t2) * rx;
+      x2 = centerX - Math.sin(t2) * rx;
       y2 = centerY - Math.sin(t2 + nodeAngleRad) * 5.145 * scalePxPerDeg;
     }
 

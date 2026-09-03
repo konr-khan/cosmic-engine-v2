@@ -927,6 +927,48 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(typeof eclipse.beta).toBe('number');
       expect(typeof eclipse.alignmentPercent).toBe('number');
     });
+
+    it('conforms NodalPlaneVisualizer dimensions and viewBox to 520x220 matching ShadowRayDiagram', () => {
+      const jd = getJulianDate(new Date(2026, 2, 20), 12);
+      const eclipse = calculateEclipseData(jd);
+
+      const nodalHtml = renderToStaticMarkup(
+        React.createElement(NodalPlaneVisualizer, {
+          eclipse,
+          currentDate: new Date('2026-03-20T12:00:00Z'),
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12
+        })
+      );
+
+      const shadowHtml = renderToStaticMarkup(
+        React.createElement(ShadowRayDiagram, {
+          eclipse,
+          currentDate: new Date('2026-03-20T12:00:00Z'),
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12
+        })
+      );
+
+      // Both cards conform to identical 520x220 viewBox and min-h-[220px]
+      expect(nodalHtml).toContain('viewBox="0 0 520 220"');
+      expect(shadowHtml).toContain('viewBox="0 0 520 220"');
+      expect(nodalHtml).toContain('min-h-[220px]');
+      expect(shadowHtml).toContain('min-h-[220px]');
+
+      // Both cards center horizontal ecliptic reference line at y = 110
+      expect(nodalHtml).toContain('y1="110"');
+      expect(nodalHtml).toContain('y2="110"');
+      expect(shadowHtml).toContain('y1="110"');
+      expect(shadowHtml).toContain('y2="110"');
+
+      // NodalPlaneVisualizer incorporates upsized Earth MiniGlobe (r=24) and apparent size metrics
+      expect(nodalHtml).toContain('Axial Sightline (5.14° Tilt)');
+      expect(nodalHtml).toContain('SUN');
+      expect(nodalHtml).toContain('MOON');
+    });
   });
 
   describe('Daylight Terminator Map Subsystem', () => {
@@ -991,6 +1033,24 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html).toContain('☊ Nodal Loop');
       expect(html).toContain('Global Potential');
       expect(html).toContain('Local Water');
+    });
+
+    it('renders Moon and tidal bulge in counter-clockwise prograde orientation', () => {
+      const html = renderToStaticMarkup(
+        React.createElement(MicroTideView, {
+          tides: { alignment: 0.0, rx: 16, ry: 12, type: 'Transitional' },
+          angles: { sunDegrees: 0, moonDegrees: 90, nodeLongitude: 0, descendingNodeLongitude: 180, toSun: 0, toMoon: 0 },
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12.0
+        })
+      );
+
+      // At moonDegrees = 90 (First Quarter), prograde counter-clockwise in SVG positions Moon UP at (0, -60)
+      // moonX = 60 * cos(-90 deg) ~ 0, moonY = 60 * sin(-90 deg) = -60
+      // We check that moonY is -60 (UP) rather than +60 (DOWN)
+      expect(html).toContain('-60)');
+      expect(html).toContain('rotate(-90)');
     });
   });
 });

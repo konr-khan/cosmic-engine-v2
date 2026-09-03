@@ -51,15 +51,20 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   const localTideColor =
     safeLocalTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-400";
 
-  // Refined "TO SUN" Rotation Logic
-  const sunAngleDeg = Number(safeAngles.sunDegrees) || 0;
-  const isLeftHemisphere = Math.abs(sunAngleDeg) > 90;
+  // Refined "TO SUN" Rotation Logic (Prograde counter-clockwise in SVG where +Y is down)
+  const rawSunAngle = Number(safeAngles.sunDegrees) || 0;
+  const sunAngleDeg = -rawSunAngle;
+  const isLeftHemisphere = Math.cos(toRadians(sunAngleDeg)) < 0;
 
   // Ascending and Descending Node Angular Locations on the 2D Orbital Circle
   const safeNodeLon = Number(nodeLongitude ?? (safeAngles as any).nodeLongitude) || 0;
   const safeSunLambda = Number(sunLambdaDeg) || 0;
-  const thetaNodeDeg = ((sunAngleDeg + (safeNodeLon - safeSunLambda)) % 360 + 360) % 360;
-  const thetaDescNodeDeg = (thetaNodeDeg + 180) % 360;
+  const rawNodeDelta = ((safeNodeLon - safeSunLambda) % 360 + 360) % 360;
+  const rawNodeDeg = ((rawSunAngle + rawNodeDelta) % 360 + 360) % 360;
+  const rawDescNodeDeg = (rawNodeDeg + 180) % 360;
+
+  const thetaNodeDeg = -rawNodeDeg;
+  const thetaDescNodeDeg = -rawDescNodeDeg;
 
   // 4-Quadrant Nodal Orbital Loop Segments (Waxing/Waning x Ascending/Descending)
   const nodalSegments = useMemo(() => {
@@ -73,8 +78,9 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
     for (let i = 0; i < steps; i++) {
       const deg1 = (i / steps) * 360;
       const deg2 = ((i + 1) / steps) * 360;
-      const rad1 = toRadians(deg1);
-      const rad2 = toRadians(deg2);
+      // Negate angle for prograde counter-clockwise motion in SVG (+Y is down)
+      const rad1 = toRadians(-deg1);
+      const rad2 = toRadians(-deg2);
 
       const x1 = r * Math.cos(rad1);
       const y1 = r * Math.sin(rad1);
@@ -82,8 +88,8 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
       const y2 = r * Math.sin(rad2);
 
       const midDeg = (deg1 + deg2) / 2;
-      const elong = ((midDeg - sunAngleDeg) % 360 + 360) % 360;
-      const deltaNode = ((midDeg - thetaNodeDeg) % 360 + 360) % 360;
+      const elong = ((midDeg - rawSunAngle) % 360 + 360) % 360;
+      const deltaNode = ((midDeg - rawNodeDeg) % 360 + 360) % 360;
 
       const isWax = elong <= 180;
       const isAsc = deltaNode <= 180;
@@ -104,7 +110,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
       wanAsc: wanAsc.join(' '),
       wanDesc: wanDesc.join(' ')
     };
-  }, [sunAngleDeg, thetaNodeDeg]);
+  }, [rawSunAngle, rawNodeDeg]);
 
   // Node Pins Positions (R = 60px)
   const nodePos = useMemo(() => {
@@ -116,12 +122,13 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
     };
   }, [thetaNodeDeg, thetaDescNodeDeg]);
 
-  // Moon Position & Nodal State
-  const moonAngleDeg = safeAngles.moonDegrees || 0;
+  // Moon Position & Nodal State (Prograde counter-clockwise in SVG)
+  const rawMoonAngle = Number(safeAngles.moonDegrees) || 0;
+  const moonAngleDeg = -rawMoonAngle;
   const moonRad = toRadians(moonAngleDeg);
   const moonX = 60 * Math.cos(moonRad);
   const moonY = 60 * Math.sin(moonRad);
-  const moonDeltaNode = ((moonAngleDeg - thetaNodeDeg) % 360 + 360) % 360;
+  const moonDeltaNode = ((rawMoonAngle - rawNodeDeg) % 360 + 360) % 360;
   const isMoonAsc = moonDeltaNode <= 180;
 
   return (
@@ -264,7 +271,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
               opacity="0.2"
               stroke="#38bdf8"
               strokeWidth="1.2"
-              transform={`rotate(${safeAngles.moonDegrees || 0})`}
+              transform={`rotate(${moonAngleDeg})`}
             />
 
             {/* Earth Living Marble Mini-Globe (Unified 9-layer component) */}

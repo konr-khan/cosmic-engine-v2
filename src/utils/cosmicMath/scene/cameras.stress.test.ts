@@ -279,6 +279,33 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
       }
     });
 
+    it('C3.2b: Prograde West-to-East orbital direction: Waxing (First Quarter) is Left (-X), Waning (Third Quarter) is Right (+X)', () => {
+      const baseScene = generateCosmicScene({ julianDate: EPOCHS.eclipseApr2024 });
+
+      // First Quarter (phase = 0.25): Moon must be to the LEFT (East of Sun, -X)
+      const fqScene = {
+        ...baseScene,
+        moon: { ...baseScene.moon, phase: 0.25 }
+      };
+      const fq = projectGeocentricAxial(fqScene);
+      expect(fq.elements.moon.x).toBeLessThan(200); // cx = 200, moves Left
+
+      // Third Quarter (phase = 0.75): Moon must be to the RIGHT (West of Sun, +X)
+      const tqScene = {
+        ...baseScene,
+        moon: { ...baseScene.moon, phase: 0.75 }
+      };
+      const tq = projectGeocentricAxial(tqScene);
+      expect(tq.elements.moon.x).toBeGreaterThan(200); // cx = 200, moves Right
+
+      // Monotonic transit across solar eclipse: from Waning crescent (Right) to Waxing crescent (Left)
+      const preEclipseScene = { ...baseScene, moon: { ...baseScene.moon, phase: 0.98 } };
+      const postEclipseScene = { ...baseScene, moon: { ...baseScene.moon, phase: 0.02 } };
+      const pre = projectGeocentricAxial(preEclipseScene);
+      const post = projectGeocentricAxial(postEclipseScene);
+      expect(pre.elements.moon.x).toBeGreaterThan(post.elements.moon.x); // Moves from Right to Left
+    });
+
     it('C3.3: 3D Projected Earth axial tilt angle follows atan2(-nx, ny) through annual cycle', () => {
       const testCases = [
         { jd: EPOCHS.marchEquinox2024, expectedTilt: 23.44, tol: 1.0 },   // Tilts right (+X)

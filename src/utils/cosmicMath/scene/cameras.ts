@@ -384,7 +384,8 @@ export function projectGeocentricAxial(
   const orbitalRx = 110 * s;
   const scalePxPerDeg = 8.5 * s;
 
-  const moonX = cx + Math.sin(phaseRad) * orbitalRx;
+  // Prograde West-to-East orbit: Waxing moves East (left, -X), Waning moves West (right, +X)
+  const moonX = cx - Math.sin(phaseRad) * orbitalRx;
   const moonY = cy - beta * scalePxPerDeg;
   const moon: ProjectedBody2D = {
     x: moonX,
