@@ -31,10 +31,10 @@ Key capabilities include:
 - **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Sector Dial featuring **Solar Noon vs. UTC Mode** segmented controls.
 - **Today's Sky Horizon Dome**: Symmetrical dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
 - **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, Meeus Ch. 48 true geocentric phase angle ($i$) and disc illumination ($k$), 2-step iterative high-latitude rise/set solver, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
-- **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view with unified 9-layer `<MiniGlobe />` featuring rotating 3D vector continents and day/night terminator, segmented `[Standard | ☊ Nodal Loop]` toggle control decomposing the lunar orbit into 4 color/stroke-coded quadrants (Sky Blue `#38bdf8` for Ascending, Rose Red `#f43f5e` for Descending, Solid for Waxing, Dashed for Waning), dynamic Ascending ($\Omega$) and Descending ($\mho$) node pins, and a dynamic ocean tidal wave oscillator reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
+- **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view with unified 9-layer `<MiniGlobe />` featuring rotating 3D vector continents and day/night terminator, prograde counter-clockwise orbital coordination ($\theta_{\text{svg}} = -\theta_{\text{math}}$) aligning lunar revolution with Earth's rotation, segmented `[Standard | ☊ Nodal Loop]` toggle control decomposing the lunar orbit into 4 color/stroke-coded quadrants (Sky Blue `#38bdf8` for Ascending, Rose Red `#f43f5e` for Descending, Solid for Waxing, Dashed for Waning), dynamic Ascending ($\Omega$) and Descending ($\mho$) node pins, and a dynamic ocean tidal wave oscillator reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
 - **Side-by-Side Dual-Perspective Eclipse Demonstrator**: 
   - **Left (Syzygy Profile & Shadow Rays)**: Strictly side-on ecliptic transverse profile with a 3D-projected inclined lunar orbital ring through Earth, tracking orbital elongation ($0^\circ \to 360^\circ$), ray-traced Umbra/Penumbra shadow cones, and minimalist vector Earth with $23.44^\circ$ seasonal axial tilt, dashed blue equator chord, and longitude-synchronized day/night observer pin.
-  - **Right (Axial Sightline & 5.14° Nodes)**: Down-the-barrel view along the Sun-Earth sightline through Earth with partially eclipsed background Sun, vector Earth with $23.44^\circ$ projected axial tilt, dashed blue equator chord, dynamic rotating observer pin, and an open 3D elliptical orbital loop with physical 2D positioning on $X$ (transverse elongation) and $Y$ (ecliptic latitude $\beta$) showing true above/below miss geometry.
+  - **Right (Axial Sightline & 5.14° Nodes)**: Down-the-barrel view along the Sun-Earth sightline through Earth with partially eclipsed background Sun, vector Earth with $23.44^\circ$ projected axial tilt, dashed blue equator chord, dynamic rotating observer pin, and an open 3D elliptical orbital loop in full dimensional parity (`viewBox="0 0 520 220"`, $26:11$ aspect ratio, $R_x = 150\text{px}$, Earth $R = 24\text{px}$, Sun $R = 46\text{px}$) with physical prograde West-to-East positioning on $X$ ($s = -\sin(\text{phaseRad})$, transiting Right-to-Left across the Sun) and $Y$ (ecliptic latitude $\beta$) showing true above/below miss geometry.
   - **Color-Coded Nodes & 2D Stroke Encoding**: Subtle **Sky Blue** (`#38bdf8`) for Ascending ($\beta \ge 0$, North of ecliptic) vs. **Crimson Red** (`#f43f5e`) for Descending ($\beta < 0$, South of ecliptic), and **Solid stroke** for Waxing ($0^\circ \to 180^\circ$) vs. **Dashed stroke** for Waning ($180^\circ \to 360^\circ$).
   - **Real-Time Annual Nodal Seasons**: Annual dynamic modulation of the orbital plane tilt driven by the Sun-Earth-Node angle ($\Delta \Omega = \lambda_{\text{sun}} - \Omega_{\text{node}}$) and dynamically gliding Ascending ($\Omega$) and Descending ($\mho$) nodes.
   - **Exact Peak UTC Eclipse Presets**: Direct snapping to exact fractional UTC peak hours of greatest eclipse for 5 historical and future presets (Apr 2024, Oct 2024, Mar 2025 Blood Moon, Aug 2026, Aug 2027 Luxor).
@@ -101,7 +101,8 @@ Cosmic Engine V2.0/
 │       ├── 0003-gyro-morph-armillary-projections.md
 │       ├── 0004-hierarchical-3d-scene-graph-and-camera-rigs.md
 │       ├── 0005-reusable-miniglobe-and-subsolar-projection.md
-│       └── 0006-armillary-hot-loop-optimization-and-latency-budget.md
+│       ├── 0006-armillary-hot-loop-optimization-and-latency-budget.md
+│       └── 0007-eclipse-axial-upsize-and-prograde-kinematics.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -380,8 +381,12 @@ The Eclipse demonstrator renders synchronized dual perspectives in `activeTab ==
    - Moon linear position along the plane follows elongation $s = -\cos(\text{phaseRad}) \in [-1, 1]$ (New Moon at $s = -1$, Full Moon at $s = +1$).
 2. **Axial Sightline Down-the-Barrel View (`NodalPlaneVisualizer.tsx`)**:
    - View looking directly along the Sun-Earth axis with Earth centered and the Sun partially eclipsed behind Earth.
-   - Transverse cross-axis displacement follows $s = \sin(\text{phaseRad}) \in [-1, 1]$ (Syzygy at center $X = 200$, Quarters at extremities $X = 200 \pm 100$).
-   - Dynamic Ascending ($\Omega$) and Descending ($\mho$) nodes glide along the orbital line ($s_{\text{node}} = -\sin(\Delta \Omega)$), converging into the center target during eclipse seasons and moving to outer extremities during off-seasons.
+   - Symmetrical layout parity (`viewBox="0 0 520 220"`, $26:11$ aspect ratio, `min-h-[220px]`) centered at $(260, 110)$ with horizontal Ecliptic Plane reference at $y = 110$.
+   - Transverse cross-axis displacement follows prograde West-to-East astronomical kinematics:
+     $$s = -\sin(\text{phaseRad}) \in [-1, 1]$$
+     (Syzygy at center $X = 260$, Quarters at extremities $X = 260 \mp 150$; Waxing moves East/Left, Waning moves West/Right). The lunar transit traverses from **Right to Left (West to East)** across the face of the Sun during solar eclipses.
+   - Dynamic Ascending ($\Omega$) and Descending ($\mho$) nodes glide along the orbital line ($X_{\text{node}} = 260 - \sin(t_{\text{node}}) \cdot 150$), converging into the center target during eclipse seasons and moving to outer extremities during off-seasons.
+   - Scaled radii: Earth MiniGlobe $R = 24\text{px}$, Sun $R = 46\text{px}$, Umbra $R = 18\text{px}$, Penumbra $R = 34\text{px}$, Moon $R = 10.5\text{px}$.
 3. **Exact UTC Preset Snapping**:
    - `EclipsePresetItem` requires explicit `timeOfDay: number` (fractional UTC hour) to guarantee that clicking presets snaps directly to peak totality (e.g., $06:58\text{ UTC}$ for Mar 14, 2025 Blood Moon).
 

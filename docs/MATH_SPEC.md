@@ -209,6 +209,58 @@ Given lunar ecliptic coordinates $(\lambda, \beta, \Delta)$ and solar coordinate
   \gamma_{\text{solar}} = \sqrt{(\Delta\lambda_{\text{conj}} \cos \beta)^2 + \beta^2}
   \]
 
+### D. Axial Sightline Down-the-Barrel Kinematics & Prograde Projections
+
+The **Axial Sightline** demonstrator (`NodalPlaneVisualizer.tsx` and `projectGeocentricAxial`) positions the observer along the Sun-Earth axis on Earth's night side ($+X$ in geocentric ecliptic coordinates), looking directly through Earth toward the Sun in the background along $-\mathbf{e}_X$.
+
+1. **Camera Reference Basis & Right-Handed Astronomical Coordinates**:
+   Let the camera be oriented with Ecliptic North as the vertical UP direction:
+   \[
+   \hat{\mathbf{u}}_{\text{up}} = +\mathbf{e}_Y, \quad \hat{\mathbf{u}}_{\text{view}} = -\mathbf{e}_X
+   \]
+   By the standard right-handed camera coordinate definition ($\hat{\mathbf{u}}_{\text{right}} = \hat{\mathbf{u}}_{\text{view}} \times \hat{\mathbf{u}}_{\text{up}}$):
+   \[
+   \hat{\mathbf{u}}_{\text{right}} = (-\mathbf{e}_X) \times (+\mathbf{e}_Y) = -\mathbf{e}_Z
+   \]
+   Therefore:
+   * **Screen Right ($+X_{\text{cam}}$)** points along $-\mathbf{e}_Z$ (Celestial/Ecliptic **West**).
+   * **Screen Left ($-X_{\text{cam}}$)** points along $+\mathbf{e}_Z$ (Celestial/Ecliptic **East**).
+   * **Screen Up ($-Y_{\text{screen}}$ in SVG)** points along $+\mathbf{e}_Y$ (Ecliptic **North**).
+
+2. **Prograde West-to-East Lunar Kinematics**:
+   The Moon's orbital motion around Earth is prograde (counter-clockwise when viewed from the North Ecliptic Pole, $+\mathbf{e}_Y$). In the fundamental plane:
+   \[
+   \mathbf{r}(\theta) = -\cos\theta \, \mathbf{e}_X + \sin\theta \, \mathbf{e}_Z
+   \]
+   Projecting onto the camera's transverse right vector $\hat{\mathbf{u}}_{\text{right}} = -\mathbf{e}_Z$:
+   \[
+   s_{\text{trans}} = \mathbf{r}(\theta) \cdot \hat{\mathbf{u}}_{\text{right}} = (\sin\theta \, \mathbf{e}_Z) \cdot (-\mathbf{e}_Z) = -\sin\theta
+   \]
+   Given phase angle $\text{phaseRad} = \text{phaseValue} \cdot 2\pi$ (where $\text{phaseValue} = 0.0$ is New Moon, $0.25$ is First Quarter, $0.5$ is Full Moon, and $0.75$ is Third Quarter), the screen coordinates on a $520 \times 220$ canvas centered at $(X_c, Y_c) = (260, 110)$ are:
+   \[
+   X_{\text{screen}} = X_c - \sin(\text{phaseRad}) \cdot R_x
+   \]
+   \[
+   Y_{\text{screen}} = Y_c - \beta \cdot \text{scalePxPerDeg}
+   \]
+   where $R_x = 150\text{px}$ and $\text{scalePxPerDeg} = 10.5\text{px/deg}$.
+
+3. **Astronomical Eclipse Transit Trajectory**:
+   * **Pre-Eclipse / Waning Crescent ($\text{phase} \approx 0.98, \sin(\text{phaseRad}) < 0$)**: The Moon is positioned to the **Right** ($X_{\text{screen}} > X_c$, West of the Sun).
+   * **Central Eclipse / Syzygy ($\text{phase} = 0.0, \sin(\text{phaseRad}) = 0$)**: The Moon is centered at $X_{\text{screen}} = X_c = 260$.
+   * **Post-Eclipse / Waxing Crescent ($\text{phase} \approx 0.02, \sin(\text{phaseRad}) > 0$)**: The Moon moves to the **Left** ($X_{\text{screen}} < X_c$, East of the Sun).
+   * **Monotonic Transit**: Over the course of a solar eclipse, $\frac{dX_{\text{screen}}}{dt} < 0$, moving the lunar disc continuously from **Right to Left (West to East)** across the face of the Sun, matching physical solar eclipses.
+
+4. **Nodal Crossing Points**:
+   With Sun-Node angle $\Delta\Omega = \lambda_{\odot} - \Omega_{\text{node}}$:
+   \[
+   t_{\text{asc}} = ((-\Delta\Omega \bmod 2\pi) + 2\pi) \bmod 2\pi, \quad X_{\text{asc}} = X_c - \sin(t_{\text{asc}}) \cdot R_x, \quad Y_{\text{asc}} = Y_c
+   \]
+   \[
+   t_{\text{desc}} = (((\pi - \Delta\Omega) \bmod 2\pi) + 2\pi) \bmod 2\pi, \quad X_{\text{desc}} = X_c - \sin(t_{\text{desc}}) \cdot R_x, \quad Y_{\text{desc}} = Y_c
+   \]
+   During eclipse seasons ($\Delta\Omega \approx 0^\circ$ or $180^\circ$), the node pins converge toward $X_c = 260$ directly within the central shadow target area.
+
 ---
 
 ## 7. Gyro-Morph Armillary Multi-Model Unification & Astrolabe Projections

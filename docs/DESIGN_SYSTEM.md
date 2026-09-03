@@ -58,6 +58,7 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Dashed Stroke (`stroke-dasharray="4 3"`)**: **Waning Moon** ($180^\circ \to 360^\circ$ elongation).
 * **Sky Blue Stroke (`#38bdf8`)**: Orbital segment is **North of Ecliptic** ($\beta \ge 0$, Ascending hemisphere).
 * **Rose Stroke (`#f43f5e`)**: Orbital segment is **South of Ecliptic** ($\beta < 0$, Descending hemisphere).
+* **Prograde Transit Direction (Axial Sightline)**: When looking toward the Sun with North UP, East is Left and West is Right. The lunar transit traverses from **Right to Left (West to East)** across the face of the Sun during solar eclipses ($s = -\sin(\text{phaseRad})$).
 
 ### C. Map & Horizon Curves
 * **Dashed Amber Line (`stroke="#fbbf24" strokeDasharray="3 2"`)**: Exact daylight terminator boundary curve ($h = -0.833^\circ$).
@@ -185,7 +186,24 @@ The **Earth & Tidal Gravity Micro View** (`MicroTideView`) integrates the unifie
 * **Dynamic Node Pins**:
   - **Ascending Node ($\Omega / ☊$) Pin**: Placed at $\theta_{\Omega} = \theta_{\text{sun}} + (\Omega - \lambda_{\text{sun}})$, styled with a Sky Blue border and `☊` text label.
   - **Descending Node ($\mho / ☋$) Pin**: Placed at $\theta_{\mho} = \theta_{\Omega} + 180^\circ$, styled with a Rose Red border and `☋` text label.
-* **Moon Body Nodal Indicator**:
-  - In Nodal Loop mode, the Moon body features an outer pulsing halo rim matching the Moon's active ecliptic hemisphere: Sky Blue for North ($\beta \ge 0$) or Rose Red for South ($\beta < 0$).
-* **Glassmorphic Nodal Legend**:
-  - Displays a compact floating overlay at `bottom-2.5 left-2.5` indicating node color semantics (`☊ Ascending (+β)`, `☋ Descending (-β)`) and stroke styling (`Solid: Waxing`, `Dashed: Waning`).
+* **Prograde Counter-Clockwise Orbital Orientation**:
+  - In SVG viewports, the vertical $Y$-axis points **downward**, meaning standard parametric $(R\cos\theta, R\sin\theta)$ and `rotate(deg)` natively rotate clockwise.
+  - To align with Earth's physical counter-clockwise rotation from above (West to East), all top-down orbital angles in `MicroTideView` are coordinated with negated SVG angles ($\theta_{\text{svg}} = -\theta_{\text{math}}$).
+  - The Moon revolves counter-clockwise (Right $\to$ Up $\to$ Left $\to$ Down), the tidal bulge ellipse rotates with `rotate(${moonAngleDeg})`, and the "TO SUN" vector and daylight terminator rotate counter-clockwise in lockstep.
+
+---
+
+## 7. Dual-Perspective Eclipse Demonstrator Sizing & Layout Parity
+
+The Eclipse Demonstrator renders two synchronized, mathematically aligned perspectives side-by-side in `activeTab === 'geometry'`:
+
+* **Layout & Viewport Parity**:
+  - **Identical Dimensions**: Both the Left pane (**Syzygy Profile & Shadow Rays** — `ShadowRayDiagram.tsx`) and Right pane (**Axial Sightline 5.14° Tilt** — `NodalPlaneVisualizer.tsx`) share identical SVG `viewBox="0 0 520 220"` ($26:11$ aspect ratio) and CSS class `w-full h-full block flex-1 min-h-[220px]`.
+  - **Aligned Origin & Ecliptic Plane**: Both viewports align on the exact same horizontal horizon line at $y = 110$.
+* **Geometric Proportions & Scaling**:
+  - **Earth MiniGlobe**: Radius $R = 24\text{px}$ across both panes (+20% upsize).
+  - **Sun & Corona**: Sun radius $R = 46\text{px}$ with soft corona wash to $62\text{px}$.
+  - **Target Shadow Cones**: Umbra core radius $R = 18\text{px}$; Penumbra envelope radius $R = 34\text{px}$.
+  - **Lunar Orbit**: Semi-major axis $R_x = 150\text{px}$ across the $520\text{px}$ width; vertical inclination scale $10.5\text{px/deg}$ ($y \in [56, 164]$ at maximum inclination $\beta = \pm 5.14^\circ$).
+  - **Moon Bead**: Base radius $R = 10.5\text{px}$ with dynamic ephemeris angular scaling ($8.5\text{px} \dots 12.5\text{px}$).
+  - **Node Pins**: Radius $R = 4\text{px}$ with high-contrast text labels (`☊ Node` in Sky Blue, `☋ Node` in Crimson Red).
