@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 387 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 389 tests)
 
 ### Essential Commands
 
@@ -103,7 +103,8 @@ Cosmic Engine V2.0/
 │       ├── 0005-reusable-miniglobe-and-subsolar-projection.md
 │       ├── 0006-armillary-hot-loop-optimization-and-latency-budget.md
 │       ├── 0007-eclipse-axial-upsize-and-prograde-kinematics.md
-│       └── 0008-canonical-camera-alignment-and-sky-view-prograde-kinematics.md
+│       ├── 0008-canonical-camera-alignment-and-sky-view-prograde-kinematics.md
+│       └── 0009-ground-truth-heliocentric-and-geocentric-prograde-kinematics.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -130,6 +131,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── globe.ts         # Pure continent spherical projection & analytical limb clipping
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   ├── geoData.ts       # World landmass continent outline polygons
+│   │   │   ├── milestones.ts    # Canonical Earth orbital milestones (single source of truth)
 │   │   │   ├── frame.ts         # Centralized EphemerisFrame snapshot generator
 │   │   │   ├── scene/           # Unified 3D Astronomical Scene Graph & Camera Rigs
 │   │   │   │   ├── index.ts          # Barrel re-export
@@ -138,7 +140,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generator.ts      # generateCosmicScene with Keplerian & lunar orbit geometry
 │   │   │   │   ├── cameras.ts        # TopDown, Transverse, Axial & Euler camera rigs
 │   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (33 tests)
-│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (20 tests)
+│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (22 tests)
 │   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (16 tests)
 │   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
 │   │   │   │   ├── index.ts          # Barrel re-export

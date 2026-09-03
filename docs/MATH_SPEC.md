@@ -650,25 +650,25 @@ Earth's heliocentric orbit is parameterized as a 3D conic section with semi-majo
      Semi-major axis $a = 1.0\text{ AU}$, linear eccentricity $c = 0.25\text{ AU}$.
      Semi-minor axis $b = a\sqrt{1 - e^2} \approx 0.96825\text{ AU}$.
 
-2. **Keplerian Orbital Equation**:
-   Given true anomaly $\nu = \lambda_\odot - \varpi$ (where $\varpi = 102.94719^\circ$ is longitude of perihelion):
+2. **Keplerian Orbital Equation & Ground-Truth Prograde Kinematics**:
+   Given true anomaly $\nu = \lambda_\odot - \varpi$ (where $\varpi = 102.937^\circ$ is longitude of perihelion):
    \[
    r(\nu) = \frac{a(1 - e^2)}{1 + e \cos\nu}
    \]
-   In the orbit plane with Focus F1 at $(0, 0, 0)$:
+   In the heliocentric ecliptic frame with Sun at Focus F1 $(-c, 0, 0)$ and Empty Focus F2 at $(+c, 0, 0)$ in exaggerated mode (or Sun at origin in true scale mode):
    \[
-   x_{\text{orbit}} = r(\nu) \cos\nu - c, \quad y_{\text{orbit}} = r(\nu) \sin\nu, \quad z_{\text{orbit}} = 0
+   \vec{r}_{\oplus}(t) = \left( -r \cos\lambda_\odot, \, r \sin\lambda_\odot, \, 0 \right)
    \]
-   The empty focus F2 is located at $(2c, 0, 0)$ relative to F1.
+   guaranteeing strictly prograde (counter-clockwise) orbital kinematics when viewed from $+Z$ (North Ecliptic Pole).
 
-3. **6 Seasonal Orbital Milestones**:
-   Each milestone node is evaluated at its exact astronomical true anomaly $\nu_i$:
-   * **Perihelion**: $\nu = 0^\circ$, $\lambda_\odot = 102.9^\circ$, $r = a(1 - e) = 0.9833\text{ AU}$, $v = 30.29\text{ km/s}$.
-   * **March Equinox**: $\lambda_\odot = 0^\circ$, $\nu = 257.05^\circ$, $r = 0.9960\text{ AU}$, $v = 29.84\text{ km/s}$.
-   * **June Solstice**: $\lambda_\odot = 90^\circ$, $\nu = 347.05^\circ$, $r = 1.0163\text{ AU}$, $v = 29.38\text{ km/s}$.
-   * **Aphelion**: $\nu = 180^\circ$, $\lambda_\odot = 282.9^\circ$, $r = a(1 + e) = 1.0167\text{ AU}$, $v = 29.29\text{ km/s}$.
-   * **September Equinox**: $\lambda_\odot = 180^\circ$, $\nu = 77.05^\circ$, $r = 1.0040\text{ AU}$, $v = 29.65\text{ km/s}$.
-   * **December Solstice**: $\lambda_\odot = 270^\circ$, $\nu = 167.05^\circ$, $r = 0.9837\text{ AU}$, $v = 30.27\text{ km/s}$.
+3. **6 Seasonal Orbital Milestones (Single Source of Truth: `src/utils/cosmicMath/milestones.ts`)**:
+   Each milestone node is evaluated at its exact Earth heliocentric longitude $\lambda_\oplus = (\lambda_\odot + 180^\circ) \bmod 360^\circ$:
+   * **March Equinox**: $\lambda_\odot = 0^\circ \implies \lambda_\oplus = 180^\circ$, placed at $(-200, 0)$ ($9\text{ o'clock}$, Left).
+   * **June Solstice**: $\lambda_\odot = 90^\circ \implies \lambda_\oplus = 270^\circ$, placed at $(0, 200)$ ($6\text{ o'clock}$, Bottom).
+   * **Aphelion**: $\lambda_\odot = 282.94^\circ \implies \lambda_\oplus = 282.94^\circ$, placed at $(44.79, 194.92)$ ($\sim 5\text{:}30$).
+   * **September Equinox**: $\lambda_\odot = 180^\circ \implies \lambda_\oplus = 0^\circ$, placed at $(200, 0)$ ($3\text{ o'clock}$, Right).
+   * **December Solstice**: $\lambda_\odot = 270^\circ \implies \lambda_\oplus = 90^\circ$, placed at $(0, -200)$ ($12\text{ o'clock}$, Top).
+   * **Perihelion**: $\lambda_\odot = 102.94^\circ \implies \lambda_\oplus = 102.94^\circ$, placed at $(-44.79, -194.92)$ ($\sim 11\text{:}30$).
 
 ### C. Dynamic 3D Inclined Lunar Orbit & Nodal Regression
 
@@ -851,6 +851,7 @@ All computational pipelines throughout Cosmic Engine V2.0 derive their physical 
 | $d_{\text{apogee}}$ | `LUNAR_APOGEE_THRESHOLD_KM` | $400,000$ | $\text{km}$ | Lunar Apogee Distance Threshold |
 | $e_{\text{true}}$ | `EARTH_ECCENTRICITY_TRUE` | $0.01671022$ | dimensionless | Physical Earth Orbital Eccentricity |
 | $e_{\text{exagg}}$ | `EARTH_ECCENTRICITY_EXAGGERATED` | $0.25$ | dimensionless | Exaggerated Eccentricity for Visual Analysis |
+| $\varpi_0$ | `EARTH_PERIHELION_LONGITUDE_DEG` | $102.937^\circ$ | $\text{Degrees}$ | Earth Longitude of Perihelion at Epoch J2000.0 |
 
 ### B. Temporal Epoch Purity & Determinism Invariant
 
