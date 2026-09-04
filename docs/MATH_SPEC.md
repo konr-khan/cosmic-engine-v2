@@ -265,7 +265,7 @@ The **Axial Sightline** demonstrator (`NodalPlaneVisualizer.tsx` and `projectGeo
 
 The **Sky View Simulator** (`SkyViewSimulator.tsx` and `LunarSurfacePovView.tsx`) visualizes syzygy alignment from two complementary vantage points:
 
-1. **Terrestrial Central Path Sky View (`SkyViewSimulator.tsx`)**:
+1. **Central Path Sky Simulator (Totality Track) (`SkyViewSimulator.tsx`)**:
    Simulates the sky perspective of an observer positioned along the central path of the lunar umbra (greatest eclipse track), looking South toward the Sun ($R_{\odot} = 42\text{px}$, $R_{\text{moon}} = 42\text{px}$):
    * **Signed Longitudinal Elongation**:
      \[
@@ -737,15 +737,19 @@ Each camera projection transforms 3D scene objects into 2D SVG screen coordinate
      \]
 2. **`projectGeocentricTransverse` (Eclipse Left Pane — Side Profile)**:
    * View direction: Perpendicular to Sun-Earth syzygy axis (along $-Y_{\text{syzygy}}$).
+   * Canonical Canvas & Radii: Default viewport $340 \times 220$ (`viewBox="0 0 340 220"`), center $(X_c, Y_c) = (170, 110)$, Earth radius $R_\oplus = 18\text{px}$, Moon radius $R_{\text{moon}} = 7.5\text{px}$, transverse orbital semi-major axis $R_x = 85\text{px}$, latitudinal elevation scale $\text{scale}_y = 8.5\text{px/deg}$.
+   * Normalized Synodic Phase Cycle: Let $\text{phaseRad} = \text{phaseValue} \cdot 2\pi \in [0, 2\pi)$, where $\text{phaseValue} \in [0, 1)$ ($0 = \text{New Moon}$, $0.25 = \text{First Quarter}$, $0.5 = \text{Full Moon}$, $0.75 = \text{Third Quarter}$).
    * Projection:
      \[
-     x_s = x_{\text{center}} - \cos(\text{elongation}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y
+     x_s = x_{\text{center}} - \cos(\text{phaseRad}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y, \quad \text{depth} = \sin(\text{phaseRad}) \cdot R_x
      \]
 3. **`projectGeocentricAxial` (Eclipse Right Pane — Sightline View)**:
-   * View direction: Along Sun-Earth axis through Earth (looking toward Moon).
-   * Projection:
+   * View direction: Along Sun-Earth axis through Earth (looking toward Moon along $-\mathbf{e}_X$).
+   * Canonical Canvas & Radii: Default viewport $520 \times 220$ (`viewBox="0 0 520 220"`), center $(X_c, Y_c) = (260, 110)$, background Sun radius $R_\odot = 46\text{px}$ ($\text{depth} = -1000$), foreground Earth radius $R_\oplus = 24\text{px}$ ($\text{depth} = 0$), Moon radius $R_{\text{moon}} = 10.5\text{px}$, transverse orbital semi-major axis $R_x = 150\text{px}$, latitudinal elevation scale $\text{scale}_y = 10.5\text{px/deg}$.
+   * Normalized Synodic Phase Cycle: Let $\text{phaseRad} = \text{phaseValue} \cdot 2\pi \in [0, 2\pi)$, where $\text{phaseValue} \in [0, 1)$ ($0 = \text{New Moon}$, $0.25 = \text{First Quarter}$, $0.5 = \text{Full Moon}$, $0.75 = \text{Third Quarter}$).
+   * Projection (Prograde West-to-East screen transit):
      \[
-     x_s = x_{\text{center}} - \sin(\text{elongation}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y
+     x_s = x_{\text{center}} - \sin(\text{phaseRad}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y, \quad \text{depth} = \cos(\text{phaseRad}) \cdot R_x
      \]
 4. **`projectEulerCamera` (Armillary 3D Apparent View)**:
    * View transformation: $\vec{P}_{\text{cam}} = \mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll}) \vec{P}_{3D}$.

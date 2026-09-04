@@ -242,7 +242,7 @@ Cosmic Engine V2.0/
 │       │       ├── LiveSyzygyView.tsx          # Side-on ecliptic profile & shadow rays
 │       │       ├── LunarSurfacePovView.tsx     # Lunar sky POV with corona & blood ring
 │       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
-│       │       ├── SkyViewSimulator.tsx        # Observer sky viewport (Corona, Blood Moon & Lunar POV)
+│       │       ├── SkyViewSimulator.tsx        # Central Path Totality Track & Lunar POV sky viewport (Corona, Blood Moon & Lunar POV)
 │       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
 │       │       └── index.ts                    # Barrel export
 │       ├── controls/            # Interactive astrolabe inputs
