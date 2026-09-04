@@ -71,6 +71,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F17 | Sky View Simulator Prograde Kinematics | Signed $\Delta\lambda$ transit coordinates in `SkyViewSimulator.tsx`, eliminating bouncing moon bug | M10 | ADR-0008 |
 | F18 | Ground-Truth Prograde Kinematics | Ground-truth CCW heliocentric and geocentric orbits, 2D Kepler focus vector, single source of truth milestones | M11 | ADR-0009 |
 | F19 | Deadwood Purge & Armillary Harmonization | Purged legacy toy orbital positions, rendered Armillary lunar nodes, aligned `orbit_path` ring, deduplicated types | M12 | REFACTOR_PLAN |
+| F20 | Domain Invariants & Physics Conservation Laws | SSoT constants, falsy-0 chirality guards, positive modulo wrapping, degeneracy clamping, independent physics conservation harness | M13 | ADR-0010 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
@@ -87,6 +88,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M10 | Canonical Camera Rig Alignment & Sky View Prograde Kinematics | `cameras.ts`, `useCosmicScene.ts`, `SkyViewSimulator.tsx`, `cameras.stress.test.ts`, ADR-0008, 387 tests | M1-M9 | DONE |
 | M11 | Ground-Truth Heliocentric & Geocentric Prograde Kinematics | `scene/generator.ts`, `milestones.ts`, `cameras.stress.test.ts`, ADR-0009, 389 tests | M1-M10 | DONE |
 | M12 | Post-Kinematics Deadwood Purge & Prograde Model Harmonization | `useCosmicEngine.ts`, `generatorBeads.ts`, `ArmillaryBeadsLayer.tsx`, `generator.ts`, type deduplication, 393 tests | M1-M11 | DONE |
+| M13 | Domain Invariant & Physics Conservation Hardening | `astroConstants.ts`, `domainInvariants.test.ts`, ADR-0010, 412 tests across 21 suites | M1-M12 | DONE |
 
 ## Interface Contracts
 

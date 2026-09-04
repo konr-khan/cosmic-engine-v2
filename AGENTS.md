@@ -105,7 +105,8 @@ Cosmic Engine V2.0/
 │       ├── 0006-armillary-hot-loop-optimization-and-latency-budget.md
 │       ├── 0007-eclipse-axial-upsize-and-prograde-kinematics.md
 │       ├── 0008-canonical-camera-alignment-and-sky-view-prograde-kinematics.md
-│       └── 0009-ground-truth-heliocentric-and-geocentric-prograde-kinematics.md
+│       ├── 0009-ground-truth-heliocentric-and-geocentric-prograde-kinematics.md
+│       └── 0010-domain-invariant-and-physics-conservation-hardening.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
