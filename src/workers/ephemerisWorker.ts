@@ -4,13 +4,17 @@ import {
   calculateAnnualSolarMatrix,
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
+import { EphemerisWorkerRequest, EphemerisWorkerResponse } from '../types/worker';
 
 /**
  * Dedicated Web Worker for off-main-thread Meeus lunar ephemeris,
  * syzygy eclipse shadow geometry, and annual solar/lunar ephemeris matrix calculations.
  */
-self.onmessage = (event: MessageEvent) => {
-  const { type, id, payload } = event.data || {};
+self.onmessage = (event: MessageEvent<EphemerisWorkerRequest>) => {
+  const message = event.data;
+  if (!message) return;
+
+  const { type, id } = message;
 
   if (type === 'CALCULATE_EPHEMERIS') {
     try {
@@ -21,7 +25,7 @@ self.onmessage = (event: MessageEvent) => {
         timeOfDay,
         calculateLunar = true,
         calculateEclipse = true
-      } = payload || {};
+      } = message.payload || {};
 
       const JD_midnight = julianDate - (timeOfDay / 24);
 
@@ -33,7 +37,7 @@ self.onmessage = (event: MessageEvent) => {
         ? calculateEclipseData(julianDate)
         : null;
 
-      self.postMessage({
+      const response: EphemerisWorkerResponse = {
         type: 'EPHEMERIS_SUCCESS',
         id,
         payload: {
@@ -41,51 +45,57 @@ self.onmessage = (event: MessageEvent) => {
           eclipse,
           timestamp: Date.now()
         }
-      });
+      };
+      self.postMessage(response);
     } catch (error) {
-      self.postMessage({
+      const response: EphemerisWorkerResponse = {
         type: 'EPHEMERIS_ERROR',
         id,
         error: error instanceof Error ? error.message : 'Ephemeris worker calculation failed'
-      });
+      };
+      self.postMessage(response);
     }
   } else if (type === 'CALCULATE_ANNUAL_SOLAR') {
     try {
-      const { year, latitude } = payload || {};
+      const { year, latitude } = message.payload || {};
       const annualSolar = calculateAnnualSolarMatrix(year, latitude);
 
-      self.postMessage({
+      const response: EphemerisWorkerResponse = {
         type: 'ANNUAL_SOLAR_SUCCESS',
         id,
         payload: {
           annualSolar
         }
-      });
+      };
+      self.postMessage(response);
     } catch (error) {
-      self.postMessage({
+      const response: EphemerisWorkerResponse = {
         type: 'ANNUAL_SOLAR_ERROR',
         id,
         error: error instanceof Error ? error.message : 'Annual solar worker calculation failed'
-      });
+      };
+      self.postMessage(response);
     }
   } else if (type === 'CALCULATE_ANNUAL_LUNAR') {
     try {
-      const { year, latitude, longitude } = payload || {};
+      const { year, latitude, longitude } = message.payload || {};
       const annualLunar = calculateAnnualLunarMatrix(year, latitude, longitude);
 
-      self.postMessage({
+      const response: EphemerisWorkerResponse = {
         type: 'ANNUAL_LUNAR_SUCCESS',
         id,
         payload: {
           annualLunar
         }
-      });
+      };
+      self.postMessage(response);
     } catch (error) {
-      self.postMessage({
+      const response: EphemerisWorkerResponse = {
         type: 'ANNUAL_LUNAR_ERROR',
         id,
         error: error instanceof Error ? error.message : 'Annual lunar worker calculation failed'
-      });
+      };
+      self.postMessage(response);
     }
   }
 };

@@ -207,7 +207,6 @@ describe('useCosmicEngine Hook Suite', () => {
 
               // Orbital Data checks
               if (orbitalData) {
-                expect(Number.isNaN(orbitalData.userRotation)).toBe(false);
                 expect(Number.isNaN(orbitalData.angles.toSun)).toBe(false);
                 expect(Number.isNaN(orbitalData.angles.toMoon)).toBe(false);
                 expect(Number.isNaN(orbitalData.angles.sunDegrees)).toBe(false);

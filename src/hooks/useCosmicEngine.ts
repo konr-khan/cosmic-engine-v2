@@ -120,10 +120,10 @@ export const useCosmicEngine = (
       const tideRx = baseOceanSize + 6 + (3 * alignmentFactor);
       const tideType: TideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
 
-      const userRotation = ((timeOfDay - 12) * 15) + longitude;
+      const observerMeridianDeg = ((timeOfDay - 12) * 15) + longitude;
       const moonPhaseAngleDeg = phase0to1 * 360;
       
-      let diff = (userRotation - moonPhaseAngleDeg) % 360;
+      let diff = (observerMeridianDeg - moonPhaseAngleDeg) % 360;
       if (diff < 0) diff += 360; 
       
       let localTideStatus: 'High Tide' | 'Low Tide' = "Low Tide";
@@ -145,7 +145,6 @@ export const useCosmicEngine = (
         lunarPos,
         phase: { value: phase0to1, name: getPhaseName(phase0to1) },
         tides: { rx: tideRx, ry: baseOceanSize, type: tideType, alignment: alignmentFactor },
-        userRotation,
         localTideStatus,
         lunarEvents: ephemeris.lunarEvents,
         eclipse: ephemeris.eclipse

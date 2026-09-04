@@ -267,8 +267,6 @@ export interface OrbitalData {
   lunarPos: LunarPosition;
   phase: { value: number; name: LunarPhaseName };
   tides: TidalVectors;
-  /** @deprecated Topocentric observer pin and Earth rotation are now calculated internally by <MiniGlobe />. */
-  userRotation: number;
   localTideStatus: 'High Tide' | 'Low Tide';
   lunarEvents: LunarEvents | null;
   eclipse: EclipseData | null;

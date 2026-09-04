@@ -7,6 +7,8 @@ import {
 import { 
   EphemerisCalculationParams, 
   EphemerisWorkerPayload,
+  EphemerisWorkerRequest,
+  EphemerisWorkerResponse,
   PendingRequestEntry,
   PendingEphemerisEntry,
   PendingAnnualSolarEntry,
@@ -157,8 +159,10 @@ export class EphemerisWorkerManager {
           { type: 'module' }
         );
 
-        this.worker.onmessage = (event: MessageEvent) => {
-          const { type, id, payload } = event.data || {};
+        this.worker.onmessage = (event: MessageEvent<EphemerisWorkerResponse>) => {
+          const response = event.data;
+          if (!response) return;
+          const { type, id } = response;
           if (type === 'EPHEMERIS_SUCCESS') {
             const requestEntry = this.pendingRequests.get(id);
             if (requestEntry && requestEntry.type === 'EPHEMERIS') {
@@ -166,7 +170,7 @@ export class EphemerisWorkerManager {
               this.signatureToRequestId.delete(requestEntry.signature);
               requestEntry.callbacks.forEach((cb) => {
                 try {
-                  cb(payload);
+                  cb(response.payload);
                 } catch (e) {
                   console.error('Ephemeris callback error:', e);
                 }
@@ -184,12 +188,12 @@ export class EphemerisWorkerManager {
             if (requestEntry && requestEntry.type === 'ANNUAL_SOLAR') {
               this.pendingRequests.delete(id);
               this.signatureToRequestId.delete(requestEntry.signature);
-              if (payload?.annualSolar) {
-                this.annualSolarCache.set(requestEntry.signature, payload.annualSolar);
+              if (response.payload?.annualSolar) {
+                this.annualSolarCache.set(requestEntry.signature, response.payload.annualSolar);
               }
               requestEntry.callbacks.forEach((cb) => {
                 try {
-                  cb(payload);
+                  cb(response.payload);
                 } catch (e) {
                   console.error('Annual solar callback error:', e);
                 }
@@ -207,12 +211,12 @@ export class EphemerisWorkerManager {
             if (requestEntry && requestEntry.type === 'ANNUAL_LUNAR') {
               this.pendingRequests.delete(id);
               this.signatureToRequestId.delete(requestEntry.signature);
-              if (payload?.annualLunar) {
-                this.annualLunarCache.set(requestEntry.signature, payload.annualLunar);
+              if (response.payload?.annualLunar) {
+                this.annualLunarCache.set(requestEntry.signature, response.payload.annualLunar);
               }
               requestEntry.callbacks.forEach((cb) => {
                 try {
-                  cb(payload);
+                  cb(response.payload);
                 } catch (e) {
                   console.error('Annual lunar callback error:', e);
                 }
@@ -292,11 +296,12 @@ export class EphemerisWorkerManager {
     this.signatureToRequestId.set(signature, requestId);
 
     try {
-      worker.postMessage({
+      const message: EphemerisWorkerRequest = {
         type: 'CALCULATE_EPHEMERIS',
         id: requestId,
         payload: requestEntry.params
-      });
+      };
+      worker.postMessage(message);
     } catch (error) {
       this._handleWorkerFailure(error);
     }
@@ -369,11 +374,12 @@ export class EphemerisWorkerManager {
     this.signatureToRequestId.set(signature, requestId);
 
     try {
-      worker.postMessage({
+      const message: EphemerisWorkerRequest = {
         type: 'CALCULATE_ANNUAL_SOLAR',
         id: requestId,
         payload: { year, latitude }
-      });
+      };
+      worker.postMessage(message);
     } catch (error) {
       this._handleWorkerFailure(error);
     }
@@ -446,11 +452,12 @@ export class EphemerisWorkerManager {
     this.signatureToRequestId.set(signature, requestId);
 
     try {
-      worker.postMessage({
+      const message: EphemerisWorkerRequest = {
         type: 'CALCULATE_ANNUAL_LUNAR',
         id: requestId,
         payload: { year, latitude, longitude }
-      });
+      };
+      worker.postMessage(message);
     } catch (error) {
       this._handleWorkerFailure(error);
     }
