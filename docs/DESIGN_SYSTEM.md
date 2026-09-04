@@ -10,8 +10,8 @@ Cosmic Engine uses a strict semantic color palette to represent physical astrono
 
 | Color | Hex Token | Tailwind Class | Semantic Usage |
 | :--- | :--- | :--- | :--- |
-| **Sky Blue** | `#38bdf8` | `text-sky-400`, `fill-sky-400`, `bg-sky-400` | **Observer Location Pin ("YOU")**, **Ascending Lunar Orbital Node** ($\beta \ge 0$, North of ecliptic), **High Tide Water Indicator** |
-| **Crimson / Rose** | `#f43f5e` | `text-rose-500`, `fill-rose-500`, `bg-rose-500` | **Descending Lunar Orbital Node** ($\beta < 0$, South of ecliptic), **Negative (Southern) Declination** |
+| **Sky Blue** | `#38bdf8` | `text-sky-400`, `fill-sky-400`, `bg-sky-400` | **Observer Location Pin ("YOU")**, **Ascending Lunar Orbital Node** ($\beta \ge 0$, North of ecliptic, $\Omega$ / $☊$), **High Tide Water Indicator** |
+| **Rose Red** | `#f43f5e` | `text-rose-500`, `fill-rose-500`, `bg-rose-500` | **Descending Lunar Orbital Node** ($\beta < 0$, South of ecliptic, $\mho$ / $☋$), **Negative (Southern) Declination** |
 | **Amber / Gold** | `#fbbf24` / `#fde047` | `text-amber-400`, `fill-amber-400`, `border-amber-400` | **Subsolar Point**, **Daylight Hemisphere** ($h \ge -0.833^\circ$), **Sun Ray Vectors**, **Daylight Terminator Rim**, **Solar Noon Action** |
 | **Civil Twilight Amber** | `#fcd34d` | `fill-amber-400/80`, `text-amber-300` | **Civil Twilight Band** ($-6.0^\circ \le h < -0.833^\circ$, horizon visible, bright stars emerge) |
 | **Nautical Twilight Slate** | `#64748b` | `fill-slate-500`, `text-slate-400` | **Nautical Twilight Band** ($-12.0^\circ \le h < -6.0^\circ$, sea horizon fades, navigation stars visible) |
@@ -46,7 +46,11 @@ To maximize information density without adding text clutter, orbital loops and c
   - **Outer Double-Grooved Brass Bezel**: Expands radially (`transform="scale(0.94 + 0.06 * opacity)"`, `#b45309`/`#78350f`, $0.75\text{px}$) with $0.5\text{px}-0.75\text{px}$ micro-ticks and delicate monospace Roman numeral micro-labels (`text-[8px] font-mono fill-amber-300/80`).
   - **Tympan Altitude Arcs (Almucantars)**: Smoothly glide from eccentric stereographic circles to concentric horizon stereonet rings (`transform="scale(0.94 + 0.06 * progress)"`, `#06b6d4` for horizon, `#64748b` dashed for altitudes).
   - **Alidade Sighting Arm**: Expands radially (`transform="scale(0.92 + 0.08 * opacity)"`) from the center pivot reticle pin.
-* **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 glowing milestone halo nodes (Perihelion `#a855f7`, Solstices `#38bdf8`/`#f43f5e`, Equinoxes `#34d399`/`#fbbf24`, Aphelion `#818cf8`) featuring geodesic spherical SLERP trajectories.
+* **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 milestone nodes featuring geodesic spherical SLERP trajectories:
+  - **Milestone Color Codes**: Perihelion `#a855f7` (Purple), June Solstice `#38bdf8` (Sky Blue), December Solstice `#f43f5e` (Rose Red), March Equinox `#34d399` (Emerald), September Equinox `#fbbf24` (Amber), Aphelion `#818cf8` (Indigo).
+  - **Seasonal Milestone Halo Tokens**:
+    - *Resting State*: Translucent outer halo (`fill={color}`, `opacity="0.20"`, `r="11px"`), inner core node (`r="5.5px"`, `fill={color}`, `stroke="#ffffff"`, `strokeWidth="1.5"`, `className="drop-shadow-md"`).
+    - *Hover State*: Expanded glowing halo (`opacity="0.45"`, `r="18px"`, `className="animate-pulse"`), expanded core node (`r="8px"`).
 * **Earth Bead**: Sky blue core (`#0284c7`, `#38bdf8`) with atmospheric glow and $23.44^\circ$ axial tilt vector.
 * **Parametric Sun Bead**: Mathematically clamped directly to $(r_0 \cos\lambda, r_0 \sin\lambda \sin\epsilon, r_0 \sin\lambda \cos\epsilon)$ on the Ecliptic track across all 4 seasons and free Rete rotation (residual $< 1.42 \times 10^{-13}\text{ px}$).
 * **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$) or freely in Astrolabe Solver Mode.
@@ -54,10 +58,10 @@ To maximize information density without adding text clutter, orbital loops and c
 * **SED Hairline Alidade Sighting Arm**: Slim $1.6\text{px}$ brass ruler body with dark wood inlay (`#78350f`, $0.75\text{px}$), cyan laser sightline (`#38bdf8`, $0.75\text{px}$ dashed), dual pinhole pinnule sighting vanes, and central reticle pin.
 
 ### B. Lunar Orbit Segmentation (Dual Eclipse Demonstrator & Macro Orbit)
-* **Solid Stroke (`stroke-width="1.5"`)**: **Waxing Moon** ($0^\circ \to 180^\circ$ elongation).
-* **Dashed Stroke (`stroke-dasharray="4 3"`)**: **Waning Moon** ($180^\circ \to 360^\circ$ elongation).
-* **Sky Blue Stroke (`#38bdf8`)**: Orbital segment is **North of Ecliptic** ($\beta \ge 0$, Ascending hemisphere).
-* **Rose Stroke (`#f43f5e`)**: Orbital segment is **South of Ecliptic** ($\beta < 0$, Descending hemisphere).
+* **Solid Stroke (`stroke-width="1.2"`)**: **Waxing Moon** ($0^\circ \to 180^\circ$ elongation).
+* **Dashed Stroke (`stroke-dasharray="4 3"`, `stroke-width="1.2"`)**: **Waning Moon** ($180^\circ \to 360^\circ$ elongation).
+* **Sky Blue Stroke (`#38bdf8`)**: Orbital segment is **North of Ecliptic** ($\beta \ge 0$, Ascending hemisphere, $\Omega$ / $☊$).
+* **Rose Red Stroke (`#f43f5e`)**: Orbital segment is **South of Ecliptic** ($\beta < 0$, Descending hemisphere, $\mho$ / $☋$).
 * **Prograde Transit Direction (Axial Sightline)**: When looking toward the Sun with North UP, East is Left and West is Right. The lunar transit traverses from **Right to Left (West to East)** across the face of the Sun during solar eclipses ($s = -\sin(\text{phaseRad})$).
 
 ### C. Sky View Simulator & Perspectival Eclipse Tokens
@@ -220,4 +224,4 @@ The Eclipse Demonstrator renders two synchronized, mathematically aligned perspe
   - **Target Shadow Cones**: Umbra core radius $R = 18\text{px}$; Penumbra envelope radius $R = 34\text{px}$.
   - **Lunar Orbit**: Semi-major axis $R_x = 150\text{px}$ across the $520\text{px}$ width; vertical inclination scale $10.5\text{px/deg}$ ($y \in [56, 164]$ at maximum inclination $\beta = \pm 5.14^\circ$).
   - **Moon Bead**: Base radius $R = 10.5\text{px}$ with dynamic ephemeris angular scaling ($8.5\text{px} \dots 12.5\text{px}$).
-  - **Node Pins**: Radius $R = 4\text{px}$ with high-contrast text labels (`☊ Node` in Sky Blue, `☋ Node` in Crimson Red).
+  - **Node Pins**: Radius $R = 4\text{px}$ with high-contrast text labels (`☊ Node` in Sky Blue, `☋ Node` in Rose Red).

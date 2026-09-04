@@ -154,11 +154,11 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
         <g className="pointer-events-none">
           {/* Waning Ascending: Dashed Sky Blue */}
           {wanAsc.length > 0 && (
-            <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.9" />
+            <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
           )}
-          {/* Waning Descending: Dashed Crimson Red */}
+          {/* Waning Descending: Dashed Rose Red */}
           {wanDesc.length > 0 && (
-            <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.9" />
+            <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
           )}
         </g>
 
@@ -218,11 +218,11 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
         <g className="pointer-events-none">
           {/* Waxing Ascending: Solid Sky Blue */}
           {waxAsc.length > 0 && (
-            <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.5" opacity="0.9" />
+            <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />
           )}
-          {/* Waxing Descending: Solid Crimson Red */}
+          {/* Waxing Descending: Solid Rose Red */}
           {waxDesc.length > 0 && (
-            <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.5" opacity="0.9" />
+            <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" opacity="0.9" />
           )}
 
           {/* Ascending Node Marker (☊) */}

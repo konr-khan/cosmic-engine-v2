@@ -97,8 +97,8 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
 
       {/* 4. BACK LUNAR ORBIT (Waning: Dashed stroke, behind Earth) */}
       <g className="pointer-events-none">
-        {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
-        {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.9" />}
+        {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />}
+        {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />}
       </g>
 
       {/* Line connecting Earth and Moon (Back) */}
@@ -155,8 +155,8 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
 
       {/* 6. FRONT LUNAR ORBIT (Waxing: Solid stroke, in front of Earth) */}
       <g className="pointer-events-none">
-        {waxAsc.length > 0 && <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.4" opacity="0.9" />}
-        {waxDesc.length > 0 && <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.4" opacity="0.9" />}
+        {waxAsc.length > 0 && <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />}
+        {waxDesc.length > 0 && <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" opacity="0.9" />}
 
         {/* Ascending Node Marker (☊) */}
         <circle cx={ascNodeX} cy={ascNodeY} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />

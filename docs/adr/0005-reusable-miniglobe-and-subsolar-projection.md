@@ -41,7 +41,7 @@ graph TD
 5. **Layer 4 (Parallels)**: Dashed cyan Equator ($0^\circ$, `#38bdf8`) and slate Tropics of Cancer ($+23.44^\circ$) and Capricorn ($-23.44^\circ$, `#64748b`).
 6. **Layer 5 (Polar Axis)**: $23.44^\circ$ Rotational polar axis stroke (`#93c5fd`, dashed `2.5 1.5`).
 7. **Layer 6 (Specular Limb Rim)**: Concentric hairline outer ($1.2\text{px}$, `#60a5fa`) and inner ($0.4\text{px}$, `#93c5fd`) strokes preserving a crisp planetary boundary across all zoom levels.
-8. **Layer 7 (Topocentric Observer Pin)**: Pulsing cyan observer location pin ("YOU") at geographic $(\phi, \lambda)$ reporting real-time local daylight status (pulsing `#38bdf8` in daylight, muted `#64748b` in night).
+8. **Layer 7 (Topocentric Observer Pin)**: Pulsing cyan observer location pin ("YOU") at geographic $(\phi, \lambda)$ reporting real-time local daylight status (pulsing `#38bdf8` in daylight, muted `#94a3b8` in night [Slate-400]).
 9. **Layer 8 (Label)**: Optional monospace bold uppercase identifier (`label="EARTH"`).
 10. **Layer 9 (Hit Target)**: Transparent circle ($r = \max(16, 1.6 R)$) providing stable mouse/touch pointer interactions without jitter.
 
