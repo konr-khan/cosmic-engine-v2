@@ -731,9 +731,9 @@ Each camera projection transforms 3D scene objects into 2D SVG screen coordinate
 
 1. **`projectHeliocentricTopDown` (Macro Orbit View)**:
    * View direction: Along $-Z_{\text{ecl}}$ (looking from North Ecliptic Pole down onto $XY$ plane).
-   * Projection:
+   * Projection (where $+Y_{\text{screen}}$ downward mapping ensures prograde counter-clockwise orbital motion; Keplerian $b/a$ eccentricity scaling is handled directly in scene generation):
      \[
-     x_s = x_{\text{center}} + x_{\text{ecl}} \cdot \text{scale}, \quad y_s = y_{\text{center}} - y_{\text{ecl}} \cdot \text{scale} \cdot b/a
+     x_s = x_{\text{center}} + x_{\text{ecl}} \cdot \text{scale}, \quad y_s = y_{\text{center}} + y_{\text{ecl}} \cdot \text{scale}
      \]
 2. **`projectGeocentricTransverse` (Eclipse Left Pane — Side Profile)**:
    * View direction: Perpendicular to Sun-Earth syzygy axis (along $-Y_{\text{syzygy}}$).

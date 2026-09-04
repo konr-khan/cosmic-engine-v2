@@ -89,6 +89,7 @@ Cosmic Engine V2.0/
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & getting started
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
+├── DEAD_ENDS.md                 # Critical log of failed historical approaches & solutions
 ├── scripts/                     # Build, linting & verification scripts
 │   ├── lintUnitSafety.mjs       # Babel AST unit-safety linter checking UI components
 │   └── syncDocMetrics.mjs       # Automated test metric synchronizer for docs
@@ -117,7 +118,6 @@ Cosmic Engine V2.0/
 │   │   ├── astronomy.ts         # Astronomical models (SolarPosition, LunarPosition, EclipseData)
 │   │   ├── worker.ts            # Web Worker RPC contracts & serialization payloads
 │   │   ├── store.ts             # Store contracts & window layout types
-│   │   ├── unitSafety.test.ts   # Vitest tests for AST unit-safety guardrails (2 tests)
 │   │   └── index.ts             # Central re-export entry
 │   ├── utils/
 │   │   ├── cosmicMath/          # Pure astronomical math domain modules
@@ -157,7 +157,6 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generator.ts      # generateArmillaryModel pipeline orchestrator
 │   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (7 tests)
-│   │   │   └── armillary.ts     # Re-export bridge to ./armillary
 │   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (126 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
