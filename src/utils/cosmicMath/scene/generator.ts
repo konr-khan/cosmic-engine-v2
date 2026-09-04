@@ -6,18 +6,20 @@
  * seasonal milestone nodes, 3D inclined lunar trajectories, and syzygy shadow cones.
  */
 
-import { Degrees, Radians, JulianDate, asDegrees, asRadians, asJulianDate, toRadians } from '../../../types/units';
+import { asDegrees, asRadians, asJulianDate, toRadians } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 import { dateToJulianDate, julianDateToDate } from '../core';
 import { 
   J2000_JD, 
   ASTRONOMICAL_UNIT_KM, 
+  EARTH_RADIUS_WGS84_KM,
+  SUN_RADIUS_KM,
   EARTH_AXIAL_OBLIQUITY_J2000_DEG, 
   EARTH_ECCENTRICITY_TRUE, 
   EARTH_ECCENTRICITY_EXAGGERATED,
   EARTH_PERIHELION_LONGITUDE_DEG
 } from '../astroConstants';
-import { calculateSolarPosition, calculateEarthOrbitalPhysics } from '../solar';
+import { calculateEarthOrbitalPhysics } from '../solar';
 import { calculateLunarPosition } from '../lunar';
 import { calculateEclipseData } from '../eclipse';
 import { EARTH_MILESTONES } from '../milestones';
@@ -248,8 +250,8 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   };
 
   // 8. 3D Umbra & Penumbra Shadow Cones
-  const rSunKm = 696340.0;
-  const rEarthKm = 6378.137;
+  const rSunKm = SUN_RADIUS_KM;
+  const rEarthKm = EARTH_RADIUS_WGS84_KM;
   const sinUmbra = (rSunKm - rEarthKm) / distKm;
   const umbraAngle = Math.asin(Math.max(0, Math.min(1, sinUmbra)));
   const umbraLengthKm = rEarthKm / sinUmbra;

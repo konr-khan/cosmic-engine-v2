@@ -9,7 +9,7 @@ import {
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
 import { JulianDate, asJulianDate } from '../../types/units';
-import { EclipseType, EclipseScannerPreset } from '../../types/astronomy';
+import { EclipseType } from '../../types/astronomy';
 
 export interface EclipseCalculationResult {
   type: EclipseType;

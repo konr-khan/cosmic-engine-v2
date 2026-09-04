@@ -50,12 +50,14 @@ import {
   rotatePointEuler3D,
   calculateShadowCones3D,
   OBLIQUITY_J2000_DEG,
-  OBLIQUITY_J2000_RAD,
-  SUN_RADIUS_KM,
-  EARTH_RADIUS_KM,
-  MOON_RADIUS_KM,
-  AU_IN_KM
+  OBLIQUITY_J2000_RAD
 } from './index';
+import { 
+  SUN_RADIUS_KM, 
+  ASTRONOMICAL_UNIT_KM, 
+  EARTH_RADIUS_WGS84_KM, 
+  MOON_RADIUS_MEAN_KM 
+} from '../astroConstants';
 import { toRadians, toDegrees, asDegrees, asRadians } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 
@@ -68,7 +70,7 @@ describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', ()
 
     it('empirically verifies Vis-Viva specific orbital energy conservation (E = v^2/2 - mu/r = const) across all 6 seasonal milestones', () => {
       const GM_SUN = 1.32712440018e11; // km^3 / s^2 (Standard gravitational parameter of the Sun)
-      const SEMI_MAJOR_AXIS_KM = AU_IN_KM; // ~149,597,870.7 km
+      const SEMI_MAJOR_AXIS_KM = ASTRONOMICAL_UNIT_KM; // ~149,597,870.7 km
       const EXPECTED_SPECIFIC_ENERGY = -GM_SUN / (2 * SEMI_MAJOR_AXIS_KM); // ~ -443.56 km^2/s^2
 
       const scene = generateCosmicScene({ scaleMode: 'true' });
@@ -121,7 +123,7 @@ describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', ()
         expect(r_AU).toBeLessThanOrEqual(1.020);
 
         // Distance in km must match AU conversion (1 AU = 149597870.7 km) within 0.1%
-        expect(r_km / AU_IN_KM).toBeCloseTo(r_AU, 2);
+        expect(r_km / ASTRONOMICAL_UNIT_KM).toBeCloseTo(r_AU, 2);
 
         // Orbital speed must remain bounded within [29.0 km/s, 30.5 km/s]
         expect(v_kms).toBeGreaterThanOrEqual(29.0);
@@ -332,8 +334,8 @@ describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', ()
         const scene = generateCosmicScene({ julianDate: baseJD + day, scaleMode: 'true' });
         const d_km = scene.earth.distanceKm;
 
-        const expectedUmbraLengthKm = (EARTH_RADIUS_KM * d_km) / (SUN_RADIUS_KM - EARTH_RADIUS_KM);
-        const expectedPenumbraLengthKm = (EARTH_RADIUS_KM * d_km) / (SUN_RADIUS_KM + EARTH_RADIUS_KM);
+        const expectedUmbraLengthKm = (EARTH_RADIUS_WGS84_KM * d_km) / (SUN_RADIUS_KM - EARTH_RADIUS_WGS84_KM);
+        const expectedPenumbraLengthKm = (EARTH_RADIUS_WGS84_KM * d_km) / (SUN_RADIUS_KM + EARTH_RADIUS_WGS84_KM);
 
         expect(scene.shadowCones.umbraLengthKm).toBeCloseTo(expectedUmbraLengthKm, 2);
         expect(scene.shadowCones.penumbraLengthKm).toBeCloseTo(expectedPenumbraLengthKm, 2);
@@ -350,15 +352,15 @@ describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', ()
 
     it('validates standalone calculateShadowCones3D solver for both Solar Eclipse (Moon occluder) and Lunar Eclipse (Earth occluder)', () => {
       const sunCenter: Vector3D = { x: 0, y: 0, z: 0 };
-      const earthCenter: Vector3D = { x: AU_IN_KM, y: 0, z: 0 };
-      const moonCenter: Vector3D = { x: AU_IN_KM - 384400, y: 0, z: 0 }; // New Moon (Solar eclipse geometry)
+      const earthCenter: Vector3D = { x: ASTRONOMICAL_UNIT_KM, y: 0, z: 0 };
+      const moonCenter: Vector3D = { x: ASTRONOMICAL_UNIT_KM - 384400, y: 0, z: 0 }; // New Moon (Solar eclipse geometry)
 
       // 1. Solar Eclipse: Moon occludes Sun
       const solarShadow = calculateShadowCones3D(
         sunCenter,
         SUN_RADIUS_KM,
         moonCenter,
-        MOON_RADIUS_KM,
+        MOON_RADIUS_MEAN_KM,
         earthCenter
       );
 
@@ -372,7 +374,7 @@ describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', ()
         sunCenter,
         SUN_RADIUS_KM,
         earthCenter,
-        EARTH_RADIUS_KM,
+        EARTH_RADIUS_WGS84_KM,
         moonCenter
       );
 

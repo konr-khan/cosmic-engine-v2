@@ -27,15 +27,12 @@ export type Latitude = number;
 export type Longitude = number;
 export type HoursDecimal = number;
 export type DayOfYear = number;
-export type Pixels = number;
 export type SpeedMultiplier = number;
-export type Percentage = number;
 
 // Nominal Type Casting & Constructor Helpers
 export const asDegrees = (val: number): Degrees => val as Degrees;
 export const asRadians = (val: number): Radians => val as Radians;
 export const asJulianDate = (val: number): JulianDate => val as JulianDate;
-export const asCenturies = (val: number): JulianCenturies => val as JulianCenturies;
 
 /**
  * Converts decimal degrees to radians.

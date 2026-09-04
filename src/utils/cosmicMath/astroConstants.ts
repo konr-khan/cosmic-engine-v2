@@ -27,6 +27,11 @@ export const DAYS_IN_YEAR_MEAN = 365.25;
 export const DAYS_IN_SYNODIC_MONTH = 29.530589;
 
 /**
+ * Sun volumetric mean radius in kilometers (IAU definition).
+ */
+export const SUN_RADIUS_KM = 696340.0;
+
+/**
  * International Astronomical Union (IAU) 2012 definition of 1 Astronomical Unit in kilometers.
  */
 export const ASTRONOMICAL_UNIT_KM = 149597870.7;

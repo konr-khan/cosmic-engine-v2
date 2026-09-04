@@ -9,15 +9,11 @@ import { Vector2D, Vector3D, AltAzimuthCoordinates, EquatorialCoordinates, Eclip
 import { Matrix3x3, ShadowCones3D } from './types';
 import { clamp } from '../core';
 
-// Standard J2000.0 Earth Obliquity
-export const OBLIQUITY_J2000_DEG = 23.439281;
-export const OBLIQUITY_J2000_RAD = (23.439281 * Math.PI) / 180;
+import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../astroConstants';
 
-// Astronomical Dimensions in Kilometers
-export const SUN_RADIUS_KM = 696340.0;
-export const EARTH_RADIUS_KM = 6378.137;
-export const MOON_RADIUS_KM = 1737.4;
-export const AU_IN_KM = 149597870.7;
+// Standard J2000.0 Earth Obliquity derived from SSoT
+export const OBLIQUITY_J2000_DEG = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
+export const OBLIQUITY_J2000_RAD = (OBLIQUITY_J2000_DEG * Math.PI) / 180;
 
 // ==========================================
 // 1. 3x3 Matrix Algebra & Vector Operations

@@ -29,18 +29,6 @@ export interface EphemerisFrame {
   isMidnightSun: boolean;
 }
 
-/** Standard twilight elevation thresholds below true horizon */
-export interface TwilightThresholds {
-  /** Center of solar disc on true horizon (-0.833° accounting for refraction & solar radius) */
-  OFFICIAL: Degrees | number;
-  /** Civil twilight threshold (-6°) */
-  CIVIL: Degrees | number;
-  /** Nautical twilight threshold (-12°) */
-  NAUTICAL: Degrees | number;
-  /** Astronomical twilight threshold (-18°) */
-  ASTRONOMICAL: Degrees | number;
-}
-
 /** Instantaneous solar position parameters */
 export interface SolarPosition {
   declination: Degrees | number;
@@ -114,9 +102,6 @@ export interface AnnualSolarMatrixItem {
   astroDusk: number;
   dayLength: number;
 }
-
-/** Alias for annual solar matrix item record */
-export type SolarMatrixRecord = AnnualSolarMatrixItem;
 
 /** Lunar phase classification names */
 export type LunarPhaseName = 
@@ -199,9 +184,6 @@ export interface AnnualLunarMatrixItem {
   distanceKm: number;
   polarState?: 'circumpolar_up' | 'circumpolar_down' | 'regular';
 }
-
-/** Alias for annual lunar matrix item record */
-export type LunarMatrixRecord = AnnualLunarMatrixItem;
 
 /** Gravitational tidal classification */
 export type TideType = 'Spring Tide' | 'Neap Tide' | 'Transitional';

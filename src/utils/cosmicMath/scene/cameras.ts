@@ -9,8 +9,8 @@
  * 4. projectEulerCamera: Generalized 3D Euler camera with Pitch, Yaw, Roll and depth sorting
  */
 
-import { Degrees, Radians, asDegrees, toRadians, toDegrees } from '../../../types/units';
-import { Vector2D, Vector3D } from '../../../types/coordinates';
+import { Degrees, asDegrees, toRadians, toDegrees } from '../../../types/units';
+import { Vector3D } from '../../../types/coordinates';
 import { 
   CosmicScene3D, 
   ProjectedScene2D, 
@@ -21,7 +21,7 @@ import {
   LunarOrbitSegment2D, 
   ProjectedShadowCones2D 
 } from './types';
-import { rotatePointEuler3D, createEulerRotationMatrix } from './transforms';
+import { createEulerRotationMatrix } from './transforms';
 import { generateOrbitalSegments } from '../projection';
 
 /** Options for standard 2D camera viewport configuration */
