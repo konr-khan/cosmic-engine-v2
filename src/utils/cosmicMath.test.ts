@@ -2067,7 +2067,7 @@ describe('cosmicMath utilities', () => {
     });
 
     describe('Stereographic Conformal Closed-Form & Invariant Verification (Milestone 1)', () => {
-      const EPS_DEG = 23.439;
+      const EPS_DEG = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
       const EPS_RAD = (EPS_DEG * Math.PI) / 180;
 
       // -------------------------------------------------------------------------

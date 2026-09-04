@@ -42,9 +42,19 @@ export const ASTRONOMICAL_UNIT_KM = 149597870.7;
 export const EARTH_RADIUS_WGS84_KM = 6378.137;
 
 /**
+ * Earth volumetric mean radius in kilometers (IUGG standard).
+ */
+export const EARTH_RADIUS_MEAN_KM = 6371.0;
+
+/**
  * Moon volumetric mean radius in kilometers (IAU definition).
  */
 export const MOON_RADIUS_MEAN_KM = 1737.4;
+
+/**
+ * Moon mean semi-major axis distance from Earth in kilometers.
+ */
+export const MOON_MEAN_DISTANCE_KM = 384400.0;
 
 /**
  * Moon mean diameter in kilometers (2 * 1737 km).
@@ -74,7 +84,7 @@ export const EARTH_AXIAL_OBLIQUITY_J2000_DEG: Degrees = asDegrees(23.439281);
 /**
  * Lunar orbital inclination to the ecliptic plane in degrees (5.145°).
  */
-export const MOON_ORBIT_INCLINATION_DEG: Degrees = asDegrees(5.14);
+export const MOON_ORBIT_INCLINATION_DEG: Degrees = asDegrees(5.145);
 
 /**
  * Lunar perigee distance threshold in kilometers.

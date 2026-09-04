@@ -1,12 +1,13 @@
 import { Degrees, Latitude, Longitude, JulianDate, asDegrees } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 import { toRadians, toDegrees, clamp } from '../core';
+import { J2000_JD } from '../astroConstants';
 
 /**
  * Computes Greenwich Mean Sidereal Time (GMST) in degrees [0, 360).
  */
 export function calculateGMST(julianDate: JulianDate | number): Degrees {
-  const d = julianDate - 2451545.0;
+  const d = julianDate - J2000_JD;
   const gmst = (280.46061837 + 360.98564736629 * d) % 360;
   return asDegrees((gmst + 360) % 360);
 }

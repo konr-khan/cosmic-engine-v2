@@ -7,6 +7,7 @@
 import { Degrees, Latitude, Longitude, asDegrees } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
 import { toRadians, toDegrees, clamp, slerp3D } from '../core';
+import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../astroConstants';
 import { EARTH_MILESTONES } from '../milestones';
 import { ASTROLABE_STARS } from './constants';
 import { equatorialToCartesian3D, equatorialToHorizontal, rotateEuler3D } from './coordinates';
@@ -97,7 +98,7 @@ export function computeArmillaryLunarNodes(params: {
   obliquity?: number;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
 }): ArmillaryLunarNodes {
-  const { isHelioMode, isGeoApparent = false, blendedEarth3D, nodeLonDeg = 0, obliquity = 23.439, transformVertex } = params;
+  const { isHelioMode, isGeoApparent = false, blendedEarth3D, nodeLonDeg = 0, obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG), transformVertex } = params;
 
   const nodeDist = isHelioMode ? 16 : 26;
   const nodeRad = toRadians(nodeLonDeg);

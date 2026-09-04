@@ -4,7 +4,8 @@ import {
   ASTRONOMICAL_UNIT_KM, 
   EARTH_ORBITAL_SPEED_MEAN_KMS, 
   SOLAR_IRRADIANCE_1AU_WM2, 
-  SUN_ANGULAR_DIAMETER_1AU_ARCMIN 
+  SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG
 } from './astroConstants';
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees } from '../../types/units';
@@ -28,7 +29,7 @@ export const calculateSolarPosition = (julianDate: JulianDate | number): SolarPo
   const gRad = toRadians(g);
   const lambda = L + 1.915 * Math.sin(gRad) + 0.020 * Math.sin(2 * gRad);
   const lambdaRad = toRadians(lambda);
-  const epsilon = 23.439 - 0.0000004 * n;
+  const epsilon = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG) - 0.0000004 * n;
   const epsilonRad = toRadians(epsilon);
   
   const alphaRad = Math.atan2(Math.cos(epsilonRad) * Math.sin(lambdaRad), Math.cos(lambdaRad));

@@ -6,6 +6,11 @@
 import { Vector3D } from '../../../types/coordinates';
 import { toRadians, clamp } from '../core';
 import { EARTH_MILESTONES } from '../milestones';
+import { 
+  EARTH_ECCENTRICITY_TRUE, 
+  EARTH_ECCENTRICITY_EXAGGERATED, 
+  MOON_ORBIT_INCLINATION_DEG 
+} from '../astroConstants';
 import { equatorialToCartesian3D, rotateEuler3D } from './coordinates';
 import { ArmillaryModelMode } from './types';
 
@@ -63,7 +68,7 @@ export function computeRawModeGeometry(
 
   if (isHelio) {
     const a = r0 * 1.1;
-    const e = exaggerateEccentricity ? 0.25 : 0.01671;
+    const e = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
     const b = a * Math.sqrt(1 - e * e);
     const c = a * e;
     const sun3D = exaggerateEccentricity ? { x: -c, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
@@ -80,7 +85,7 @@ export function computeRawModeGeometry(
     const moonAngleRad = toRadians(moonLambdaDeg);
     const moon3D: Vector3D = {
       x: earth3D.x + 16 * Math.cos(moonAngleRad),
-      y: earth3D.y + 16 * Math.sin(toRadians(5.14)) * Math.sin(moonAngleRad),
+      y: earth3D.y + 16 * Math.sin(toRadians(MOON_ORBIT_INCLINATION_DEG)) * Math.sin(moonAngleRad),
       z: earth3D.z - 16 * Math.sin(moonAngleRad)
     };
 

@@ -1,10 +1,12 @@
-import { getJulianDate, toRadians, toDegrees } from './core';
+import { getJulianDate, julianDateToDate, toRadians, toDegrees } from './core';
 import { 
+  J2000_JD,
   ASTRONOMICAL_UNIT_KM, 
   EARTH_RADIUS_WGS84_KM, 
   MOON_RADIUS_MEAN_KM, 
   MOON_DIAMETER_KM, 
-  SUN_ANGULAR_DIAMETER_1AU_ARCMIN 
+  SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
+  MOON_ORBIT_INCLINATION_DEG
 } from './astroConstants';
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
@@ -131,9 +133,9 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
     }
   }
 
-  // Node proximity metric (0° = exact node crossing, 5.14° = max tilt)
+  // Node proximity metric (0° = exact node crossing, 5.145° = max tilt)
   const nodeProximityDeg = parseFloat(absBeta.toFixed(2));
-  const alignmentPercent = Math.max(0, Math.min(100, Math.round((1 - absBeta / 5.14) * 100)));
+  const alignmentPercent = Math.max(0, Math.min(100, Math.round((1 - absBeta / Number(MOON_ORBIT_INCLINATION_DEG)) * 100)));
 
   // Shadow Cone radiuses (scaled for visual rendering)
   const umbraRadiusKm = Math.max(0, MOON_DIAMETER_KM - (distanceKm * 0.009));
@@ -244,7 +246,7 @@ export interface UpcomingEclipseEvent extends EclipseCalculationResult {
  * @returns List of upcoming eclipse events
  */
 export const findUpcomingEclipses = (
-  startDate: Date = new Date(), 
+  startDate: Date = julianDateToDate(J2000_JD), 
   limit: number = 4
 ): UpcomingEclipseEvent[] => {
   const list: UpcomingEclipseEvent[] = [];

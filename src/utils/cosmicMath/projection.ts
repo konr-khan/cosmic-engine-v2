@@ -6,6 +6,7 @@
  */
 
 import { toRadians } from './core';
+import { EARTH_AXIAL_OBLIQUITY_J2000_DEG, MOON_ORBIT_INCLINATION_DEG } from './astroConstants';
 
 export interface EarthSideGeometry {
   earthR: number;
@@ -39,7 +40,7 @@ export function calculateEarthSideGeometry(
   timeOfDay: number,
   longitude: number = 0
 ): EarthSideGeometry {
-  const epsRad = toRadians(23.439281);
+  const epsRad = toRadians(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
   const sunLambdaRad = toRadians(sunLambdaDeg);
 
   // Projected tilt in side-on view (Sun on left at -X, Earth at center):
@@ -120,7 +121,7 @@ export function calculateEarthAxialGeometry(
   longitude: number = 0
 ): EarthAxialGeometry {
   const earthR = earthRadius;
-  const epsRad = toRadians(23.439281); // Earth obliquity 23.44°
+  const epsRad = toRadians(EARTH_AXIAL_OBLIQUITY_J2000_DEG); // Earth obliquity 23.44°
   const sunLambdaRad = toRadians(sunLambdaDeg);
 
   // Unit vectors in screen projection (Z facing viewer along Sun->Earth sightline):
@@ -223,20 +224,21 @@ export function generateOrbitalSegments(
     const t2 = ((i + 1) / steps) * 2 * Math.PI;
 
     let x1: number, y1: number, x2: number, y2: number;
+    const incDeg = Number(MOON_ORBIT_INCLINATION_DEG);
     if (projection === 'side') {
       x1 = centerX - Math.cos(t1) * rx;
-      y1 = centerY - Math.sin(t1 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+      y1 = centerY - Math.sin(t1 + nodeAngleRad) * incDeg * scalePxPerDeg;
       x2 = centerX - Math.cos(t2) * rx;
-      y2 = centerY - Math.sin(t2 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+      y2 = centerY - Math.sin(t2 + nodeAngleRad) * incDeg * scalePxPerDeg;
     } else {
       x1 = centerX - Math.sin(t1) * rx;
-      y1 = centerY - Math.sin(t1 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+      y1 = centerY - Math.sin(t1 + nodeAngleRad) * incDeg * scalePxPerDeg;
       x2 = centerX - Math.sin(t2) * rx;
-      y2 = centerY - Math.sin(t2 + nodeAngleRad) * 5.145 * scalePxPerDeg;
+      y2 = centerY - Math.sin(t2 + nodeAngleRad) * incDeg * scalePxPerDeg;
     }
 
     const midT = (t1 + t2) / 2;
-    const midBeta = Math.sin(midT + nodeAngleRad) * 5.145;
+    const midBeta = Math.sin(midT + nodeAngleRad) * incDeg;
     const isWax = midT <= Math.PI;
     const isAsc = midBeta >= 0;
 

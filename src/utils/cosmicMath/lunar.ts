@@ -1,5 +1,15 @@
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
-import { LUNAR_PERIGEE_THRESHOLD_KM, LUNAR_APOGEE_THRESHOLD_KM } from './astroConstants';
+import { 
+  J2000_JD,
+  ASTRONOMICAL_UNIT_KM,
+  EARTH_RADIUS_WGS84_KM,
+  EARTH_RADIUS_MEAN_KM,
+  MOON_RADIUS_MEAN_KM,
+  MOON_MEAN_DISTANCE_KM,
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG,
+  LUNAR_PERIGEE_THRESHOLD_KM, 
+  LUNAR_APOGEE_THRESHOLD_KM 
+} from './astroConstants';
 import { calculateSolarPosition } from './solar';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees, HoursDecimal, julianDateToCenturies } from '../../types/units';
 import { 
@@ -60,7 +70,7 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
     - 2956 * Math.cos(2 * dRad)
     - 569 * Math.cos(2 * mpRad);
 
-  const epsilon = 23.439 - 0.0000004 * (julianDate - 2451545.0);
+  const epsilon = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG) - 0.0000004 * (julianDate - J2000_JD);
   const epsRad = toRadians(epsilon);
   const lRad = toRadians(lambda);
   const bRad = toRadians(beta);
@@ -78,18 +88,18 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
   const normLambda = ((lambda % 360) + 360) % 360;
   const nodeLongitude = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
   const descendingNodeLongitude = (nodeLongitude + 180) % 360;
-  const angularRadiusDeg = toDegrees(Math.asin(1737.4 / distanceKm));
-  const parallaxDeg = toDegrees(Math.asin(6378.137 / distanceKm));
+  const angularRadiusDeg = toDegrees(Math.asin(MOON_RADIUS_MEAN_KM / distanceKm));
+  const parallaxDeg = toDegrees(Math.asin(EARTH_RADIUS_WGS84_KM / distanceKm));
 
   // --- Meeus Ch. 48 Geocentric Phase Angle (i) & True Illumination Fraction (k) ---
-  const n = julianDate - 2451545.0;
+  const n = julianDate - J2000_JD;
   const solarL = (280.460 + 0.9856474 * n) % 360;
   const solarG = (357.528 + 0.9856003 * n) % 360;
   const solarGRad = toRadians(solarG);
   const solarLambda = solarL + 1.915 * Math.sin(solarGRad) + 0.020 * Math.sin(2 * solarGRad);
   const solarLambdaRad = toRadians(solarLambda);
   const solarDistAU = 1.00014 - 0.01671 * Math.cos(solarGRad) - 0.00014 * Math.cos(2 * solarGRad);
-  const solarDistKm = solarDistAU * 149597870.7;
+  const solarDistKm = solarDistAU * ASTRONOMICAL_UNIT_KM;
 
   // Geocentric elongation psi: cos(psi) = cos(beta) * cos(lambda - lambda_sun)
   const cosPsi = Math.cos(bRad) * Math.cos(lRad - solarLambdaRad);
@@ -112,7 +122,7 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
     declination, 
     rightAscension, 
     distanceKm, 
-    distanceEarthRadii: distanceKm / 6371,
+    distanceEarthRadii: distanceKm / EARTH_RADIUS_MEAN_KM,
     phase: phase0to1,
     phaseName,
     elongation: D,
@@ -143,7 +153,7 @@ export const calculateParallacticAngle = (
   decDeg: Degrees | number, 
   raDeg: Degrees | HoursDecimal | number
 ): number => {
-  const d = julianDate - 2451545.0;
+  const d = julianDate - J2000_JD;
   const gmst = (280.46061837 + 360.98564736629 * d) % 360;
   const lst = (gmst + lon + 360) % 360;
   let H = (lst - raDeg + 360) % 360;
@@ -280,8 +290,8 @@ export const calculateLunarIllumination = (phase: number, beta?: number): number
     const cosPsi = Math.cos(bRad) * Math.cos(dRad);
     const psiRad = Math.acos(clamp(cosPsi, -1, 1));
     const sinPsi = Math.sin(psiRad);
-    // Delta / R approx 384400 / 149597870 = 0.00257
-    const phaseAngleRad = Math.atan2(sinPsi, 0.00257 - cosPsi);
+    const ratioDeltaR = MOON_MEAN_DISTANCE_KM / ASTRONOMICAL_UNIT_KM; // ~0.00257
+    const phaseAngleRad = Math.atan2(sinPsi, ratioDeltaR - cosPsi);
     return Math.round(((1 + Math.cos(phaseAngleRad)) / 2) * 100);
   }
   const normPhase = ((phase % 1) + 1) % 1;

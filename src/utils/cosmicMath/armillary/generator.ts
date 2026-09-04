@@ -2,6 +2,17 @@ import { Degrees, Latitude, Longitude, HoursDecimal, JulianDate, asDegrees } fro
 import { Vector3D } from '../../../types/coordinates';
 import { toRadians, clamp, slerp3D } from '../core';
 import { calculateEarthOrbitalPhysics } from '../solar';
+import {
+  J2000_JD,
+  JULIAN_CENTURY_DAYS,
+  ASTRONOMICAL_UNIT_KM,
+  EARTH_ORBITAL_SPEED_MEAN_KMS,
+  SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG,
+  EARTH_ECCENTRICITY_TRUE,
+  EARTH_ECCENTRICITY_EXAGGERATED,
+  MOON_ORBIT_INCLINATION_DEG
+} from '../astroConstants';
 import { 
   ArmillaryProjectionMode,
   ArmillaryOrbitalPhysics,
@@ -75,7 +86,7 @@ function generateArmillaryRings(params: {
   const isSourceHelio = fromProjectionMode === 'heliocentric';
   const isHelioT = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
   const aOrb = r0 * 1.1;
-  const eOrb = exaggerateEccentricity ? 0.25 : 0.01671;
+  const eOrb = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
   const bOrb = aOrb * Math.sqrt(1 - eOrb * eOrb);
   const cOrb = aOrb * eOrb;
   const tiltRad = toRadians((1 - isHelioT) * obliquity);
@@ -108,7 +119,7 @@ function generateArmillaryRings(params: {
   // 1. Lunar Orbit Ring (5.145° Inclined around Earth, precessing node Omega)
   const isHelioMode = projectionMode === 'heliocentric';
   const lunarOrbitRadius = isHelioMode ? 16 : 26;
-  const incRad = toRadians(5.145);
+  const incRad = toRadians(MOON_ORBIT_INCLINATION_DEG);
   const epsRad = toRadians(obliquity);
   const nodeRad = toRadians(nodeLonDeg);
 
@@ -358,8 +369,8 @@ export function generateArmillaryModel(params: {
 
   const lambdaClamp = clamp(morphLambda, 0, 1);
   const transT = clamp(projectionTransitionT, 0, 1);
-  const obliquity = 23.439;
-  const T = (julianDate - 2451545.0) / 36525;
+  const obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
+  const T = (julianDate - J2000_JD) / JULIAN_CENTURY_DAYS;
   const defaultNodeLon = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
   const nodeLonDeg = moonNodeLonDeg ?? defaultNodeLon;
   const baseLstDeg = calculateLST(julianDate, longitude);
@@ -376,10 +387,10 @@ export function generateArmillaryModel(params: {
   const physicsSolar = calculateEarthOrbitalPhysics(julianDate);
   const physics: ArmillaryOrbitalPhysics = {
     distanceAU: physicsSolar.distanceAU ?? 1.0,
-    distanceKm: physicsSolar.distanceKm ?? 149597870,
-    orbitalSpeedKms: physicsSolar.orbitalSpeedKms ?? 29.78,
+    distanceKm: physicsSolar.distanceKm ?? ASTRONOMICAL_UNIT_KM,
+    orbitalSpeedKms: physicsSolar.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS,
     solarIrradiancePercent: physicsSolar.solarIrradiancePercent ?? 100.0,
-    sunAngularDiameterArcmin: physicsSolar.sunAngularDiameterArcmin ?? 32.0
+    sunAngularDiameterArcmin: physicsSolar.sunAngularDiameterArcmin ?? SUN_ANGULAR_DIAMETER_1AU_ARCMIN
   };
 
   const rotateCamera = createEulerCameraRotator(cameraPitch, cameraYaw, 0);

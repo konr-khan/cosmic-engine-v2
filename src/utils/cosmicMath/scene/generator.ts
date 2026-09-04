@@ -17,7 +17,8 @@ import {
   EARTH_AXIAL_OBLIQUITY_J2000_DEG, 
   EARTH_ECCENTRICITY_TRUE, 
   EARTH_ECCENTRICITY_EXAGGERATED,
-  EARTH_PERIHELION_LONGITUDE_DEG
+  EARTH_PERIHELION_LONGITUDE_DEG,
+  MOON_ORBIT_INCLINATION_DEG
 } from '../astroConstants';
 import { calculateEarthOrbitalPhysics } from '../solar';
 import { calculateLunarPosition } from '../lunar';
@@ -187,7 +188,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const nodeAngleDeg = ((sunLambdaDeg - nodeLonDeg) % 360 + 360) % 360;
   const nodeAngleRad = toRadians(nodeAngleDeg);
 
-  const lunarOrbitalRadiusAU = lunarDistKm / 149597870.7; // ~0.00257 AU
+  const lunarOrbitalRadiusAU = lunarDistKm / ASTRONOMICAL_UNIT_KM; // ~0.00257 AU
   const lunarVisualRadius = isExag ? 40 : lunarOrbitalRadiusAU;
 
   // Moon position relative to Earth (prograde counter-clockwise orbit)
@@ -206,9 +207,10 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   // Sample 3D Lunar Orbit loop (72 steps)
   const numSteps = 72;
   const samples = [];
+  const incDeg = Number(MOON_ORBIT_INCLINATION_DEG);
   for (let i = 0; i <= numSteps; i++) {
     const t = (i / numSteps) * 2 * Math.PI;
-    const sampleBetaDeg = 5.145 * Math.sin(t + nodeAngleRad);
+    const sampleBetaDeg = incDeg * Math.sin(t + nodeAngleRad);
     const sampleBetaRad = toRadians(sampleBetaDeg);
     const samplePos: Vector3D = {
       x: -lunarVisualRadius * Math.cos(t),
@@ -240,7 +242,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   };
 
   const lunarOrbit: LunarOrbit3D = {
-    inclination: toRadians(5.145),
+    inclination: toRadians(MOON_ORBIT_INCLINATION_DEG),
     nodeLongitude: asDegrees(nodeLonDeg),
     descendingNodeLongitude: asDegrees(descNodeLonDeg),
     nodeAngleDeg: asDegrees(nodeAngleDeg),
@@ -268,15 +270,15 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   });
 
   const umbraApex: Vector3D = {
-    x: earthPos.x + (umbraLengthKm / 149597870.7) * shadowAxis.x,
-    y: earthPos.y + (umbraLengthKm / 149597870.7) * shadowAxis.y,
-    z: earthPos.z + (umbraLengthKm / 149597870.7) * shadowAxis.z
+    x: earthPos.x + (umbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.x,
+    y: earthPos.y + (umbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.y,
+    z: earthPos.z + (umbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.z
   };
 
   const penumbraApex: Vector3D = {
-    x: earthPos.x - (penumbraLengthKm / 149597870.7) * shadowAxis.x,
-    y: earthPos.y - (penumbraLengthKm / 149597870.7) * shadowAxis.y,
-    z: earthPos.z - (penumbraLengthKm / 149597870.7) * shadowAxis.z
+    x: earthPos.x - (penumbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.x,
+    y: earthPos.y - (penumbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.y,
+    z: earthPos.z - (penumbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.z
   };
 
   const umbraRadiusAtMoonKm = Math.max(0, 1.02 * rEarthKm * (1 - lunarDistKm / umbraLengthKm));
