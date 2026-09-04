@@ -89,7 +89,9 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const isExag = scaleMode === 'exaggerated';
   const e = isExag ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
   const a = isExag ? r0 : 1.0;
-  const bRatio = isExag ? Math.sqrt(1 - EARTH_ECCENTRICITY_EXAGGERATED * EARTH_ECCENTRICITY_EXAGGERATED) : Math.sqrt(1 - e * e);
+  const bRatio = isExag 
+    ? Math.sqrt(Math.max(0, 1 - EARTH_ECCENTRICITY_EXAGGERATED * EARTH_ECCENTRICITY_EXAGGERATED)) 
+    : Math.sqrt(Math.max(0, 1 - e * e));
   const b = a * bRatio;
   const c = a * e;
 
@@ -258,13 +260,14 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   // 8. 3D Umbra & Penumbra Shadow Cones
   const rSunKm = SUN_RADIUS_KM;
   const rEarthKm = EARTH_RADIUS_WGS84_KM;
-  const sinUmbra = (rSunKm - rEarthKm) / distKm;
+  const safeDistKm = Math.max(1e-6, distKm);
+  const sinUmbra = (rSunKm - rEarthKm) / safeDistKm;
   const umbraAngle = Math.asin(Math.max(0, Math.min(1, sinUmbra)));
-  const umbraLengthKm = rEarthKm / sinUmbra;
+  const umbraLengthKm = rEarthKm / Math.max(1e-6, sinUmbra);
 
-  const sinPenumbra = (rSunKm + rEarthKm) / distKm;
+  const sinPenumbra = (rSunKm + rEarthKm) / safeDistKm;
   const penumbraAngle = Math.asin(Math.max(0, Math.min(1, sinPenumbra)));
-  const penumbraLengthKm = rEarthKm / sinPenumbra;
+  const penumbraLengthKm = rEarthKm / Math.max(1e-6, sinPenumbra);
 
   // Shadow axis points away from Sun: from Sun to Earth
   const shadowAxis: Vector3D = normalizeVector3D({
@@ -285,8 +288,8 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
     z: earthPos.z - (penumbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.z
   };
 
-  const umbraRadiusAtMoonKm = Math.max(0, 1.02 * rEarthKm * (1 - lunarDistKm / umbraLengthKm));
-  const penumbraRadiusAtMoonKm = 1.02 * rEarthKm * (1 + lunarDistKm / penumbraLengthKm);
+  const umbraRadiusAtMoonKm = Math.max(0, 1.02 * rEarthKm * (1 - lunarDistKm / Math.max(1e-6, umbraLengthKm)));
+  const penumbraRadiusAtMoonKm = 1.02 * rEarthKm * (1 + lunarDistKm / Math.max(1e-6, penumbraLengthKm));
 
   const shadowCones: ShadowCones3D = {
     umbraApex,

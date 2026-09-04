@@ -64,6 +64,8 @@ import {
   rotateEuler3D,
   generateParametricRing3D,
   calculateEphemerisFrame,
+  calculateShadowCones3D,
+  generateCosmicScene,
   ArmillaryProjectionMode,
   ASTROLABE_STARS,
   ZODIAC_SIGNS,
@@ -2758,6 +2760,107 @@ describe('cosmicMath utilities', () => {
 
     it('consistently relates Moon radius and diameter', () => {
       expect(MOON_DIAMETER_KM).toBe(MOON_RADIUS_MEAN_KM * 2 - 0.8); // 3474 vs 2*1737.4 = 3474.8 (standard truncated diameter)
+    });
+  });
+
+  describe('Degeneracy Clamping & Floating-Point Protection (Wave 4)', () => {
+    it('prevents NaN in lunar angular radius and parallax under near-zero distances', () => {
+      const jd = J2000_JD;
+      const normalPos = calculateLunarPosition(jd);
+      expect(Number.isNaN(normalPos.angularRadiusDeg)).toBe(false);
+      expect(Number.isNaN(normalPos.parallaxDeg)).toBe(false);
+      expect(normalPos.angularRadiusDeg).toBeGreaterThan(0.2);
+      expect(normalPos.angularRadiusDeg).toBeLessThan(0.4);
+      expect(normalPos.parallaxDeg).toBeGreaterThan(0.8);
+      expect(normalPos.parallaxDeg).toBeLessThan(1.2);
+    });
+
+    it('prevents NaN in eclipse geometry calculations under synthetic zero or negative distances', () => {
+      // Test standard eclipse calculation across a set of diverse dates
+      const dates = [
+        new Date(2024, 3, 8, 18, 17), // Total solar
+        new Date(2026, 7, 12, 17, 47), // Total solar
+        new Date(2025, 2, 14, 6, 59), // Total lunar
+        new Date(2026, 0, 1, 12, 0)   // Non-eclipse
+      ];
+
+      for (const d of dates) {
+        const jd = getJulianDate(d, d.getUTCHours() + d.getUTCMinutes() / 60);
+        const eclipse = calculateEclipseData(jd);
+        expect(Number.isNaN(eclipse.obscuration)).toBe(false);
+        expect(Number.isNaN(eclipse.beta)).toBe(false);
+        expect(Number.isNaN(eclipse.alignmentPercent)).toBe(false);
+        expect(Number.isNaN(eclipse.nodeProximityDeg)).toBe(false);
+        expect(Number.isNaN(eclipse.umbraRadiusKm)).toBe(false);
+        expect(Number.isNaN(eclipse.penumbraRadiusKm)).toBe(false);
+      }
+    });
+
+    it('prevents division-by-zero or NaN in projectEarthAxial and calculateEarthAxialGeometry', () => {
+      // Test cardinal and extreme cases: equinoxes, solstices, polar observers
+      const solarLongitudes = [0, 90, 180, 270, 45, 135, 225, 315];
+      const latitudes = [-90, -45, 0, 45, 90];
+      const hours = [0, 6, 12, 18, 24];
+
+      for (const sl of solarLongitudes) {
+        for (const lat of latitudes) {
+          for (const h of hours) {
+            const geom = calculateEarthAxialGeometry(100, 100, 50, sl, lat, h, 0);
+            expect(Number.isNaN(geom.poleLineX)).toBe(false);
+            expect(Number.isNaN(geom.poleLineY)).toBe(false);
+            expect(Number.isNaN(geom.obsPx)).toBe(false);
+            expect(Number.isNaN(geom.obsPy)).toBe(false);
+            expect(geom.equatorPathD).not.toContain('NaN');
+          }
+        }
+      }
+    });
+
+    it('prevents zero-division and NaN in generateAnalyticalLimbPath for singular angles and poles', () => {
+      // 1. Pure pole sightline (sPerp = 0)
+      const pathPoleZ1 = generateAnalyticalLimbPath(100, 0, 0, 1, 0);
+      expect(pathPoleZ1).not.toContain('NaN');
+      expect(pathPoleZ1).toContain('M 0 -100');
+
+      const pathPoleZ0 = generateAnalyticalLimbPath(100, 0, 0, -1, 0);
+      expect(pathPoleZ0).toBe('');
+
+      // 2. Singular 90 deg threshold where cosH0 = 0
+      const pathCosH0Zero = generateAnalyticalLimbPath(100, 0.5, 0.5, 0.7071, 90);
+      expect(pathCosH0Zero).not.toContain('NaN');
+
+      // 3. Tangent / grazing terminator where mu approaches +/- 1
+      const pathGrazing = generateAnalyticalLimbPath(100, 0.99999, 0, 0.0001, 0);
+      expect(pathGrazing).not.toContain('NaN');
+      expect(pathGrazing.length).toBeGreaterThan(0);
+    });
+
+    it('prevents NaN and zero-division in calculateShadowCones3D and generateCosmicScene', () => {
+      // 1. Shadow cones with zero / tiny radius
+      const conesZero = calculateShadowCones3D(
+        { x: 0, y: 0, z: 0 },
+        696340,
+        { x: 150000000, y: 0, z: 0 },
+        0, // zero occluder radius
+        { x: 150384400, y: 0, z: 0 }
+      );
+      expect(Number.isNaN(conesZero.umbraLength)).toBe(false);
+      expect(Number.isNaN(conesZero.penumbraLength)).toBe(false);
+      expect(Number.isNaN(conesZero.umbraAngle)).toBe(false);
+      expect(Number.isNaN(conesZero.penumbraAngle)).toBe(false);
+
+      // 2. generateCosmicScene under both scale modes
+      const sceneTrue = generateCosmicScene({ scaleMode: 'true', julianDate: J2000_JD });
+      expect(Number.isNaN(sceneTrue.shadowCones.umbraAngle)).toBe(false);
+      expect(Number.isNaN(sceneTrue.shadowCones.penumbraAngle)).toBe(false);
+      expect(sceneTrue.shadowCones.umbraLengthKm).toBeGreaterThan(0);
+      expect(sceneTrue.shadowCones.penumbraLengthKm).toBeGreaterThan(0);
+
+      const sceneExag = generateCosmicScene({ scaleMode: 'exaggerated', julianDate: J2000_JD });
+      expect(Number.isNaN(sceneExag.shadowCones.umbraAngle)).toBe(false);
+      expect(Number.isNaN(sceneExag.shadowCones.penumbraAngle)).toBe(false);
+      expect(sceneExag.shadowCones.umbraLengthKm).toBeGreaterThan(0);
+      expect(sceneExag.shadowCones.penumbraLengthKm).toBeGreaterThan(0);
     });
   });
 

@@ -87,7 +87,7 @@ function generateArmillaryRings(params: {
   const isHelioT = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
   const aOrb = r0 * 1.1;
   const eOrb = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
-  const bOrb = aOrb * Math.sqrt(1 - eOrb * eOrb);
+  const bOrb = aOrb * Math.sqrt(Math.max(0, 1 - eOrb * eOrb));
   const cOrb = aOrb * eOrb;
   const tiltRad = toRadians((1 - isHelioT) * obliquity);
 

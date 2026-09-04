@@ -1,4 +1,4 @@
-import { getJulianDate, julianDateToDate, toRadians, toDegrees } from './core';
+import { getJulianDate, julianDateToDate, toRadians, toDegrees, clamp } from './core';
 import { 
   J2000_JD,
   ASTRONOMICAL_UNIT_KM, 
@@ -54,7 +54,9 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
   const beta = lunarPos.beta; // Moon ecliptic latitude (-5.14° to +5.14°)
   const absBeta = Math.abs(beta);
   const distanceKm = lunarPos.distanceKm;
-  const sunDistanceKm = solarPos.distanceKm || ASTRONOMICAL_UNIT_KM;
+  const sunDistanceKm = solarPos.distanceKm ?? ASTRONOMICAL_UNIT_KM;
+  const safeDistanceKm = Math.max(1e-6, distanceKm);
+  const safeSunDistanceKm = Math.max(1e-6, sunDistanceKm);
 
   // Phase value 0 (New Moon) to 1
   const phaseValue = elongation / 360;
@@ -64,10 +66,10 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
   const distToFullMoon = Math.abs(elongation - 180);
 
   // Angular radii and parallax
-  const sSun = solarPos.sunAngularRadiusDeg ?? (SUN_ANGULAR_DIAMETER_1AU_ARCMIN / (solarPos.distanceAU || 1) / 120); // ~0.267°
-  const sMoon = lunarPos.angularRadiusDeg ?? toDegrees(Math.asin(MOON_RADIUS_MEAN_KM / distanceKm)); // ~0.26° - 0.28°
-  const piMoon = lunarPos.parallaxDeg ?? toDegrees(Math.asin(EARTH_RADIUS_WGS84_KM / distanceKm)); // ~0.95° - 1.02°
-  const piSun = toDegrees(Math.asin(EARTH_RADIUS_WGS84_KM / sunDistanceKm)); // ~0.0024°
+  const sSun = solarPos.sunAngularRadiusDeg ?? (SUN_ANGULAR_DIAMETER_1AU_ARCMIN / (solarPos.distanceAU ?? 1) / 120); // ~0.267°
+  const sMoon = lunarPos.angularRadiusDeg ?? toDegrees(Math.asin(clamp(MOON_RADIUS_MEAN_KM / safeDistanceKm, -1, 1))); // ~0.26° - 0.28°
+  const piMoon = lunarPos.parallaxDeg ?? toDegrees(Math.asin(clamp(EARTH_RADIUS_WGS84_KM / safeDistanceKm, -1, 1))); // ~0.95° - 1.02°
+  const piSun = toDegrees(Math.asin(clamp(EARTH_RADIUS_WGS84_KM / safeSunDistanceKm, -1, 1))); // ~0.0024°
 
   // Earth umbra & penumbra radii at Moon's distance (including 1.02 atmospheric enlargement)
   const umbraRadiusDeg = (piMoon + piSun - sSun) * 1.02;
@@ -145,7 +147,7 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
     ? parseFloat((((lunarPos.argumentOfLatitude % 360) + 360) % 360).toFixed(4))
     : undefined;
   const isAscendingHemisphere = lunarPos.argumentOfLatitude !== undefined
-    ? (lunarPos.argumentOfLatitude % 360 < 180)
+    ? ((((lunarPos.argumentOfLatitude % 360) + 360) % 360) < 180)
     : beta >= 0;
   const nodeLongitude = lunarPos.nodeLongitude !== undefined
     ? parseFloat(lunarPos.nodeLongitude.toFixed(4))

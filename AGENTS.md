@@ -60,7 +60,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 393 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 20 modules, 403 tests)
 
 ### Essential Commands
 
@@ -141,7 +141,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── cameras.ts        # TopDown, Transverse, Axial & Euler camera rigs
 │   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (33 tests)
 │   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (22 tests)
-│   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (16 tests)
+│   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (18 tests)
 │   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
 │   │   │   │   ├── index.ts          # Barrel re-export
 │   │   │   │   ├── types.ts          # Armillary domain types & 5-model continuum definitions
@@ -157,7 +157,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generator.ts      # generateArmillaryModel pipeline orchestrator
 │   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (7 tests)
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (126 tests)
+│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (134 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)

@@ -6,6 +6,7 @@
 
 import { Degrees, toRadians } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
+import { clamp } from './core';
 import { rotateEuler3D } from './armillary/coordinates';
 
 export type MiniGlobeViewMode = 
@@ -96,7 +97,7 @@ export function projectContinentLandmasses(
         const nx = -Math.sin(epsRad) * Math.cos(sunLambdaRad);
         const ny = Math.cos(epsRad);
         const nz = -Math.sin(epsRad) * Math.sin(sunLambdaRad);
-        const nLen = Math.sqrt(nx * nx + ny * ny) || 1;
+        const nLen = Math.max(1e-6, Math.sqrt(nx * nx + ny * ny));
 
         const ux = ny / nLen;
         const uy = -nx / nLen;
@@ -201,6 +202,12 @@ export function generateAnalyticalLimbPath(
   const vy = -sy * sz / sPerp;
 
   const denom = cosH0 * sPerp;
+  if (Math.abs(denom) < 1e-9) {
+    if (sz >= sinH0) {
+      return `M 0 -${radius} A ${radius} ${radius} 0 1 1 0 ${radius} A ${radius} ${radius} 0 1 1 0 -${radius} Z`;
+    }
+    return '';
+  }
   const mu = -(sinH0 * sz) / denom;
 
   // Case A: Entire terminator on backside
@@ -241,7 +248,7 @@ export function generateAnalyticalLimbPath(
   }
 
   // Case C: Terminator intersects limb at 2 points
-  const phi0 = Math.asin(mu);
+  const phi0 = Math.asin(clamp(mu, -1, 1));
   const phiStart = phi0;
   const phiEnd = Math.PI - phi0;
 

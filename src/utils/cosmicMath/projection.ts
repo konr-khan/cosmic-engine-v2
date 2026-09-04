@@ -5,7 +5,7 @@
  * and 4-quadrant orbital loop path generators for side-on and axial sightline eclipse viewers.
  */
 
-import { toRadians } from './core';
+import { toRadians, clamp } from './core';
 import { EARTH_AXIAL_OBLIQUITY_J2000_DEG, MOON_ORBIT_INCLINATION_DEG } from './astroConstants';
 
 export interface EarthSideGeometry {
@@ -130,7 +130,7 @@ export function calculateEarthAxialGeometry(
   const nz = -Math.sin(epsRad) * Math.sin(sunLambdaRad);
 
   // Length of projected axis on screen
-  const nScreenLen = Math.sqrt(nx * nx + ny * ny);
+  const nScreenLen = Math.max(1e-6, Math.sqrt(nx * nx + ny * ny));
   const ux = ny / nScreenLen;
   const uy = -nx / nScreenLen;
   const uz = 0;
@@ -173,7 +173,7 @@ export function calculateEarthAxialGeometry(
 
   const obsPx = centerX + obsEx;
   const obsPy = centerY - obsEy;
-  const decRad = Math.asin(Math.sin(epsRad) * Math.sin(sunLambdaRad));
+  const decRad = Math.asin(clamp(Math.sin(epsRad) * Math.sin(sunLambdaRad), -1, 1));
   const isDaylight = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hRad) >= 0;
 
   return {

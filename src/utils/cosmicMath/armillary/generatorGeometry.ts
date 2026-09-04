@@ -69,7 +69,7 @@ export function computeRawModeGeometry(
   if (isHelio) {
     const a = r0 * 1.1;
     const e = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
-    const b = a * Math.sqrt(1 - e * e);
+    const b = a * Math.sqrt(Math.max(0, 1 - e * e));
     const c = a * e;
     const sun3D = exaggerateEccentricity ? { x: -c, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
 

@@ -88,8 +88,9 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
   const normLambda = ((lambda % 360) + 360) % 360;
   const nodeLongitude = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
   const descendingNodeLongitude = ((nodeLongitude + 180) % 360 + 360) % 360;
-  const angularRadiusDeg = toDegrees(Math.asin(MOON_RADIUS_MEAN_KM / distanceKm));
-  const parallaxDeg = toDegrees(Math.asin(EARTH_RADIUS_WGS84_KM / distanceKm));
+  const safeDistanceKm = Math.max(1e-6, distanceKm);
+  const angularRadiusDeg = toDegrees(Math.asin(clamp(MOON_RADIUS_MEAN_KM / safeDistanceKm, -1, 1)));
+  const parallaxDeg = toDegrees(Math.asin(clamp(EARTH_RADIUS_WGS84_KM / safeDistanceKm, -1, 1)));
 
   // --- Meeus Ch. 48 Geocentric Phase Angle (i) & True Illumination Fraction (k) ---
   const n = julianDate - J2000_JD;

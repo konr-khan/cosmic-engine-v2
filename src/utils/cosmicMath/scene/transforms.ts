@@ -480,7 +480,7 @@ export function calculateShadowCones3D(
   // By similar triangles: L_penumbra / R_occ = (D_sun_occ - L_penumbra) / R_sun
   // L_penumbra * (R_sun + R_occ) = R_occ * D_sun_occ
   // L_penumbra = (R_occ * D_sun_occ) / (R_sun + R_occ)
-  const sumR_penumbra = sunRadius + occluderRadius;
+  const sumR_penumbra = Math.max(1e-6, sunRadius + occluderRadius);
   const penumbraLength = (occluderRadius * dSunOcc) / sumR_penumbra;
   const penumbraApex = subtractVectors3D(occluderCenter, scaleVector3D(axisDir, penumbraLength));
   const penumbraAngle = asRadians(Math.asin(clamp(sumR_penumbra / dSunOcc, 0, 1)));
