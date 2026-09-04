@@ -113,18 +113,17 @@ export const useCosmicEngine = (
       const angleToMoon = toRadians(moonDegrees);
 
       const phase0to1 = lunarPos.phase;
-      const elongationRad = toRadians(lunarPos.elongation ?? ((moonDegrees - sunDegrees + 360) % 360));
+      const elongationRad = toRadians(lunarPos.elongation ?? (((moonDegrees - sunDegrees) % 360 + 360) % 360));
       const alignmentFactor = Math.cos(2 * elongationRad);
 
       const baseOceanSize = CONFIG.ORBIT.earthRadius + 4;
       const tideRx = baseOceanSize + 6 + (3 * alignmentFactor);
       const tideType: TideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
 
-      const observerMeridianDeg = ((timeOfDay - 12) * 15) + longitude;
+      const observerMeridianDeg = (((((timeOfDay - 12) * 15) + longitude) % 360) + 360) % 360;
       const moonPhaseAngleDeg = phase0to1 * 360;
       
-      let diff = (observerMeridianDeg - moonPhaseAngleDeg) % 360;
-      if (diff < 0) diff += 360; 
+      const diff = (((observerMeridianDeg - moonPhaseAngleDeg) % 360) + 360) % 360; 
       
       let localTideStatus: 'High Tide' | 'Low Tide' = "Low Tide";
       if (diff <= 45 || diff >= 315 || (diff >= 135 && diff <= 225)) {

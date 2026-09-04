@@ -106,10 +106,11 @@ export function calculatePlanetaryHour(
 
   // Planetary day rulers (Sun starts Sunday, Moon Monday, Mars Tuesday, Mercury Wednesday, Jupiter Thursday, Venus Friday, Saturn Saturday)
   const DAY_RULERS = [3, 6, 2, 5, 1, 4, 0]; // Index in CHALDEAN_PLANETS: Sun=3, Moon=6, Mars=2, Mercury=5, Jupiter=1, Venus=4, Saturn=0
-  const dayRulerIndex = DAY_RULERS[dayOfWeek % 7];
+  const dayRulerIndex = DAY_RULERS[((dayOfWeek % 7) + 7) % 7];
 
-  const dayLength = (sunset - sunrise + 24) % 24 || 12;
-  const nightLength = 24 - dayLength;
+  const rawDayLength = ((sunset - sunrise) % 24 + 24) % 24;
+  const dayLength = rawDayLength > 0.01 && rawDayLength < 23.99 ? rawDayLength : 12;
+  const nightLength = Math.max(0.1, 24 - dayLength);
 
   if (currentTime >= sunrise && currentTime < sunset) {
     isDay = true;

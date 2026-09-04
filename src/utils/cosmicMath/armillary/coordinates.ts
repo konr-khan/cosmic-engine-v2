@@ -9,7 +9,7 @@ import { J2000_JD } from '../astroConstants';
 export function calculateGMST(julianDate: JulianDate | number): Degrees {
   const d = julianDate - J2000_JD;
   const gmst = (280.46061837 + 360.98564736629 * d) % 360;
-  return asDegrees((gmst + 360) % 360);
+  return asDegrees(((gmst % 360) + 360) % 360);
 }
 
 /**
@@ -17,7 +17,7 @@ export function calculateGMST(julianDate: JulianDate | number): Degrees {
  */
 export function calculateLST(julianDate: JulianDate | number, longitude: Longitude): Degrees {
   const gmst = calculateGMST(julianDate);
-  const lst = (gmst + longitude + 360) % 360;
+  const lst = (((gmst + longitude) % 360) + 360) % 360;
   return asDegrees(lst);
 }
 
@@ -85,7 +85,7 @@ export function equatorialToHorizontal(
   latitude: Latitude,
   lstDeg: Degrees | number
 ): { altDeg: number; azDeg: number } {
-  const H = ((lstDeg - raDeg + 360) % 360);
+  const H = (((lstDeg - raDeg) % 360 + 360) % 360);
   const hRad = toRadians(H);
   const latRad = toRadians(latitude);
   const decRad = toRadians(decDeg);
@@ -97,7 +97,7 @@ export function equatorialToHorizontal(
   const sinAz = -Math.cos(decRad) * Math.sin(hRad);
   const cosAz = Math.sin(decRad) * Math.cos(latRad) - Math.cos(decRad) * Math.sin(latRad) * Math.cos(hRad);
   const azRad = Math.atan2(sinAz, cosAz);
-  const azDeg = (toDegrees(azRad) + 360) % 360;
+  const azDeg = ((toDegrees(azRad) % 360) + 360) % 360;
 
   return { altDeg: parseFloat(altDeg.toFixed(2)), azDeg: parseFloat(azDeg.toFixed(2)) };
 }

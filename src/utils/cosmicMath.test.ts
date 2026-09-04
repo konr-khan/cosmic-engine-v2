@@ -578,6 +578,50 @@ describe('cosmicMath utilities', () => {
       const diff = Math.abs(lunarAfter.nodeLongitude - lunarJ2000.nodeLongitude);
       expect(diff < 2 || Math.abs(diff - 360) < 2).toBe(true);
     });
+
+    it('guarantees polar singularity safety and zero division immunity for lunar events at exact geographic poles (±90°)', () => {
+      const jd = 2451545.0;
+      const northPole = calculateLunarEvents(90, 0, jd, 12);
+      expect(Number.isNaN(northPole.transit)).toBe(false);
+      expect(Number.isNaN(northPole.declination)).toBe(false);
+      expect(['circumpolar_up', 'circumpolar_down', 'regular']).toContain(northPole.polarState);
+
+      const southPole = calculateLunarEvents(-90, 0, jd, 12);
+      expect(Number.isNaN(southPole.transit)).toBe(false);
+      expect(Number.isNaN(southPole.declination)).toBe(false);
+      expect(['circumpolar_up', 'circumpolar_down', 'regular']).toContain(southPole.polarState);
+    });
+
+    it('guarantees robust positive modulo and zero division immunity for planetary hours under polar day/night and negative dayOfWeek', () => {
+      // 1. Negative dayOfWeek wrapping
+      const hourNeg = calculatePlanetaryHour(12 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, -1);
+      expect(hourNeg.hourNumber).toBeGreaterThanOrEqual(1);
+      expect(hourNeg.hourNumber).toBeLessThanOrEqual(12);
+      expect(hourNeg.rulingPlanet).toBeDefined();
+
+      // 2. 24-hour polar day (sunset == sunrise or dayLength == 24)
+      const hourPolar = calculatePlanetaryHour(12 as HoursDecimal, 0 as HoursDecimal, 24 as HoursDecimal, 0);
+      expect(Number.isNaN(hourPolar.progressPercent)).toBe(false);
+      expect(hourPolar.hourNumber).toBeGreaterThanOrEqual(1);
+    });
+
+    it('guarantees positive [0, 360) modulo wrapping for GMST, LST, and horizontal coordinates across negative ranges', () => {
+      // GMST across historical epoch prior to J2000
+      const gmstPast = calculateGMST(2400000.0);
+      expect(gmstPast).toBeGreaterThanOrEqual(0);
+      expect(gmstPast).toBeLessThan(360);
+
+      // LST with negative observer longitude
+      const lstWest = calculateLST(2451545.0, -179.9);
+      expect(lstWest).toBeGreaterThanOrEqual(0);
+      expect(lstWest).toBeLessThan(360);
+
+      // Equatorial to horizontal coordinates
+      const horiz = equatorialToHorizontal(-45, -10, 45, 10);
+      expect(horiz.azDeg).toBeGreaterThanOrEqual(0);
+      expect(horiz.azDeg).toBeLessThan(360);
+      expect(Number.isNaN(horiz.altDeg)).toBe(false);
+    });
   });
 
   describe('Eclipse Presets & Syzygy Solver Matrix (All 5 Presets)', () => {

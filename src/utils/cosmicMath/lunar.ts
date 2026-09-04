@@ -87,7 +87,7 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
 
   const normLambda = ((lambda % 360) + 360) % 360;
   const nodeLongitude = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
-  const descendingNodeLongitude = (nodeLongitude + 180) % 360;
+  const descendingNodeLongitude = ((nodeLongitude + 180) % 360 + 360) % 360;
   const angularRadiusDeg = toDegrees(Math.asin(MOON_RADIUS_MEAN_KM / distanceKm));
   const parallaxDeg = toDegrees(Math.asin(EARTH_RADIUS_WGS84_KM / distanceKm));
 
@@ -155,8 +155,8 @@ export const calculateParallacticAngle = (
 ): number => {
   const d = julianDate - J2000_JD;
   const gmst = (280.46061837 + 360.98564736629 * d) % 360;
-  const lst = (gmst + lon + 360) % 360;
-  let H = (lst - raDeg + 360) % 360;
+  const lst = (((gmst + lon) % 360) + 360) % 360;
+  let H = (((lst - raDeg) % 360) + 360) % 360;
 
   const latRad = toRadians(clamp(lat, -89.9, 89.9));
   const decRad = toRadians(decDeg);
@@ -202,7 +202,10 @@ export const calculateLunarEvents = (
 
   // Step 1: Initial estimate using transit declination
   const decRadTransit = toRadians(lunarNow.declination);
-  const cosH0 = (sinAlt - sinLat * Math.sin(decRadTransit)) / (cosLat * Math.cos(decRadTransit));
+  const denom0 = cosLat * Math.cos(decRadTransit);
+  const cosH0 = Math.abs(denom0) < 1e-9
+    ? (sinAlt >= sinLat * Math.sin(decRadTransit) ? 2 : -2)
+    : (sinAlt - sinLat * Math.sin(decRadTransit)) / denom0;
 
 /**
  * Refines a candidate lunar rise or set event timestamp using topocentric coordinate recalculation.
@@ -219,7 +222,9 @@ function refineLunarEventHour(
   const jdEvent = julianDate + (estHour / 24.0);
   const lunarPos = calculateLunarPosition(jdEvent);
   const decRad = toRadians(lunarPos.declination);
-  const cosH = (sinAlt - sinLat * Math.sin(decRad)) / (cosLat * Math.cos(decRad));
+  const denom = cosLat * Math.cos(decRad);
+  if (Math.abs(denom) < 1e-9) return null;
+  const cosH = (sinAlt - sinLat * Math.sin(decRad)) / denom;
 
   if (cosH >= -1 && cosH <= 1) {
     const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;

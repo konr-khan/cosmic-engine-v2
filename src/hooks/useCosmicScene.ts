@@ -208,7 +208,7 @@ export function useHeliocentricScene(
     ? (scene3D.scaleMode === 'true' ? scene3D.foci.f2.y * orbitalRadius : scene3D.foci.f2.y * scaleFactor)
     : 0;
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
-    ?? ((scene3D.earth.heliocentricLongitude + 180) % 360);
+    ?? (((scene3D.earth.heliocentricLongitude + 180) % 360 + 360) % 360);
   const axialTiltDeg = toDegrees(scene3D.earth.obliquity);
 
   const physics: SolarPositionFull = useMemo(() => {
@@ -319,7 +319,7 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
   }, [scene3D]);
 
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
-    ?? ((scene3D.earth.heliocentricLongitude + 180) % 360);
+    ?? (((scene3D.earth.heliocentricLongitude + 180) % 360 + 360) % 360);
 
   // Transverse Node Coordinates
   const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg ?? 0));
@@ -447,7 +447,7 @@ export function useArmillaryScene(options?: UseArmillaryOptions): ArmillaryScene
   }, [scene3D, pitch, yaw, roll, radius]);
 
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
-    ?? ((scene3D.earth.heliocentricLongitude + 180) % 360);
+    ?? (((scene3D.earth.heliocentricLongitude + 180) % 360 + 360) % 360);
 
   return {
     julianDate,

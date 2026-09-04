@@ -132,8 +132,8 @@ export function computeArmillaryLunarNodes(params: {
   const descV = transformVertex(descNode3D);
 
   return {
-    ascendingNode: { screenPos: ascV.screenPos, isFront: ascV.isFront, lonDeg: nodeLonDeg },
-    descendingNode: { screenPos: descV.screenPos, isFront: descV.isFront, lonDeg: (nodeLonDeg + 180) % 360 }
+    ascendingNode: { screenPos: ascV.screenPos, isFront: ascV.isFront, lonDeg: ((nodeLonDeg % 360) + 360) % 360 },
+    descendingNode: { screenPos: descV.screenPos, isFront: descV.isFront, lonDeg: (((nodeLonDeg + 180) % 360 + 360) % 360) }
   };
 }
 
@@ -164,7 +164,7 @@ export function computeArmillaryObserverCone(params: {
   if (orbitRingOpacity <= 0.05) return undefined;
 
   const phi = toRadians(latitude);
-  const rotDeg = (gmstDeg + longitude + 360) % 360;
+  const rotDeg = (((gmstDeg + longitude) % 360) + 360) % 360;
   const rotRad = toRadians(rotDeg);
   const epsRad = toRadians(obliquity);
 

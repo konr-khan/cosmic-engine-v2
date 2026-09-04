@@ -74,7 +74,7 @@ export function computeRawModeGeometry(
     const sun3D = exaggerateEccentricity ? { x: -c, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
 
     // Earth's heliocentric longitude: lambda_earth = sunLambdaDeg + 180°
-    const earthLonRad = toRadians((sunLambdaDeg + 180) % 360);
+    const earthLonRad = toRadians(((sunLambdaDeg + 180) % 360 + 360) % 360);
     const earth3D: Vector3D = {
       x: a * Math.cos(earthLonRad),
       y: 0,
@@ -82,7 +82,7 @@ export function computeRawModeGeometry(
     };
 
     // Moon relative to Earth (prograde counter-clockwise orbit)
-    const moonAngleRad = toRadians(moonLambdaDeg);
+    const moonAngleRad = toRadians(((moonLambdaDeg % 360) + 360) % 360);
     const moon3D: Vector3D = {
       x: earth3D.x + 16 * Math.cos(moonAngleRad),
       y: earth3D.y + 16 * Math.sin(toRadians(MOON_ORBIT_INCLINATION_DEG)) * Math.sin(moonAngleRad),
@@ -120,7 +120,7 @@ export function computeRawModeGeometry(
   if (isGeo) {
     const earth3D: Vector3D = { x: 0, y: 0, z: 0 };
     const a = r0 * 1.1;
-    const sunLonRad = toRadians(sunLambdaDeg);
+    const sunLonRad = toRadians(((sunLambdaDeg % 360) + 360) % 360);
     const epsRad = toRadians(obliquity);
 
     // Sun position strictly on Ecliptic track revolving around Earth (r_sun = -r_earth)
@@ -140,7 +140,7 @@ export function computeRawModeGeometry(
 
     // Milestones along Sun's apparent ecliptic path (helioLon + 180°)
     const milestones3D = EARTH_MILESTONES.map((m) => {
-      const apparentSunLonRad = toRadians((m.helioEclipticLon + 180) % 360);
+      const apparentSunLonRad = toRadians(((m.helioEclipticLon + 180) % 360 + 360) % 360);
       return {
         id: m.id,
         p3d: {
@@ -169,7 +169,7 @@ export function computeRawModeGeometry(
   // 2D Astrolabe modes (stereographic, rojas, horizon)
   const earth3D: Vector3D = { x: 0, y: 0, z: 0 };
   const epsRad = toRadians(obliquity);
-  const sunLonRad = toRadians(sunLambdaDeg);
+  const sunLonRad = toRadians(((sunLambdaDeg % 360) + 360) % 360);
 
   // Mathematical Sun bead clamped strictly to the Ecliptic track:
   // x = r0 * cos(lambda), y = r0 * sin(lambda) * sin(eps), z = r0 * sin(lambda) * cos(eps)
