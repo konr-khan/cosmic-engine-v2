@@ -335,13 +335,13 @@ Rotated by Rete offset $\Delta\theta_{\text{rete}}$ around the $Y$-axis:
 3. **Keplerian Orbital Physics Metrics**:
    * *Orbital Velocity (Vis-Viva Equation)*: $v = \sqrt{G M_\odot \left(\frac{2}{r} - \frac{1}{a}\right)} \approx 29.78 \sqrt{\frac{2}{r_{\text{AU}}} - 1}\text{ km/s}$
    * *Relative Solar Irradiance*: $I = \left(\frac{1\text{ AU}}{r}\right)^2 \times 100\%$
-   * *Solar Angular Diameter*: $\theta_\odot = \frac{31.98'}{r_{\text{AU}}}$
+   * *Solar Angular Diameter*: $\theta_\odot = \frac{31.986'}{r_{\text{AU}}}$
 4. **Seasonal Milestone Nodes**:
    6 seasonal milestone points ($M_k$) positioned along the orbit:
-   * *Perihelion* ($\lambda = 103^\circ$, $0.983\text{ AU}$, $30.29\text{ km/s}$)
+   * *Perihelion* ($\lambda = 102.94^\circ$, $0.983\text{ AU}$, $30.29\text{ km/s}$)
    * *March Equinox* ($\lambda = 0^\circ$, $0.996\text{ AU}$, $29.84\text{ km/s}$)
    * *June Solstice* ($\lambda = 90^\circ$, $1.016\text{ AU}$, $29.29\text{ km/s}$)
-   * *Aphelion* ($\lambda = 283^\circ$, $1.017\text{ AU}$, $29.29\text{ km/s}$)
+   * *Aphelion* ($\lambda = 282.94^\circ$, $1.017\text{ AU}$, $29.29\text{ km/s}$)
    * *September Equinox* ($\lambda = 180^\circ$, $1.004\text{ AU}$, $29.72\text{ km/s}$)
    * *December Solstice* ($\lambda = 270^\circ$, $0.984\text{ AU}$, $30.28\text{ km/s}$)
 
@@ -581,7 +581,7 @@ In the toggleable `☊ Nodal Loop` mode of the Tidal Gravity Micro View, the cir
 ### A. Subsolar Apparent Angular Diameter ($\theta_\odot$)
 Given instantaneous Earth-Sun heliocentric distance $r_{\text{AU}} \in [0.983, 1.017]\text{ AU}$:
 \[
-\theta_\odot = \frac{31.98'}{r_{\text{AU}}} \quad [\text{arcminutes}]
+\theta_\odot = \frac{31.986'}{r_{\text{AU}}} \quad [\text{arcminutes}]
 \]
 * *Perihelion ($0.983\text{ AU}$)*: $\theta_\odot \approx 32.53'$.
 * *Aphelion ($1.017\text{ AU}$)*: $\theta_\odot \approx 31.45'$.
@@ -698,31 +698,31 @@ The lunar orbit is modeled as an inclined ellipse ($i = 5.145^\circ$) with conti
 Given physical radii $R_\odot = 696,340\text{ km}$, $R_\oplus = 6,378.137\text{ km}$, $R_{\text{moon}} = 1,737.4\text{ km}$ and Earth-Sun distance $d_{\odot}$:
 
 1. **Umbra Shadow Cone (Total/Annular Shadow)**:
-   * Apex Distance from Earth center:
+   * Apex Distance from Earth center (with $\epsilon = 10^{-6}$ non-zero denominator floor):
      \[
-     L_{\text{umbra}} = \frac{R_\oplus \cdot d_\odot}{R_\odot - R_\oplus} \approx 1,384,000\text{ km} \approx 217 R_\oplus
+     L_{\text{umbra}} = \frac{R_\oplus \cdot d_\odot}{\max(10^{-6}, R_\odot - R_\oplus)} \approx 1,384,000\text{ km} \approx 217 R_\oplus
      \]
-   * Half-angle of Umbra cone:
+   * Half-angle of Umbra cone (clamped to $[0, 1]$):
      \[
-     \alpha_{\text{umbra}} = \arcsin\left(\frac{R_\odot - R_\oplus}{d_\odot}\right) \approx 0.264^\circ
+     \alpha_{\text{umbra}} = \arcsin\left(\text{clamp}\left(\frac{R_\odot - R_\oplus}{\max(10^{-6}, d_\odot)}, 0, 1\right)\right) \approx 0.264^\circ
      \]
    * Umbra Radius at Lunar Distance ($d_{\text{moon}} \approx 384,400\text{ km}$):
      \[
-     r_{\text{umbra}}(d_{\text{moon}}) = R_\oplus - d_{\text{moon}} \tan\alpha_{\text{umbra}} \approx 4,600\text{ km}
+     r_{\text{umbra}}(d_{\text{moon}}) = \max\left(0, 1.02 R_\oplus \left(1 - \frac{d_{\text{moon}}}{\max(10^{-6}, L_{\text{umbra}})}\right)\right) \approx 4,600\text{ km}
      \]
 
 2. **Penumbra Shadow Cone (Partial Shadow)**:
-   * Apex Distance (between Sun and Earth):
+   * Apex Distance (between Sun and Earth, with $\epsilon = 10^{-6}$ denominator floor):
      \[
-     L_{\text{penumbra}} = \frac{R_\oplus \cdot d_\odot}{R_\odot + R_\oplus} \approx 1,358,000\text{ km}
+     L_{\text{penumbra}} = \frac{R_\oplus \cdot d_\odot}{\max(10^{-6}, R_\odot + R_\oplus)} \approx 1,358,000\text{ km}
      \]
-   * Half-angle of Penumbra cone:
+   * Half-angle of Penumbra cone (clamped to $[0, 1]$):
      \[
-     \alpha_{\text{penumbra}} = \arcsin\left(\frac{R_\odot + R_\oplus}{d_\odot}\right) \approx 0.269^\circ
+     \alpha_{\text{penumbra}} = \arcsin\left(\text{clamp}\left(\frac{R_\odot + R_\oplus}{\max(10^{-6}, d_\odot)}, 0, 1\right)\right) \approx 0.269^\circ
      \]
    * Penumbra Radius at Lunar Distance:
      \[
-     r_{\text{penumbra}}(d_{\text{moon}}) = R_\oplus + d_{\text{moon}} \tan\alpha_{\text{penumbra}} \approx 8,180\text{ km}
+     r_{\text{penumbra}}(d_{\text{moon}}) = 1.02 R_\oplus \left(1 + \frac{d_{\text{moon}}}{\max(10^{-6}, L_{\text{penumbra}})}\right) \approx 8,180\text{ km}
      \]
 
 ### E. Canonical Camera Projection Pipelines
@@ -839,14 +839,16 @@ All computational pipelines throughout Cosmic Engine V2.0 derive their physical 
 | $Y_{\text{mean}}$ | `DAYS_IN_YEAR_MEAN` | $365.25$ | $\text{days}$ | Mean calendar days per Julian Year |
 | $M_{\text{synodic}}$ | `DAYS_IN_SYNODIC_MONTH` | $29.530589$ | $\text{days}$ | Mean synodic month period |
 | $1\text{ AU}$ | `ASTRONOMICAL_UNIT_KM` | $149,597,870.7$ | $\text{km}$ | IAU 2012 Definition |
+| $R_{\oplus, \text{mean}}$ | `EARTH_RADIUS_MEAN_KM` | $6371.0$ | $\text{km}$ | IUGG Volumetric Mean Earth Radius |
 | $R_\oplus$ | `EARTH_RADIUS_WGS84_KM` | $6378.137$ | $\text{km}$ | WGS-84 Reference Ellipsoid Equatorial Radius |
+| $d_{\text{moon, mean}}$ | `MOON_MEAN_DISTANCE_KM` | $384400.0$ | $\text{km}$ | Mean Geocentric Lunar Distance |
 | $R_{\text{moon}}$ | `MOON_RADIUS_MEAN_KM` | $1737.4$ | $\text{km}$ | IAU Volumetric Mean Lunar Radius |
 | $D_{\text{moon}}$ | `MOON_DIAMETER_KM` | $3474.0$ | $\text{km}$ | Mean Lunar Diameter ($2 \cdot R_{\text{moon}}$) |
 | $v_{\oplus, \text{mean}}$ | `EARTH_ORBITAL_SPEED_MEAN_KMS` | $29.7847$ | $\text{km/s}$ | Mean Earth Orbital Speed at 1 AU |
 | $S_0$ | `SOLAR_IRRADIANCE_1AU_WM2` | $1361.0$ | $\text{W/m}^2$ | Solar Constant (Total Solar Irradiance at 1 AU) |
 | $\theta_\odot$ | `SUN_ANGULAR_DIAMETER_1AU_ARCMIN` | $31.986$ | $\text{arcmin}$ | Sun Apparent Angular Diameter at 1 AU |
 | $\varepsilon_0$ | `EARTH_AXIAL_OBLIQUITY_J2000_DEG` | $23.439281^\circ$ | $\text{Degrees}$ | IAU Mean Obliquity of Ecliptic at J2000.0 |
-| $i_{\text{moon}}$ | `MOON_ORBIT_INCLINATION_DEG` | $5.14^\circ$ | $\text{Degrees}$ | Mean Lunar Orbit Inclination to Ecliptic |
+| $i_{\text{moon}}$ | `MOON_ORBIT_INCLINATION_DEG` | $5.145^\circ$ | $\text{Degrees}$ | Mean Lunar Orbit Inclination to Ecliptic |
 | $d_{\text{perigee}}$ | `LUNAR_PERIGEE_THRESHOLD_KM` | $365,000$ | $\text{km}$ | Lunar Perigee Distance Threshold |
 | $d_{\text{apogee}}$ | `LUNAR_APOGEE_THRESHOLD_KM` | $400,000$ | $\text{km}$ | Lunar Apogee Distance Threshold |
 | $e_{\text{true}}$ | `EARTH_ECCENTRICITY_TRUE` | $0.01671022$ | dimensionless | Physical Earth Orbital Eccentricity |
