@@ -158,6 +158,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generator.ts      # generateArmillaryModel pipeline orchestrator
 │   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (7 tests)
+│   │   ├── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (15 tests)
 │   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (134 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
