@@ -322,7 +322,7 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
     ?? ((scene3D.earth.heliocentricLongitude + 180) % 360);
 
   // Transverse Node Coordinates
-  const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0));
+  const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg ?? 0));
   const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
   const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
 

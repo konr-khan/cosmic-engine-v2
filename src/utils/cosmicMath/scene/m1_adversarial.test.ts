@@ -18,6 +18,7 @@ import {
   projectGeocentricTransverse,
   projectGeocentricAxial,
   projectEulerCamera,
+  CosmicScene3D,
   ScaleMode,
   identityMatrix3x3,
   multiplyMatrix3x3,
@@ -504,6 +505,38 @@ describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', ()
       });
       expect(Number.isFinite(tightPerspective.elements.sun.x)).toBe(true);
       expect(Number.isFinite(tightPerspective.elements.earth.r)).toBe(true);
+    });
+
+    it('guarantees invariant chirality and zero-angle falsy immunity when heliocentricLongitude is 0° (vernal/autumnal boundary)', () => {
+      const scene = generateCosmicScene({ scaleMode: 'exaggerated' });
+      const sceneWithZeroLon: CosmicScene3D = {
+        ...scene,
+        earth: {
+          ...scene.earth,
+          heliocentricLongitude: asDegrees(0)
+        }
+      };
+
+      const axial = projectGeocentricAxial(sceneWithZeroLon);
+      const epsDeg = toDegrees(scene.earth.obliquity);
+
+      // When earth heliocentric longitude is 0°, apparent Sun longitude is (0 + 180) = 180°.
+      // In axial view: nx = -sin(eps) * cos(180°) = +sin(eps), ny = cos(eps).
+      // axialTiltAngle2D = atan2(-nx, ny) * (180/pi) = -epsDeg (~ -23.44°).
+      // If falsy 0 was unhandled, sunLambdaDeg would be 0°, yielding +epsDeg (chirality inversion).
+      expect(axial.elements.earth.axialTiltAngle2D).toBeCloseTo(-epsDeg, 4);
+
+      const transverse = projectGeocentricTransverse(sceneWithZeroLon);
+      // In transverse side-on view: thetaSide = eps * sin(180°) = 0°
+      expect(transverse.elements.earth.axialTiltAngle2D).toBeCloseTo(0, 4);
+    });
+
+    it('guarantees falsy immunity when descendingNodeLongitude or rightAscension is 0°', () => {
+      const scene = generateCosmicScene({ julianDate: 2451545.0 });
+      expect(scene.sun.rightAscension).toBeDefined();
+      expect(typeof scene.sun.rightAscension).toBe('number');
+      expect(scene.moon.descendingNodeLongitude).toBeDefined();
+      expect(typeof scene.moon.descendingNodeLongitude).toBe('number');
     });
   });
 

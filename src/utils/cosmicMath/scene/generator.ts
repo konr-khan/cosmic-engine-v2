@@ -18,7 +18,9 @@ import {
   EARTH_ECCENTRICITY_TRUE, 
   EARTH_ECCENTRICITY_EXAGGERATED,
   EARTH_PERIHELION_LONGITUDE_DEG,
-  MOON_ORBIT_INCLINATION_DEG
+  MOON_ORBIT_INCLINATION_DEG,
+  EARTH_ORBITAL_SPEED_MEAN_KMS,
+  SUN_ANGULAR_DIAMETER_1AU_ARCMIN
 } from '../astroConstants';
 import { calculateEarthOrbitalPhysics } from '../solar';
 import { calculateLunarPosition } from '../lunar';
@@ -80,8 +82,8 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const earthLambdaDeg = (sunLambdaDeg + 180) % 360;
   const earthLambdaRad = toRadians(earthLambdaDeg);
 
-  const distAU = solarPhysics.distanceAU || 1.0;
-  const distKm = solarPhysics.distanceKm || ASTRONOMICAL_UNIT_KM;
+  const distAU = solarPhysics.distanceAU ?? 1.0;
+  const distKm = solarPhysics.distanceKm ?? ASTRONOMICAL_UNIT_KM;
 
   // 3. Scale Mode Evaluation
   const isExag = scaleMode === 'exaggerated';
@@ -183,8 +185,10 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const lunarBetaRad = toRadians(lunarBetaDeg);
   const lunarLonDeg = lunarPos.lambda;
   const lunarLonRad = toRadians(lunarLonDeg);
-  const nodeLonDeg = lunarPos.nodeLongitude || 0;
-  const descNodeLonDeg = lunarPos.descendingNodeLongitude || ((nodeLonDeg + 180) % 360);
+  const nodeLonDeg = lunarPos.nodeLongitude ?? 0;
+  const descNodeLonDeg = lunarPos.descendingNodeLongitude !== undefined
+    ? lunarPos.descendingNodeLongitude
+    : (((nodeLonDeg + 180) % 360 + 360) % 360);
   const nodeAngleDeg = ((sunLambdaDeg - nodeLonDeg) % 360 + 360) % 360;
   const nodeAngleRad = toRadians(nodeAngleDeg);
 
@@ -318,8 +322,8 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       position: sunPos,
       radius: 15,
       eclipticLongitude: asDegrees(sunLambdaDeg),
-      rightAscension: asDegrees(solarPhysics.rightAscension || 0),
-      declination: asDegrees(solarPhysics.declination || 0)
+      rightAscension: asDegrees(solarPhysics.rightAscension ?? 0),
+      declination: asDegrees(solarPhysics.declination ?? 0)
     },
     earth: {
       position: earthPos,
@@ -330,12 +334,12 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       axialTiltVector,
       distanceAU: distAU,
       distanceKm: distKm,
-      orbitalSpeedKms: solarPhysics.orbitalSpeedKms || 29.78,
-      solarIrradiancePercent: solarPhysics.solarIrradiancePercent || 100.0,
-      sunAngularDiameterArcmin: solarPhysics.sunAngularDiameterArcmin || 32.0,
+      orbitalSpeedKms: solarPhysics.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS,
+      solarIrradiancePercent: solarPhysics.solarIrradiancePercent ?? 100.0,
+      sunAngularDiameterArcmin: solarPhysics.sunAngularDiameterArcmin ?? SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
       velocity: {
-        x: -solarPhysics.orbitalSpeedKms * Math.sin(earthLambdaRad),
-        y: solarPhysics.orbitalSpeedKms * Math.cos(earthLambdaRad),
+        x: -(solarPhysics.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS) * Math.sin(earthLambdaRad),
+        y: (solarPhysics.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS) * Math.cos(earthLambdaRad),
         z: 0
       },
       subsolarGeo: {
@@ -348,8 +352,8 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       radius: 4.5,
       eclipticLongitude: asDegrees(lunarLonDeg),
       eclipticLatitude: asDegrees(lunarBetaDeg),
-      rightAscension: asDegrees(lunarPos.rightAscension || 0),
-      declination: asDegrees(lunarPos.declination || 0),
+      rightAscension: asDegrees(lunarPos.rightAscension ?? 0),
+      declination: asDegrees(lunarPos.declination ?? 0),
       distanceKm: lunarDistKm,
       phase: lunarPos.phase,
       phaseName: lunarPos.phaseName,

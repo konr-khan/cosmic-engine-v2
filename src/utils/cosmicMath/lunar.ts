@@ -188,8 +188,8 @@ export const calculateLunarEvents = (
   const lunarNow = calculateLunarPosition(julianDateExact);
   const solarNoon = calculateSolarPosition(julianDateExact);
 
-  let transitUTC = 12 - (lon / 15) - ((solarNoon.equationOfTime || 0) / 60);
-  const solarRA = solarNoon.rightAscension || 0;
+  let transitUTC = 12 - (lon / 15) - ((solarNoon.equationOfTime ?? 0) / 60);
+  const solarRA = solarNoon.rightAscension ?? 0;
   const raDiffDeg = ((lunarNow.rightAscension - solarRA) % 360 + 360) % 360;
   const phaseDiffHours = raDiffDeg / 15;
   transitUTC = (transitUTC + phaseDiffHours + 24) % 24;

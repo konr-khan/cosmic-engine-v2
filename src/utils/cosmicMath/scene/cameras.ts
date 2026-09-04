@@ -23,6 +23,7 @@ import {
 } from './types';
 import { createEulerRotationMatrix } from './transforms';
 import { generateOrbitalSegments } from '../projection';
+import { EARTH_ECCENTRICITY_TRUE, EARTH_ECCENTRICITY_EXAGGERATED } from '../astroConstants';
 
 /** Options for standard 2D camera viewport configuration */
 export interface CameraOptions {
@@ -105,7 +106,7 @@ export function projectHeliocentricTopDown(
 
   // 1. Keplerian Orbit Parameters & SVG Path
   const a = 200; // display semi-major axis
-  const e = scene.scaleMode === 'exaggerated' ? 0.25 : 0.01671;
+  const e = scene.scaleMode === 'exaggerated' ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
   const b = a * Math.sqrt(Math.max(0, 1 - e * e));
 
   const rx = a * s;
@@ -232,8 +233,8 @@ export function projectGeocentricTransverse(
   // 2. Earth Projected Axial Tilt
   // Obliquity tilt projected in side-on view: thetaSide = eps * sin(sunLambda)
   const epsRad = scene.earth.obliquity;
-  const sunLambdaDeg = scene.earth.heliocentricLongitude 
-    ? ((scene.earth.heliocentricLongitude + 180) % 360) 
+  const sunLambdaDeg = scene.earth.heliocentricLongitude !== undefined
+    ? (((scene.earth.heliocentricLongitude + 180) % 360 + 360) % 360) 
     : 0;
   const sunLambdaRad = toRadians(sunLambdaDeg);
   const thetaSideRad = epsRad * Math.sin(sunLambdaRad);
@@ -368,8 +369,8 @@ export function projectGeocentricAxial(
 
   // 2. Foreground Earth Body with 3D Projected Axial Tilt
   const epsRad = scene.earth.obliquity;
-  const sunLambdaDeg = scene.earth.heliocentricLongitude 
-    ? ((scene.earth.heliocentricLongitude + 180) % 360) 
+  const sunLambdaDeg = scene.earth.heliocentricLongitude !== undefined
+    ? (((scene.earth.heliocentricLongitude + 180) % 360 + 360) % 360) 
     : 0;
   const sunLambdaRad = toRadians(sunLambdaDeg);
 
