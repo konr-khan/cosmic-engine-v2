@@ -7,14 +7,7 @@ import { MiniGlobe } from "../../common/MiniGlobe";
 
 export interface MicroTideViewProps {
   tides?: TidalVectors | null;
-  angles?: OrbitalAngles | {
-    toSun?: number;
-    toMoon?: number;
-    sunDegrees?: number;
-    moonDegrees?: number;
-    nodeLongitude?: number;
-    descendingNodeLongitude?: number;
-  } | null;
+  angles?: Partial<OrbitalAngles> | null;
   localTideStatus?: "High Tide" | "Low Tide" | string;
   phaseValue?: number;
   latitude?: number;
@@ -38,7 +31,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   const [orbitViewMode, setOrbitViewMode] = useState<'standard' | 'nodal'>('standard');
 
   const safeTides = tides || { alignment: 0, rx: 16, ry: 12, type: 'Transitional' };
-  const safeAngles = angles || { sunDegrees: 0, moonDegrees: 0 };
+  const safeAngles: Partial<OrbitalAngles> = angles || { sunDegrees: 0, moonDegrees: 0 };
   const safeLocalTideStatus = localTideStatus || "Low Tide";
 
   // Compute lunar phase value (0 to 1) if not explicitly provided
@@ -57,7 +50,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   const isLeftHemisphere = Math.cos(toRadians(sunAngleDeg)) < 0;
 
   // Ascending and Descending Node Angular Locations on the 2D Orbital Circle
-  const safeNodeLon = Number(nodeLongitude ?? (safeAngles as any).nodeLongitude) || 0;
+  const safeNodeLon = Number(nodeLongitude ?? safeAngles.nodeLongitude) || 0;
   const safeSunLambda = Number(sunLambdaDeg) || 0;
   const rawNodeDelta = ((safeNodeLon - safeSunLambda) % 360 + 360) % 360;
   const rawNodeDeg = ((rawSunAngle + rawNodeDelta) % 360 + 360) % 360;

@@ -39,14 +39,14 @@ export const asJulianDate = (val: number): JulianDate => val as JulianDate;
  * Acts as a verified conversion gatekeeper between degree and radian domain models.
  */
 export const toRadians = (deg: Degrees | number): Radians => {
-  return (deg * (Math.PI / 180)) as Radians;
+  return asRadians(deg * (Math.PI / 180));
 };
 
 /**
  * Converts radians to decimal degrees.
  */
 export const toDegrees = (rad: Radians | number): Degrees => {
-  return (rad * (180 / Math.PI)) as Degrees;
+  return asDegrees(rad * (180 / Math.PI));
 };
 
 /**

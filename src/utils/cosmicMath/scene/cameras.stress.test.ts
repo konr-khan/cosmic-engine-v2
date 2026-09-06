@@ -353,6 +353,39 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
         expect(transDeltaY / 8.5).toBeCloseTo(axialDefaultDeltaY / 10.5, 4);
       }
     });
+
+    it('C3.5: Anti-solar sightline depth sign and ADR-0012 dual-depth near/far orbitalSegments contracts', () => {
+      const baseScene = generateCosmicScene({ julianDate: EPOCHS.eclipseApr2024 });
+
+      // New Moon (phase = 0.0): Moon between Earth and Sun -> depth Z = -cos(0) * Rx = -Rx < 0 (behind Earth along sightline)
+      const newMoonScene = { ...baseScene, moon: { ...baseScene.moon, phase: 0.0 } };
+      const nm = projectGeocentricAxial(newMoonScene);
+      expect(nm.elements.moon.depth).toBeLessThan(0);
+      expect(nm.elements.moon.depth).toBeCloseTo(-150, 2);
+
+      // Full Moon (phase = 0.5): Moon opposite Sun -> depth Z = -cos(PI) * Rx = +Rx > 0 (in front of Earth towards viewer)
+      const fullMoonScene = { ...baseScene, moon: { ...baseScene.moon, phase: 0.5 } };
+      const fm = projectGeocentricAxial(fullMoonScene);
+      expect(fm.elements.moon.depth).toBeGreaterThan(0);
+      expect(fm.elements.moon.depth).toBeCloseTo(150, 2);
+
+      // ADR-0012 Decomposed near/far orbitalSegments exposed in axial and transverse elements
+      expect(nm.elements.orbitalSegments).toBeDefined();
+      const segs = nm.elements.orbitalSegments!;
+      expect(segs.nearWaxAsc).toBeDefined();
+      expect(segs.farWaxAsc).toBeDefined();
+      expect(segs.nearWaxDesc).toBeDefined();
+      expect(segs.farWaxDesc).toBeDefined();
+      expect(segs.nearWanAsc).toBeDefined();
+      expect(segs.farWanAsc).toBeDefined();
+      expect(segs.nearWanDesc).toBeDefined();
+      expect(segs.farWanDesc).toBeDefined();
+
+      const trans = projectGeocentricTransverse(baseScene);
+      expect(trans.elements.orbitalSegments).toBeDefined();
+      expect(trans.elements.orbitalSegments!.nearWaxAsc).toBeDefined();
+      expect(trans.elements.orbitalSegments!.farWaxAsc).toBeDefined();
+    });
   });
 
   // =========================================================================

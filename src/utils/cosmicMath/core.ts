@@ -6,27 +6,13 @@ import {
   DayOfYear,
   asDegrees, 
   asRadians, 
-  asJulianDate 
+  asJulianDate,
+  toRadians,
+  toDegrees
 } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
 
-/**
- * Converts degrees to radians.
- * @param deg - Angle in degrees
- * @returns Angle in radians
- */
-export const toRadians = (deg: Degrees | number): Radians => {
-  return asRadians(deg * (Math.PI / 180));
-};
-
-/**
- * Converts radians to degrees.
- * @param rad - Angle in radians
- * @returns Angle in degrees
- */
-export const toDegrees = (rad: Radians | number): Degrees => {
-  return asDegrees(rad * (180 / Math.PI));
-};
+export { toRadians, toDegrees };
 
 /**
  * Clamps a numerical value within [min, max] bounds.

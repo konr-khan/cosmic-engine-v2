@@ -61,7 +61,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 21 modules, 417 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 21 modules, 418 tests)
 
 ### Essential Commands
 
@@ -144,7 +144,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generator.ts      # generateCosmicScene with Keplerian & lunar orbit geometry
 │   │   │   │   ├── cameras.ts        # TopDown, Transverse, Axial & Euler camera rigs
 │   │   │   │   ├── scene.test.ts     # Comprehensive scene graph unit tests (33 tests)
-│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (22 tests)
+│   │   │   │   ├── cameras.stress.test.ts # Camera projection stress tests (23 tests)
 │   │   │   │   └── m1_adversarial.test.ts # Adversarial coordinate & singular edge tests (18 tests)
 │   │   │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe math module
 │   │   │   │   ├── index.ts          # Barrel re-export

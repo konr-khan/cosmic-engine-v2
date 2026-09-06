@@ -273,7 +273,7 @@ export function projectGeocentricTransverse(
       : 0
   );
 
-  const { waxAsc, waxDesc, wanAsc, wanDesc } = generateOrbitalSegments(
+  const orbitalSegments = generateOrbitalSegments(
     earthX,
     earthY,
     liveOrbitalRx,
@@ -282,6 +282,7 @@ export function projectGeocentricTransverse(
     'side',
     72
   );
+  const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
 
   const lunarOrbitSegments: LunarOrbitSegment2D[] = [
     { path: waxAsc.join(' '), stroke: '#38bdf8', isFront: true, isAscending: true },
@@ -324,6 +325,7 @@ export function projectGeocentricTransverse(
       moon,
       orbitPath: `M 10 ${earthY} L 510 ${earthY}`, // Ecliptic reference centerline
       lunarOrbitSegments,
+      orbitalSegments,
       shadowCones,
       nodeMarkers: {
         asc: { x: ascNodeX, y: earthY, label: '☊ Node' },
@@ -403,7 +405,7 @@ export function projectGeocentricAxial(
     y: moonY,
     r: 10.5 * s,
     visible: true,
-    depth: Math.cos(phaseRad) * orbitalRx
+    depth: -Math.cos(phaseRad) * orbitalRx
   };
 
   // 4. 4-Quadrant Axial Lunar Orbit Loop
@@ -413,7 +415,7 @@ export function projectGeocentricAxial(
       : 0
   );
 
-  const { waxAsc, waxDesc, wanAsc, wanDesc } = generateOrbitalSegments(
+  const orbitalSegments = generateOrbitalSegments(
     cx,
     cy,
     orbitalRx,
@@ -422,6 +424,7 @@ export function projectGeocentricAxial(
     'axial',
     72
   );
+  const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
 
   const lunarOrbitSegments: LunarOrbitSegment2D[] = [
     { path: waxAsc.join(' '), stroke: '#38bdf8', isFront: true, isAscending: true },
@@ -447,6 +450,7 @@ export function projectGeocentricAxial(
       moon,
       orbitPath: `M 20 ${cy} L 500 ${cy}`, // Horizontal ecliptic plane (0 deg)
       lunarOrbitSegments,
+      orbitalSegments,
       nodeMarkers: {
         asc: { x: ascNodeX, y: cy, label: '☊ Node' },
         desc: { x: descNodeX, y: cy, label: '☋ Node' }

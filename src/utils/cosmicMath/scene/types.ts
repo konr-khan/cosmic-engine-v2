@@ -9,6 +9,7 @@
 import { Degrees, Radians, JulianDate, Latitude, Longitude, HoursDecimal } from '../../../types/units';
 import { Vector2D, Vector3D, AltAzimuthCoordinates, EquatorialCoordinates, EclipticCoordinates } from '../../../types/coordinates';
 import { LunarPhaseName, EclipseType } from '../../../types/astronomy';
+import { OrbitalSegments } from '../projection';
 
 /** Scale rendering mode for planetary orbits */
 export type ScaleMode = 'true' | 'exaggerated';
@@ -286,6 +287,7 @@ export interface LunarOrbitSegment2D {
   strokeDasharray?: string;
   isFront: boolean;
   isAscending?: boolean;
+  isNear?: boolean;
 }
 
 /** 2D Projected Shadow Cones */
@@ -323,6 +325,7 @@ export interface ProjectedScene2D {
     orbitPath: string;
     lunarOrbitPath?: string;
     lunarOrbitSegments?: LunarOrbitSegment2D[];
+    orbitalSegments?: OrbitalSegments;
     shadowCones?: ProjectedShadowCones2D;
     milestones: ProjectedMilestone2D[];
     focus2?: { x: number; y: number; visible: boolean };

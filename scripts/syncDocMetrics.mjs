@@ -18,6 +18,7 @@ const rootDir = path.resolve(__dirname, '..');
 
 const readmePath = path.join(rootDir, 'README.md');
 const agentsPath = path.join(rootDir, 'AGENTS.md');
+const dossierPath = path.join(rootDir, 'docs', 'COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
 const tempJsonPath = path.join(rootDir, '.vitest-metrics.json');
 const vitestBinPath = path.join(rootDir, 'node_modules', 'vitest', 'vitest.mjs');
 
@@ -238,6 +239,28 @@ if (fs.existsSync(readmePath)) {
 
   fs.writeFileSync(readmePath, readmeContent, 'utf8');
   console.log('✔ README.md test metrics synchronized.');
+}
+
+// ==========================================
+// 3. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md
+// ==========================================
+if (fs.existsSync(dossierPath)) {
+  let dossierContent = fs.readFileSync(dossierPath, 'utf8');
+
+  // A. Header Test Harness line
+  dossierContent = dossierContent.replace(
+    /(> \*\*Test Harness\*\*: )\d+ passing unit tests across \d+ test suites/g,
+    `$1${totalTests} passing unit tests across ${totalFiles} test suites`
+  );
+
+  // B. ADR 0010/0011/0012 consequences test count
+  dossierContent = dossierContent.replace(
+    /All \d+ Vitest suites and \d+ unit tests pass deterministically/g,
+    `All ${totalFiles} Vitest suites and ${totalTests} unit tests pass deterministically`
+  );
+
+  fs.writeFileSync(dossierPath, dossierContent, 'utf8');
+  console.log('✔ COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md test metrics synchronized.');
 }
 
 console.log(`\n🎉 Documentation test metrics synchronization complete: ${totalFiles} suites, ${totalTests} tests.`);
