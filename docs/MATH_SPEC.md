@@ -807,7 +807,25 @@ Given geographic coordinates $(\lambda_{\text{geo}}, \phi_{\text{geo}})$ and loc
 2. **Camera / Ecliptic Transformation**:
    * **`euler3d`**: $\vec{P}_{\text{cam}} = \mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll}) \vec{P}_{\text{eq}}$.
    * **`topdown`**: $\vec{P}_{\text{ecl}} = (x_b, y_b \cos\varepsilon - z_b \sin\varepsilon, y_b \sin\varepsilon + z_b \cos\varepsilon)$ where $(x_b, y_b, z_b) = (\cos\phi \sin h, \cos\phi \cos h, \sin\phi)$.
-   * **`transverse`** / **`axial`**: Transformed along syzygy frame matching `calculateEarthSideGeometry` and `calculateEarthAxialGeometry`.
+   * **`transverse`**: Transformed along syzygy frame matching `calculateEarthSideGeometry`, with solar hemisphere on screen left and night hemisphere on screen right.
+   * **`axial`**: Anti-solar perspective looking at the background Sun through Earth matching `calculateEarthAxialGeometry`:
+     \[
+     x_{\text{body}} = -\cos\phi_{\text{geo}} \sin h, \quad y_{\text{body}} = \sin\phi_{\text{geo}}, \quad z_{\text{body}} = -\cos\phi_{\text{geo}} \cos h
+     \]
+     Projected via Earth's projected rotation axis $\vec{N} = (-\sin\varepsilon\cos\lambda_\odot, \cos\varepsilon, -\sin\varepsilon\sin\lambda_\odot)$ onto screen orthonormal basis $(\vec{U}, \vec{N}, \vec{W})$:
+     \[
+     x_{\text{proj}} = x_{\text{body}} u_x + y_{\text{body}} n_x - z_{\text{body}} v_x
+     \]
+     \[
+     y_{\text{proj}} = x_{\text{body}} u_y + y_{\text{body}} n_y - z_{\text{body}} v_y
+     \]
+     \[
+     z_{\text{proj}} = y_{\text{body}} n_z + z_{\text{body}} \|\vec{n}_{\text{screen}}\|
+     \]
+     Where $z_{\text{proj}} \ge 0$ defines the visible perpetual night hemisphere, and un-mirrored continents rotate prograde from West to East (screen left to right). Observer daylight status conforms to the exact solar elevation equation:
+     \[
+     \sin\phi_{\text{geo}} \sin\delta_\odot + \cos\phi_{\text{geo}} \cos\delta_\odot \cos h \ge 0
+     \]
 3. **Front-Hemisphere Edge Clipping ($z \ge 0$)**:
    For each polygon edge $\vec{v}_1 \to \vec{v}_2$ crossing $z = 0$, the zero-crossing parameter $t_0 = \frac{-v_{1, z}}{v_{2, z} - v_{1, z}} \in [0, 1]$ yields horizon intersection point $\vec{v}_{\text{cross}} = (1 - t_0)\vec{v}_1 + t_0 \vec{v}_2$. Normalizing $\hat{v} = \vec{v}_{\text{cross}} / \|\vec{v}_{\text{cross}}\|$ guarantees exact limb boundary alignment $(R \hat{v}_x, -R \hat{v}_y)$ with zero polygon chord-cutting.
 

@@ -75,6 +75,11 @@ const CANONICAL_SUITES = [
     focus: 'Polar daylight singularities ($\\pm 90^\\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, closed-form stereographic conformal ring invariants ($R_0 \\sec\\epsilon$), and 5-model Gyro-Morph continuum'
   },
   {
+    domain: 'Domain Invariants & Physics Conservation',
+    file: 'src/utils/cosmicMath/domainInvariants.test.ts',
+    focus: 'Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 \\dot{\\theta} = \\text{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance'
+  },
+  {
     domain: '3D Scene Graph Math',
     file: 'src/utils/cosmicMath/scene/scene.test.ts',
     focus: '3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\\circ$ inclined lunar orbit with continuous nodal precession $\\Omega(t)$, and 3D syzygy shadow cones'
