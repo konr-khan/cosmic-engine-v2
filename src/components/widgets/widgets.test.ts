@@ -481,9 +481,9 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
 
       expect(html).toContain('miniglobe-root');
       expect(html).toContain('⊕ EARTH');
-      expect(html).toContain('Perihelion');
-      expect(html).toContain('☊');
-      expect(html).toContain('☋');
+      // Lunar nodes (☊ and ☋) are removed from Orbit mode to avoid visual clutter
+      expect(html).not.toContain('☊');
+      expect(html).not.toContain('☋');
     });
 
     it('renders ArmillaryEarthPip in Heliocentric Orbit mode with 3D Living Marble MiniGlobe and GMST sync', () => {
@@ -1019,6 +1019,47 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(nodalHtml).toContain('Axial Sightline (5.14° Tilt)');
       expect(nodalHtml).toContain('SUN');
       expect(nodalHtml).toContain('MOON');
+
+      // Both NodalPlaneVisualizer and ShadowRayDiagram integrate Dual-Zone masking
+      expect(nodalHtml).toContain('clipPath id="axialEarthClip"');
+      expect(nodalHtml).toContain('mask id="axialOutsideEarth"');
+      expect(shadowHtml).toContain('clipPath id="syzygyEarthClip"');
+      expect(shadowHtml).toContain('mask id="syzygyOutsideEarth"');
+    });
+
+    it('renders NodalPlaneVisualizer with ghosted transit silhouette behind Earth at New Moon without popping', () => {
+      // New Moon (phaseValue = 0.0)
+      const newMoonEclipse: EclipseData = {
+        type: 'TOTAL_SOLAR',
+        category: 'SOLAR',
+        label: 'Solar Eclipse',
+        obscuration: 100,
+        beta: 0.0,
+        nodeProximityDeg: 0.0,
+        alignmentPercent: 100,
+        isEclipseActive: true,
+        distanceKm: 360000,
+        umbraRadiusKm: 18,
+        penumbraRadiusKm: 34,
+        raDiff: 0,
+        elongation: 0,
+        phaseValue: 0.0
+      };
+
+      const html = renderToStaticMarkup(
+        React.createElement(NodalPlaneVisualizer, {
+          eclipse: newMoonEclipse,
+          currentDate: new Date('2026-03-20T12:00:00Z'),
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12
+        })
+      );
+
+      // Moon should be rendered as a ghosted transit silhouette behind Earth rather than popping on the surface
+      expect(html).toContain('[Behind Earth / Transit]');
+      expect(html).toContain('clip-path="url(#axialEarthClip)"');
+      expect(html).toContain('mask="url(#axialOutsideEarth)"');
     });
 
     it('renders SkyViewSimulator with prograde Right-to-Left transit across solar eclipse without bouncing', () => {

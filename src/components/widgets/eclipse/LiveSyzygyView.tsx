@@ -55,6 +55,19 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
 
   return (
     <g>
+      <defs>
+        {/* Clip path strictly inside Earth disc (r = 18 at 310, 110) */}
+        <clipPath id="syzygyEarthClip">
+          <circle cx={liveEarthX} cy={liveEarthY} r="18" />
+        </clipPath>
+
+        {/* Inverse Mask strictly outside Earth disc (r = 18 at 310, 110) */}
+        <mask id="syzygyOutsideEarth">
+          <rect x="0" y="0" width="520" height="220" fill="#ffffff" />
+          <circle cx={liveEarthX} cy={liveEarthY} r="18" fill="#000000" />
+        </mask>
+      </defs>
+
       {/* Ecliptic Reference Centerline (0°) */}
       <line x1="10" y1="110" x2="510" y2="110" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
       <text x="92" y="104" className="text-[8px] font-mono fill-slate-500">Ecliptic Plane (0°)</text>
@@ -95,15 +108,15 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       <line x1="50" y1="82" x2="310" y2="92" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
       <line x1="50" y1="138" x2="310" y2="128" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
 
-      {/* 4. BACK LUNAR ORBIT (Waning: Dashed stroke, behind Earth) */}
-      <g className="pointer-events-none">
+      {/* 4. BACK LUNAR ORBIT (Waning: Dashed stroke, behind Earth, outside Earth disc) */}
+      <g mask="url(#syzygyOutsideEarth)" className="pointer-events-none">
         {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />}
         {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />}
       </g>
 
-      {/* Line connecting Earth and Moon (Back) */}
+      {/* Line connecting Earth and Moon (Back, masked outside Earth disc) */}
       {!isWaxing && (
-        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
+        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" mask="url(#syzygyOutsideEarth)" />
       )}
 
       {/* DYNAMIC MOON BODY (When behind Earth / Waning) */}
@@ -153,8 +166,16 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
         onPointerLeave={() => setHoveredEntity(null)}
       />
 
-      {/* 6. FRONT LUNAR ORBIT (Waxing: Solid stroke, in front of Earth) */}
-      <g className="pointer-events-none">
+      {/* DUAL-ZONE GHOSTED X-RAY CHORD ACROSS EARTH DISC (r <= 18px) */}
+      <g clipPath="url(#syzygyEarthClip)" className="pointer-events-none" opacity="0.22">
+        {waxAsc.length > 0 && <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" />}
+        {waxDesc.length > 0 && <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" />}
+        {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" strokeDasharray="3 2" />}
+        {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" strokeDasharray="3 2" />}
+      </g>
+
+      {/* 6. FRONT LUNAR ORBIT (Waxing: Solid stroke, outside Earth disc) */}
+      <g mask="url(#syzygyOutsideEarth)" className="pointer-events-none">
         {waxAsc.length > 0 && <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />}
         {waxDesc.length > 0 && <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" opacity="0.9" />}
 
@@ -181,9 +202,9 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
         </text>
       </g>
 
-      {/* Line connecting Earth and Moon (Front) */}
+      {/* Line connecting Earth and Moon (Front, masked outside Earth disc) */}
       {isWaxing && (
-        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" />
+        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" mask="url(#syzygyOutsideEarth)" />
       )}
 
       {/* DYNAMIC MOON BODY (When in front of Earth / Waxing) */}
