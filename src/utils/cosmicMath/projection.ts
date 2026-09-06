@@ -196,10 +196,21 @@ export interface OrbitalSegments {
   waxDesc: string[];
   wanAsc: string[];
   wanDesc: string[];
+  // Viewer-side paths (near side, in front of Earth: depth > 0)
+  nearWaxAsc: string[];
+  nearWaxDesc: string[];
+  nearWanAsc: string[];
+  nearWanDesc: string[];
+  // Sun-facing / far-side paths (behind Earth: depth <= 0)
+  farWaxAsc: string[];
+  farWaxDesc: string[];
+  farWanAsc: string[];
+  farWanDesc: string[];
 }
 
 /**
- * Generates 4-quadrant segmented SVG path arrays for Waxing/Waning x Ascending/Descending 2D stroke styling.
+ * Generates 4-quadrant segmented SVG path arrays for Waxing/Waning x Ascending/Descending 2D stroke styling,
+ * decomposed into viewer-side (depth > 0) and sun-facing / far-side (depth <= 0) segments.
  * @param centerX - SVG center X
  * @param centerY - SVG center Y
  * @param rx - Horizontal semi-major radius
@@ -222,6 +233,16 @@ export function generateOrbitalSegments(
   const waxDesc: string[] = [];
   const wanAsc: string[] = [];
   const wanDesc: string[] = [];
+
+  const nearWaxAsc: string[] = [];
+  const nearWaxDesc: string[] = [];
+  const nearWanAsc: string[] = [];
+  const nearWanDesc: string[] = [];
+
+  const farWaxAsc: string[] = [];
+  const farWaxDesc: string[] = [];
+  const farWanAsc: string[] = [];
+  const farWanDesc: string[] = [];
 
   for (let i = 0; i < steps; i++) {
     const t1 = (i / steps) * 2 * Math.PI;
@@ -246,15 +267,48 @@ export function generateOrbitalSegments(
     const isWax = midT <= Math.PI;
     const isAsc = midBeta >= 0;
 
+    // Depth relative to Earth along the viewing line of sight:
+    // - In 'side' view: depth Z = sin(midT) * rx (> 0 is viewer-side / waxing, <= 0 is far-side / waning)
+    // - In 'axial' view: depth Z = -cos(midT) * rx (> 0 is viewer-side / near Full Moon, <= 0 is sun-facing / near New Moon)
+    const midZ = projection === 'side' ? Math.sin(midT) * rx : -Math.cos(midT) * rx;
+    const isNear = midZ > 0;
+
     const seg = `M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}`;
     if (isWax) {
-      if (isAsc) waxAsc.push(seg);
-      else waxDesc.push(seg);
+      if (isAsc) {
+        waxAsc.push(seg);
+        if (isNear) nearWaxAsc.push(seg);
+        else farWaxAsc.push(seg);
+      } else {
+        waxDesc.push(seg);
+        if (isNear) nearWaxDesc.push(seg);
+        else farWaxDesc.push(seg);
+      }
     } else {
-      if (isAsc) wanAsc.push(seg);
-      else wanDesc.push(seg);
+      if (isAsc) {
+        wanAsc.push(seg);
+        if (isNear) nearWanAsc.push(seg);
+        else farWanAsc.push(seg);
+      } else {
+        wanDesc.push(seg);
+        if (isNear) nearWanDesc.push(seg);
+        else farWanDesc.push(seg);
+      }
     }
   }
 
-  return { waxAsc, waxDesc, wanAsc, wanDesc };
+  return {
+    waxAsc,
+    waxDesc,
+    wanAsc,
+    wanDesc,
+    nearWaxAsc,
+    nearWaxDesc,
+    nearWanAsc,
+    nearWanDesc,
+    farWaxAsc,
+    farWaxDesc,
+    farWanAsc,
+    farWanDesc
+  };
 }

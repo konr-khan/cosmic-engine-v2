@@ -70,8 +70,11 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const moonX = centerX - (Math.sin(phaseRad) * orbitalRx);
   const moonY = centerY - (beta * scalePxPerDeg);
 
-  // 3D Elliptical Orbital Loop: 4-Quadrant Paths (Waxing/Waning x Ascending/Descending)
-  const { waxAsc, waxDesc, wanAsc, wanDesc } = generateOrbitalSegments(
+  // 3D Elliptical Orbital Loop: Decomposed into Viewer-Side (Z > 0) and Sun-Facing (Z <= 0) Paths
+  const { 
+    nearWaxAsc, nearWaxDesc, nearWanAsc, nearWanDesc,
+    farWaxAsc, farWaxDesc, farWanAsc, farWanDesc 
+  } = generateOrbitalSegments(
     centerX,
     centerY,
     orbitalRx,
@@ -97,7 +100,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const moonDepth = -Math.cos(phaseRad) * orbitalRx;
   const isNearSide = moonDepth > 0;
   const distFromEarthCenter = Math.hypot(moonX - centerX, moonY - centerY);
-  const isBehindEarthDisc = !isNearSide && distFromEarthCenter <= 24;
+  const isMoonOccludedByEarth = !isNearSide && distFromEarthCenter < 24 + axialMoonRadius;
 
   return (
     <div className="w-full h-full flex flex-col justify-between relative select-none">
@@ -171,8 +174,24 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
         {/* Umbra Shadow Core */}
         <circle cx={centerX} cy={centerY} r="18" fill="#020617" stroke="#f43f5e" strokeWidth="1" />
 
-        {/* 3. FAR-SIDE MOON DISC (When outside Earth disc on the far side: Z <= 0, r > 24) */}
-        {!isNearSide && !isBehindEarthDisc && (
+        {/* 3. FAR-SIDE ORBITAL PATHS IN OPEN SKY (Sun-Facing side: depth <= 0, outside Earth disc) */}
+        <g mask="url(#axialOutsideEarth)" className="pointer-events-none">
+          {farWaxAsc.length > 0 && (
+            <path d={farWaxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />
+          )}
+          {farWaxDesc.length > 0 && (
+            <path d={farWaxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" opacity="0.9" />
+          )}
+          {farWanAsc.length > 0 && (
+            <path d={farWanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
+          )}
+          {farWanDesc.length > 0 && (
+            <path d={farWanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
+          )}
+        </g>
+
+        {/* 4. FAR-SIDE MOON DISC (Rendered behind Earth disc) */}
+        {!isNearSide && (
           <g transform={`translate(${moonX}, ${moonY})`}>
             <circle 
               r={axialMoonRadius} 
@@ -183,29 +202,10 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
               strokeDasharray={isWaxing ? undefined : '3 2'}
               className="drop-shadow"
             />
-            <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
-            <text 
-              x={moonX > centerX ? 12 : -12} 
-              y="-4" 
-              textAnchor={moonX > centerX ? 'start' : 'end'} 
-              className={`text-[8.5px] font-mono font-bold select-none pointer-events-none ${
-                eclipse.isEclipseActive ? 'fill-rose-300' : (isAscending ? 'fill-sky-300' : 'fill-rose-300')
-              }`}
-            >
-              MOON ({moonAngularDiamArcmin.toFixed(1)}')
-            </text>
-            <text 
-              x={moonX > centerX ? 12 : -12} 
-              y="8" 
-              textAnchor={moonX > centerX ? 'start' : 'end'} 
-              className="text-[7.5px] font-mono fill-slate-400 select-none pointer-events-none"
-            >
-              {isWaxing ? '[Waxing / Solid]' : '[Waning / Dashed]'}
-            </text>
           </g>
         )}
 
-        {/* 4. HIGH-PRECISION EARTH MINI-GLOBE IN AXIAL PROJECTION (Upsized radius=24) */}
+        {/* 5. HIGH-PRECISION EARTH MINI-GLOBE IN AXIAL PROJECTION (Upsized radius=24) */}
         <MiniGlobe
           cx={centerX}
           cy={centerY}
@@ -223,71 +223,55 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
           showLabel={true}
         />
 
-        {/* 5. DUAL-ZONE GHOSTED X-RAY CHORD ACROSS EARTH DISC (r <= 24px) */}
+        {/* 6. SUN-FACING GHOSTED X-RAY CHORD ACROSS EARTH DISC (ONLY Far-Side depth <= 0) */}
         <g clipPath="url(#axialEarthClip)" className="pointer-events-none" opacity="0.22">
-          {waxAsc.length > 0 && (
-            <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" />
+          {farWaxAsc.length > 0 && (
+            <path d={farWaxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" />
           )}
-          {waxDesc.length > 0 && (
-            <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" />
+          {farWaxDesc.length > 0 && (
+            <path d={farWaxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" />
           )}
-          {wanAsc.length > 0 && (
-            <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" strokeDasharray="3 2" />
+          {farWanAsc.length > 0 && (
+            <path d={farWanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" strokeDasharray="3 2" />
           )}
-          {wanDesc.length > 0 && (
-            <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" strokeDasharray="3 2" />
+          {farWanDesc.length > 0 && (
+            <path d={farWanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" strokeDasharray="3 2" />
           )}
         </g>
 
-        {/* GHOSTED MOON DISC (When transiting behind Earth disc: Z <= 0, r <= 24) */}
-        {isBehindEarthDisc && (
-          <g transform={`translate(${moonX}, ${moonY})`} opacity="0.35" className="pointer-events-none">
-            <circle 
-              r={axialMoonRadius} 
-              fill="#0f172a" 
-              fillOpacity="0.5" 
-              stroke={isAscending ? '#38bdf8' : '#f43f5e'} 
-              strokeWidth="1.5" 
-              strokeDasharray="3 2"
-            />
-            <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
-            <text 
-              x={moonX > centerX ? 12 : -12} 
-              y="-4" 
-              textAnchor={moonX > centerX ? 'start' : 'end'} 
-              className={`text-[8px] font-mono font-bold select-none pointer-events-none ${
-                isAscending ? 'fill-sky-300/80' : 'fill-rose-300/80'
-              }`}
-            >
-              MOON ({moonAngularDiamArcmin.toFixed(1)}')
-            </text>
-            <text 
-              x={moonX > centerX ? 12 : -12} 
-              y="7" 
-              textAnchor={moonX > centerX ? 'start' : 'end'} 
-              className="text-[7px] font-mono fill-slate-400 select-none pointer-events-none"
-            >
-              [Behind Earth / Transit]
-            </text>
+        {/* 7. EARTH-OCCLUDED MOON OUTLINE OVERLAY (Preserves complete circular outline across Earth) */}
+        {isMoonOccludedByEarth && (
+          <g clipPath="url(#axialEarthClip)" className="pointer-events-none">
+            <g transform={`translate(${moonX}, ${moonY})`}>
+              <circle 
+                r={axialMoonRadius} 
+                fill="#0f172a" 
+                fillOpacity="0.45" 
+                stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
+                strokeWidth="2" 
+                strokeDasharray={isWaxing ? undefined : '3 2'}
+                opacity="0.75"
+              />
+            </g>
           </g>
         )}
 
-        {/* 6. VIBRANT ORBITAL LOOPS IN OPEN SKY (Masked outside Earth disc: r > 24px) */}
-        <g mask="url(#axialOutsideEarth)" className="pointer-events-none">
+        {/* 8. VIEWER-SIDE ORBITAL LOOPS (IN FRONT OF EARTH: depth > 0, FULL VIBRANCY 0.9, NO MASK) */}
+        <g className="pointer-events-none">
           {/* Waxing: Solid stroke */}
-          {waxAsc.length > 0 && (
-            <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />
+          {nearWaxAsc.length > 0 && (
+            <path d={nearWaxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />
           )}
-          {waxDesc.length > 0 && (
-            <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" opacity="0.9" />
+          {nearWaxDesc.length > 0 && (
+            <path d={nearWaxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" opacity="0.9" />
           )}
 
           {/* Waning: Dashed stroke */}
-          {wanAsc.length > 0 && (
-            <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
+          {nearWanAsc.length > 0 && (
+            <path d={nearWanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
           )}
-          {wanDesc.length > 0 && (
-            <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
+          {nearWanDesc.length > 0 && (
+            <path d={nearWanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />
           )}
 
           {/* Ascending Node Marker (☊) */}
@@ -313,7 +297,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
           </text>
         </g>
 
-        {/* 7. DYNAMIC MOON DISC IN FOREGROUND (When on Near Side: Z > 0) */}
+        {/* 9. NEAR-SIDE MOON DISC (When on Near Side: Z > 0, full foreground opacity) */}
         {isNearSide && (
           <g transform={`translate(${moonX}, ${moonY})`}>
             <circle 
@@ -346,8 +330,32 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
             </text>
           </g>
         )}
-      </svg>
 
+        {/* 10. PIN DOT & TELEMETRY LABELS FOR FAR-SIDE MOON (Always readable in foreground) */}
+        {!isNearSide && (
+          <g transform={`translate(${moonX}, ${moonY})`} className="pointer-events-none">
+            <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
+            <text 
+              x={moonX > centerX ? 12 : -12} 
+              y="-4" 
+              textAnchor={moonX > centerX ? 'start' : 'end'} 
+              className={`text-[8.5px] font-mono font-bold select-none pointer-events-none ${
+                eclipse.isEclipseActive ? 'fill-rose-300' : (isAscending ? 'fill-sky-300' : 'fill-rose-300')
+              }`}
+            >
+              MOON ({moonAngularDiamArcmin.toFixed(1)}')
+            </text>
+            <text 
+              x={moonX > centerX ? 12 : -12} 
+              y="8" 
+              textAnchor={moonX > centerX ? 'start' : 'end'} 
+              className="text-[7.5px] font-mono fill-slate-400 select-none pointer-events-none"
+            >
+              {distFromEarthCenter <= 24 ? '[Behind Earth / Transit]' : (isWaxing ? '[Waxing / Solid]' : '[Waning / Dashed]')}
+            </text>
+          </g>
+        )}
+      </svg>
     </div>
   );
 };

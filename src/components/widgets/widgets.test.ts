@@ -48,7 +48,7 @@ import {
   ArmillaryEarthPip
 } from './index';
 import { computeStagedCamera, type ArmillaryCameraState, type ArmillaryModelOutput } from './armillary';
-import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, calculateEclipseData, generateArmillaryModel } from '../../utils/cosmicMath';
+import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate, dateToJulianDate, calculateEclipseData, generateArmillaryModel } from '../../utils/cosmicMath';
 import { EclipseData } from '../../types';
 
 describe('Observatory 8-Widget Architecture & Integration Tests', () => {
@@ -1060,6 +1060,83 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html).toContain('[Behind Earth / Transit]');
       expect(html).toContain('clip-path="url(#axialEarthClip)"');
       expect(html).toContain('mask="url(#axialOutsideEarth)"');
+    });
+
+    it('unmutes viewer-side orbital paths in Axial Sightline and Syzygy views while ghosting only sun-facing far-side paths', () => {
+      const date2028 = new Date('2028-01-15T13:40:00Z');
+      const jd2028 = dateToJulianDate(date2028);
+      const eclipse2028 = calculateEclipseData(jd2028);
+
+      const nodalHtml = renderToStaticMarkup(
+        React.createElement(NodalPlaneVisualizer, {
+          eclipse: eclipse2028,
+          currentDate: date2028,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 13.67
+        })
+      );
+
+      const syzygyHtml = renderToStaticMarkup(
+        React.createElement(LiveSyzygyView, {
+          eclipse: eclipse2028,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 13.67,
+          sunLambdaDeg: 295,
+          setHoveredEntity: () => {}
+        })
+      );
+
+      // In Axial Sightline, near-side paths are rendered unmasked in front of Earth at 0.9 opacity
+      // while only far-side paths are clipped to axialEarthClip at 0.22 opacity
+      expect(nodalHtml).toContain('opacity="0.22"');
+      expect(nodalHtml).toContain('clip-path="url(#axialEarthClip)"');
+      expect(nodalHtml).toContain('opacity="0.9"');
+
+      // In Syzygy view, waxing front paths are rendered unmasked at 0.9 opacity across Earth
+      expect(syzygyHtml).toContain('opacity="0.9"');
+      expect(syzygyHtml).toContain('clip-path="url(#syzygyEarthClip)"');
+    });
+
+    it('preserves solid waxing stroke and Earth-occluded circular outline at 0009Z and 0109Z on 8/03/2027', () => {
+      const date0009 = new Date('2027-08-03T00:09:00Z');
+      const jd0009 = dateToJulianDate(date0009);
+      const eclipse0009 = calculateEclipseData(jd0009);
+
+      const html0009 = renderToStaticMarkup(
+        React.createElement(NodalPlaneVisualizer, {
+          eclipse: eclipse0009,
+          currentDate: date0009,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 0.15
+        })
+      );
+
+      // At 0009Z on 8/03/2027, the Moon has already entered its waxing phase (~14h after New Moon).
+      // It must render with a solid stroke (not dashed) and retain its occluded outline across Earth
+      expect(eclipse0009.phaseValue).toBeLessThanOrEqual(0.5); // Waxing
+      expect(html0009).toContain('clip-path="url(#axialEarthClip)"');
+      expect(html0009).toContain('[Behind Earth / Transit]');
+
+      const date0109 = new Date('2027-08-03T01:09:00Z');
+      const jd0109 = dateToJulianDate(date0109);
+      const eclipse0109 = calculateEclipseData(jd0109);
+
+      const html0109 = renderToStaticMarkup(
+        React.createElement(NodalPlaneVisualizer, {
+          eclipse: eclipse0109,
+          currentDate: date0109,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 1.15
+        })
+      );
+
+      // At 0109Z, Moon center is just outside Earth (dist ~24.2px), but disc overlaps Earth disc.
+      // Occluded overlay must remain present across Earth disc without losing outline
+      expect(html0109).toContain('clip-path="url(#axialEarthClip)"');
     });
 
     it('renders SkyViewSimulator with prograde Right-to-Left transit across solar eclipse without bouncing', () => {

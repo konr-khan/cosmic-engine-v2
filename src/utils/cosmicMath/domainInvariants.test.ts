@@ -34,7 +34,8 @@ import {
   getJulianDate,
   toRadians,
   toDegrees,
-  EARTH_MILESTONES
+  EARTH_MILESTONES,
+  generateOrbitalSegments
 } from './index';
 import { asJulianDate } from '../../types/units';
 
@@ -250,4 +251,43 @@ describe('Domain Invariants & Physics Conservation Suite (Wave 5)', () => {
     });
   });
 
+  describe('7. Orbital Segments Near/Far Depth Partition Invariant', () => {
+    it('strictly conserves total segment count across near-side and far-side decompositions in side and axial views', () => {
+      const steps = 72;
+      const nodeAngle = toRadians(45);
+
+      for (const proj of ['side', 'axial'] as const) {
+        const segs = generateOrbitalSegments(260, 110, 150, 8.5, nodeAngle, proj, steps);
+
+        // Conservation of quadrant partitions
+        expect(segs.nearWaxAsc.length + segs.farWaxAsc.length).toBe(segs.waxAsc.length);
+        expect(segs.nearWaxDesc.length + segs.farWaxDesc.length).toBe(segs.waxDesc.length);
+        expect(segs.nearWanAsc.length + segs.farWanAsc.length).toBe(segs.wanAsc.length);
+        expect(segs.nearWanDesc.length + segs.farWanDesc.length).toBe(segs.wanDesc.length);
+
+        // Conservation of total loop steps
+        const totalNear = segs.nearWaxAsc.length + segs.nearWaxDesc.length + segs.nearWanAsc.length + segs.nearWanDesc.length;
+        const totalFar = segs.farWaxAsc.length + segs.farWaxDesc.length + segs.farWanAsc.length + segs.farWanDesc.length;
+        expect(totalNear + totalFar).toBe(steps);
+
+        // Verify side projection depth semantics: waxing is 100% near-side, waning is 100% far-side
+        if (proj === 'side') {
+          expect(segs.nearWaxAsc.length + segs.nearWaxDesc.length).toBe(segs.waxAsc.length + segs.waxDesc.length);
+          expect(segs.farWanAsc.length + segs.farWanDesc.length).toBe(segs.wanAsc.length + segs.wanDesc.length);
+          expect(segs.farWaxAsc.length).toBe(0);
+          expect(segs.nearWanAsc.length).toBe(0);
+        }
+
+        // Verify axial projection depth semantics: both waxing and waning cross near and far sides
+        if (proj === 'axial') {
+          expect(segs.nearWaxAsc.length + segs.nearWaxDesc.length).toBeGreaterThan(0);
+          expect(segs.farWaxAsc.length + segs.farWaxDesc.length).toBeGreaterThan(0);
+          expect(segs.nearWanAsc.length + segs.nearWanDesc.length).toBeGreaterThan(0);
+          expect(segs.farWanAsc.length + segs.farWanDesc.length).toBeGreaterThan(0);
+        }
+      }
+    });
+  });
+
 });
+
