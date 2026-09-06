@@ -1139,41 +1139,86 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html0109).toContain('clip-path="url(#axialEarthClip)"');
     });
 
-    it('applies in-front vibrant and behind muted styling to ascending and descending nodes', () => {
-      const date = new Date('2028-01-15T13:40:00Z');
-      const jd = dateToJulianDate(date);
-      const eclipse = calculateEclipseData(jd);
+    it('mutes ascending and descending nodes only when directly behind Earth disc while preserving full vibrancy in open sky and in front of Earth', () => {
+      // 1. Axial Sightline: Ascending Node directly behind Earth (tAsc = 0, nodeAngleDeg = 0)
+      // When nodeAngleDeg = 0: tAsc = 0, ascNodeX = 260 (center), ascNodeDepth = -150 <= 0 (behind Earth)
+      // tDesc = PI, descNodeX = 260 (center), descNodeDepth = +150 > 0 (in front of Earth)
+      const alignedEclipse: EclipseData = {
+        type: 'NONE',
+        category: 'NO_ECLIPSE',
+        label: 'No Eclipse',
+        obscuration: 0,
+        beta: 0.0,
+        nodeProximityDeg: 0.0,
+        nodeAngleDeg: 0,
+        alignmentPercent: 0,
+        isEclipseActive: false,
+        distanceKm: 384400,
+        umbraRadiusKm: 18,
+        penumbraRadiusKm: 34,
+        raDiff: 90,
+        elongation: 90,
+        phaseValue: 0.25
+      };
 
-      const nodalHtml = renderToStaticMarkup(
+      const axialHtml = renderToStaticMarkup(
         React.createElement(NodalPlaneVisualizer, {
-          eclipse,
-          currentDate: date,
+          eclipse: alignedEclipse,
+          currentDate: new Date('2026-03-20T12:00:00Z'),
           latitude: 47.06,
           longitude: -122.81,
-          timeOfDay: 13.67
+          timeOfDay: 12
         })
       );
 
+      // Ascending Node is directly behind Earth: muted styling (dashed stroke, 0.35 opacity, fill-sky-400/60)
+      expect(axialHtml).toContain('stroke-dasharray="2 1.5"');
+      expect(axialHtml).toContain('fill-sky-400/60');
+      // Descending Node is directly in front of Earth: vibrant styling (solid white stroke, bright fill-rose-400)
+      expect(axialHtml).toContain('fill-rose-400 font-semibold');
+
+      // 2. Syzygy View: Ascending Node directly behind Earth (tAsc = 270 deg / 3*PI/2)
+      // When nodeAngleDeg = 90: tAsc = -90 = 270 deg, ascNodeX = 310 (center), ascNodeDepth = sin(270)*85 = -85 <= 0
+      const syzygyEclipse: EclipseData = {
+        ...alignedEclipse,
+        nodeAngleDeg: 90
+      };
+
       const syzygyHtml = renderToStaticMarkup(
         React.createElement(LiveSyzygyView, {
-          eclipse,
+          eclipse: syzygyEclipse,
           latitude: 47.06,
           longitude: -122.81,
-          timeOfDay: 13.67,
-          sunLambdaDeg: 295,
+          timeOfDay: 12,
+          sunLambdaDeg: 0,
           setHoveredEntity: () => {}
         })
       );
 
-      // Both views have node markers (☊ and ☋)
-      expect(nodalHtml).toContain('☊ Node');
-      expect(nodalHtml).toContain('☋ Node');
-      expect(syzygyHtml).toContain('☊ Node');
-      expect(syzygyHtml).toContain('☋ Node');
+      // Ascending Node directly behind Earth in Syzygy view: muted styling
+      expect(syzygyHtml).toContain('stroke-dasharray="2 1.5"');
+      expect(syzygyHtml).toContain('fill-sky-400/60');
 
-      // Both views partition nodes into vibrant in-front and muted behind (opacity="0.45")
-      expect(nodalHtml).toContain('opacity="0.45"');
-      expect(syzygyHtml).toContain('opacity="0.45"');
+      // 3. Open Sky: When node is far from Earth (e.g. nodeAngleDeg = 45 in Axial view)
+      // Both nodes are at dist = 150 * sin(45) ~ 106px >> 24px (open sky). Both must be vibrant!
+      const openSkyEclipse: EclipseData = {
+        ...alignedEclipse,
+        nodeAngleDeg: 45
+      };
+
+      const openSkyHtml = renderToStaticMarkup(
+        React.createElement(NodalPlaneVisualizer, {
+          eclipse: openSkyEclipse,
+          currentDate: new Date('2026-03-20T12:00:00Z'),
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12
+        })
+      );
+
+      // In open sky, neither node is directly behind Earth: both have bright full-vibrancy classes
+      expect(openSkyHtml).toContain('fill-sky-400 font-semibold');
+      expect(openSkyHtml).toContain('fill-rose-400 font-semibold');
     });
 
     it('renders SkyViewSimulator with prograde Right-to-Left transit across solar eclipse without bouncing', () => {

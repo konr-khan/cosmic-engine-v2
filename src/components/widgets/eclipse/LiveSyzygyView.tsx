@@ -53,9 +53,11 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
   const descNodeX = liveEarthX - (Math.cos(tDesc) * liveOrbitalRx);
   const descNodeY = liveEarthY;
 
-  // 3D Depth along Line of Sight (sin(t) * rx: > 0 viewer-side/front, <= 0 far-side/behind)
-  const isAscNear = Math.sin(tAsc) * liveOrbitalRx > 0;
-  const isDescNear = Math.sin(tDesc) * liveOrbitalRx > 0;
+  // Node 3D Depth along viewing axis (sin(t) * rx in side view: Z > 0 is viewer-side/waxing, Z <= 0 is far-side/waning)
+  const ascNodeDepth = Math.sin(tAsc) * liveOrbitalRx;
+  const descNodeDepth = Math.sin(tDesc) * liveOrbitalRx;
+  const isAscBehindEarth = ascNodeDepth <= 0 && Math.abs(ascNodeX - liveEarthX) <= 18;
+  const isDescBehindEarth = descNodeDepth <= 0 && Math.abs(descNodeX - liveEarthX) <= 18;
 
   return (
     <g>
@@ -118,34 +120,6 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
         {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />}
       </g>
 
-      {/* Far-Side Node Markers (Behind Earth: Muted Color Logic) */}
-      {!isAscNear && (
-        <g className="pointer-events-none" opacity="0.45">
-          <circle cx={ascNodeX} cy={ascNodeY} r="3" fill="#38bdf8" stroke="rgba(255,255,255,0.6)" strokeWidth="0.75" />
-          <text
-            x={ascNodeX < liveEarthX ? ascNodeX - 6 : ascNodeX + 6}
-            y={ascNodeY - 5}
-            textAnchor={ascNodeX < liveEarthX ? "end" : "start"}
-            className="text-[7.5px] font-mono fill-sky-400/70 font-medium select-none"
-          >
-            ☊ Node
-          </text>
-        </g>
-      )}
-      {!isDescNear && (
-        <g className="pointer-events-none" opacity="0.45">
-          <circle cx={descNodeX} cy={descNodeY} r="3" fill="#f43f5e" stroke="rgba(255,255,255,0.6)" strokeWidth="0.75" />
-          <text
-            x={descNodeX > liveEarthX ? descNodeX + 6 : descNodeX - 6}
-            y={descNodeY + 12}
-            textAnchor={descNodeX > liveEarthX ? "start" : "end"}
-            className="text-[7.5px] font-mono fill-rose-400/70 font-medium select-none"
-          >
-            ☋ Node
-          </text>
-        </g>
-      )}
-
       {/* Line connecting Earth and Moon (Back, masked outside Earth disc) */}
       {!isWaxing && (
         <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" mask="url(#syzygyOutsideEarth)" />
@@ -202,12 +176,6 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       <g clipPath="url(#syzygyEarthClip)" className="pointer-events-none" opacity="0.22">
         {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" strokeDasharray="3 2" />}
         {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" strokeDasharray="3 2" />}
-        {!isAscNear && Math.abs(ascNodeX - liveEarthX) <= 18 && (
-          <circle cx={ascNodeX} cy={ascNodeY} r="2.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.75" />
-        )}
-        {!isDescNear && Math.abs(descNodeX - liveEarthX) <= 18 && (
-          <circle cx={descNodeX} cy={descNodeY} r="2.5" fill="#f43f5e" stroke="#ffffff" strokeWidth="0.75" />
-        )}
       </g>
 
       {/* EARTH-OCCLUDED MOON OUTLINE OVERLAY (Preserves complete circular outline across Earth) */}
@@ -232,9 +200,22 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
         {waxAsc.length > 0 && <path d={waxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />}
         {waxDesc.length > 0 && <path d={waxDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" opacity="0.9" />}
 
-        {/* Near-Side Node Markers (In Front of Earth: Vibrant Full Color) */}
-        {isAscNear && (
-          <g className="pointer-events-none">
+        {/* Ascending Node Marker (☊) */}
+        {isAscBehindEarth ? (
+          <g opacity="0.35">
+            <circle cx={ascNodeX} cy={ascNodeY} r="3" fill="#0f172a" stroke="#38bdf8" strokeWidth="1" strokeDasharray="2 1.5" />
+            <circle cx={ascNodeX} cy={ascNodeY} r="1.2" fill="#38bdf8" />
+            <text
+              x={ascNodeX < liveEarthX ? ascNodeX - 6 : ascNodeX + 6}
+              y={ascNodeY - 5}
+              textAnchor={ascNodeX < liveEarthX ? "end" : "start"}
+              className="text-[7px] font-mono fill-sky-400/60 font-medium select-none"
+            >
+              ☊ Node
+            </text>
+          </g>
+        ) : (
+          <g>
             <circle cx={ascNodeX} cy={ascNodeY} r="3.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
             <text
               x={ascNodeX < liveEarthX ? ascNodeX - 6 : ascNodeX + 6}
@@ -247,8 +228,22 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
           </g>
         )}
 
-        {isDescNear && (
-          <g className="pointer-events-none">
+        {/* Descending Node Marker (☋) */}
+        {isDescBehindEarth ? (
+          <g opacity="0.35">
+            <circle cx={descNodeX} cy={descNodeY} r="3" fill="#0f172a" stroke="#f43f5e" strokeWidth="1" strokeDasharray="2 1.5" />
+            <circle cx={descNodeX} cy={descNodeY} r="1.2" fill="#f43f5e" />
+            <text
+              x={descNodeX > liveEarthX ? descNodeX + 6 : descNodeX - 6}
+              y={descNodeY + 12}
+              textAnchor={descNodeX > liveEarthX ? "start" : "end"}
+              className="text-[7px] font-mono fill-rose-400/60 font-medium select-none"
+            >
+              ☋ Node
+            </text>
+          </g>
+        ) : (
+          <g>
             <circle cx={descNodeX} cy={descNodeY} r="3.5" fill="#f43f5e" stroke="#ffffff" strokeWidth="1" />
             <text
               x={descNodeX > liveEarthX ? descNodeX + 6 : descNodeX - 6}
