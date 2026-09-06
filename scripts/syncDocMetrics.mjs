@@ -71,9 +71,39 @@ console.log(`📊 Live Test Harness Metrics: ${totalFiles} test files, ${totalTe
  */
 const CANONICAL_SUITES = [
   {
-    domain: 'Cosmic Math',
-    file: 'src/utils/cosmicMath.test.ts',
-    focus: 'Polar daylight singularities ($\\pm 90^\\circ$, continuous twilight), UTC date invariance & `createUTCDate`, Julian dates, Meeus lunar series, disc illumination ($k$), nodal precession ($\\Omega$), 365/366-day solar & lunar matrices, eclipse presets, 3D projection obliquity & observer pin geometry, closed-form stereographic conformal ring invariants ($R_0 \\sec\\epsilon$), and 5-model Gyro-Morph continuum'
+    domain: 'Core Astronomy & Time',
+    file: 'src/utils/cosmicMath/core.test.ts',
+    focus: 'Julian date engines, UTC date invariance & `createUTCDate`, time parsing & formatting, spherical linear interpolation (`slerp3D`), physical constants (`astroConstants`), and floating-point degeneracy protection'
+  },
+  {
+    domain: 'Solar Ephemeris & Twilight',
+    file: 'src/utils/cosmicMath/solar.test.ts',
+    focus: 'Solar declination, equation of time, daily solar events (rise/set), civil/nautical/astronomical twilight bands, polar boundaries (midnight sun, polar night), and annual solar matrix'
+  },
+  {
+    domain: 'Lunar Ephemeris & Illumination',
+    file: 'src/utils/cosmicMath/lunar.test.ts',
+    focus: 'Meeus lunar series, true geocentric phase angle ($i$), disc illumination ($k$), 2-step iterative rise/set solver, parallactic angle, nodal precession, and annual lunar matrix'
+  },
+  {
+    domain: 'Eclipse Geometry & Presets',
+    file: 'src/utils/cosmicMath/eclipse.test.ts',
+    focus: 'Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`)'
+  },
+  {
+    domain: '3D Obliquity & Earth Projections',
+    file: 'src/utils/cosmicMath/projection.test.ts',
+    focus: 'Earth axial obliquity ($23.439^\\circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping'
+  },
+  {
+    domain: 'Armillary Continuum & Projections',
+    file: 'src/utils/cosmicMath/armillary/armillary.test.ts',
+    focus: 'Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0\\sec\\epsilon$)'
+  },
+  {
+    domain: 'SkyDomeBase Primitive',
+    file: 'src/components/widgets/today/SkyDomeBase.test.tsx',
+    focus: 'Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors'
   },
   {
     domain: 'Domain Invariants & Physics Conservation',
@@ -245,22 +275,71 @@ if (fs.existsSync(readmePath)) {
 // 3. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md
 // ==========================================
 if (fs.existsSync(dossierPath)) {
-  let dossierContent = fs.readFileSync(dossierPath, 'utf8');
+  const adrDir = path.join(rootDir, 'docs', 'adr');
+  const adrFiles = fs.existsSync(adrDir) ? fs.readdirSync(adrDir).filter(f => f.endsWith('.md')).sort() : [];
 
-  // A. Header Test Harness line
-  dossierContent = dossierContent.replace(
-    /(> \*\*Test Harness\*\*: )\d+ passing unit tests across \d+ test suites/g,
-    `$1${totalTests} passing unit tests across ${totalFiles} test suites`
-  );
+  const adrs = adrFiles.map(file => {
+    const filePath = path.join(adrDir, file);
+    const c = fs.readFileSync(filePath, 'utf8');
+    const match = c.match(/^#\s+(ADR\s+\d+:\s*.+)/m);
+    const title = match ? match[1].trim() : file;
+    return { file, title, content: c, filePath };
+  });
 
-  // B. ADR 0010/0011/0012 consequences test count
-  dossierContent = dossierContent.replace(
-    /All \d+ Vitest suites and \d+ unit tests pass deterministically/g,
-    `All ${totalFiles} Vitest suites and ${totalTests} unit tests pass deterministically`
-  );
+  const now = new Date().toISOString();
 
-  fs.writeFileSync(dossierPath, dossierContent, 'utf8');
-  console.log('✔ COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md test metrics synchronized.');
+  const tocLines = [
+    '1. [System Overview & Setup](#system-overview-setup)',
+    '2. [Project Roadmap, Features & Milestones](#project-roadmap-features-milestones)',
+    '3. [Agent Guidelines, Protocols & Architecture Map](#agent-guidelines-protocols-architecture-map)',
+    '4. [Critical Log of Historical Dead Ends](#critical-log-of-historical-dead-ends)',
+    '5. [Astronomical Math Specification](#astronomical-math-specification)',
+    '6. [Design System & Visual Vector Tokens](#design-system-visual-vector-tokens)',
+    ...adrs.map((adr, i) => `${i + 7}. [${adr.title}](#${adr.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')})`)
+  ];
+
+  const sections = [
+    { title: 'System Overview & Setup', file: 'README.md' },
+    { title: 'Project Roadmap, Features & Milestones', file: 'PROJECT.md' },
+    { title: 'Agent Guidelines, Protocols & Architecture Map', file: 'AGENTS.md' },
+    { title: 'Critical Log of Historical Dead Ends', file: 'DEAD_ENDS.md' },
+    { title: 'Astronomical Math Specification', file: 'docs/MATH_SPEC.md' },
+    { title: 'Design System & Visual Vector Tokens', file: 'docs/DESIGN_SYSTEM.md' },
+  ];
+
+  let doc = `# Cosmic Engine V2.0 — Master Documentation Dossier
+
+> **Compilation Date**: ${now}
+> **Repository**: konr-khan/cosmic-engine-v2
+> **Version**: 2.0.0 (Production Hardened)
+> **Test Harness**: ${totalTests} passing unit tests across ${totalFiles} test suites
+> **Unit Safety**: Strict branded nominal typing (0 violations across 77 UI components)
+
+---
+
+## Table of Contents
+
+${tocLines.join('\n')}
+
+---
+`;
+
+  for (const sec of sections) {
+    const p = path.join(rootDir, sec.file);
+    if (fs.existsSync(p)) {
+      const secContent = fs.readFileSync(p, 'utf8');
+      doc += `\n## ${sec.title}\n\n> Source: [${sec.file}](file:///${p.replace(/\\/g, '/')})\n\n${secContent}\n\n---\n`;
+    }
+  }
+
+  for (const adr of adrs) {
+    const relPath = `docs/adr/${adr.file}`;
+    const fullPath = path.join(rootDir, relPath);
+    doc += `\n## ${adr.title}\n\n> Source: [${relPath}](file:///${fullPath.replace(/\\/g, '/')})\n\n${adr.content}\n\n---\n`;
+  }
+
+  fs.writeFileSync(dossierPath, doc, 'utf8');
+  console.log('✔ COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md compiled and synchronized.');
 }
 
 console.log(`\n🎉 Documentation test metrics synchronization complete: ${totalFiles} suites, ${totalTests} tests.`);

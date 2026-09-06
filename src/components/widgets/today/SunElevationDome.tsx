@@ -5,10 +5,11 @@ import {
   toDegrees, 
   formatTime, 
   clamp, 
-  calculateEarthOrbitalPhysics,
+  calculateEarthOrbitalPhysics, 
   getJulianDate 
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
+import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeReferenceLine } from './SkyDomeBase';
 
 export interface SunElevationDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -51,12 +52,9 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
     Math.cos(toRadians(latitude)) * Math.cos(toRadians(sunDeclination as number)) * Math.cos(toRadians(sunHourAngle));
   const currentSunElevation = toDegrees(Math.asin(clamp(sinSunAlt, -1, 1)));
 
-  // Sun Arc Coordinates (SVG: 260x120 - upsized by ~50%)
-  const elR = 92;
-  const elCx = 130;
-  const elCy = 104;
-  const sunX = elCx + elR * Math.sin(toRadians(sunHourAngle));
-  const sunY = elCy - elR * Math.sin(toRadians(currentSunElevation));
+  // Sun Arc Coordinates (SVG: 260x120)
+  const sunX = EL_CX + EL_R * Math.sin(toRadians(sunHourAngle));
+  const sunY = EL_CY - EL_R * Math.sin(toRadians(currentSunElevation));
 
   // --- Solstice Peaks & Zenith Cap Math ---
   const OBLIQUITY = 23.439281;
@@ -75,159 +73,71 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   // Zenith Cap geometry (unreachable sector when latitude is outside tropics)
   let capPathD = '';
   if (!isTropical && maxAnnualNoon < 89.5) {
-    const yCap = elCy - elR * Math.sin(toRadians(maxAnnualNoon));
-    const xCapL = elCx - elR * Math.cos(toRadians(maxAnnualNoon));
-    const xCapR = elCx + elR * Math.cos(toRadians(maxAnnualNoon));
-    capPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${elR} ${elR} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
+    const yCap = EL_CY - EL_R * Math.sin(toRadians(maxAnnualNoon));
+    const xCapL = EL_CX - EL_R * Math.cos(toRadians(maxAnnualNoon));
+    const xCapR = EL_CX + EL_R * Math.cos(toRadians(maxAnnualNoon));
+    capPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${EL_R} ${EL_R} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
   }
 
-  // Summer Solstice Chord Line
-  const summerY = elCy - elR * Math.sin(toRadians(summerSolsticeNoon));
-  const summerXL = elCx - elR * Math.cos(toRadians(summerSolsticeNoon));
-  const summerXR = elCx + elR * Math.cos(toRadians(summerSolsticeNoon));
+  // Solstice Reference Lines
+  const referenceLines: SkyDomeReferenceLine[] = [];
+  if (summerSolsticeNoon > 0 && summerSolsticeNoon < 89.5) {
+    const summerY = EL_CY - EL_R * Math.sin(toRadians(summerSolsticeNoon));
+    const summerXL = EL_CX - EL_R * Math.cos(toRadians(summerSolsticeNoon));
+    const summerXR = EL_CX + EL_R * Math.cos(toRadians(summerSolsticeNoon));
+    referenceLines.push({
+      y: summerY,
+      xLeft: summerXL,
+      xRight: summerXR,
+      stroke: '#fbbf24',
+      label: `${summerSolsticeNoon.toFixed(0)}°`,
+      labelColor: 'fill-amber-400/90',
+      title: `Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}°`
+    });
+  }
 
-  // Winter Solstice Chord Line
-  const winterY = winterSolsticeNoon > 0 ? elCy - elR * Math.sin(toRadians(winterSolsticeNoon)) : elCy;
-  const winterXL = winterSolsticeNoon > 0 ? elCx - elR * Math.cos(toRadians(winterSolsticeNoon)) : elCx - elR;
-  const winterXR = winterSolsticeNoon > 0 ? elCx + elR * Math.cos(toRadians(winterSolsticeNoon)) : elCx + elR;
+  if (winterSolsticeNoon > 0) {
+    const winterY = EL_CY - EL_R * Math.sin(toRadians(winterSolsticeNoon));
+    const winterXL = EL_CX - EL_R * Math.cos(toRadians(winterSolsticeNoon));
+    const winterXR = EL_CX + EL_R * Math.cos(toRadians(winterSolsticeNoon));
+    referenceLines.push({
+      y: winterY,
+      xLeft: winterXL,
+      xRight: winterXR,
+      stroke: '#d97706',
+      label: `${winterSolsticeNoon.toFixed(0)}°`,
+      labelColor: 'fill-amber-600/90',
+      title: `Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}°`
+    });
+  }
 
   return (
-    <div className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative">
-      {/* Header */}
-      <div className="w-full flex justify-between items-center mb-1 px-1 font-mono">
-        <div className="text-xs text-slate-300 font-semibold uppercase tracking-wider flex items-center gap-1.5 font-sans">
-          <Sun className="w-4 h-4 text-amber-400" /> Sun Elevation Arc
-        </div>
-        <div className="text-xs text-amber-400/90 font-mono">
-          <span className="text-[10px] text-slate-400 font-sans uppercase mr-1">Noon Peak:</span>
-          <strong className="text-white font-semibold">{(noonElevation as number).toFixed(1)}°</strong>
-        </div>
-      </div>
-
-      {/* Semicircular Sun Dome SVG (Upsized 50%) */}
-      <div className="relative w-full py-1 flex items-center justify-center">
-        <svg viewBox="0 0 260 120" className="w-full max-h-[155px] overflow-visible" preserveAspectRatio="xMidYMid meet">
-          {/* Horizon Line (0°) */}
-          <line x1="18" y1={elCy} x2="242" y2={elCy} stroke="#334155" strokeWidth="0.75" strokeOpacity="0.7" />
-          <text x="16" y={elCy + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
-          <text x="244" y={elCy + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
-
-          {/* Semicircular Elevation Arc Dome */}
-          <path
-            d={`M ${elCx - elR} ${elCy} A ${elR} ${elR} 0 0 1 ${elCx + elR} ${elCy}`}
-            fill="none"
-            stroke="#334155"
-            strokeWidth="0.75"
-            strokeDasharray="4 3"
-            strokeOpacity="0.6"
-          />
-
-          {/* Unreachable Zenith Cap (Outside Tropics) */}
-          {capPathD && (
-            <path
-              d={capPathD}
-              fill="#020617"
-              fillOpacity="0.6"
-              stroke="#475569"
-              strokeWidth="0.6"
-              strokeDasharray="2 2"
-            />
-          )}
-
-          {/* Summer Solstice Noon Peak Reference Line */}
-          {summerSolsticeNoon > 0 && summerSolsticeNoon < 89.5 && (
-            <g>
-              <line
-                x1={summerXL}
-                y1={summerY}
-                x2={summerXR}
-                y2={summerY}
-                stroke="#fbbf24"
-                strokeWidth="0.7"
-                strokeDasharray="3 2"
-                strokeOpacity="0.7"
-              />
-              <text
-                x={summerXR + 3}
-                y={summerY + 2.5}
-                className="text-[6.5px] font-mono fill-amber-400/90 font-medium pointer-events-none select-none"
-              >
-                {summerSolsticeNoon.toFixed(0)}°
-              </text>
-              <title>{`Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}°`}</title>
-            </g>
-          )}
-
-          {/* Winter Solstice Noon Peak Reference Line */}
-          {winterSolsticeNoon > 0 && (
-            <g>
-              <line
-                x1={winterXL}
-                y1={winterY}
-                x2={winterXR}
-                y2={winterY}
-                stroke="#d97706"
-                strokeWidth="0.7"
-                strokeDasharray="3 2"
-                strokeOpacity="0.7"
-              />
-              <text
-                x={winterXR + 3}
-                y={winterY + 2.5}
-                className="text-[6.5px] font-mono fill-amber-600/90 font-medium pointer-events-none select-none"
-              >
-                {winterSolsticeNoon.toFixed(0)}°
-              </text>
-              <title>{`Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}°`}</title>
-            </g>
-          )}
-
-          {/* Zenith Marker (90°) */}
-          <line x1={elCx} y1={elCy - elR - 3} x2={elCx} y2={elCy - elR + 3} stroke="#475569" strokeWidth="0.75" />
-          <text x={elCx} y={elCy - elR - 5} textAnchor="middle" className="text-[8px] font-mono fill-slate-500 font-medium">+90°</text>
-
-          {/* Observer Horizon Center Origin */}
-          <circle cx={elCx} cy={elCy} r="2" fill="#475569" />
-
-          {/* Sun Elevation Vector & Disc */}
-          {currentSunElevation > -18 && (
-            <g>
-              <line
-                x1={elCx}
-                y1={elCy}
-                x2={sunX}
-                y2={sunY}
-                stroke={currentSunElevation >= 0 ? '#fbbf24' : '#64748b'}
-                strokeWidth="1"
-                strokeDasharray="2 2"
-                opacity="0.8"
-              />
-              <circle
-                cx={sunX}
-                cy={sunY}
-                r="5"
-                fill={currentSunElevation >= 0 ? '#fbbf24' : '#475569'}
-                stroke="#ffffff"
-                strokeWidth="1.2"
-                className="drop-shadow"
-              />
-            </g>
-          )}
-        </svg>
-      </div>
-
-      {/* Live Sun Elevation Angle Readout Badge */}
-      <div className="text-center my-1 bg-slate-950/80 px-3 py-1 rounded-lg border border-slate-800/60 shadow-sm">
-        <div className={`text-sm font-mono font-semibold ${currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}`}>
-          {currentSunElevation >= 0 ? `+${currentSunElevation.toFixed(1)}°` : `${currentSunElevation.toFixed(1)}°`}
-          <span className="text-[10px] text-slate-400 uppercase font-sans ml-1.5 font-normal">
-            {currentSunElevation > 0 ? '(Above Horizon)' : '(Below Horizon)'}
-          </span>
-        </div>
-      </div>
-
-      {/* Interactive Hover HUD Popover for Sun / Solar Analemma */}
-      {isHoveringSunMetrics && (
+    <SkyDomeBase
+      title="Sun Elevation Arc"
+      icon={Sun}
+      iconColorClass="text-amber-400"
+      peakLabel="Noon Peak"
+      peakElevation={noonElevation as number}
+      currentElevation={currentSunElevation}
+      elevationColorClass={currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}
+      latitude={latitude}
+      capPathD={capPathD}
+      referenceLines={referenceLines}
+      bodyX={sunX}
+      bodyY={sunY}
+      bodyVectorStroke={currentSunElevation >= 0 ? '#fbbf24' : '#64748b'}
+      renderBodyGraphic={() => (
+        <circle
+          cx={sunX}
+          cy={sunY}
+          r="5"
+          fill={currentSunElevation >= 0 ? '#fbbf24' : '#475569'}
+          stroke="#ffffff"
+          strokeWidth="1.2"
+          className="drop-shadow"
+        />
+      )}
+      popover={isHoveringSunMetrics ? (
         <div className="absolute bottom-20 left-4 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-700 p-3 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
           <div className="text-xs font-semibold text-amber-300 flex items-center justify-between">
             <span>Solar Analemma &amp; Orbit</span>
@@ -250,8 +160,8 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
               : 'Mean 1 AU Orbit: Solar distance is near average (149.6M km / 1.000 AU).'}
           </div>
         </div>
-      )}
-
+      ) : null}
+    >
       {/* Symmetrical Sun State & Analemma Bar */}
       <div 
         className="bg-slate-950/60 p-2 rounded-xl border border-slate-800/40 flex items-center justify-between gap-3 mt-1 cursor-pointer transition-colors hover:border-slate-700"
@@ -337,7 +247,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
           </span>
         </div>
       </div>
-    </div>
+    </SkyDomeBase>
   );
 };
 

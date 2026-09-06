@@ -258,3 +258,5 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     </div>
   );
 };
+
+export default GyroArmillaryView;

@@ -29,7 +29,8 @@ Key capabilities include:
   - **Interactive Alidade Sighting Arm & Snap-to-Star**: Authentic dual pinnule sighting vanes, laser sightline, and **Click-to-Snap Target Locking** on stars (*Sirius*, *Vega*, *Arcturus*, *Rigel*), Sun, and Moon with live Alt/Az and RA/Dec sighting telemetry HUD.
   - **Historical Horology**: 12 classical navigational astrolabe stars, Roman/Medieval 12 Unequal Planetary Hours with Chaldean planetary rulers, and Greenwich/Local Sidereal Time.
 - **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Sector Dial featuring **Solar Noon vs. UTC Mode** segmented controls.
-- **Today's Sky Horizon Dome**: Symmetrical dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
+- **Today's Sky Horizon Dome**: Reusable shared `<SkyDomeBase />` primitive consolidating 260x120 SVG elevation arc geometry (`EL_R = 92`, `EL_CX = 130`, `EL_CY = 104`), symmetrical dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, dynamic hemisphere culmination meridian indicator (**S** for $\phi \ge 0^\circ$ vs. **N** for $\phi < 0^\circ$), interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, and mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics.
+- **Widget Code-Splitting & Modular Lazy Loading**: Dynamic code-splitting of all 8 primary observatory widgets via `React.lazy()` and `<Suspense>` inside `DashboardWindow`, reducing the initial client bundle by **50.4%** (from 526.91 kB to 261.29 kB) with dark glassmorphic skeleton fallbacks and domain test suite decomposition.
 - **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, Meeus Ch. 48 true geocentric phase angle ($i$) and disc illumination ($k$), 2-step iterative high-latitude rise/set solver, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
 - **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view with unified 9-layer `<MiniGlobe />` featuring rotating 3D vector continents and day/night terminator, prograde counter-clockwise orbital coordination ($\theta_{\text{svg}} = -\theta_{\text{math}}$) aligning lunar revolution with Earth's rotation, segmented `[Standard | ☊ Nodal Loop]` toggle control decomposing the lunar orbit into 4 color/stroke-coded quadrants (Sky Blue `#38bdf8` for Ascending, Rose Red `#f43f5e` for Descending, Solid for Waxing, Dashed for Waning), dynamic Ascending ($\Omega$) and Descending ($\mho$) node pins, and a dynamic ocean tidal wave oscillator reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
 - **Side-by-Side Dual-Perspective Eclipse Demonstrator**: 
@@ -61,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 21 modules, 418 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 27 modules, 429 tests)
 
 ### Essential Commands
 
@@ -228,6 +229,8 @@ Cosmic Engine V2.0/
 │       │   │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── today/           # Decomposed today's horizon subsystem modules
+│       │   │   ├── SkyDomeBase.tsx         # Reusable 260x120 SVG elevation arc primitive & cardinal cues
+│       │   │   ├── SkyDomeBase.test.tsx    # Vitest unit tests for SkyDomeBase (10 tests)
 │       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
 │       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
 │       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
@@ -259,7 +262,7 @@ Cosmic Engine V2.0/
 │       ├── layout/              # Container layout modules
 │       │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
 │       │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
-│       │   ├── DashboardWindow.test.tsx   # Unit tests for window layout & drag-and-drop (16 tests)
+│       │   ├── DashboardWindow.test.tsx   # Unit tests for window layout & drag-and-drop (17 tests)
 │       │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
 │       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
 │       │       ├── AstrolabeDial.tsx           # 4-concentric interactive SVG astrolabe dial

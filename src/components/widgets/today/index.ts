@@ -4,3 +4,5 @@ export { SunElevationDome } from './SunElevationDome';
 export type { SunElevationDomeProps } from './SunElevationDome';
 export { MoonElevationDome } from './MoonElevationDome';
 export type { MoonElevationDomeProps } from './MoonElevationDome';
+export { SkyDomeBase, EL_R, EL_CX, EL_CY } from './SkyDomeBase';
+export type { SkyDomeBaseProps, SkyDomeReferenceLine } from './SkyDomeBase';

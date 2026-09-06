@@ -1,4 +1,4 @@
-import React, { useState, useRef, ReactNode, ComponentType } from 'react';
+import React, { useState, useRef, ReactNode, ComponentType, Suspense } from 'react';
 import { Move, Maximize2, Minimize2, Lock, Unlock, RefreshCw } from 'lucide-react';
 import { WindowErrorBoundary } from '../common/WindowErrorBoundary';
 
@@ -230,7 +230,21 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
           }}
         >
           <WindowErrorBoundary windowTitle={title} windowId={id}>
-            {children}
+            <Suspense fallback={
+              <div 
+                data-testid={`window-skeleton-${id}`}
+                className="w-full h-full min-h-[240px] flex-1 flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-sm rounded-xl border border-slate-800/60 p-6 animate-pulse"
+              >
+                <div className="relative flex items-center justify-center mb-3">
+                  <div className="w-10 h-10 rounded-full border-2 border-indigo-500/20 border-t-indigo-400 animate-spin" />
+                  <div className="absolute w-2 h-2 rounded-full bg-indigo-400/60" />
+                </div>
+                <div className="h-3 w-28 bg-slate-800/80 rounded mb-2" />
+                <div className="h-2 w-40 bg-slate-800/50 rounded" />
+              </div>
+            }>
+              {children}
+            </Suspense>
           </WindowErrorBoundary>
         </div>
       )}

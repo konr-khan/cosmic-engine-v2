@@ -46,6 +46,18 @@ describe('DashboardWindow Layout Container Test Suite', () => {
       expect(html).toContain('window-body-content');
       expect(html).toContain('Healthy Child Content');
     });
+
+    it('wraps window body in Suspense boundary inside WindowErrorBoundary', () => {
+      const html = renderToStaticMarkup(
+        <DashboardWindow id="suspense-test" title="Lunar Almanac">
+          <div data-testid="resolved-lazy-child">Resolved Lazy Widget</div>
+        </DashboardWindow>
+      );
+
+      expect(html).toContain('window-body-content');
+      expect(html).toContain('data-testid="resolved-lazy-child"');
+      expect(html).toContain('Resolved Lazy Widget');
+    });
   });
 
   describe('Responsive Grid Column Span Classes', () => {

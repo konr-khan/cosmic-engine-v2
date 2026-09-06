@@ -6,16 +6,15 @@ import { ephemerisWorkerManager } from './workers/ephemerisWorkerManager';
 import { ObsNavbar } from './components/layout/ObsNavbar';
 import { OrbitalChronometer } from './components/layout/OrbitalChronometer';
 import { DashboardWindow } from './components/layout/DashboardWindow';
-import { 
-  TodayHorizonView, 
-  TerminatorMap, 
-  SolarAlmanac, 
-  MacroOrbitView, 
-  MicroTideView, 
-  LunarAlmanacCard, 
-  EclipseDemonstrator,
-  GyroArmillaryView 
-} from './components/widgets';
+// Dynamically code-split the 8 primary observatory widgets
+const TodayHorizonView = React.lazy(() => import('./components/widgets/today/TodayHorizonView'));
+const SolarAlmanac = React.lazy(() => import('./components/widgets/solar/SolarAlmanacCard'));
+const LunarAlmanacCard = React.lazy(() => import('./components/widgets/lunar/LunarAlmanacCard'));
+const EclipseDemonstrator = React.lazy(() => import('./components/widgets/eclipse/EclipseDemonstrator'));
+const TerminatorMap = React.lazy(() => import('./components/widgets/terminator/TerminatorMap'));
+const MacroOrbitView = React.lazy(() => import('./components/widgets/macro/MacroOrbitView'));
+const GyroArmillaryView = React.lazy(() => import('./components/widgets/armillary/GyroArmillaryView'));
+const MicroTideView = React.lazy(() => import('./components/widgets/tides/MicroTideView'));
 import { getDayOfYear } from './utils/cosmicMath';
 
 const selectObserverParams = (state: { date: Date; timeOfDay: number; latitude: number; longitude: number; useAnalemma: boolean }) => ({
