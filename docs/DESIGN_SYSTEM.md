@@ -57,12 +57,21 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Navigational Astrolabe Stars**: Rendered as delicate diamond florets (`strokeWidth="0.6"`, `r="1.2-3.2px"`) with hairline dashed flame pointers and glowing magnitude halos.
 * **SED Hairline Alidade Sighting Arm**: Slim $1.6\text{px}$ brass ruler body with dark wood inlay (`#78350f`, $0.75\text{px}$), cyan laser sightline (`#38bdf8`, $0.75\text{px}$ dashed), dual pinhole pinnule sighting vanes, and central reticle pin.
 
-### B. Lunar Orbit Segmentation (Dual Eclipse Demonstrator & Macro Orbit)
+### B. Lunar Orbit Segmentation & Dual-Zone Depth Encodings (Eclipse Demonstrator)
 * **Solid Stroke (`stroke-width="1.2"`)**: **Waxing Moon** ($0^\circ \to 180^\circ$ elongation).
 * **Dashed Stroke (`stroke-dasharray="4 3"`, `stroke-width="1.2"`)**: **Waning Moon** ($180^\circ \to 360^\circ$ elongation).
 * **Sky Blue Stroke (`#38bdf8`)**: Orbital segment is **North of Ecliptic** ($\beta \ge 0$, Ascending hemisphere, $\Omega$ / $☊$).
 * **Rose Red Stroke (`#f43f5e`)**: Orbital segment is **South of Ecliptic** ($\beta < 0$, Descending hemisphere, $\mho$ / $☋$).
 * **Prograde Transit Direction (Axial Sightline)**: When looking toward the Sun with North UP, East is Left and West is Right. The lunar transit traverses from **Right to Left (West to East)** across the face of the Sun during solar eclipses ($s = -\sin(\text{phaseRad})$).
+* **Dual-Zone Line-of-Sight Depth Masking**:
+  - **Viewer-Side Foreground ($Z > 0$)**: Unmasked with **full vibrancy ($0.9$ opacity, $1.2\text{px}$ width)** in front of the Earth globe. Foreground paths are never muted across the planet disc.
+  - **Sun-Facing Background ($Z \le 0$)**: Rendered with `mask="url(#outsideEarth)"` at $0.9$ opacity in open sky, and softened to a subtle **ghosted X-ray chord** at $0.22$ opacity (`strokeWidth="1.0"`) inside `clipPath="url(#axialEarthClip)"` / `clipPath="url(#syzygyEarthClip)"`.
+* **Earth-Occluded Moon Outline Overlay**:
+  - Whenever the far-side Moon ($Z \le 0$) overlaps the Earth disc ($dist < R_{\text{earth}} + R_{\text{moon}}$), an overlay disc clipped to `axialEarthClip` renders on top of `<MiniGlobe />`.
+  - **Styling**: Translucent dark fill `#0f172a` ($0.45$ opacity), matching stroke width ($2.0\text{px}$), and phase-appropriate dash array (`strokeDasharray={isWaxing ? undefined : '3 2'}`), preserving a seamless, unbroken circular boundary across Earth's limb.
+* **Ascending (☊) & Descending (☋) Node Pin Depth Muting**:
+  - **Directly Behind Earth** ($Z_{\text{node}} \le 0 \land \|\mathbf{x}_{\text{node}} - \mathbf{x}_{\text{earth}}\| \le R_{\text{earth}}$): Ghosted X-ray styling at `opacity="0.35"`, dark translucent fill `#0f172a`, dashed ring `strokeDasharray="2 1.5"`, and muted text `/60 font-medium`.
+  - **In Front of Earth ($Z > 0$) or in Open Sky ($r > R_{\text{earth}}$)**: 100% full vibrancy with solid color fill (`#38bdf8` / `#f43f5e`), crisp white border (`#ffffff`, $1\text{px}$), and bold bright labels.
 
 ### C. Sky View Simulator & Perspectival Eclipse Tokens
 * **Central Path Sky Simulator (`viewBox="0 0 240 240"`, centered at $120, 120$)**:

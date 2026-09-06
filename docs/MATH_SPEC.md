@@ -261,6 +261,25 @@ The **Axial Sightline** demonstrator (`NodalPlaneVisualizer.tsx` and `projectGeo
    \]
    During eclipse seasons ($\Delta\Omega \approx 0^\circ$ or $180^\circ$), the node pins converge toward $X_c = 260$ directly within the central shadow target area.
 
+5. **Line-of-Sight Depth Decomposition & Nodal Occlusion**:
+   * **Depth Function Along Viewing Axis**:
+     - *Axial Sightline*: $Z(t) = -\cos(t) \cdot R_x$ ($Z > 0$ is near-side facing deep space; $Z \le 0$ is far-side facing background Sun).
+     - *Transverse Profile*: $Z(t) = \sin(t) \cdot R_x$ ($Z > 0$ is near-side/waxing; $Z \le 0$ is far-side/waning).
+   * **Dual-Zone Orbital Path Masking**:
+     - *Near-Side ($Z > 0$)*: Rendered unmasked at full $0.9$ opacity across the entire loop including Earth crossing.
+     - *Far-Side ($Z \le 0$)*: Rendered masked in open sky ($0.9$ opacity) and softened to a subtle $0.22$ ghosted X-ray chord across Earth ($r \le R_{\text{earth}}$).
+   * **Earth-Occluded Moon Disc Overlay**:
+     When the far-side Moon ($Z \le 0$) overlaps the Earth disc ($\|\mathbf{x}_{\text{moon}} - \mathbf{x}_{\text{earth}}\| < R_{\text{earth}} + R_{\text{moon}}$), an overlay clipped to `axialEarthClip` renders on top of `<MiniGlobe />`:
+     \[
+     \text{strokeDasharray} = \text{isWaxing} \ ? \ \text{undefined} : \text{"3 2"}, \quad \text{strokeWidth} = 2.0\text{px}, \quad \text{fill} = \text{#0f172a (0.45 opacity)}
+     \]
+   * **Nodal Pin Occlusion Invariant**:
+     A node marker is considered occluded by Earth if and only if it lies on the far side within Earth's projected radius:
+     \[
+     \text{isBehindEarth} = (Z_{\text{node}} \le 0) \land (\|\mathbf{x}_{\text{node}} - \mathbf{x}_{\text{earth}}\| \le R_{\text{earth}})
+     \]
+     When $\text{isBehindEarth}$ is true, the node renders with ghosted X-ray styling (`opacity = 0.35`, dark translucent fill `#0f172a`, dashed ring `strokeDasharray = "2 1.5"`, muted text `/60 font-medium`); otherwise it retains 100% full vibrancy.
+
 ### E. Sky View Simulator Prograde Invariants & Perspectival Kinematics
 
 The **Sky View Simulator** (`SkyViewSimulator.tsx` and `LunarSurfacePovView.tsx`) visualizes syzygy alignment from two complementary vantage points:
