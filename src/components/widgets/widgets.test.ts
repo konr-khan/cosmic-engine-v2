@@ -1139,6 +1139,43 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html0109).toContain('clip-path="url(#axialEarthClip)"');
     });
 
+    it('applies in-front vibrant and behind muted styling to ascending and descending nodes', () => {
+      const date = new Date('2028-01-15T13:40:00Z');
+      const jd = dateToJulianDate(date);
+      const eclipse = calculateEclipseData(jd);
+
+      const nodalHtml = renderToStaticMarkup(
+        React.createElement(NodalPlaneVisualizer, {
+          eclipse,
+          currentDate: date,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 13.67
+        })
+      );
+
+      const syzygyHtml = renderToStaticMarkup(
+        React.createElement(LiveSyzygyView, {
+          eclipse,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 13.67,
+          sunLambdaDeg: 295,
+          setHoveredEntity: () => {}
+        })
+      );
+
+      // Both views have node markers (☊ and ☋)
+      expect(nodalHtml).toContain('☊ Node');
+      expect(nodalHtml).toContain('☋ Node');
+      expect(syzygyHtml).toContain('☊ Node');
+      expect(syzygyHtml).toContain('☋ Node');
+
+      // Both views partition nodes into vibrant in-front and muted behind (opacity="0.45")
+      expect(nodalHtml).toContain('opacity="0.45"');
+      expect(syzygyHtml).toContain('opacity="0.45"');
+    });
+
     it('renders SkyViewSimulator with prograde Right-to-Left transit across solar eclipse without bouncing', () => {
       // 1. Pre-eclipse (elongation = 359 deg -> Moon West of Sun, Right of center)
       const preEclipse: EclipseData = {
