@@ -231,8 +231,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         )}
       </g>
 
-      {/* 3. Lunar Nodes (Ascending ☊ & Descending ☋ Pins on Inclined Orbit) */}
-      {lunarNodes && lunarOrbitOpacity > 0.05 && (
+      {/* 3. Lunar Nodes (Ascending ☊ & Descending ☋ Pins on Inclined Orbit - Helio Mode Only) */}
+      {lunarNodes && isHeliocentric && lunarOrbitOpacity > 0.05 && (
         <g 
           className="transition-opacity duration-200"
           style={{ opacity: lunarOrbitOpacity }}

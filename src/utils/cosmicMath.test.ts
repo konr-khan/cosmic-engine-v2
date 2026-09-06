@@ -1260,6 +1260,10 @@ describe('cosmicMath utilities', () => {
         // Observer at 09:44 UTC in Olympia, WA (-122.81°W -> 01:33 AM local solar time -> Night)
         const olympiaNight = calculateEarthSideGeometry(310, 110, 18, 147, 47.06, 9.733, -122.81);
         expect(olympiaNight.isDaylight).toBe(false);
+
+        // Observer at 18:36 UTC in Olympia, WA (-122.81°W -> ~10:24 AM local solar time -> Daylight)
+        const olympiaDay = calculateEarthSideGeometry(310, 110, 18, 162.5, 47.06, 18.6, -122.81);
+        expect(olympiaDay.isDaylight).toBe(true);
       });
     });
 
@@ -1283,6 +1287,10 @@ describe('cosmicMath utilities', () => {
         // Observer at 09:44 UTC in Olympia, WA (-122.81°W -> 01:33 AM local solar time -> Night)
         const olympiaAxialNight = calculateEarthAxialGeometry(200, 90, 20, 147, 47.06, 9.733, -122.81);
         expect(olympiaAxialNight.isDaylight).toBe(false);
+
+        // Observer at 18:36 UTC in Olympia, WA (-122.81°W -> ~10:24 AM local solar time -> Daylight)
+        const olympiaAxialDay = calculateEarthAxialGeometry(200, 90, 20, 162.5, 47.06, 18.6, -122.81);
+        expect(olympiaAxialDay.isDaylight).toBe(true);
       });
     });
 

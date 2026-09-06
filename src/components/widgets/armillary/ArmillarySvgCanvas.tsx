@@ -311,6 +311,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           cameraPitch={camera.pitch}
           orbitRingOpacity={orbitRingOpacity}
           celestialRingsOpacity={celestialRingsOpacity}
+          lunarOrbitOpacity={lunarOrbitOpacity}
         />
 
         {/* 6. Navigational Astrolabe Stars (Click to Snap) */}

@@ -187,22 +187,6 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
           </div>
         )}
 
-        {/* Observer POV Sky Cone Toggle */}
-        {isOrbital && onToggleObserverCone && (
-          <button
-            onClick={() => onToggleObserverCone(!showObserverCone)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-mono transition-all cursor-pointer ${
-              showObserverCone
-                ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 font-semibold'
-                : 'bg-slate-950/90 text-slate-500 border-slate-800/80 hover:text-slate-300'
-            }`}
-            title="Toggle Topocentric Observer Sky Cone in Orbit View"
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${showObserverCone ? 'bg-sky-400 animate-pulse' : 'bg-slate-600'}`} />
-            <span>POV Cone</span>
-          </button>
-        )}
-
         {/* Morph Slider Bar */}
         <div 
           className="flex items-center gap-2 bg-slate-950/90 px-3 py-1 rounded-xl border border-slate-800/80 text-xs font-mono select-none touch-none"
@@ -301,11 +285,11 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
         {/* Feature Toggles */}
         <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs">
           <button
-            onClick={onToggleRays}
+            onClick={isOrbital ? () => onToggleObserverCone?.(!showObserverCone) : onToggleRays}
             className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              showRays ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              (isOrbital ? showObserverCone : showRays) ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Toggle Volumetric Laser Projection Rays &amp; Cones"
+            title={isOrbital ? "Toggle Observer Sky Cone (FOV)" : "Toggle Volumetric Laser Projection Rays & Cones"}
           >
             <Zap className="w-3.5 h-3.5" />
           </button>

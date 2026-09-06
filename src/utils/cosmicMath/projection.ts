@@ -75,7 +75,8 @@ export function calculateEarthSideGeometry(
 
   const obsPx = earthCenterX + earthRadius * xProj;
   const obsPy = earthCenterY - earthRadius * yProj;
-  const isDaylight = xBody < 0; // facing Sun on left
+  const decRad = Math.asin(clamp(Math.sin(epsRad) * Math.sin(sunLambdaRad), -1, 1));
+  const isDaylight = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hRad) >= 0;
 
   return {
     earthR: earthRadius,

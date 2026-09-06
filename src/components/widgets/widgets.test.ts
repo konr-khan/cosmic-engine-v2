@@ -382,8 +382,9 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html).toContain('⊕ EARTH (Center)');
       expect(html).toContain('☉ SUN');
       expect(html).toContain('☽ MOON');
-      expect(html).toContain('☊');
-      expect(html).toContain('☋');
+      // Lunar nodes (☊ and ☋) are removed from 3D Apparent mode to avoid visual clutter
+      expect(html).not.toContain('☊');
+      expect(html).not.toContain('☋');
     });
 
     it('renders ArmillaryBeadsLayer in 2D Astrolabe plate modes with MiniGlobe in flat pin mode', () => {
@@ -462,6 +463,7 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
             sun: model.sun,
             moon: model.moon,
             milestones: model.milestones,
+            lunarNodes: model.lunarNodes,
             projectionMode: 'heliocentric',
             modelType: 'orbit',
             morphLambda: 0.0,
@@ -480,6 +482,8 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(html).toContain('miniglobe-root');
       expect(html).toContain('⊕ EARTH');
       expect(html).toContain('Perihelion');
+      expect(html).toContain('☊');
+      expect(html).toContain('☋');
     });
 
     it('renders ArmillaryEarthPip in Heliocentric Orbit mode with 3D Living Marble MiniGlobe and GMST sync', () => {
@@ -525,7 +529,7 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       expect(htmlGeocentric).toBe('');
     });
 
-    it('renders segmented True/Exaggerated Scale toggle and POV Cone toggle in ArmillaryHeaderControls', () => {
+    it('renders segmented True/Exaggerated Scale toggle and unified Observer Sky Cone toggle on Zap button in ArmillaryHeaderControls', () => {
       const html = renderToStaticMarkup(
         React.createElement(ArmillaryHeaderControls, {
           projectionMode: 'heliocentric',
@@ -552,8 +556,9 @@ describe('Observatory 8-Widget Architecture & Integration Tests', () => {
       // Verify segmented Scale toggle with both options
       expect(html).toContain('1× True');
       expect(html).toContain('Exaggerated');
-      // Verify POV Cone toggle
-      expect(html).toContain('POV Cone');
+      // Verify POV Cone toggle folded into Zap button in Orbit view
+      expect(html).toContain('Toggle Observer Sky Cone (FOV)');
+      expect(html).not.toContain('POV Cone');
     });
 
     it('unifies Earth orbit ring to fully solid path in top-down view (pitch = ±90°)', () => {

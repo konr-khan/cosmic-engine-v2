@@ -9,6 +9,7 @@ export interface ArmillaryRingsLayerProps {
   cameraPitch?: number;
   orbitRingOpacity: number;
   celestialRingsOpacity: number;
+  lunarOrbitOpacity?: number;
 }
 
 export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
@@ -17,7 +18,8 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
   morphLambda,
   cameraPitch,
   orbitRingOpacity,
-  celestialRingsOpacity
+  celestialRingsOpacity,
+  lunarOrbitOpacity = 1.0
 }) => {
   const lambda = morphLambda !== undefined ? morphLambda : (is3D ? 0.0 : 1.0);
   const uMorph = Math.max(0, Math.min(1, (lambda - 0.85) / 0.15));
@@ -34,7 +36,8 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
       <g>
         {rings.map((ring) => {
           const isOrbitPath = ring.id === 'orbit_path';
-          const ringOpacity = isOrbitPath ? orbitRingOpacity : celestialRingsOpacity;
+          const isLunarOrbit = ring.id === 'lunar_orbit';
+          const ringOpacity = isOrbitPath ? orbitRingOpacity : (isLunarOrbit ? lunarOrbitOpacity : celestialRingsOpacity);
           if (ringOpacity <= 0.01 || !ring.backPathD) return null;
 
           const u = isOrbitPath || ring.id === 'ecliptic' ? Math.max(uMorph, uPitch) : uMorph;
@@ -66,7 +69,8 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
       <g filter="url(#ringGlow)">
         {rings.map((ring) => {
           const isOrbitPath = ring.id === 'orbit_path';
-          const ringOpacity = isOrbitPath ? orbitRingOpacity : celestialRingsOpacity;
+          const isLunarOrbit = ring.id === 'lunar_orbit';
+          const ringOpacity = isOrbitPath ? orbitRingOpacity : (isLunarOrbit ? lunarOrbitOpacity : celestialRingsOpacity);
           if (ringOpacity <= 0.01) return null;
 
           const u = isOrbitPath || ring.id === 'ecliptic' ? Math.max(uMorph, uPitch) : uMorph;
