@@ -39,6 +39,7 @@ export interface AxialGlobeGeometry {
   obsPx: number;
   obsPy: number;
   isDaylight: boolean;
+  isObsVisible?: boolean;
 }
 
 export interface EulerGlobeGeometry {

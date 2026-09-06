@@ -104,9 +104,9 @@ export function projectContinentLandmasses(
         const vx = (nx * nz) / nLen;
         const vy = (ny * nz) / nLen;
 
-        const xBody = Math.cos(latRad) * Math.sin(hRad);
+        const xBody = -Math.cos(latRad) * Math.sin(hRad);
         const yBody = Math.sin(latRad);
-        const zBody = Math.cos(latRad) * Math.cos(hRad);
+        const zBody = -Math.cos(latRad) * Math.cos(hRad); // Night-facing: >0 facing camera away from Sun, <0 facing background Sun
 
         const xProj = xBody * ux + yBody * nx - zBody * vx;
         const yProj = xBody * uy + yBody * ny - zBody * vy;

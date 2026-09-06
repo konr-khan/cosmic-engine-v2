@@ -100,6 +100,7 @@ export interface EarthAxialGeometry {
   obsPx: number;
   obsPy: number;
   isDaylight: boolean;
+  isObsVisible: boolean;
 }
 
 /**
@@ -150,8 +151,8 @@ export function calculateEarthAxialGeometry(
   const eqSteps = 16;
   for (let i = 0; i <= eqSteps; i++) {
     const theta = (i / eqSteps) * Math.PI; // 0 to PI along front equator
-    const ex = earthR * (Math.cos(theta) * ux - Math.sin(theta) * vx);
-    const ey = earthR * (Math.cos(theta) * uy - Math.sin(theta) * vy);
+    const ex = earthR * (-Math.cos(theta) * ux - Math.sin(theta) * vx);
+    const ey = earthR * (-Math.cos(theta) * uy - Math.sin(theta) * vy);
     const px = centerX + ex;
     const py = centerY - ey;
     eqPts.push(`${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`);
@@ -163,9 +164,9 @@ export function calculateEarthAxialGeometry(
   const localHourAngleDeg = ((timeOfDay - 12) * 15) + longitude;
   const hRad = toRadians(localHourAngleDeg);
 
-  const xBody = Math.cos(latRad) * Math.sin(hRad);
+  const xBody = -Math.cos(latRad) * Math.sin(hRad);
   const yBody = Math.sin(latRad);
-  const zBody = Math.cos(latRad) * Math.cos(hRad); // >0 = daylight facing Sun, <0 = night
+  const zBody = -Math.cos(latRad) * Math.cos(hRad); // Night-facing: >0 facing camera away from Sun, <0 facing background Sun
 
   // Transform body coordinates to screen:
   const obsEx = earthR * (xBody * ux + yBody * nx + zBody * (-vx));
@@ -176,6 +177,7 @@ export function calculateEarthAxialGeometry(
   const obsPy = centerY - obsEy;
   const decRad = Math.asin(clamp(Math.sin(epsRad) * Math.sin(sunLambdaRad), -1, 1));
   const isDaylight = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hRad) >= 0;
+  const isObsVisible = obsEz > 0;
 
   return {
     earthR,
@@ -184,7 +186,8 @@ export function calculateEarthAxialGeometry(
     equatorPathD,
     obsPx,
     obsPy,
-    isDaylight
+    isDaylight,
+    isObsVisible
   };
 }
 

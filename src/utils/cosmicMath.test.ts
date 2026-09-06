@@ -1280,17 +1280,32 @@ describe('cosmicMath utilities', () => {
       it('correctly reports daylight at noon along axial sightline and accounts for longitude', () => {
         const noon = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 12, 0);
         expect(noon.isDaylight).toBe(true);
+        expect(noon.isObsVisible).toBe(false); // Noon faces background Sun on far side
 
         const midnight = calculateEarthAxialGeometry(200, 90, 20, 0, 45, 0, 0);
         expect(midnight.isDaylight).toBe(false);
+        expect(midnight.isObsVisible).toBe(true); // Midnight faces camera on front side
 
         // Observer at 09:44 UTC in Olympia, WA (-122.81°W -> 01:33 AM local solar time -> Night)
         const olympiaAxialNight = calculateEarthAxialGeometry(200, 90, 20, 147, 47.06, 9.733, -122.81);
         expect(olympiaAxialNight.isDaylight).toBe(false);
+        expect(olympiaAxialNight.isObsVisible).toBe(true);
 
         // Observer at 18:36 UTC in Olympia, WA (-122.81°W -> ~10:24 AM local solar time -> Daylight)
         const olympiaAxialDay = calculateEarthAxialGeometry(200, 90, 20, 162.5, 47.06, 18.6, -122.81);
         expect(olympiaAxialDay.isDaylight).toBe(true);
+        expect(olympiaAxialDay.isObsVisible).toBe(false);
+
+        // Specific 8/20/2027 scenario:
+        // 08:07 UTC -> Local midnight (00:07) -> Night (Visible on front night disk, hollow pin)
+        const aug20Midnight = calculateEarthAxialGeometry(260, 110, 24, 147, 47.06, 8.1167, -122.81);
+        expect(aug20Midnight.isDaylight).toBe(false);
+        expect(aug20Midnight.isObsVisible).toBe(true);
+
+        // 16:17 UTC -> Local morning daylight (08:17) -> Daylight (Occluded on far side facing Sun)
+        const aug20Daylight = calculateEarthAxialGeometry(260, 110, 24, 147, 47.06, 16.2833, -122.81);
+        expect(aug20Daylight.isDaylight).toBe(true);
+        expect(aug20Daylight.isObsVisible).toBe(false);
       });
     });
 
