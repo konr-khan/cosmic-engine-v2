@@ -154,7 +154,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 38 specialized domain suites (**478 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 38 specialized domain suites (**480 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -190,7 +190,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Eclipse Demonstrator Widget** | `src/components/widgets/eclipse/EclipseWidget.test.tsx` (9 tests) | Historic Great American Eclipse data, 520x220 viewBox parity, dual-zone masking, nodal depth muting behind Earth, and prograde right-to-left SkyViewSimulator transit without bounce |
 | **Terminator Map Widget** | `src/components/widgets/terminator/TerminatorMap.test.tsx` (6 tests) | Dynamic observer meridian centering, wrapped landmass polygons, topocentric YOU pin crosshairs, distance-scaled Subsolar (AU) and Sublunar (km) disc markers, and 4-tier twilight shadow boundaries |
 | **Macro Orbit Widget** | `src/components/widgets/macro/MacroOrbitWidget.test.tsx` (3 tests) | Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD |
-| **Micro Tide Widget** | `src/components/widgets/tides/TidesWidget.test.tsx` (3 tests) | MicroTideView Earth tidal gravity, MiniGlobe 3D vector integration, segmented Nodal Loop and potential toggles, and counter-clockwise prograde Moon revolution |
+| **Micro Tide Widget** | `src/components/widgets/tides/TidesWidget.test.tsx` (5 tests) | MicroTideView Earth tidal gravity, MiniGlobe 3D vector integration, segmented Nodal Loop and potential toggles, and counter-clockwise prograde Moon revolution |
 | **Armillary Visualizer Widget** | `src/components/widgets/armillary/ArmillaryWidget.test.tsx` (17 tests) | Continuum model generation, camera staging timing (pitch/yaw at $lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification |
 | **Staged Camera Hook** | `src/components/widgets/armillary/useStagedCamera.test.ts` (9 tests) | 2-phase Euler angle interpolation ($lambda le 0.45$), canonical pole locking ($lambda ge 0.45$), memory angle retention, and reverse transition unwinding |
 | **Camera Staging Adversarial** | `src/components/widgets/armillary/m2_adversarial.test.ts` (9 tests) | Camera alignment timing ($0 le lambda le 0.45$), canonical pole lock ($0.45 le lambda le 1.0$), geodesic wrapping, and custom user 3D angle restoration |

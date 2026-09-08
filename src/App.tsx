@@ -42,7 +42,7 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
 }) {
   const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectObserverParams);
 
-  const { solarData, orbitalData } = useCosmicEngine(
+  const { solarData, orbitalData, julianDate } = useCosmicEngine(
     date,
     timeOfDay,
     latitude,
@@ -160,6 +160,9 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           timeOfDay={timeOfDay}
           sunLambdaDeg={solarData?.lambda}
           nodeLongitude={orbitalData?.angles?.nodeLongitude ?? orbitalData?.nodeLongitude}
+          moonBetaDeg={orbitalData?.lunarPos?.beta}
+          currentDate={date}
+          julianDate={julianDate}
         />
       );
     default:

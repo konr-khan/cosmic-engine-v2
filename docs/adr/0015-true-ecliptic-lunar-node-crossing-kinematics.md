@@ -57,6 +57,9 @@ A critical temporal and visual divergence was identified between the **Today's S
   - In `LiveSyzygyView` and `NodalPlaneVisualizer`, the Moon bead stroke switches from Rose Red to Sky Blue at the exact instant the bead crosses the horizontal $Y = 110$ ecliptic baseline.
 * **Today's Sky Moon Elevation Arc (`MoonElevationDome.tsx`, `todaySky.ts`)**:
   - Diurnal arc track stroke color, micro-rail center bead, and telemetry all switch from Rose Red to Sky Blue at the exact moment the countdown reaches `0.0d`.
+* **Earth & Tidal Gravity Micro View (`MicroTideView.tsx`)**:
+  - The Moon body halo stroke color is defined strictly as `beta >= 0` (Sky Blue `#38bdf8` for Ascending North vs Rose Red `#f43f5e` for Descending South), matching its labeled UI legend (`+β` vs `-β`).
+  - The ☊ and ☋ node pins are positioned at the true node crossing longitudes (`trueAscNodeLon`, `trueDescNodeLon`) derived from `calculateTrueLunarNodeEvents`, with the 4-quadrant orbital loop segments smoothly partitioned at these true crossing boundaries.
 
 ### 5. Tiered Ergonomic Countdown Formatting
 * Replaced the arbitrary `0.4d` cutoff with clean, tiered temporal formatting:

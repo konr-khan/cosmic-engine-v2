@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 38 modules, 478 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 38 modules, 480 tests)
 
 ### Essential Commands
 
@@ -221,7 +221,7 @@ Cosmic Engine V2.0/
 │       │   │   └── index.ts                    # Barrel export
 │       │   ├── tides/           # Decomposed gravitational tidal force subsystem modules
 │       │   │   ├── MicroTideView.tsx           # Earth gravitational tidal force micro-view & ocean wave oscillator
-│       │   │   ├── TidesWidget.test.tsx        # Vitest unit tests for tides widget (3 tests)
+│       │   │   ├── TidesWidget.test.tsx        # Vitest unit tests for tides widget (5 tests)
 │       │   │   └── index.ts                    # Barrel export
 │       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
 │       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses

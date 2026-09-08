@@ -1,5 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { toRadians } from "../../../utils/cosmicMath";
+import { 
+  toRadians, 
+  getJulianDate, 
+  calculateLunarPosition, 
+  calculateTrueLunarNodeEvents 
+} from "../../../utils/cosmicMath";
 import { TidalVectors } from "../../../types";
 import { OrbitalAngles } from "../../../types/coordinates";
 import { TidalWaveOscillator } from "../lunar/TidalWaveOscillator";
@@ -15,6 +20,10 @@ export interface MicroTideViewProps {
   timeOfDay?: number;
   sunLambdaDeg?: number;
   nodeLongitude?: number;
+  moonBetaDeg?: number;
+  currentDate?: Date;
+  julianDate?: number;
+  initialOrbitViewMode?: 'standard' | 'nodal';
 }
 
 export const MicroTideView: React.FC<MicroTideViewProps> = ({
@@ -27,8 +36,12 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   timeOfDay = 12.0,
   sunLambdaDeg = 0,
   nodeLongitude,
+  moonBetaDeg,
+  currentDate,
+  julianDate,
+  initialOrbitViewMode = 'standard',
 }) => {
-  const [orbitViewMode, setOrbitViewMode] = useState<'standard' | 'nodal'>('standard');
+  const [orbitViewMode, setOrbitViewMode] = useState<'standard' | 'nodal'>(initialOrbitViewMode);
 
   const safeTides = tides || { alignment: 0, rx: 16, ry: 12, type: 'Transitional' };
   const safeAngles: Partial<OrbitalAngles> = angles || { sunDegrees: 0, moonDegrees: 0 };
@@ -56,8 +69,38 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   const rawNodeDeg = ((rawSunAngle + rawNodeDelta) % 360 + 360) % 360;
   const rawDescNodeDeg = (rawNodeDeg + 180) % 360;
 
-  const thetaNodeDeg = -rawNodeDeg;
-  const thetaDescNodeDeg = -rawDescNodeDeg;
+  // True Lunar Node Crossings (where true ecliptic latitude beta = 0)
+  const { trueAscNodeLon, trueDescNodeLon } = useMemo(() => {
+    const jd = julianDate !== undefined
+      ? julianDate
+      : (currentDate !== undefined ? getJulianDate(currentDate, timeOfDay) : null);
+
+    if (jd !== null) {
+      const trueEvents = calculateTrueLunarNodeEvents(jd, 16);
+      const ascCrossings = trueEvents.allCrossings.filter(c => c.type === 'ascending');
+      const descCrossings = trueEvents.allCrossings.filter(c => c.type === 'descending');
+
+      const ascCrossing = ascCrossings.sort((a, b) => Math.abs(a.daysOffset) - Math.abs(b.daysOffset))[0];
+      const descCrossing = descCrossings.sort((a, b) => Math.abs(a.daysOffset) - Math.abs(b.daysOffset))[0];
+
+      if (ascCrossing && descCrossing) {
+        const ascPos = calculateLunarPosition(ascCrossing.jd);
+        const descPos = calculateLunarPosition(descCrossing.jd);
+        return {
+          trueAscNodeLon: Number(ascPos.lambda),
+          trueDescNodeLon: Number(descPos.lambda)
+        };
+      }
+    }
+
+    return {
+      trueAscNodeLon: rawNodeDeg,
+      trueDescNodeLon: rawDescNodeDeg
+    };
+  }, [julianDate, currentDate, timeOfDay, rawNodeDeg, rawDescNodeDeg]);
+
+  const thetaNodeDeg = -trueAscNodeLon;
+  const thetaDescNodeDeg = -trueDescNodeLon;
 
   // 4-Quadrant Nodal Orbital Loop Segments (Waxing/Waning x Ascending/Descending)
   const nodalSegments = useMemo(() => {
@@ -67,6 +110,8 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
     const waxDesc: string[] = [];
     const wanAsc: string[] = [];
     const wanDesc: string[] = [];
+
+    const totalAscArc = ((trueDescNodeLon - trueAscNodeLon) % 360 + 360) % 360;
 
     for (let i = 0; i < steps; i++) {
       const deg1 = (i / steps) * 360;
@@ -82,10 +127,10 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
 
       const midDeg = (deg1 + deg2) / 2;
       const elong = ((midDeg - rawSunAngle) % 360 + 360) % 360;
-      const deltaNode = ((midDeg - rawNodeDeg) % 360 + 360) % 360;
+      const deltaFromAsc = ((midDeg - trueAscNodeLon) % 360 + 360) % 360;
 
       const isWax = elong <= 180;
-      const isAsc = deltaNode <= 180;
+      const isAsc = deltaFromAsc <= totalAscArc;
 
       const seg = `M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}`;
       if (isWax) {
@@ -103,7 +148,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
       wanAsc: wanAsc.join(' '),
       wanDesc: wanDesc.join(' ')
     };
-  }, [rawSunAngle, rawNodeDeg]);
+  }, [rawSunAngle, trueAscNodeLon, trueDescNodeLon]);
 
   // Node Pins Positions (R = 60px)
   const nodePos = useMemo(() => {
@@ -121,8 +166,10 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   const moonRad = toRadians(moonAngleDeg);
   const moonX = 60 * Math.cos(moonRad);
   const moonY = 60 * Math.sin(moonRad);
-  const moonDeltaNode = ((rawMoonAngle - rawNodeDeg) % 360 + 360) % 360;
-  const isMoonAsc = moonDeltaNode <= 180;
+
+  const isMoonAsc = moonBetaDeg !== undefined
+    ? moonBetaDeg >= 0
+    : (((rawMoonAngle - trueAscNodeLon) % 360 + 360) % 360 <= ((trueDescNodeLon - trueAscNodeLon) % 360 + 360) % 360);
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
