@@ -199,7 +199,10 @@ To enforce 100% mathematical consistency across all observatory telemetry, visua
    \[
    \text{isAscendingHemisphere} = (\beta \ge 0^\circ)
    \]
-   guaranteeing that the Moon bead switches from Rose Red to Sky Blue at the exact second it crosses the horizontal $Y = 110$ ecliptic plane in the Syzygy and Axial Sightline demonstrators.
+   guaranteeing that the Moon bead switches between Rose Red (Descending, South) and Sky Blue (Ascending, North) at the exact second it crosses the true node across all observatory instruments:
+   - **Eclipse Mechanics (`LiveSyzygyView`, `NodalPlaneVisualizer`)**: Crosses the horizontal $Y = 110$ ecliptic plane baseline.
+   - **Today's Sky (`MoonElevationDome`)**: Transitions the diurnal track stroke color and reaches `0.0d` on the Draconic micro-rail.
+   - **Earth & Tidal Gravity Micro View (`MicroTideView`)**: Transitions the Moon body halo stroke and hits the ☊/☋ node pins positioned at the true crossing longitudes ($\lambda_{\text{asc}}, \lambda_{\text{desc}}$).
 
 ---
 

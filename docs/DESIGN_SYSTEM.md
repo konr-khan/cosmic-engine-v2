@@ -240,14 +240,15 @@ The **Earth & Tidal Gravity Micro View** (`MicroTideView`) integrates the unifie
   - The oceanic daylight hemisphere rotates smoothly with the live solar direction (`sunAngleDeg`).
 * **`[Standard | ☊ Nodal Loop]` Segmented Controls**:
   - **Standard Mode**: Classic minimalist dashed gray circular lunar orbit (`stroke="#334155"`, `strokeDasharray="3 3"`).
-  - **☊ Nodal Loop Mode**: Decomposes the $R = 60\text{px}$ top-down lunar orbit into 4 color-coded, stroke-coded quadrants based on the Moon's elongation from the Sun and ecliptic latitude $\beta$:
+  - **☊ Nodal Loop Mode**: Decomposes the $R = 60\text{px}$ top-down lunar orbit into 4 color-coded, stroke-coded quadrants partitioned dynamically at the true node crossing longitudes (`trueAscNodeLon`, `trueDescNodeLon`) based on elongation from the Sun and instantaneous true ecliptic latitude $\beta$:
     1. **Waxing Ascending** ($E \in [0^\circ, 180^\circ], \beta \ge 0$): Solid Sky Blue (`#38bdf8`, `strokeWidth="1.2"`).
     2. **Waxing Descending** ($E \in [0^\circ, 180^\circ], \beta < 0$): Solid Rose Red (`#f43f5e`, `strokeWidth="1.2"`).
     3. **Waning Ascending** ($E \in [180^\circ, 360^\circ], \beta \ge 0$): Dashed Sky Blue (`#38bdf8`, `strokeDasharray="4 3"`).
     4. **Waning Descending** ($E \in [180^\circ, 360^\circ], \beta < 0$): Dashed Rose Red (`#f43f5e`, `strokeDasharray="4 3"`).
-* **Dynamic Node Pins**:
-  - **Ascending Node ($\Omega / ☊$) Pin**: Placed at $\theta_{\Omega} = \theta_{\text{sun}} + (\Omega - \lambda_{\text{sun}})$, styled with a Sky Blue border and `☊` text label.
-  - **Descending Node ($\mho / ☋$) Pin**: Placed at $\theta_{\mho} = \theta_{\Omega} + 180^\circ$, styled with a Rose Red border and `☋` text label.
+* **True Node Crossing Pins & Instantaneous Latitudinal Status**:
+  - **Ascending Node (☊) Pin**: Placed at $\theta = -\lambda_{\text{asc}}$ (SVG coordinates) using the true crossing longitude solved via `calculateTrueLunarNodeEvents`, styled with a Sky Blue border and `☊` text label.
+  - **Descending Node (☋) Pin**: Placed at $\theta = -\lambda_{\text{desc}}$ using the true descending crossing longitude, styled with a Rose Red border and `☋` text label.
+  - **Moon Body Halo**: Directly governed by true ecliptic latitude ($\beta \ge 0^\circ$ for Sky Blue `#38bdf8` vs $\beta < 0^\circ$ for Rose Red `#f43f5e`), in 100% agreement with the UI legend (`☊ Ascending (+β)` vs `☋ Descending (-β)`).
 * **Prograde Counter-Clockwise Orbital Orientation**:
   - In SVG viewports, the vertical $Y$-axis points **downward**, meaning standard parametric $(R\cos\theta, R\sin\theta)$ and `rotate(deg)` natively rotate clockwise.
   - To align with Earth's physical counter-clockwise rotation from above (West to East), all top-down orbital angles in `MicroTideView` are coordinated with negated SVG angles ($\theta_{\text{svg}} = -\theta_{\text{math}}$).
