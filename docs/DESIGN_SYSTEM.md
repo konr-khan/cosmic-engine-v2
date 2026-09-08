@@ -269,3 +269,32 @@ The Eclipse Demonstrator renders two synchronized, mathematically aligned perspe
   - **Lunar Orbit**: Semi-major axis $R_x = 150\text{px}$ across the $520\text{px}$ width; vertical inclination scale $10.5\text{px/deg}$ ($y \in [56, 164]$ at maximum inclination $\beta = \pm 5.14^\circ$).
   - **Moon Bead**: Base radius $R = 10.5\text{px}$ with dynamic ephemeris angular scaling ($8.5\text{px} \dots 12.5\text{px}$).
   - **Node Pins**: Radius $R = 4\text{px}$ with high-contrast text labels (`☊ Node` in Sky Blue, `☋ Node` in Rose Red).
+
+---
+
+## 8. Today's Sky Dome Symmetrical Horizon & Nodal Tokens
+
+The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout, and visual conventions:
+
+* **Symmetrical Sky Dome Geometry**:
+  - Viewport: `viewBox="0 0 260 138"`, baseline horizon at $Y = 104$ (`EL_CY`), center meridian at $X = 130$ (`EL_CX`), dome radius $R = 92\text{px}$ (`EL_R`).
+  - Vertical headroom $Y \in [104, 138]$ reserved for sub-horizon twilight paths down to $-18^\circ$ astronomical twilight.
+* **Atmospheric Twilight Strata Tokens**:
+  - **Daylight** ($h \ge 0^\circ$): Amber/Gold (`#fbbf24`).
+  - **Civil Twilight** ($-0.833^\circ \to -6^\circ$): Warm Golden Amber (`#f59e0b`).
+  - **Nautical Twilight** ($-6^\circ \to -12^\circ$): Slate Navy (`#64748b`).
+  - **Astronomical Twilight** ($-12^\circ \to -18^\circ$): Deep Indigo Slate (`#334155`).
+  - **Night** ($h < -18^\circ$): Deep Space Slate (`#020617`).
+* **Lunar Diurnal Arc Modes & 4-Quadrant Stroke Encodings**:
+  - **Standard Mode (`Std`)**: Serene lunar silver solid arc (`#e2e8f0`, width $1.5\text{px}$).
+  - **Nodal Mode (`☊ Nodes`)**: Evaluates true ecliptic latitude $\beta \ge 0$ (North, Sky Blue `#38bdf8`) vs. $\beta < 0$ (South, Rose Red `#f43f5e`), and waxing (solid) vs. waning (dashed `4 3`).
+* **Tiered Node Crossing Countdown Tokens**:
+  - **Immediate Crossing** ($|t - t_{\text{node}}| \le 0.05\text{d} \approx 1.2\text{h}$): `${symbol} Crossing Now`
+  - **Near-Term** ($|t - t_{\text{node}}| \le 0.5\text{d} \le 12\text{h}$): `${symbol} in Xh` / `${symbol} Xh ago`
+  - **Standard Range** ($|t - t_{\text{node}}| > 0.5\text{d}$): `${symbol} in X.Xd` / `${symbol} X.Xd ago`
+  - **Topocentric Elevation Gate**: Node pin on the Sky Dome renders when $el \ge -18^\circ$ (above astronomical twilight threshold), fading to $50\%$ opacity when below the horizon ($el \in [-18^\circ, 0^\circ]$).
+* **Centered $\pm 15$-Day Draconic Progress Micro-Rail**:
+  - Horizontal timeline $X \in [12, 228]$, centered at $X = 120$ for Today ($T = 0$).
+  - Track segments continuously colored Sky Blue for $\beta \ge 0$ and Rose Red for $\beta < 0$.
+  - Pinned node beads $\Omega$ and $\mho$ glide along the rail based on exact true crossing epochs.
+

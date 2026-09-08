@@ -176,6 +176,31 @@ Given lunar ecliptic coordinates $(\lambda, \beta, \Delta)$ and solar coordinate
   1. *Initial transit & half-day arc*: $\cos H_0 = \frac{\sin(0.125^\circ) - \sin\phi \sin\delta_{\text{transit}}}{\cos\phi \cos\delta_{\text{transit}}}$, $t^{(0)}_{\text{rise/set}} = t_{\text{transit}} \mp \frac{H_0}{15^\circ/\text{h}} \times 1.035$.
   2. *Drift correction step*: Re-evaluate Moon declination $\delta_{\text{rise/set}}$ at candidate epoch $\text{JD}_0 + t^{(0)}/24$, recomputing $\cos H_{\text{refined}} = \frac{\sin(0.125^\circ) - \sin\phi \sin\delta_{\text{refined}}}{\cos\phi \cos\delta_{\text{refined}}}$ to account for the Moon's $\approx 0.55^\circ/\text{h}$ orbital motion. Circumpolar conditions ($\cos H < -1$ or $\cos H > 1$) return `null` rise/set events cleanly.
 
+### E. True Ecliptic Latitude Crossing Solver ($\beta = 0^\circ$) & Nodal Ephemeris
+While the mean argument of latitude $F = L' - \Omega$ represents unperturbed nodal motion, the Moon's true ecliptic latitude $\beta$ undergoes substantial solar gravitational perturbations (evection, variation, and annual terms) of amplitude over $\pm 0.7^\circ$:
+\[
+\beta = 5.1282^\circ \sin F + 0.2806^\circ \sin(M' + F) + 0.2777^\circ \sin(M' - F) + 0.1732^\circ \sin(2D - F)
+\]
+Because of the non-zero perturbation sum at $F = 0^\circ$ and $F = 180^\circ$, mean nodal passage ($F = 0^\circ$) and physical ecliptic plane crossing ($\beta = 0^\circ$) diverge by up to $\sim 14$ hours.
+
+To enforce 100% mathematical consistency across all observatory telemetry, visual beads, and countdowns, nodal passages are defined strictly by **True Ecliptic Latitude Crossing ($\beta = 0^\circ$)**:
+1. **Newton-Raphson Central-Difference Solver (`findTrueLunarNodeCrossing`)**:
+   Given an initial approximation $t_0$ from the mean argument of latitude, the true crossing Julian Date is solved iteratively:
+   \[
+   t_{k+1} = t_k - \frac{\beta(t_k)}{\dot{\beta}(t_k)}, \quad \dot{\beta}(t_k) \approx \frac{\beta(t_k + h) - \beta(t_k - h)}{2h}
+   \]
+   with step $h = 0.005\text{ days}$ ($7.2\text{ minutes}$). Convergence to sub-second precision ($|\Delta t| < 10^{-5}\text{ days} \approx 0.86\text{ s}$, $|\beta| < 10^{-4\circ}$) is achieved in $2 \dots 3$ iterations ($< 0.005\text{ ms}$).
+2. **Node Type Determination**:
+   \[
+   \text{type} = \begin{cases} \text{Ascending Node (☊)} & \text{if } \dot{\beta} > 0 \ (\text{crossing South to North}) \\ \text{Descending Node (☋)} & \text{if } \dot{\beta} < 0 \ (\text{crossing North to South}) \end{cases}
+   \]
+3. **Ascending Hemisphere Invariant**:
+   The active orbital hemisphere is strictly defined by instantaneous physical latitude:
+   \[
+   \text{isAscendingHemisphere} = (\beta \ge 0^\circ)
+   \]
+   guaranteeing that the Moon bead switches from Rose Red to Sky Blue at the exact second it crosses the horizontal $Y = 110$ ecliptic plane in the Syzygy and Axial Sightline demonstrators.
+
 ---
 
 ## 6. Syzygy Eclipse Shadow Geometry
