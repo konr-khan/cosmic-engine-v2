@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Moon, Compass } from 'lucide-react';
 import { PhaseVisual } from '../../common/PhaseVisual';
 import { 
@@ -6,15 +6,19 @@ import {
   toDegrees, 
   formatTime, 
   clamp, 
-  calculateLunarIllumination 
+  calculateLunarIllumination,
+  projectSkyDomePoint,
+  generateDiurnalPath,
+  calculateMonthlyLunarDeclinationBounds
 } from '../../../utils/cosmicMath';
 import { OrbitalData } from '../../../types';
-import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeReferenceLine } from './SkyDomeBase';
+import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
 
 export interface MoonElevationDomeProps {
   orbitalData?: OrbitalData | null;
   displayTime: number;
   latitude: number;
+  currentDate?: Date;
   onSetTime?: (time: number) => void;
 }
 
@@ -22,6 +26,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   orbitalData,
   displayTime,
   latitude,
+  currentDate = new Date(),
   onSetTime,
 }) => {
   const [isHoveringMoonMetrics, setIsHoveringMoonMetrics] = useState(false);
@@ -56,19 +61,18 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   const illPercent = calculateLunarIllumination(phase.value ?? 0);
 
   const moonHourAngle = (displayTime - transit) * 15;
-  const sinMoonAlt =
-    Math.sin(toRadians(latitude)) * Math.sin(toRadians(moonDeclination as number)) +
-    Math.cos(toRadians(latitude)) * Math.cos(toRadians(moonDeclination as number)) * Math.cos(toRadians(moonHourAngle));
-  const currentMoonElevation = toDegrees(Math.asin(clamp(sinMoonAlt, -1, 1)));
+  const moonPos = projectSkyDomePoint(moonHourAngle, Number(moonDeclination), latitude);
+  const currentMoonElevation = moonPos.elevation;
+  const moonX = moonPos.x;
+  const moonY = moonPos.y;
 
-  const sinMoonPeak =
-    Math.sin(toRadians(latitude)) * Math.sin(toRadians(moonDeclination as number)) +
-    Math.cos(toRadians(latitude)) * Math.cos(toRadians(moonDeclination as number));
-  const transitPeakElevation = toDegrees(Math.asin(clamp(sinMoonPeak, -1, 1)));
+  const transitPeakElevation = projectSkyDomePoint(0, Number(moonDeclination), latitude).elevation;
 
-  // Moon Arc Coordinates (SVG: 260x120)
-  const moonX = EL_CX + EL_R * Math.sin(toRadians(moonHourAngle));
-  const moonY = EL_CY - EL_R * Math.sin(toRadians(currentMoonElevation));
+  // Monthly Declination Bounds over a rolling 30-day window (±15 days)
+  const monthlyBounds = useMemo(
+    () => calculateMonthlyLunarDeclinationBounds(currentDate),
+    [currentDate]
+  );
 
   // --- Lunar Altitude Bounds & Zenith Cap Math ---
   // Major lunar standstill declination: 23.439° (obliquity) + 5.145° (lunar inclination) = 28.584°
@@ -89,35 +93,63 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     lunarCapPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${EL_R} ${EL_R} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
   }
 
-  // Standstill Reference Lines
-  const referenceLines: SkyDomeReferenceLine[] = [];
-  if (maxAnnualMoonNoon > 0 && maxAnnualMoonNoon < 89.5) {
-    const maxMoonY = EL_CY - EL_R * Math.sin(toRadians(maxAnnualMoonNoon));
-    const maxMoonXL = EL_CX - EL_R * Math.cos(toRadians(maxAnnualMoonNoon));
-    const maxMoonXR = EL_CX + EL_R * Math.cos(toRadians(maxAnnualMoonNoon));
-    referenceLines.push({
-      y: maxMoonY,
-      xLeft: maxMoonXL,
-      xRight: maxMoonXR,
+  // --- Curved Diurnal Paths ---
+  const maxPathResult = generateDiurnalPath(latitude, monthlyBounds.maxDec);
+  const todayPathResult = generateDiurnalPath(latitude, Number(moonDeclination));
+  const minPathResult = generateDiurnalPath(latitude, monthlyBounds.minDec);
+
+  const diurnalPaths: SkyDomeDiurnalPath[] = [];
+
+  // 1. Monthly Max Lunar Transit Arc (Soft silver dashed hairline)
+  if (maxPathResult.pathD && maxPathResult.peakAlt > 0) {
+    const maxPeak = maxPathResult.peakAlt;
+    const labelY = EL_CY - EL_R * Math.sin(toRadians(maxPeak));
+    const labelX = EL_CX + EL_R * Math.cos(toRadians(maxPeak)) + 3;
+    diurnalPaths.push({
+      id: 'moon-monthly-max',
+      d: maxPathResult.pathD,
       stroke: '#94a3b8',
-      label: `${maxAnnualMoonNoon.toFixed(0)}°`,
+      strokeWidth: 0.75,
+      strokeDasharray: '3 2',
+      strokeOpacity: 0.7,
+      label: `${maxPeak.toFixed(0)}°`,
       labelColor: 'fill-slate-400',
-      title: `Max Possible Lunar Altitude: ${maxAnnualMoonNoon.toFixed(1)}°`
+      labelX,
+      labelY: labelY + 2.5,
+      title: `Max Possible Lunar Altitude (Monthly ±15d Peak: ${monthlyBounds.maxDec.toFixed(1)}° Dec): ${maxPeak.toFixed(1)}°`
     });
   }
 
-  if (minAnnualMoonNoon > 0) {
-    const minMoonY = minAnnualMoonNoon > 0 ? EL_CY - EL_R * Math.sin(toRadians(minAnnualMoonNoon)) : EL_CY;
-    const minMoonXL = minAnnualMoonNoon > 0 ? EL_CX - EL_R * Math.cos(toRadians(minAnnualMoonNoon)) : EL_CX - EL_R;
-    const minMoonXR = minAnnualMoonNoon > 0 ? EL_CX + EL_R * Math.cos(toRadians(minAnnualMoonNoon)) : EL_CX + EL_R;
-    referenceLines.push({
-      y: minMoonY,
-      xLeft: minMoonXL,
-      xRight: minMoonXR,
+  // 2. Active Today's Moon Path (Glowing silver/indigo track)
+  if (todayPathResult.pathD) {
+    diurnalPaths.push({
+      id: 'today-moon-path',
+      d: todayPathResult.pathD,
+      stroke: '#c084fc',
+      strokeWidth: 1.5,
+      strokeOpacity: 0.9,
+      isGlowing: true,
+      title: `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}°`
+    });
+  }
+
+  // 3. Monthly Min Lunar Transit Arc (Muted slate dashed hairline)
+  if (minPathResult.pathD && minPathResult.peakAlt > 0) {
+    const minPeak = minPathResult.peakAlt;
+    const labelY = EL_CY - EL_R * Math.sin(toRadians(minPeak));
+    const labelX = EL_CX + EL_R * Math.cos(toRadians(minPeak)) + 3;
+    diurnalPaths.push({
+      id: 'moon-monthly-min',
+      d: minPathResult.pathD,
       stroke: '#64748b',
-      label: `${minAnnualMoonNoon.toFixed(0)}°`,
+      strokeWidth: 0.75,
+      strokeDasharray: '3 2',
+      strokeOpacity: 0.6,
+      label: `${minPeak.toFixed(0)}°`,
       labelColor: 'fill-slate-500',
-      title: `Min Possible Lunar Altitude: ${minAnnualMoonNoon.toFixed(1)}°`
+      labelX,
+      labelY: labelY + 2.5,
+      title: `Min Possible Lunar Altitude (Monthly ±15d Trough: ${monthlyBounds.minDec.toFixed(1)}° Dec): ${minPeak.toFixed(1)}°`
     });
   }
 
@@ -132,7 +164,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       elevationColorClass={currentMoonElevation >= 0 ? 'text-slate-200' : 'text-slate-400'}
       latitude={latitude}
       capPathD={lunarCapPathD}
-      referenceLines={referenceLines}
+      diurnalPaths={diurnalPaths}
       bodyX={moonX}
       bodyY={moonY}
       bodyVectorStroke={currentMoonElevation >= 0 ? '#94a3b8' : '#475569'}

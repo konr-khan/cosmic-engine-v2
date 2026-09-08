@@ -14,6 +14,21 @@ export interface SkyDomeReferenceLine {
   title: string;
 }
 
+export interface SkyDomeDiurnalPath {
+  id: string;
+  d: string;
+  stroke: string;
+  strokeWidth?: number;
+  strokeDasharray?: string;
+  strokeOpacity?: number;
+  label?: string;
+  labelColor?: string;
+  labelX?: number;
+  labelY?: number;
+  title?: string;
+  isGlowing?: boolean;
+}
+
 export interface SkyDomeBaseProps {
   title: string;
   icon: ComponentType<{ className?: string }>;
@@ -25,6 +40,7 @@ export interface SkyDomeBaseProps {
   latitude?: number;
   capPathD?: string;
   referenceLines?: SkyDomeReferenceLine[];
+  diurnalPaths?: SkyDomeDiurnalPath[];
   bodyX?: number;
   bodyY?: number;
   bodyVectorStroke?: string;
@@ -44,6 +60,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   latitude,
   capPathD,
   referenceLines = [],
+  diurnalPaths = [],
   bodyX = EL_CX,
   bodyY = EL_CY,
   bodyVectorStroke = '#64748b',
@@ -125,6 +142,43 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
                 {line.label}
               </text>
               <title>{line.title}</title>
+            </g>
+          ))}
+
+          {/* Diurnal Transit Path Arcs */}
+          {diurnalPaths.map((path) => (
+            <g key={path.id}>
+              {path.isGlowing && path.d && (
+                <path
+                  d={path.d}
+                  fill="none"
+                  stroke={path.stroke}
+                  strokeWidth={(path.strokeWidth || 1.2) + 2}
+                  strokeOpacity={0.25}
+                  className="blur-[1px] pointer-events-none select-none"
+                />
+              )}
+              {path.d && (
+                <path
+                  d={path.d}
+                  fill="none"
+                  stroke={path.stroke}
+                  strokeWidth={path.strokeWidth ?? 0.8}
+                  strokeDasharray={path.strokeDasharray}
+                  strokeOpacity={path.strokeOpacity ?? 0.8}
+                >
+                  {path.title && <title>{path.title}</title>}
+                </path>
+              )}
+              {path.label && path.labelX !== undefined && path.labelY !== undefined && (
+                <text
+                  x={path.labelX}
+                  y={path.labelY}
+                  className={`text-[6.5px] font-mono ${path.labelColor || 'fill-slate-400'} font-medium pointer-events-none select-none`}
+                >
+                  {path.label}
+                </text>
+              )}
             </g>
           ))}
 

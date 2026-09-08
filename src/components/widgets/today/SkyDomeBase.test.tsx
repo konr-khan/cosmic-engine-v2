@@ -154,6 +154,47 @@ describe('SkyDomeBase Primitive Component Test Suite', () => {
     expect(html).toContain('stroke="#fbbf24"');
   });
 
+  it('renders diurnal transit paths with glowing effect, labels, and title tooltips', () => {
+    const html = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Elevation Arc"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={66.4}
+        currentElevation={45.0}
+        diurnalPaths={[
+          {
+            id: 'summer-solstice',
+            d: 'M 38 104 L 130 20 L 222 104',
+            stroke: '#fbbf24',
+            strokeWidth: 0.75,
+            strokeDasharray: '3 2',
+            strokeOpacity: 0.7,
+            label: '66°',
+            labelColor: 'fill-amber-400',
+            labelX: 180,
+            labelY: 25,
+            title: 'Summer Solstice Noon Peak: 66.4°'
+          },
+          {
+            id: 'today-sun-path',
+            d: 'M 45 104 L 130 50 L 215 104',
+            stroke: '#f59e0b',
+            strokeWidth: 1.5,
+            isGlowing: true,
+            title: "Today's Solar Transit Peak: 45.0°"
+          }
+        ]}
+      />
+    );
+
+    expect(html).toContain('M 38 104 L 130 20 L 222 104');
+    expect(html).toContain('Summer Solstice Noon Peak: 66.4°');
+    expect(html).toContain('Solar Transit Peak: 45.0°');
+    expect(html).toContain('66°');
+    expect(html).toContain('blur-[1px]');
+  });
+
   it('renders body vector and graphic when elevation > -18°', () => {
     const html = renderToStaticMarkup(
       <SkyDomeBase

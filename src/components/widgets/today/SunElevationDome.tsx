@@ -6,10 +6,12 @@ import {
   formatTime, 
   clamp, 
   calculateEarthOrbitalPhysics, 
-  getJulianDate 
+  getJulianDate,
+  projectSkyDomePoint,
+  generateDiurnalPath
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
-import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeReferenceLine } from './SkyDomeBase';
+import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
 
 export interface SunElevationDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -47,14 +49,10 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   } = solarData || {};
 
   const sunHourAngle = (displayTime - solarNoon) * 15;
-  const sinSunAlt =
-    Math.sin(toRadians(latitude)) * Math.sin(toRadians(sunDeclination as number)) +
-    Math.cos(toRadians(latitude)) * Math.cos(toRadians(sunDeclination as number)) * Math.cos(toRadians(sunHourAngle));
-  const currentSunElevation = toDegrees(Math.asin(clamp(sinSunAlt, -1, 1)));
-
-  // Sun Arc Coordinates (SVG: 260x120)
-  const sunX = EL_CX + EL_R * Math.sin(toRadians(sunHourAngle));
-  const sunY = EL_CY - EL_R * Math.sin(toRadians(currentSunElevation));
+  const sunPos = projectSkyDomePoint(sunHourAngle, Number(sunDeclination), latitude);
+  const currentSunElevation = sunPos.elevation;
+  const sunX = sunPos.x;
+  const sunY = sunPos.y;
 
   // --- Solstice Peaks & Zenith Cap Math ---
   const OBLIQUITY = 23.439281;
@@ -79,34 +77,84 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
     capPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${EL_R} ${EL_R} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
   }
 
-  // Solstice Reference Lines
-  const referenceLines: SkyDomeReferenceLine[] = [];
-  if (summerSolsticeNoon > 0 && summerSolsticeNoon < 89.5) {
-    const summerY = EL_CY - EL_R * Math.sin(toRadians(summerSolsticeNoon));
-    const summerXL = EL_CX - EL_R * Math.cos(toRadians(summerSolsticeNoon));
-    const summerXR = EL_CX + EL_R * Math.cos(toRadians(summerSolsticeNoon));
-    referenceLines.push({
-      y: summerY,
-      xLeft: summerXL,
-      xRight: summerXR,
+  // --- Curved Diurnal Paths ---
+  const summerDec = latitude >= 0 ? OBLIQUITY : -OBLIQUITY;
+  const winterDec = latitude >= 0 ? -OBLIQUITY : OBLIQUITY;
+
+  const summerPathResult = generateDiurnalPath(latitude, summerDec);
+  const winterPathResult = generateDiurnalPath(latitude, winterDec);
+  const equinoxPathResult = generateDiurnalPath(latitude, 0);
+  const todayPathResult = generateDiurnalPath(latitude, Number(sunDeclination));
+
+  const diurnalPaths: SkyDomeDiurnalPath[] = [];
+
+  // 1. Summer Solstice Arc (Amber dashed hairline)
+  if (summerPathResult.pathD && summerSolsticeNoon > 0) {
+    const labelY = EL_CY - EL_R * Math.sin(toRadians(summerSolsticeNoon));
+    const labelX = EL_CX + EL_R * Math.cos(toRadians(summerSolsticeNoon)) + 3;
+    diurnalPaths.push({
+      id: 'summer-solstice',
+      d: summerPathResult.pathD,
       stroke: '#fbbf24',
+      strokeWidth: 0.75,
+      strokeDasharray: '3 2',
+      strokeOpacity: 0.7,
       label: `${summerSolsticeNoon.toFixed(0)}°`,
       labelColor: 'fill-amber-400/90',
+      labelX,
+      labelY: labelY + 2.5,
       title: `Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}°`
     });
   }
 
-  if (winterSolsticeNoon > 0) {
-    const winterY = EL_CY - EL_R * Math.sin(toRadians(winterSolsticeNoon));
-    const winterXL = EL_CX - EL_R * Math.cos(toRadians(winterSolsticeNoon));
-    const winterXR = EL_CX + EL_R * Math.cos(toRadians(winterSolsticeNoon));
-    referenceLines.push({
-      y: winterY,
-      xLeft: winterXL,
-      xRight: winterXR,
+  // 2. Active Today's Sun Path (Glowing Solid Gold Track)
+  if (todayPathResult.pathD) {
+    diurnalPaths.push({
+      id: 'today-sun-path',
+      d: todayPathResult.pathD,
+      stroke: '#f59e0b',
+      strokeWidth: 1.5,
+      strokeOpacity: 0.95,
+      isGlowing: true,
+      title: `Today's Solar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}°`
+    });
+  }
+
+  // 3. Equinox Arc (Muted slate dashed hairline)
+  if (equinoxPathResult.pathD && equinoxPathResult.peakAlt > 0) {
+    const eqPeak = equinoxPathResult.peakAlt;
+    const labelY = EL_CY - EL_R * Math.sin(toRadians(eqPeak));
+    const labelX = EL_CX + EL_R * Math.cos(toRadians(eqPeak)) + 3;
+    diurnalPaths.push({
+      id: 'equinox-path',
+      d: equinoxPathResult.pathD,
+      stroke: '#64748b',
+      strokeWidth: 0.75,
+      strokeDasharray: '2 3',
+      strokeOpacity: 0.5,
+      label: `${eqPeak.toFixed(0)}°`,
+      labelColor: 'fill-slate-400/80',
+      labelX,
+      labelY: labelY + 2.5,
+      title: `Equinox Noon Peak: ${eqPeak.toFixed(1)}°`
+    });
+  }
+
+  // 4. Winter Solstice Arc (Bronze dashed hairline)
+  if (winterPathResult.pathD && winterSolsticeNoon > 0) {
+    const labelY = EL_CY - EL_R * Math.sin(toRadians(winterSolsticeNoon));
+    const labelX = EL_CX + EL_R * Math.cos(toRadians(winterSolsticeNoon)) + 3;
+    diurnalPaths.push({
+      id: 'winter-solstice',
+      d: winterPathResult.pathD,
       stroke: '#d97706',
+      strokeWidth: 0.75,
+      strokeDasharray: '3 2',
+      strokeOpacity: 0.7,
       label: `${winterSolsticeNoon.toFixed(0)}°`,
       labelColor: 'fill-amber-600/90',
+      labelX,
+      labelY: labelY + 2.5,
       title: `Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}°`
     });
   }
@@ -122,7 +170,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       elevationColorClass={currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}
       latitude={latitude}
       capPathD={capPathD}
-      referenceLines={referenceLines}
+      diurnalPaths={diurnalPaths}
       bodyX={sunX}
       bodyY={sunY}
       bodyVectorStroke={currentSunElevation >= 0 ? '#fbbf24' : '#64748b'}

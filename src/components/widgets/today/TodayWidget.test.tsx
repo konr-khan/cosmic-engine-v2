@@ -53,6 +53,8 @@ describe('Today Horizon Subsystem', () => {
     expect(temperateHtml).toContain('>66.4°');
     expect(temperateHtml).toContain('Summer Solstice Noon Peak');
     expect(temperateHtml).toContain('Winter Solstice Noon Peak');
+    expect(temperateHtml).toContain('Equinox Noon Peak');
+    expect(temperateHtml).toContain('Solar Transit Peak');
 
     // Tropical latitude (10°N): Sun reaches 90° zenith, Zenith Cap displays None (90°)
     const tropicalHtml = renderToStaticMarkup(
@@ -106,6 +108,7 @@ describe('Today Horizon Subsystem', () => {
     );
     expect(moonHtml).toContain('Max Possible Lunar Altitude');
     expect(moonHtml).toContain('Min Possible Lunar Altitude');
+    expect(moonHtml).toContain('Lunar Transit Peak');
     // Verify miniature phase visual with parallactic angle rotation is present
     expect(moonHtml).toContain('rotate(45)');
   });

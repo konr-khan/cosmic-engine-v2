@@ -52,6 +52,7 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
           orbitalData={orbitalData}
           displayTime={displayTime}
           latitude={latitude}
+          currentDate={currentDate}
           onSetTime={onSetTime}
         />
       </div>
