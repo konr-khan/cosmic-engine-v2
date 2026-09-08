@@ -134,6 +134,41 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 * **`euler3d` (Armillary 3D Apparent View)**: Renders 3D sphere rotating dynamically with user Euler camera dragging $(\text{Pitch}, \text{Yaw}, \text{Roll})$ in inertial space with analytical limb clipping.
 * **`flat` (Astrolabe 2D Plate Modes)**: Renders precision concentric brass pivot pin (`#b45309`/`#78350f`, $0.75\text{px}$) with dark core (`#0f172a`), pulsing Sky Blue center dot (`#38bdf8`), and fine crosshair reticle (`#78350f`, $0.5\text{px}$).
 
+### F. Today's Horizon Observatory Domes & Draconic Kinematics
+* **Canonical Symmetrical Viewport (`viewBox="0 0 260 138"`)**:
+  - Shared geometric constants across `SunElevationDome` and `MoonElevationDome`: $CX = 130, CY = 104, R = 92$.
+  - Horizon baseline at $Y = 104$, Zenith marker (+90°) at $Y = 12$, Cardinal Azimuth ticks: East ($X = 38$), Meridian ($X = 130$), West ($X = 222$).
+  - Culmination Meridian indicator dynamically flips based on observer geographic latitude: **S** for Northern hemisphere ($\phi \ge 0^\circ$) vs. **N** for Southern hemisphere ($\phi < 0^\circ$).
+  - Sub-horizon vertical headroom: $34\text{px}$ ($Y \in [104, 138]$) accommodating nocturnal paths down to $-18^\circ$ astronomical twilight and negative declination excursions.
+* **Harmonized Atmospheric Twilight Strata Tokens**:
+  - **Daylight**: Amber / Gold (`#fbbf24`, $h \ge -0.833^\circ$).
+  - **Civil Twilight**: Warm Golden Amber (`#f59e0b`, $-6.0^\circ \le h < -0.833^\circ$).
+  - **Nautical Twilight**: Slate Navy (`#64748b`, $-12.0^\circ \le h < -6.0^\circ$).
+  - **Astronomical Twilight**: Deep Indigo Slate (`#334155`, $-18.0^\circ \le h < -12.0^\circ$).
+  - **Night**: Deep Space Slate (`#020617`, $h < -18.0^\circ$).
+* **Lunar Diurnal Arc Styling & Mode Separation**:
+  - **Standard (`Std`) Mode**: Diurnal elevation arc renders in serene lunar silver (`stroke="#e2e8f0"`, `strokeWidth="1.2"`), maintaining calm astronomical observation.
+  - **Nodal (`☊ Nodes`) Mode**: Diurnal elevation arc inherits canonical Eclipse-demonstrator 4-quadrant color and stroke encodings:
+    - **Sky Blue (`#38bdf8`)**: Moon North of Ecliptic ($\beta \ge 0$, Ascending hemisphere).
+    - **Rose Red (`#f43f5e`)**: Moon South of Ecliptic ($\beta < 0$, Descending hemisphere).
+    - **Solid Stroke**: Waxing Moon ($0^\circ \le \text{elongation} < 180^\circ$).
+    - **Dashed Stroke (`strokeDasharray="4 3"`)**: Waning Moon ($180^\circ \le \text{elongation} < 360^\circ$).
+* **Continuous Nocturnal Sub-Horizon Trajectory Styling**:
+  - Sub-horizon nocturnal paths ($h < 0^\circ, Y > 104$) are rendered strictly with **solid strokes** (`strokeDasharray = undefined`) and subdued opacity (`strokeOpacity="0.20"`, `strokeWidth="1.0"`).
+  - Eliminates misleading dashed strokes below the horizon, reserving dashed stroke encoding exclusively for waning lunar orbital phase.
+* **Bilateral Node Crossings & Gated Sky Dome Pins**:
+  - Ascending (☊, `#38bdf8`) and Descending (☋, `#f43f5e`) node pins on the Sky Dome are strictly temporal-gated: visible **only** when `nearestNodeDistDays <= 1.0` (or $|\beta| \le 0.8^\circ$), preventing on-dome node clutter.
+  - Sighting telemetry badge displays `"Crossing Today"` when within 24 hours of either node event.
+* **Centered $\pm 15$-Day Draconic Progress Micro-Rail**:
+  - Displayed within the Moon Dome Nodal Inspector modal: $X \in [12, 228]$ ($216\text{px}$ track width), anchored at $X = 120$ for Today ($T = 0$).
+  - Linear temporal mapping: $X(t) = 120 + t \cdot 7.2$ across $t \in [-15, +15]$ days.
+  - Continuous color-coded track segments: Sky Blue (`#38bdf8`) for northern ecliptic latitude $\beta(t) \ge 0$ vs. Rose Red (`#f43f5e`) for southern $\beta(t) < 0$.
+  - Historical and upcoming node pins: Ascending (Sky Blue circle, `☊`) and Descending (Rose Red circle, `☋`) pins with signed temporal offset tags (`-4.2d`, `+8.9d`).
+* **Footer Metric Relocation & 4-Column Panel (`grid-cols-4`)**:
+  - Segmented toggle controls (`[Std | Twilights]` / `[Std | ☊ Nodes]`) are housed in the 4th metric slot of the card footer:
+    - *Sun Dome*: `[Sunrise/Sunset | Solar Noon | Declination | [Std | Twilights]]`
+    - *Moon Dome*: `[Moonrise/Moonset | Lunar Transit | Declination | [Std | ☊ Nodes]]`
+  - Preserves clean card headers, uniform card heights, and horizontal alignment across the dashboard grid.
 
 ---
 

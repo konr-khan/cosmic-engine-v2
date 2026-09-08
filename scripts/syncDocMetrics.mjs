@@ -86,6 +86,11 @@ const CANONICAL_SUITES = [
     focus: 'Meeus lunar series, true geocentric phase angle ($i$), disc illumination ($k$), 2-step iterative rise/set solver, parallactic angle, nodal precession, and annual lunar matrix'
   },
   {
+    domain: 'Today Sky & Diurnal Kinematics',
+    file: 'src/utils/cosmicMath/todaySky.test.ts',
+    focus: 'Sky dome coordinate projection ($X, Y$), diurnal path generation (circumpolar, polar night, normal rise/set), monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification'
+  },
+  {
     domain: 'Eclipse Geometry & Presets',
     file: 'src/utils/cosmicMath/eclipse.test.ts',
     focus: 'Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`)'

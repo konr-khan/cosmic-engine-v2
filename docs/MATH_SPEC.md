@@ -906,5 +906,146 @@ To guarantee absolute mathematical reproducibility, eliminate runtime timezone l
    * `julianDateToDate(jd: JulianDate): Date`
    * `createUTCDate(year, month, day, hours?, minutes?, seconds?, ms?): Date`
 
+---
 
+## 12. Sky Dome Projection & Diurnal Transit Kinematics (`todaySky.ts`)
 
+The **Today's Sky Horizon Dome** subsystem projects topocentric celestial coordinates (hour angle $H$, declination $\delta$, and observer latitude $\phi$) into symmetrical 2D SVG canvas viewports (`viewBox="0 0 260 138"`), modeling diurnal paths, atmospheric twilight boundaries, and draconic nodal crossings.
+
+### A. Orthographic Prime Vertical Projection (`projectSkyDomePoint`)
+
+Given observer latitude $\phi$, celestial body declination $\delta$, and local hour angle $H$:
+
+1. **Elevation Angle ($h$)**:
+   \[
+   \sin h = \sin\phi \sin\delta + \cos\phi \cos\delta \cos H
+   \]
+   \[
+   h = \arcsin(\operatorname{clamp}(\sin h, -1.0, 1.0)) \quad [^\circ]
+   \]
+
+2. **2D Canvas Mapping**:
+   With canonical dome geometry $CX = 130$, $CY = 104$, and radius $R = 92$:
+   \[
+   X = CX + R \cos\delta \sin H
+   \]
+   \[
+   Y = CY - R \sin h
+   \]
+   This orthographic formulation guarantees exact mathematical coincidence between instantaneous celestial body beads and continuous diurnal transit arcs.
+
+### B. Diurnal Transit Path Generation (`generateDiurnalPath`)
+
+1. **Meridian Culmination Peak ($H = 0$)**:
+   \[
+   \sin h_{\text{peak}} = \sin\phi \sin\delta + \cos\phi \cos\delta = \cos(\phi - \delta)
+   \]
+   \[
+   X_{\text{peak}} = CX, \quad Y_{\text{peak}} = CY - R \sin h_{\text{peak}}
+   \]
+
+2. **Semi-Diurnal Hour Angle & Horizon Contact ($h = 0^\circ$)**:
+   \[
+   \cos H_0 = -\tan\phi \tan\delta
+   \]
+
+3. **Boundary & Polar Regime Classification**:
+   * **Polar Night** ($\tan\phi \tan\delta \le -1$):
+     The celestial body never rises above the horizon ($h_{\text{peak}} < 0^\circ$).
+     `isPolarNight = true`, `isCircumpolar = false`, `pathD = ""`, `risePoint = null`, `setPoint = null`.
+   * **Midnight Sun / Circumpolar Motion** ($\tan\phi \tan\delta \ge 1$):
+     The celestial body never sets below the horizon.
+     `isCircumpolar = true`, `isPolarNight = false`, generating an uninterrupted visible arc across $H \in [-90^\circ, +90^\circ]$.
+   * **Standard Rise / Set** ($-1 < \tan\phi \tan\delta < 1$):
+     Body rises at $-H_0$ and sets at $+H_0$:
+     \[
+     H_0 = \arccos(-\tan\phi \tan\delta) \quad [^\circ]
+     \]
+     Path is parameterized over $N$ discrete steps ($N = 48$). Endpoints are strictly clamped to the horizon line ($Y = CY$) to eliminate floating-point rounding artifacts.
+
+### C. Astronomical Twilight Band Geometry
+
+For a solar depression threshold angle $\theta \in \{-6^\circ, -12^\circ, -18^\circ\}$:
+\[
+\sin\theta = \sin\phi \sin\delta + \cos\phi \cos\delta \cos H_\theta
+\]
+\[
+\cos H_\theta = \frac{\sin\theta - \sin\phi \sin\delta}{\cos\phi \cos\delta}
+\]
+* If $\cos H_\theta \le -1$: The Sun never dips below depression $\theta$ (continuous twilight / white nights).
+* If $\cos H_\theta \ge 1$: The Sun never reaches depression $\theta$ (polar winter darkness).
+* Otherwise: $H_\theta = \arccos(\operatorname{clamp}(\cos H_\theta, -1, 1))$, generating twilight path arcs spanning $[-H_{18}, -H_0]$ (morning) and $[+H_0, +H_{18}]$ (evening).
+
+### D. Instantaneous Sky Dome Lunar Nodes (`calculateSkyDomeLunarNodes`)
+
+The Moon's orbital nodes lie on the ecliptic plane ($\beta = 0^\circ$). Given Ascending Node longitude $\Omega$ and Descending Node longitude $\mho = (\Omega + 180^\circ) \bmod 360^\circ$:
+
+1. **Equatorial Coordinates of Node**:
+   \[
+   \sin\delta_{\text{node}} = \sin\varepsilon \sin\lambda_{\text{node}} \implies \delta_{\text{node}} = \arcsin(\sin\varepsilon \sin\lambda_{\text{node}})
+   \]
+   \[
+   \alpha_{\text{node}} = \operatorname{atan2}(\cos\varepsilon \sin\lambda_{\text{node}}, \cos\lambda_{\text{node}})
+   \]
+
+2. **Local Sidereal Time ($\theta_{\text{LST}}$) & Nodal Hour Angle**:
+   Derived from active display time $t_{\text{disp}}$, solar noon $t_{\text{noon}}$, and solar right ascension $\alpha_\odot$:
+   \[
+   \theta_{\text{LST}} = (t_{\text{disp}} - t_{\text{noon}}) \cdot 15^\circ + \alpha_\odot
+   \]
+   \[
+   H_{\text{node}} = ((\theta_{\text{LST}} - \alpha_{\text{node}}) \bmod 360^\circ + 360^\circ) \bmod 360^\circ
+   \]
+   Node coordinates are then projected into 2D dome canvas space via `projectSkyDomePoint(H_node, delta_node, phi)`.
+
+### E. Draconic Nodal Cycle & Bilateral Proximity Solver
+
+1. **Draconic Constants & Argument of Latitude**:
+   * Draconic Month: $T_{\text{draconic}} = 27.21222\text{ days}$.
+   * Argument of Latitude: $F = (\lambda_{\text{moon}} - \Omega) \bmod 360^\circ \in [0^\circ, 360^\circ)$.
+
+2. **Prograde Upcoming & Previous Node Distances**:
+   \[
+   \Delta F_{\text{next}} = \begin{cases} 180^\circ - F & \text{if } F < 180^\circ \ (\text{upcoming is Descending } \mho) \\ 360^\circ - F & \text{if } F \ge 180^\circ \ (\text{upcoming is Ascending } \Omega) \end{cases}
+   \]
+   \[
+   \Delta F_{\text{prev}} = \begin{cases} F & \text{if } F < 180^\circ \ (\text{previous was Ascending } \Omega) \\ F - 180^\circ & \text{if } F \ge 180^\circ \ (\text{previous was Descending } \mho) \end{cases}
+   \]
+   \[
+   t_{\text{next}} = \frac{\Delta F_{\text{next}}}{360^\circ} \cdot T_{\text{draconic}}, \quad t_{\text{prev}} = \frac{\Delta F_{\text{prev}}}{360^\circ} \cdot T_{\text{draconic}} \quad [\text{days}]
+   \]
+
+3. **Bilateral Nearest Node Distance & 24-Hour Crossing Gate**:
+   \[
+   d_{\text{nearest}} = \min(t_{\text{next}}, t_{\text{prev}})
+   \]
+   \[
+   \text{nearestNodeType} = \begin{cases} \text{upcomingNodeType} & \text{if } t_{\text{next}} \le t_{\text{prev}} \\ \text{prevNodeType} & \text{if } t_{\text{prev}} < t_{\text{next}} \end{cases}
+   \]
+   \[
+   \text{isNearNode} = (d_{\text{nearest}} \le 1.0\text{ days}) \lor (|\beta_{\text{moon}}| \le 0.8^\circ)
+   \]
+   **Physical Invariant**: Sky dome node pins are rendered if and only if $\text{nearestNodeDistDays} \le 1.0$. This prevents distant upcoming nodes ($t_{\text{next}} \approx 13\text{d}$) from rendering immediately following a completed crossing.
+
+### F. Centered $\pm 15$-Day Draconic Progress Micro-Rail
+
+1. **Linear Coordinate Transform**:
+   For temporal offset $t \in [-15, +15]\text{ days}$ mapped onto track domain $X \in [12, 228]$ ($W = 216\text{px}$), centered at $X = 120$ for Today ($t = 0$):
+   \[
+   X(t) = 120 + t \cdot \frac{108}{15} = 120 + t \cdot 7.2
+   \]
+
+2. **Continuous Color-Coded Segments**:
+   The $[-15, +15]$ timeline is subdivided at all node events $\{t_k\}$. For each sub-interval with midpoint $t_{\text{mid}}$:
+   \[
+   F(t_{\text{mid}}) = \left( \left( F_0 + \frac{t_{\text{mid}}}{T_{\text{draconic}}} \cdot 360^\circ \right) \bmod 360^\circ + 360^\circ \right) \bmod 360^\circ
+   \]
+   The segment is styled **Sky Blue (`#38bdf8`)** if $F(t_{\text{mid}}) < 180^\circ$ (Moon North of Ecliptic, $\beta \ge 0$), and **Rose Red (`#f43f5e`)** if $F(t_{\text{mid}}) \ge 180^\circ$ (Moon South of Ecliptic, $\beta < 0$).
+
+### G. Monthly Lunar Declination Bounds (`calculateMonthlyLunarDeclinationBounds`)
+
+To provide empirical monthly transit bounds for the Moon dome:
+\[
+\delta_{\text{min}} = \min_{t \in [-15, +15]} \delta_{\text{moon}}(t_0 + t), \quad \delta_{\text{max}} = \max_{t \in [-15, +15]} \delta_{\text{moon}}(t_0 + t)
+\]
+Because the Moon's tropical month cycle is $27.32158\text{ days} < 30\text{ days}$, a symmetric 30-day window centered on $t_0$ is mathematically guaranteed to capture both the northernmost peak and southernmost trough of the active lunar declination cycle.
