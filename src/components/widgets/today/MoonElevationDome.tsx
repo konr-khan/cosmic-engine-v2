@@ -248,16 +248,19 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       bodyX={moonX}
       bodyY={moonY}
       bodyVectorStroke={currentMoonElevation >= 0 ? moonTrackColor : '#475569'}
-      extraSvgContent={isNodalMode && nodalData.isNearNode && nodalData.upcomingNode.isVisible && (
+      extraSvgContent={isNodalMode && nodalData.isNearNode && nodalData.nearestNode.isVisible && (
         <g className="lunar-upcoming-node-layer">
           {(() => {
-            const node = nodalData.upcomingNode;
-            const isAsc = nodalData.upcomingNodeType === 'ascending';
+            const node = nodalData.nearestNode;
+            const isAsc = nodalData.nearestNodeType === 'ascending';
             const color = isAsc ? '#38bdf8' : '#f43f5e';
             const symbol = isAsc ? '☊' : '☋';
-            const labelText = Math.abs(nodalData.moonBeta) <= 0.6 
-              ? `${symbol} Node Crossing Today`
-              : `${symbol} Node in ${nodalData.daysToNextNode}d`;
+            const dist = nodalData.nearestNodeDistDays;
+            const labelText = dist <= 0.4
+              ? `${symbol} Crossing Today`
+              : nodalData.isApproachingNearestNode
+              ? `${symbol} in ${dist.toFixed(1)}d`
+              : `${symbol} ${dist.toFixed(1)}d ago`;
 
             return (
               <g
@@ -266,7 +269,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
                 opacity={node.isAboveHorizon ? 1.0 : 0.5}
               >
                 {/* Outer glowing halo */}
-                <circle cx="0" cy="0" r="8" fill={color} fillOpacity="0.2" className="animate-pulse" />
+                <circle cx="0" cy="0" r="8" fill={color} fillOpacity="0.25" className="animate-pulse" />
                 {/* Core disc */}
                 <circle cx="0" cy="0" r="4.5" fill="#020617" stroke={color} strokeWidth="1.2" />
                 {/* Node symbol */}

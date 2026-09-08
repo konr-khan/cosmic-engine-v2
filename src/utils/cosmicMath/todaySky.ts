@@ -323,6 +323,10 @@ export interface SkyDomeLunarNodesResult {
   upcomingNodeType: 'ascending' | 'descending';
   prevNodeType: 'ascending' | 'descending';
   upcomingNode: SkyDomeLunarNode;
+  nearestNode: SkyDomeLunarNode;
+  nearestNodeType: 'ascending' | 'descending';
+  nearestNodeDistDays: number;
+  isApproachingNearestNode: boolean;
   isNearNode: boolean;
   quadrantLabel: string;
   timelineNodes: TimelineNodeEvent[];
@@ -395,9 +399,6 @@ export const calculateSkyDomeLunarNodes = (
 
   const daysToNextNode = parseFloat(((deltaFNext / 360) * DRACONIC_PERIOD_DAYS).toFixed(1));
   const daysSincePrevNode = parseFloat(((deltaFPrev / 360) * DRACONIC_PERIOD_DAYS).toFixed(1));
-
-  // Gated strictly to within 1.0 day / 0.8° of the node crossing to eliminate buzzing
-  const isNearNode = Math.abs(moonBeta) <= 0.8 || daysToNextNode <= 1.0 || daysSincePrevNode <= 1.0;
 
   // Build sorted list of node events within the [-15, +15] days window
   const timelineNodes: TimelineNodeEvent[] = [];
@@ -515,6 +516,16 @@ export const calculateSkyDomeLunarNodes = (
   const ascendingNode = projectNode(ascLon);
   const descendingNode = projectNode(descLon);
   const upcomingNode = upcomingNodeType === 'ascending' ? ascendingNode : descendingNode;
+  const prevNode = prevNodeType === 'ascending' ? ascendingNode : descendingNode;
+
+  const isApproachingNearestNode = daysToNextNode <= daysSincePrevNode;
+  const nearestNodeType = isApproachingNearestNode ? upcomingNodeType : prevNodeType;
+  const nearestNode = isApproachingNearestNode ? upcomingNode : prevNode;
+  const nearestNodeDistDays = Math.min(daysToNextNode, daysSincePrevNode);
+
+  // A node crossing event is happening TODAY if within <= 1.0 day of the nearest node
+  const isNearNode = nearestNodeDistDays <= 1.0;
+
   const quadrantLabel = `${isWaxing ? 'Waxing' : 'Waning'} ${isMoonAscending ? 'North (☊)' : 'South (☋)'}`;
 
   return {
@@ -530,6 +541,10 @@ export const calculateSkyDomeLunarNodes = (
     upcomingNodeType,
     prevNodeType,
     upcomingNode,
+    nearestNode,
+    nearestNodeType,
+    nearestNodeDistDays,
+    isApproachingNearestNode,
     isNearNode,
     quadrantLabel,
     timelineNodes,

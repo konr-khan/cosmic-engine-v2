@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { getJulianDate } from './core';
 import { 
   projectSkyDomePoint, 
   generateDiurnalPath, 
@@ -254,5 +255,31 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
       expect(seg.startDays).toBeLessThan(seg.endDays);
       expect(['#38bdf8', '#f43f5e']).toContain(seg.color);
     }
+  });
+
+  it('correctly tracks descending node crossing and suppresses distant ascending node on 2026-09-10/11', () => {
+    // 9/09/2026 18:05 UTC: Descending node crossing
+    const jdCrossing = getJulianDate(new Date('2026-09-09T00:00:00Z'), 18 + 5 / 60);
+    const nodesCrossing = calculateSkyDomeLunarNodes(47.06, jdCrossing, 18 + 5 / 60);
+    expect(nodesCrossing.nearestNodeType).toBe('descending');
+    expect(nodesCrossing.nearestNodeDistDays).toBeLessThanOrEqual(0.3);
+    expect(nodesCrossing.isNearNode).toBe(true);
+
+    // 9/10/2026 02:08 UTC: ~8 hours after crossing
+    const jdAfter = getJulianDate(new Date('2026-09-10T00:00:00Z'), 2 + 8 / 60);
+    const nodesAfter = calculateSkyDomeLunarNodes(47.06, jdAfter, 2 + 8 / 60);
+    // Nearest node MUST be descending (passed ~8h ago), NOT upcoming ascending (13d away)
+    expect(nodesAfter.nearestNodeType).toBe('descending');
+    expect(nodesAfter.nearestNodeDistDays).toBeLessThanOrEqual(0.5);
+    expect(nodesAfter.isNearNode).toBe(true);
+    expect(nodesAfter.upcomingNodeType).toBe('ascending');
+    expect(nodesAfter.daysToNextNode).toBeGreaterThan(12);
+
+    // 9/11/2026 02:00 UTC: ~32 hours after crossing (> 1.0 day)
+    const jdDistant = getJulianDate(new Date('2026-09-11T00:00:00Z'), 2);
+    const nodesDistant = calculateSkyDomeLunarNodes(47.06, jdDistant, 2);
+    // isNearNode MUST be false because nearest node is > 1.0 day away
+    expect(nodesDistant.nearestNodeDistDays).toBeGreaterThan(1.0);
+    expect(nodesDistant.isNearNode).toBe(false);
   });
 });
