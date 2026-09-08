@@ -8,7 +8,8 @@ import {
   calculateEarthOrbitalPhysics, 
   getJulianDate,
   projectSkyDomePoint,
-  generateDiurnalPath
+  generateDiurnalPath,
+  getSolarTwilightStatus
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
 import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
@@ -120,6 +121,19 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
     });
   }
 
+  // 2b. Today's Twilight Sub-Horizon Continuation (0° to -18°)
+  if (todayPathResult.twilightD) {
+    diurnalPaths.push({
+      id: 'today-twilight-path',
+      d: todayPathResult.twilightD,
+      stroke: '#f59e0b',
+      strokeWidth: 1.0,
+      strokeDasharray: '2 2',
+      strokeOpacity: 0.4,
+      title: "Today's Twilight Track (0° to −18°)"
+    });
+  }
+
   // 3. Equinox Arc (Muted slate dashed hairline)
   if (equinoxPathResult.pathD && equinoxPathResult.peakAlt > 0) {
     const eqPeak = equinoxPathResult.peakAlt;
@@ -159,6 +173,8 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
     });
   }
 
+  const twilightStatus = getSolarTwilightStatus(currentSunElevation);
+
   return (
     <SkyDomeBase
       title="Sun Elevation Arc"
@@ -167,7 +183,9 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       peakLabel="Noon Peak"
       peakElevation={noonElevation as number}
       currentElevation={currentSunElevation}
-      elevationColorClass={currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}
+      elevationColorClass={twilightStatus.badgeClass}
+      elevationStatusSubtitle={twilightStatus.label}
+      showTwilightBands={true}
       latitude={latitude}
       capPathD={capPathD}
       diurnalPaths={diurnalPaths}
@@ -179,9 +197,21 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
           cx={sunX}
           cy={sunY}
           r="5"
-          fill={currentSunElevation >= 0 ? '#fbbf24' : '#475569'}
+          fill={
+            currentSunElevation >= 0
+              ? '#fbbf24'
+              : currentSunElevation >= -6
+              ? '#f59e0b'
+              : currentSunElevation >= -12
+              ? '#38bdf8'
+              : currentSunElevation >= -18
+              ? '#818cf8'
+              : '#475569'
+          }
+          fillOpacity={currentSunElevation >= -18 ? 0.95 : 0.45}
           stroke="#ffffff"
           strokeWidth="1.2"
+          strokeOpacity={currentSunElevation >= -18 ? 0.9 : 0.4}
           className="drop-shadow"
         />
       )}

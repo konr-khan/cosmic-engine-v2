@@ -254,4 +254,28 @@ describe('SkyDomeBase Primitive Component Test Suite', () => {
     expect(html).toContain('data-testid="test-child-metrics"');
     expect(html).toContain('Child Metrics Row');
   });
+
+  it('renders sub-horizon atmospheric twilight strata and elevation status subtitle', () => {
+    const html = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Elevation Arc"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={60.0}
+        currentElevation={-4.5}
+        showTwilightBands={true}
+        elevationStatusSubtitle="Civil Twilight"
+      />
+    );
+
+    expect(html).toContain('viewBox="0 0 260 138"');
+    expect(html).toContain('twilight-strata');
+    expect(html).toContain('−6°');
+    expect(html).toContain('−12°');
+    expect(html).toContain('−18°');
+    expect(html).toContain('CIVIL');
+    expect(html).toContain('NAUT');
+    expect(html).toContain('ASTRO');
+    expect(html).toContain('(Below Horizon) · Civil Twilight');
+  });
 });

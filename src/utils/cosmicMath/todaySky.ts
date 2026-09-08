@@ -13,6 +13,7 @@ export interface SkyDomePoint {
 
 export interface DiurnalPathResult {
   pathD: string;
+  twilightD?: string;
   peakAlt: number;
   riseHourAngle: number | null;
   isCircumpolar: boolean;
@@ -25,6 +26,20 @@ export interface DiurnalPathResult {
 export interface MonthlyLunarBounds {
   minDec: number;
   maxDec: number;
+}
+
+export type TwilightPhase = 
+  | 'daylight' 
+  | 'civil_twilight' 
+  | 'nautical_twilight' 
+  | 'astronomical_twilight' 
+  | 'night';
+
+export interface TwilightStatusInfo {
+  phase: TwilightPhase;
+  label: string;
+  subtitle: string;
+  badgeClass: string;
 }
 
 /**
@@ -166,8 +181,52 @@ export const generateDiurnalPath = (
     }
   }
 
+  // Generate twilight path segments down to -18° if body rises and sets
+  let twilightD = '';
+  const sin18 = Math.sin(toRadians(-18));
+  const B = Math.cos(phiRad) * Math.cos(decRad);
+  const A = Math.sin(phiRad) * Math.sin(decRad);
+
+  if (Math.abs(B) > 1e-6) {
+    const ratio18 = (sin18 - A) / B;
+    let h18Deg = 180;
+
+    if (ratio18 <= -1) {
+      // Sun never dips below -18° (all-night twilight / white nights)
+      h18Deg = 180;
+    } else if (ratio18 >= 1) {
+      // Sun never rises above -18°
+      h18Deg = h0Deg;
+    } else {
+      h18Deg = toDegrees(Math.acos(clamp(ratio18, -1, 1)));
+    }
+
+    if (h18Deg > h0Deg) {
+      const twilightSteps = 12;
+      const morningPoints: string[] = [];
+      const eveningPoints: string[] = [];
+
+      // Morning twilight: -h18Deg -> -h0Deg
+      for (let i = 0; i <= twilightSteps; i++) {
+        const h = -h18Deg + ((h18Deg - h0Deg) * i) / twilightSteps;
+        const pt = projectSkyDomePoint(h, declinationDeg, latitudeDeg, cx, cy, r);
+        morningPoints.push(`${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`);
+      }
+
+      // Evening twilight: +h0Deg -> +h18Deg
+      for (let i = 0; i <= twilightSteps; i++) {
+        const h = h0Deg + ((h18Deg - h0Deg) * i) / twilightSteps;
+        const pt = projectSkyDomePoint(h, declinationDeg, latitudeDeg, cx, cy, r);
+        eveningPoints.push(`${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`);
+      }
+
+      twilightD = `${morningPoints.join(' ')} ${eveningPoints.join(' ')}`.trim();
+    }
+  }
+
   return {
     pathD: points.join(' '),
+    twilightD,
     peakAlt,
     riseHourAngle: h0Deg,
     isCircumpolar: false,
@@ -175,6 +234,78 @@ export const generateDiurnalPath = (
     peakPoint,
     risePoint,
     setPoint
+  };
+};
+
+/**
+ * Returns the exact solar twilight phase and human-readable descriptive status
+ * for any given sun elevation angle.
+ */
+export const getSolarTwilightStatus = (elevationDeg: number): TwilightStatusInfo => {
+  if (elevationDeg >= 0) {
+    return {
+      phase: 'daylight',
+      label: 'Daylight',
+      subtitle: 'Sun Above Horizon',
+      badgeClass: 'text-amber-400'
+    };
+  }
+  if (elevationDeg >= -6) {
+    return {
+      phase: 'civil_twilight',
+      label: 'Civil Twilight',
+      subtitle: 'Golden / Blue Hour',
+      badgeClass: 'text-amber-300'
+    };
+  }
+  if (elevationDeg >= -12) {
+    return {
+      phase: 'nautical_twilight',
+      label: 'Nautical Twilight',
+      subtitle: 'Sea Horizon Lost',
+      badgeClass: 'text-sky-300'
+    };
+  }
+  if (elevationDeg >= -18) {
+    return {
+      phase: 'astronomical_twilight',
+      label: 'Astronomical Twilight',
+      subtitle: 'Faint Stars Emerge',
+      badgeClass: 'text-indigo-300'
+    };
+  }
+  return {
+    phase: 'night',
+    label: 'Astronomical Night',
+    subtitle: 'Dark Sky',
+    badgeClass: 'text-slate-400'
+  };
+};
+
+/**
+ * Returns human-readable status for lunar elevation.
+ */
+export const getLunarElevationStatus = (
+  elevationDeg: number
+): { label: string; subtitle: string; badgeClass: string } => {
+  if (elevationDeg >= 0) {
+    return {
+      label: 'Above Horizon',
+      subtitle: 'Moonlit Sky',
+      badgeClass: 'text-slate-200'
+    };
+  }
+  if (elevationDeg >= -6) {
+    return {
+      label: 'Near Horizon',
+      subtitle: 'Sub-Horizon Transit',
+      badgeClass: 'text-slate-400'
+    };
+  }
+  return {
+    label: 'Below Horizon',
+    subtitle: 'Occluded by Earth',
+    badgeClass: 'text-slate-500'
   };
 };
 

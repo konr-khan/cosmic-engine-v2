@@ -9,6 +9,8 @@ import {
   projectSkyDomePoint, 
   generateDiurnalPath, 
   calculateMonthlyLunarDeclinationBounds,
+  getSolarTwilightStatus,
+  getLunarElevationStatus,
   EL_R, 
   EL_CX, 
   EL_CY 
@@ -140,5 +142,48 @@ describe('Monthly Lunar Declination Bounds (calculateMonthlyLunarDeclinationBoun
     // Bounds should not exceed physical Major Standstill limits (±29°)
     expect(bounds.maxDec).toBeLessThanOrEqual(29);
     expect(bounds.minDec).toBeGreaterThanOrEqual(-29);
+  });
+});
+
+describe('Solar & Lunar Twilight Status Helpers', () => {
+  it('correctly maps solar elevation to the 5 twilight phases', () => {
+    // Daylight
+    const day = getSolarTwilightStatus(25);
+    expect(day.phase).toBe('daylight');
+    expect(day.label).toBe('Daylight');
+
+    // Civil Twilight (0° to -6°)
+    const civil = getSolarTwilightStatus(-3.5);
+    expect(civil.phase).toBe('civil_twilight');
+    expect(civil.label).toBe('Civil Twilight');
+
+    // Nautical Twilight (-6° to -12°)
+    const naut = getSolarTwilightStatus(-8.2);
+    expect(naut.phase).toBe('nautical_twilight');
+    expect(naut.label).toBe('Nautical Twilight');
+
+    // Astronomical Twilight (-12° to -18°)
+    const astro = getSolarTwilightStatus(-14.7);
+    expect(astro.phase).toBe('astronomical_twilight');
+    expect(astro.label).toBe('Astronomical Twilight');
+
+    // Astronomical Night (<-18°)
+    const night = getSolarTwilightStatus(-30);
+    expect(night.phase).toBe('night');
+    expect(night.label).toBe('Astronomical Night');
+  });
+
+  it('correctly maps lunar elevation status', () => {
+    expect(getLunarElevationStatus(15).label).toBe('Above Horizon');
+    expect(getLunarElevationStatus(-2).label).toBe('Near Horizon');
+    expect(getLunarElevationStatus(-25).label).toBe('Below Horizon');
+  });
+
+  it('generates twilight sub-horizon path segments for temperate day', () => {
+    const res = generateDiurnalPath(47.06, 0);
+    expect(res.twilightD).toBeDefined();
+    expect(res.twilightD!.length).toBeGreaterThan(0);
+    expect(res.twilightD).toContain('M');
+    expect(res.twilightD).toContain('L');
   });
 });

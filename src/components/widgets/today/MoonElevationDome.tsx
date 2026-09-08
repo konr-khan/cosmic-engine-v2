@@ -9,7 +9,8 @@ import {
   calculateLunarIllumination,
   projectSkyDomePoint,
   generateDiurnalPath,
-  calculateMonthlyLunarDeclinationBounds
+  calculateMonthlyLunarDeclinationBounds,
+  getLunarElevationStatus
 } from '../../../utils/cosmicMath';
 import { OrbitalData } from '../../../types';
 import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
@@ -133,6 +134,19 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     });
   }
 
+  // 2b. Today's Moon Sub-Horizon Continuation
+  if (todayPathResult.twilightD) {
+    diurnalPaths.push({
+      id: 'today-moon-twilight-path',
+      d: todayPathResult.twilightD,
+      stroke: '#c084fc',
+      strokeWidth: 1.0,
+      strokeDasharray: '2 2',
+      strokeOpacity: 0.35,
+      title: "Today's Sub-Horizon Lunar Track"
+    });
+  }
+
   // 3. Monthly Min Lunar Transit Arc (Muted slate dashed hairline)
   if (minPathResult.pathD && minPathResult.peakAlt > 0) {
     const minPeak = minPathResult.peakAlt;
@@ -153,6 +167,8 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     });
   }
 
+  const lunarStatus = getLunarElevationStatus(currentMoonElevation);
+
   return (
     <SkyDomeBase
       title="Moon Elevation Arc"
@@ -161,7 +177,8 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       peakLabel="Transit Peak"
       peakElevation={transitPeakElevation}
       currentElevation={currentMoonElevation}
-      elevationColorClass={currentMoonElevation >= 0 ? 'text-slate-200' : 'text-slate-400'}
+      elevationColorClass={lunarStatus.badgeClass}
+      elevationStatusSubtitle={lunarStatus.label}
       latitude={latitude}
       capPathD={lunarCapPathD}
       diurnalPaths={diurnalPaths}
