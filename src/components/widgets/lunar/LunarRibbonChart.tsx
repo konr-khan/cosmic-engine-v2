@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Moon } from 'lucide-react';
-import { formatTime, clamp, getDayOfYear } from '../../../utils/cosmicMath';
+import { formatTime, getDayOfYear } from '../../../utils/cosmicMath';
 import { AnnualLunarMatrixItem } from '../../../types';
+import { useRibbonScrubber } from '../common/useRibbonScrubber';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -55,10 +56,6 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
   viewMode = 'synodic',
   onViewModeChange
 }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [hoverDay, setHoverDay] = useState<number | null>(null);
-
   const lonOffsetHours = longitude / 15;
 
   const ribbonWidth = 800;
@@ -67,8 +64,6 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
   const padRight = 65;
   const padTop = 20;
   const padBottom = 30;
-  const chartW = ribbonWidth - padLeft - padRight;
-  const chartH = ribbonHeight - padTop - padBottom;
 
   const isSynodic = viewMode === 'synodic';
   const span = 30;
@@ -89,79 +84,63 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
     }
   }
 
-  const dayToX = useCallback((d: number): number => {
-    if (isSynodic) {
-      return padLeft + ((d - startDay) / Math.max(1, endDay - startDay)) * chartW;
-    }
-    return padLeft + ((d - 1) / (totalDays - 1)) * chartW;
-  }, [isSynodic, startDay, endDay, padLeft, chartW, totalDays]);
+  const {
+    svgRef,
+    isDragging,
+    setIsDragging,
+    hoverDay,
+    setHoverDay,
+    chartW,
+    chartH,
+    dayToX,
+    xToDay,
+    timeToY,
+    getSvgCoordinates,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp
+  } = useRibbonScrubber({
+    width: ribbonWidth,
+    height: ribbonHeight,
+    padding: { left: padLeft, right: padRight, top: padTop, bottom: padBottom },
+    totalDays,
+    startDay: isSynodic ? startDay : 1,
+    endDay: isSynodic ? endDay : totalDays,
+    onScrub: ({ day, time }, e) => {
+      if (onHoverDayChange) onHoverDayChange(day);
 
-  const xToDay = useCallback((x: number): number => {
-    if (isSynodic) {
-      const rawDay = startDay + ((x - padLeft) / chartW) * (endDay - startDay);
-      return Math.max(startDay, Math.min(endDay, Math.round(rawDay)));
-    }
-    const rawDay = 1 + ((x - padLeft) / chartW) * (totalDays - 1);
-    return Math.max(1, Math.min(totalDays, Math.round(rawDay)));
-  }, [chartW, padLeft, totalDays, isSynodic, startDay, endDay]);
+      // In 30-Day Synodic View, mouseover strictly provides straight data readout
+      // without scrubbing through the year or horizontal time guidelines!
+      if (!isSynodic) {
+        if (onHoverDate) {
+          const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
+          onHoverDate(d);
+        }
 
-  const timeToY = (timeHours: number): number => {
-    const clamped = clamp(timeHours, 0, 24);
-    return padTop + chartH - (clamped / 24) * chartH;
-  };
+        if (onHoverTime) {
+          const utcTime = timeMode === 'utc' 
+            ? time 
+            : ((time - lonOffsetHours) % 24 + 24) % 24;
+          onHoverTime(parseFloat(utcTime.toFixed(3)));
+        }
+
+        if ((isDragging || e.type === 'pointerdown') && onDayChange) {
+          onDayChange(day);
+        }
+      }
+    },
+    onScrubEnd: (endDayVal) => {
+      if (!isSynodic && endDayVal !== null && onDayChange) {
+        onDayChange(endDayVal);
+      }
+    }
+  });
 
   const transformTime = useCallback((time: number | null | undefined): number | null => {
     if (time === null || time === undefined) return null;
     if (timeMode === 'utc') return time;
     return ((time + lonOffsetHours) % 24 + 24) % 24;
   }, [timeMode, lonOffsetHours]);
-
-  const getSvgCoordinates = (e: React.PointerEvent<SVGSVGElement> | React.MouseEvent<SVGSVGElement>): { svgX: number; svgY: number } => {
-    if (!svgRef.current) return { svgX: 0, svgY: 0 };
-    const ctm = svgRef.current.getScreenCTM();
-    if (ctm) {
-      const pt = svgRef.current.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
-      const transformed = pt.matrixTransform(ctm.inverse());
-      return { svgX: transformed.x, svgY: transformed.y };
-    }
-    const rect = svgRef.current.getBoundingClientRect();
-    return {
-      svgX: ((e.clientX - rect.left) / rect.width) * ribbonWidth,
-      svgY: ((e.clientY - rect.top) / rect.height) * ribbonHeight
-    };
-  };
-
-  const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
-    const { svgX, svgY } = getSvgCoordinates(e);
-    const day = xToDay(svgX);
-    setHoverDay(day);
-    if (onHoverDayChange) onHoverDayChange(day);
-
-    // In 30-Day Synodic View, mouseover strictly provides straight data readout
-    // without scrubbing through the year or horizontal time guidelines!
-    if (!isSynodic) {
-      if (onHoverDate) {
-        const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
-        onHoverDate(d);
-      }
-
-      const relY = svgY - padTop;
-      if (relY >= 0 && relY <= chartH && onHoverTime) {
-        const chartTime = ((chartH - relY) / chartH) * 24;
-        const utcTime = timeMode === 'utc' 
-          ? chartTime 
-          : ((chartTime - lonOffsetHours) % 24 + 24) % 24;
-        onHoverTime(parseFloat(utcTime.toFixed(3)));
-      }
-
-      if ((isDragging || e.type === 'pointerdown') && onDayChange) {
-        onDayChange(day);
-      }
-    }
-  };
 
   const activeMoonrise = transformTime(activeData.moonrise);
   const activeMoonset = transformTime(activeData.moonset);
@@ -387,21 +366,10 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         ref={svgRef}
         viewBox={`0 0 ${ribbonWidth} ${ribbonHeight}`}
         className="w-full h-[200px] block overflow-visible cursor-crosshair"
-        onPointerDown={(e) => { 
-          if (!isSynodic) {
-            setIsDragging(true); 
-            e.currentTarget.setPointerCapture(e.pointerId); 
-          }
-          handlePointer(e); 
-        }}
-        onPointerMove={(e) => handlePointer(e)}
-        onPointerUp={(e) => { 
-          setIsDragging(false); 
-          try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
-          if (!isSynodic && hoverDay !== null && onDayChange) onDayChange(hoverDay);
-        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
         onClick={(e) => {
-          if (!svgRef.current) return;
           const { svgX } = getSvgCoordinates(e);
           const day = xToDay(svgX);
           if (onDayChange) onDayChange(day);

@@ -1,6 +1,7 @@
-import React, { useRef, useState, useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { formatTime, getDayOfYear } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem } from '../../../types';
+import { useRibbonScrubber } from '../common/useRibbonScrubber';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -42,10 +43,6 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
   getDayLabel,
   year = 2026,
 }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [hoverDay, setHoverDay] = useState<number | null>(null);
-
   const width = 800;
   const height = 440;
   const paddingLeft = 55;
@@ -53,19 +50,46 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
   const paddingTop = 30;
   const paddingBottom = 35;
 
-  const chartW = width - paddingLeft - paddingRight;
-  const chartH = height - paddingTop - paddingBottom;
+  const {
+    svgRef,
+    isDragging,
+    setIsDragging,
+    hoverDay,
+    setHoverDay,
+    chartW,
+    chartH,
+    dayToX,
+    timeToY,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp
+  } = useRibbonScrubber({
+    width,
+    height,
+    padding: { left: paddingLeft, right: paddingRight, top: paddingTop, bottom: paddingBottom },
+    totalDays,
+    onScrub: ({ day, time }, e) => {
+      if (onHoverDate) {
+        const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
+        onHoverDate(d);
+      }
 
-  const xToDay = useCallback((x: number): number => {
-    const rawDay = 1 + ((x - paddingLeft) / chartW) * (totalDays - 1);
-    return Math.max(1, Math.min(totalDays, Math.round(rawDay)));
-  }, [chartW, paddingLeft, totalDays]);
+      // Calculate time from vertical Y position in Local Solar Time, then bridge to UTC
+      if (onHoverTime) {
+        const utcHoverTime = ((time - lonOffsetHours - eotOffsetHours) % 24 + 24) % 24;
+        onHoverTime(parseFloat(utcHoverTime.toFixed(3)));
+      }
 
-  const dayToX = (day: number): number => paddingLeft + ((day - 1) / (totalDays - 1)) * chartW;
-  const timeToY = (timeHours: number): number => {
-    const clamped = Math.max(0, Math.min(24, timeHours));
-    return paddingTop + chartH - (clamped / 24) * chartH;
-  };
+      if ((isDragging || e.type === 'pointerdown') && onDayChange) {
+        onDayChange(day);
+      }
+    },
+    onScrubEnd: (endDay) => {
+      if (endDay !== null && onDayChange) {
+        onDayChange(endDay);
+      }
+    }
+  });
 
   const buildBandPath = (topKey: keyof AnnualSolarMatrixItem, bottomKey: keyof AnnualSolarMatrixItem): string => {
     if (!almanacData.length) return '';
@@ -87,73 +111,6 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
       path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][key] as number)}`;
     }
     return path;
-  };
-
-  const getSvgCoordinates = (e: React.PointerEvent<SVGSVGElement>): { svgX: number; svgY: number } => {
-    if (!svgRef.current) return { svgX: 0, svgY: 0 };
-    const ctm = svgRef.current.getScreenCTM();
-    if (ctm) {
-      const pt = svgRef.current.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
-      const transformed = pt.matrixTransform(ctm.inverse());
-      return { svgX: transformed.x, svgY: transformed.y };
-    }
-    const rect = svgRef.current.getBoundingClientRect();
-    return {
-      svgX: ((e.clientX - rect.left) / rect.width) * width,
-      svgY: ((e.clientY - rect.top) / rect.height) * height
-    };
-  };
-
-  const handlePointer = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
-    const { svgX, svgY } = getSvgCoordinates(e);
-    const day = xToDay(svgX);
-    setHoverDay(day);
-
-    if (onHoverDate) {
-      const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
-      onHoverDate(d);
-    }
-
-    // Calculate time from vertical Y position in Local Solar Time, then bridge to UTC
-    const relY = svgY - paddingTop;
-    if (relY >= 0 && relY <= chartH && onHoverTime) {
-      const localChartTime = ((chartH - relY) / chartH) * 24;
-      const utcHoverTime = ((localChartTime - lonOffsetHours - eotOffsetHours) % 24 + 24) % 24;
-      onHoverTime(parseFloat(utcHoverTime.toFixed(3)));
-    }
-
-    if ((isDragging || e.type === 'pointerdown') && onDayChange) {
-      onDayChange(day);
-    }
-  };
-
-  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    setIsDragging(true);
-    handlePointer(e);
-    if (svgRef.current) {
-      svgRef.current.setPointerCapture(e.pointerId);
-    }
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    handlePointer(e);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
-    setIsDragging(false);
-    if (hoverDay !== null && onDayChange) {
-      onDayChange(hoverDay);
-    }
-    if (svgRef.current) {
-      try {
-        svgRef.current.releasePointerCapture(e.pointerId);
-      } catch {
-        // Ignore if pointer capture was already released
-      }
-    }
   };
 
   const sunriseY = timeToY(activeData.sunrise);
