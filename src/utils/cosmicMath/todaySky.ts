@@ -240,6 +240,7 @@ export const generateDiurnalPath = (
 /**
  * Returns the exact solar twilight phase and human-readable descriptive status
  * for any given sun elevation angle.
+ * Harmonized with Solar Almanac Ribbon & Terminator Map design tokens.
  */
 export const getSolarTwilightStatus = (elevationDeg: number): TwilightStatusInfo => {
   if (elevationDeg >= 0) {
@@ -263,7 +264,7 @@ export const getSolarTwilightStatus = (elevationDeg: number): TwilightStatusInfo
       phase: 'nautical_twilight',
       label: 'Nautical Twilight',
       subtitle: 'Sea Horizon Lost',
-      badgeClass: 'text-sky-300'
+      badgeClass: 'text-slate-300'
     };
   }
   if (elevationDeg >= -18) {
@@ -271,14 +272,113 @@ export const getSolarTwilightStatus = (elevationDeg: number): TwilightStatusInfo
       phase: 'astronomical_twilight',
       label: 'Astronomical Twilight',
       subtitle: 'Faint Stars Emerge',
-      badgeClass: 'text-indigo-300'
+      badgeClass: 'text-slate-400'
     };
   }
   return {
     phase: 'night',
     label: 'Astronomical Night',
     subtitle: 'Dark Sky',
-    badgeClass: 'text-slate-400'
+    badgeClass: 'text-slate-500'
+  };
+};
+
+export interface SkyDomeLunarNode {
+  x: number;
+  y: number;
+  elevation: number;
+  hourAngle: number;
+  declination: number;
+  rightAscension: number;
+  eclipticLongitude: number;
+  isAboveHorizon: boolean;
+  isVisible: boolean; // elevation >= -18
+}
+
+export interface SkyDomeLunarNodesResult {
+  ascendingNode: SkyDomeLunarNode;
+  descendingNode: SkyDomeLunarNode;
+  moonBeta: number;
+  isMoonAscending: boolean;
+}
+
+/**
+ * Calculates the exact instantaneous Sky Dome positions and elevation angles for the
+ * Moon's Ascending Node (☊) and Descending Node (☋).
+ *
+ * The nodes lie on the Ecliptic plane (beta = 0). Their right ascension and declination
+ * are solved from the nodal longitude Omega and obliquity epsilon, and projected into
+ * 2D Sky Dome space matching the local sidereal time of the observer.
+ */
+export const calculateSkyDomeLunarNodes = (
+  latitudeDeg: number,
+  julianDate: number,
+  displayTime: number,
+  solarNoon: number = 12,
+  sunLambdaDeg?: number,
+  options?: {
+    cx?: number;
+    cy?: number;
+    r?: number;
+  }
+): SkyDomeLunarNodesResult => {
+  const cx = options?.cx ?? EL_CX;
+  const cy = options?.cy ?? EL_CY;
+  const r = options?.r ?? EL_R;
+
+  const lunarPos = calculateLunarPosition(julianDate);
+  const ascLon = Number(lunarPos.nodeLongitude);
+  const descLon = Number(lunarPos.descendingNodeLongitude);
+  const moonBeta = Number(lunarPos.beta ?? lunarPos.eclipticLatitude ?? 0);
+  const isMoonAscending = moonBeta >= 0;
+
+  const OBLIQUITY = 23.439281;
+  const epsRad = toRadians(OBLIQUITY);
+
+  // Derive solar right ascension to establish local sidereal time (LST)
+  let solLam = sunLambdaDeg;
+  if (solLam === undefined) {
+    const n = julianDate - 2451545.0;
+    const L = (280.460 + 0.9856474 * n) % 360;
+    const g = (357.528 + 0.9856003 * n) % 360;
+    solLam = L + 1.915 * Math.sin(toRadians(g)) + 0.020 * Math.sin(toRadians(2 * g));
+  }
+  const solLamRad = toRadians(solLam);
+  let sunRa: number = Number(toDegrees(Math.atan2(Math.cos(epsRad) * Math.sin(solLamRad), Math.cos(solLamRad))));
+  if (sunRa < 0) sunRa += 360;
+
+  // LST at the active display time: H_sun = (displayTime - solarNoon) * 15 => LST = H_sun + sunRA
+  const lstDeg = (displayTime - solarNoon) * 15 + sunRa;
+
+  const projectNode = (nodeLonDeg: number): SkyDomeLunarNode => {
+    const lamRad = toRadians(nodeLonDeg);
+    const sinDec = Math.sin(epsRad) * Math.sin(lamRad);
+    const decDeg = Number(toDegrees(Math.asin(clamp(sinDec, -1, 1))));
+    let raDeg: number = Number(toDegrees(Math.atan2(Math.cos(epsRad) * Math.sin(lamRad), Math.cos(lamRad))));
+    if (raDeg < 0) raDeg += 360;
+
+    let hDeg = ((lstDeg - raDeg) % 360 + 360) % 360;
+    if (hDeg > 180) hDeg -= 360;
+
+    const pt = projectSkyDomePoint(hDeg, decDeg, latitudeDeg, cx, cy, r);
+    return {
+      x: pt.x,
+      y: pt.y,
+      elevation: pt.elevation,
+      hourAngle: hDeg,
+      declination: decDeg,
+      rightAscension: raDeg,
+      eclipticLongitude: nodeLonDeg,
+      isAboveHorizon: pt.elevation >= 0,
+      isVisible: pt.elevation >= -18
+    };
+  };
+
+  return {
+    ascendingNode: projectNode(ascLon),
+    descendingNode: projectNode(descLon),
+    moonBeta,
+    isMoonAscending
   };
 };
 

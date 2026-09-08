@@ -47,6 +47,7 @@ export interface SkyDomeBaseProps {
   bodyY?: number;
   bodyVectorStroke?: string;
   renderBodyGraphic?: (pos: { x: number; y: number }) => ReactNode;
+  extraSvgContent?: ReactNode;
   popover?: ReactNode;
   children?: ReactNode;
 }
@@ -69,6 +70,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   bodyY = EL_CY,
   bodyVectorStroke = '#64748b',
   renderBodyGraphic,
+  extraSvgContent,
   popover,
   children
 }) => {
@@ -90,10 +92,10 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
         </div>
       </div>
 
-      {/* Semicircular Sky Dome SVG (260x120 or 260x138 with twilight bands) */}
+      {/* Semicircular Sky Dome SVG (Unified 260x138 canonical viewport) */}
       <div className="relative w-full py-1 flex items-center justify-center">
         <svg 
-          viewBox={showTwilightBands ? "0 0 260 138" : "0 0 260 120"} 
+          viewBox="0 0 260 138" 
           className="w-full max-h-[160px] overflow-visible" 
           preserveAspectRatio="xMidYMid meet"
         >
@@ -101,34 +103,34 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
           {showTwilightBands && (
             <g className="twilight-strata">
               {/* Civil Twilight (0° to -6°, Y: 104 -> 113.6) */}
-              <rect x="18" y="104" width="224" height="9.6" fill="#f59e0b" fillOpacity="0.07" />
-              <line x1="18" y1="113.6" x2="242" y2="113.6" stroke="#d97706" strokeWidth="0.5" strokeDasharray="2 3" strokeOpacity="0.4" />
-              <text x="245" y="115.5" className="text-[6px] font-mono fill-amber-500/70 font-medium select-none pointer-events-none">−6°</text>
-              <text x="15" y="115.5" textAnchor="end" className="text-[5.5px] font-mono fill-amber-500/60 font-medium select-none pointer-events-none">CIVIL</text>
+              <rect x="18" y="104" width="224" height="9.6" fill="#f59e0b" fillOpacity="0.08" />
+              <line x1="18" y1="113.6" x2="242" y2="113.6" stroke="#d97706" strokeWidth="0.5" strokeDasharray="2 3" strokeOpacity="0.5" />
+              <text x="245" y="115.5" className="text-[6px] font-mono fill-amber-500/80 font-medium select-none pointer-events-none">−6°</text>
+              <text x="15" y="115.5" textAnchor="end" className="text-[5.5px] font-mono fill-amber-500/80 font-medium select-none pointer-events-none">CIVIL</text>
 
-              {/* Nautical Twilight (-6° to -12°, Y: 113.6 -> 123.1) */}
-              <rect x="18" y="113.6" width="224" height="9.5" fill="#38bdf8" fillOpacity="0.05" />
-              <line x1="18" y1="123.1" x2="242" y2="123.1" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="2 3" strokeOpacity="0.35" />
-              <text x="245" y="125" className="text-[6px] font-mono fill-sky-500/70 font-medium select-none pointer-events-none">−12°</text>
-              <text x="15" y="125" textAnchor="end" className="text-[5.5px] font-mono fill-sky-500/60 font-medium select-none pointer-events-none">NAUT</text>
+              {/* Nautical Twilight (-6° to -12°, Y: 113.6 -> 123.1) - Slate tones matching Solar Almanac */}
+              <rect x="18" y="113.6" width="224" height="9.5" fill="#64748b" fillOpacity="0.08" />
+              <line x1="18" y1="123.1" x2="242" y2="123.1" stroke="#475569" strokeWidth="0.5" strokeDasharray="2 3" strokeOpacity="0.45" />
+              <text x="245" y="125" className="text-[6px] font-mono fill-slate-400/80 font-medium select-none pointer-events-none">−12°</text>
+              <text x="15" y="125" textAnchor="end" className="text-[5.5px] font-mono fill-slate-400/80 font-medium select-none pointer-events-none">NAUT</text>
 
-              {/* Astronomical Twilight (-12° to -18°, Y: 123.1 -> 132.4) */}
-              <rect x="18" y="123.1" width="224" height="9.3" fill="#6366f1" fillOpacity="0.04" />
-              <line x1="18" y1="132.4" x2="242" y2="132.4" stroke="#4338ca" strokeWidth="0.5" strokeDasharray="2 3" strokeOpacity="0.3" />
-              <text x="245" y="134.5" className="text-[6px] font-mono fill-indigo-500/70 font-medium select-none pointer-events-none">−18°</text>
-              <text x="15" y="134.5" textAnchor="end" className="text-[5.5px] font-mono fill-indigo-500/60 font-medium select-none pointer-events-none">ASTRO</text>
+              {/* Astronomical Twilight (-12° to -18°, Y: 123.1 -> 132.4) - Deep Slate tones matching Solar Almanac */}
+              <rect x="18" y="123.1" width="224" height="9.3" fill="#334155" fillOpacity="0.1" />
+              <line x1="18" y1="132.4" x2="242" y2="132.4" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 3" strokeOpacity="0.4" />
+              <text x="245" y="134.5" className="text-[6px] font-mono fill-slate-500/80 font-medium select-none pointer-events-none">−18°</text>
+              <text x="15" y="134.5" textAnchor="end" className="text-[5.5px] font-mono fill-slate-500/80 font-medium select-none pointer-events-none">ASTRO</text>
             </g>
           )}
 
           {/* Horizon Line (0°) */}
           <line x1="18" y1={EL_CY} x2="242" y2={EL_CY} stroke="#334155" strokeWidth="0.75" strokeOpacity="0.7" />
-          <text x="16" y={showTwilightBands ? 101 : EL_CY + 10} textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
-          <text x="244" y={showTwilightBands ? 101 : EL_CY + 10} textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
+          <text x="16" y="101" textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
+          <text x="244" y="101" textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
 
           {/* Cardinal Compass Indicators (E, S/N, W) */}
-          <text x="36" y={showTwilightBands ? 101 : EL_CY + 10} textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">E</text>
-          <text x={EL_CX} y={showTwilightBands ? 101 : EL_CY + 12} textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">{meridianLabel}</text>
-          <text x="224" y={showTwilightBands ? 101 : EL_CY + 10} textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">W</text>
+          <text x="36" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">E</text>
+          <text x={EL_CX} y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">{meridianLabel}</text>
+          <text x="224" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">W</text>
 
           {/* Semicircular Elevation Arc Dome */}
           <path
@@ -219,6 +221,9 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
 
           {/* Observer Horizon Center Origin */}
           <circle cx={EL_CX} cy={EL_CY} r="2" fill="#475569" />
+
+          {/* Extra SVG Overlays (e.g. Lunar Node Pins ☊ and ☋) */}
+          {extraSvgContent}
 
           {/* Body Elevation Vector & Body Graphic */}
           {isVisible && (

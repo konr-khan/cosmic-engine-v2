@@ -9,6 +9,7 @@ import {
   projectSkyDomePoint, 
   generateDiurnalPath, 
   calculateMonthlyLunarDeclinationBounds,
+  calculateSkyDomeLunarNodes,
   getSolarTwilightStatus,
   getLunarElevationStatus,
   EL_R, 
@@ -156,21 +157,25 @@ describe('Solar & Lunar Twilight Status Helpers', () => {
     const civil = getSolarTwilightStatus(-3.5);
     expect(civil.phase).toBe('civil_twilight');
     expect(civil.label).toBe('Civil Twilight');
+    expect(civil.badgeClass).toBe('text-amber-300');
 
     // Nautical Twilight (-6° to -12°)
     const naut = getSolarTwilightStatus(-8.2);
     expect(naut.phase).toBe('nautical_twilight');
     expect(naut.label).toBe('Nautical Twilight');
+    expect(naut.badgeClass).toBe('text-slate-300');
 
     // Astronomical Twilight (-12° to -18°)
     const astro = getSolarTwilightStatus(-14.7);
     expect(astro.phase).toBe('astronomical_twilight');
     expect(astro.label).toBe('Astronomical Twilight');
+    expect(astro.badgeClass).toBe('text-slate-400');
 
     // Astronomical Night (<-18°)
     const night = getSolarTwilightStatus(-30);
     expect(night.phase).toBe('night');
     expect(night.label).toBe('Astronomical Night');
+    expect(night.badgeClass).toBe('text-slate-500');
   });
 
   it('correctly maps lunar elevation status', () => {
@@ -185,5 +190,35 @@ describe('Solar & Lunar Twilight Status Helpers', () => {
     expect(res.twilightD!.length).toBeGreaterThan(0);
     expect(res.twilightD).toContain('M');
     expect(res.twilightD).toContain('L');
+  });
+});
+
+describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
+  it('correctly computes Ascending and Descending nodes 180° apart on the Ecliptic', () => {
+    // J2000 epoch (JD 2451545.0) at Solar Noon
+    const nodes = calculateSkyDomeLunarNodes(47.06, 2451545.0, 12, 12);
+
+    expect(nodes.ascendingNode).toBeDefined();
+    expect(nodes.descendingNode).toBeDefined();
+
+    // Ecliptic longitude separation should be 180°
+    const diff = Math.abs(nodes.descendingNode.eclipticLongitude - nodes.ascendingNode.eclipticLongitude);
+    expect(diff).toBeCloseTo(180, 1);
+
+    // Declination symmetry: sin(dec_asc) = -sin(dec_desc)
+    expect(nodes.ascendingNode.declination).toBeCloseTo(-nodes.descendingNode.declination, 1);
+
+    // Nodes must be projected within valid SVG canvas ranges
+    expect(Number.isFinite(nodes.ascendingNode.x)).toBe(true);
+    expect(Number.isFinite(nodes.ascendingNode.y)).toBe(true);
+    expect(Number.isFinite(nodes.ascendingNode.elevation)).toBe(true);
+    expect(Number.isFinite(nodes.descendingNode.x)).toBe(true);
+    expect(Number.isFinite(nodes.descendingNode.y)).toBe(true);
+    expect(Number.isFinite(nodes.descendingNode.elevation)).toBe(true);
+
+    // Moon ecliptic latitude beta check
+    expect(typeof nodes.moonBeta).toBe('number');
+    expect(typeof nodes.isMoonAscending).toBe('boolean');
+    expect(nodes.isMoonAscending).toBe(nodes.moonBeta >= 0);
   });
 });

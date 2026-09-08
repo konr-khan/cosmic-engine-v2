@@ -112,4 +112,87 @@ describe('Today Horizon Subsystem', () => {
     // Verify miniature phase visual with parallactic angle rotation is present
     expect(moonHtml).toContain('rotate(45)');
   });
+
+  it('guarantees symmetrical 260x138 viewBox parity across both Sun and Moon domes', () => {
+    const sunHtml = renderToStaticMarkup(
+      React.createElement(SunElevationDome, {
+        displayTime: 12,
+        latitude: 47.06
+      })
+    );
+    const moonHtml = renderToStaticMarkup(
+      React.createElement(MoonElevationDome, {
+        displayTime: 12,
+        latitude: 47.06
+      })
+    );
+
+    // Both domes must share identical canonical viewBox="0 0 260 138"
+    expect(sunHtml).toContain('viewBox="0 0 260 138"');
+    expect(moonHtml).toContain('viewBox="0 0 260 138"');
+  });
+
+  it('renders 4-badge footer summary panels with segmented mode controls', () => {
+    const sunHtml = renderToStaticMarkup(
+      React.createElement(SunElevationDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        solarData: {
+          sunrise: 6,
+          sunset: 18,
+          solarNoon: 12,
+          declination: 10,
+          noonElevation: 50,
+          equationOfTime: 0,
+          dayLength: 12,
+          civil: 0.5,
+          nautical: 1,
+          astronomical: 1.5,
+          daysSinceEpoch: 100,
+          lambda: 0,
+          eclipticLongitude: 0,
+          isMidnightSun: false,
+          isPolarNight: false
+        }
+      })
+    );
+
+    // Sun 4-badge footer checks
+    expect(sunHtml).toContain('grid-cols-4');
+    expect(sunHtml).toContain('Sunrise / Set');
+    expect(sunHtml).toContain('Solar Noon');
+    expect(sunHtml).toContain('Declination (δ)');
+    expect(sunHtml).toContain('Standard Solar View');
+    expect(sunHtml).toContain('Twilight Strata View');
+
+    const moonHtml = renderToStaticMarkup(
+      React.createElement(MoonElevationDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        orbitalData: {
+          phase: { value: 0.5, name: 'Full Moon' },
+          lunarEvents: {
+            moonrise: 18,
+            transit: 0,
+            moonset: 6,
+            distanceKm: 384400,
+            distanceEarthRadii: 60.3,
+            isPerigee: false,
+            isApogee: false,
+            declination: -5,
+            parallacticAngle: 0
+          }
+        } as unknown as OrbitalData
+      })
+    );
+
+    // Moon 4-badge footer checks
+    expect(moonHtml).toContain('grid-cols-4');
+    expect(moonHtml).toContain('Moonrise / Set');
+    expect(moonHtml).toContain('Lunar Transit');
+    expect(moonHtml).toContain('Declination (δ)');
+    expect(moonHtml).toContain('Standard Lunar View');
+    expect(moonHtml).toContain('Lunar Nodes View');
+    expect(moonHtml).toContain('☊ Nodes');
+  });
 });

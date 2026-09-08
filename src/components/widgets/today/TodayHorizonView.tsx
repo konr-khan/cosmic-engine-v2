@@ -50,6 +50,7 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
         />
         <MoonElevationDome
           orbitalData={orbitalData}
+          solarData={solarData}
           displayTime={displayTime}
           latitude={latitude}
           currentDate={currentDate}

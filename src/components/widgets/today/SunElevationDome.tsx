@@ -30,6 +30,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   onSetTime,
 }) => {
   const [isHoveringSunMetrics, setIsHoveringSunMetrics] = useState(false);
+  const [isTwilightMode, setIsTwilightMode] = useState(false);
 
   // Earth-Sun Distance & Orbital Physics from Canonical Solver
   const fallbackPhysics = useMemo(
@@ -122,7 +123,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   }
 
   // 2b. Today's Twilight Sub-Horizon Continuation (0° to -18°)
-  if (todayPathResult.twilightD) {
+  if (isTwilightMode && todayPathResult.twilightD) {
     diurnalPaths.push({
       id: 'today-twilight-path',
       d: todayPathResult.twilightD,
@@ -185,7 +186,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       currentElevation={currentSunElevation}
       elevationColorClass={twilightStatus.badgeClass}
       elevationStatusSubtitle={twilightStatus.label}
-      showTwilightBands={true}
+      showTwilightBands={isTwilightMode}
       latitude={latitude}
       capPathD={capPathD}
       diurnalPaths={diurnalPaths}
@@ -203,10 +204,10 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
               : currentSunElevation >= -6
               ? '#f59e0b'
               : currentSunElevation >= -12
-              ? '#38bdf8'
+              ? '#64748b'
               : currentSunElevation >= -18
-              ? '#818cf8'
-              : '#475569'
+              ? '#334155'
+              : '#1e293b'
           }
           fillOpacity={currentSunElevation >= -18 ? 0.95 : 0.45}
           stroke="#ffffff"
@@ -300,11 +301,11 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
         </div>
       </div>
 
-      {/* Mirrored Footer Summary Badges: Sunrise / Sunset, Solar Noon Snap Button, Declination */}
-      <div className="grid grid-cols-3 gap-2 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
+      {/* Mirrored Footer Summary Badges: Sunrise / Sunset, Solar Noon Snap Button, Declination, Mode Toggle */}
+      <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
         <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[8px] sm:text-[8.5px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Sunrise / Sunset</span>
-          <span className="text-slate-200 font-semibold text-[11px] sm:text-xs font-mono whitespace-nowrap">
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Sunrise / Set</span>
+          <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
             {formatTime(sunrise).substring(0, 5)} / {formatTime(sunset).substring(0, 5)}
           </span>
         </div>
@@ -313,16 +314,45 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
           className="text-center bg-amber-950/60 hover:bg-amber-900/80 transition-all cursor-pointer p-1.5 rounded-lg border border-amber-500/40 text-amber-300 shadow-sm flex flex-col justify-center min-w-0"
           title="Click to jump clock to Solar Noon"
         >
-          <span className="text-[8px] sm:text-[8.5px] text-amber-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap flex items-center justify-center gap-0.5 truncate">
+          <span className="text-[7.5px] sm:text-[8px] text-amber-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap flex items-center justify-center gap-0.5 truncate">
             <Compass className="w-2.5 h-2.5 shrink-0" /> Solar Noon
           </span>
-          <span className="text-amber-200 font-semibold text-[11px] sm:text-xs font-mono whitespace-nowrap">{formatTime(solarNoon).substring(0, 5)} <span className="text-amber-400/80 text-[10px] font-normal font-sans">UTC</span></span>
+          <span className="text-amber-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">{formatTime(solarNoon).substring(0, 5)} <span className="text-amber-400/80 text-[9px] font-normal font-sans">UTC</span></span>
         </div>
         <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[8px] sm:text-[8.5px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Declination (δ)</span>
-          <span className={`text-[11px] sm:text-xs font-semibold font-mono whitespace-nowrap ${(sunDeclination as number) >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Declination (δ)</span>
+          <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${(sunDeclination as number) >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
             {(sunDeclination as number) >= 0 ? `+${(sunDeclination as number).toFixed(1)}°` : `${(sunDeclination as number).toFixed(1)}°`}
           </span>
+        </div>
+        <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
+          <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
+            <button
+              type="button"
+              onClick={() => setIsTwilightMode(false)}
+              aria-label="Standard Solar View"
+              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                !isTwilightMode
+                  ? 'bg-slate-800 text-amber-400 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Std
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsTwilightMode(true)}
+              aria-label="Twilight Strata View"
+              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                isTwilightMode
+                  ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Twilight
+            </button>
+          </div>
         </div>
       </div>
     </SkyDomeBase>
