@@ -93,27 +93,32 @@ const CANONICAL_SUITES = [
   {
     domain: '3D Obliquity & Earth Projections',
     file: 'src/utils/cosmicMath/projection.test.ts',
-    focus: 'Earth axial obliquity ($23.439^\\circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping'
+    focus: 'Earth axial obliquity ($23.439^\circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping'
   },
   {
     domain: 'Armillary Continuum & Projections',
     file: 'src/utils/cosmicMath/armillary/armillary.test.ts',
-    focus: 'Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0\\sec\\epsilon$)'
+    focus: 'Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0\sec\epsilon$)'
   },
   {
-    domain: 'SkyDomeBase Primitive',
-    file: 'src/components/widgets/today/SkyDomeBase.test.tsx',
-    focus: 'Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors'
+    domain: 'Armillary Benchmark',
+    file: 'src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts',
+    focus: '1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation'
+  },
+  {
+    domain: 'Armillary Adversarial',
+    file: 'src/utils/cosmicMath/armillary/m3_adversarial.test.ts',
+    focus: 'Analytical closed-form Stereographic Ecliptic invariant ($R_0\sec\epsilon$), Sun bead clamping residuals ($< 1.42 \times 10^{-13}\text{ px}$), and 10,000-sample randomized Monte Carlo transitions'
   },
   {
     domain: 'Domain Invariants & Physics Conservation',
     file: 'src/utils/cosmicMath/domainInvariants.test.ts',
-    focus: 'Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 \\dot{\\theta} = \\text{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance'
+    focus: 'Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 \dot{\theta} = \text{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance'
   },
   {
     domain: '3D Scene Graph Math',
     file: 'src/utils/cosmicMath/scene/scene.test.ts',
-    focus: '3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\\circ$ inclined lunar orbit with continuous nodal precession $\\Omega(t)$, and 3D syzygy shadow cones'
+    focus: '3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\circ$ inclined lunar orbit with continuous nodal precession $\Omega(t)$, and 3D syzygy shadow cones'
   },
   {
     domain: 'Scene Cameras Stress',
@@ -123,62 +128,27 @@ const CANONICAL_SUITES = [
   {
     domain: 'Scene Coordinate Adversarial',
     file: 'src/utils/cosmicMath/scene/m1_adversarial.test.ts',
-    focus: 'Coordinate frame invariants, axial tilt matrix preservation ($23.439^\\circ$) in inertial space, and singular polar viewing angles'
+    focus: 'Coordinate frame invariants, axial tilt matrix preservation ($23.439^\circ$) in inertial space, and singular polar viewing angles'
   },
   {
-    domain: 'MiniGlobe SVG Component',
-    file: 'src/components/common/MiniGlobe.test.tsx',
-    focus: '9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping'
+    domain: 'Unit-Safety AST Guardrails',
+    file: 'src/types/unitSafety.test.ts',
+    focus: 'Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), ensuring verified boundary conversion gatekeepers'
+  },
+  {
+    domain: 'Cosmic State Store',
+    file: 'src/store/cosmicStore.test.ts',
+    focus: 'Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping'
+  },
+  {
+    domain: 'Cosmic Engine Hook',
+    file: 'src/hooks/useCosmicEngine.test.ts',
+    focus: 'Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$)'
   },
   {
     domain: 'Cosmic Scene Hook',
     file: 'src/hooks/useCosmicScene.test.ts',
     focus: 'Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`), and `shallowEqual` protection'
-  },
-  {
-    domain: 'Observatory Widgets',
-    file: 'src/components/widgets/widgets.test.ts',
-    focus: 'Modular barrel exports, contract assertions, and integrated domain ephemeris across all 8 observatory window subsystems, including camera pole timing and depth stroke unification'
-  },
-  {
-    domain: 'Interactive Controls',
-    file: 'src/components/controls/controls.test.tsx',
-    focus: 'Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags'
-  },
-  {
-    domain: 'Dashboard Window Layout',
-    file: 'src/components/layout/DashboardWindow.test.tsx',
-    focus: 'Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts'
-  },
-  {
-    domain: 'Staged Camera Hook',
-    file: 'src/components/widgets/armillary/useStagedCamera.test.ts',
-    focus: '2-phase Euler angle interpolation ($\\lambda \\le 0.45$), canonical pole locking ($\\lambda \\ge 0.45$), memory angle retention, and reverse transition unwinding'
-  },
-  {
-    domain: 'Camera Staging Adversarial',
-    file: 'src/components/widgets/armillary/m2_adversarial.test.ts',
-    focus: 'Camera alignment timing ($0 \\le \\lambda \\le 0.45$), canonical pole lock ($0.45 \\le \\lambda \\le 1.0$), geodesic wrapping, and custom user 3D angle restoration'
-  },
-  {
-    domain: 'Armillary Adversarial',
-    file: 'src/utils/cosmicMath/armillary/m3_adversarial.test.ts',
-    focus: 'Analytical closed-form Stereographic Ecliptic invariant ($R_0\\sec\\epsilon$), Sun bead clamping residuals ($< 1.42 \\times 10^{-13}\\text{ px}$), and 10,000-sample randomized Monte Carlo transitions'
-  },
-  {
-    domain: 'Armillary Benchmark',
-    file: 'src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts',
-    focus: '1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation'
-  },
-  {
-    domain: 'Depth Stroke Unification',
-    file: 'src/components/widgets/depthUnificationStress.test.ts',
-    focus: 'Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\\lambda \\in [0.85, 1.0]$'
-  },
-  {
-    domain: 'Cosmic Engine Hook',
-    file: 'src/hooks/useCosmicEngine.test.ts',
-    focus: 'Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\\circ\\text{N}, -90^\\circ\\text{S}$)'
   },
   {
     domain: 'Ephemeris Worker Hook',
@@ -191,19 +161,99 @@ const CANONICAL_SUITES = [
     focus: 'Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset'
   },
   {
+    domain: 'MiniGlobe SVG Component',
+    file: 'src/components/common/MiniGlobe.test.tsx',
+    focus: '9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping'
+  },
+  {
     domain: 'Window Error Boundary',
     file: 'src/components/common/WindowErrorBoundary.test.tsx',
     focus: 'Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience'
   },
   {
-    domain: 'Cosmic State Store',
-    file: 'src/store/cosmicStore.test.ts',
-    focus: 'Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping'
+    domain: 'Interactive Controls',
+    file: 'src/components/controls/controls.test.tsx',
+    focus: 'Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags'
   },
   {
-    domain: 'Unit-Safety AST Guardrails',
-    file: 'src/types/unitSafety.test.ts',
-    focus: 'Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), ensuring verified boundary conversion gatekeepers'
+    domain: 'Dashboard Window Layout',
+    file: 'src/components/layout/DashboardWindow.test.tsx',
+    focus: 'Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts'
+  },
+  {
+    domain: 'Layout & Chronometer Dock',
+    file: 'src/components/layout/layout.test.tsx',
+    focus: 'Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing'
+  },
+  {
+    domain: 'Ribbon Scrubber Hook',
+    file: 'src/components/widgets/common/useRibbonScrubber.test.ts',
+    focus: 'Bidirectional 2D coordinate scaling (dayToX, xToDay, timeToY, yToTime), synodic sub-window scaling, dragging state, and pointer capture lifecycle'
+  },
+  {
+    domain: 'SkyDomeBase Primitive',
+    file: 'src/components/widgets/today/SkyDomeBase.test.tsx',
+    focus: 'Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors'
+  },
+  {
+    domain: 'Today Horizon Widget',
+    file: 'src/components/widgets/today/TodayWidget.test.tsx',
+    focus: 'SunElevationDome and MoonElevationDome rendering, temperate vs. tropical zenith caps, lunar standstill transit bounds, and SkyDomeBase shared geometry'
+  },
+  {
+    domain: 'Solar Almanac Widget',
+    file: 'src/components/widgets/solar/SolarWidget.test.tsx',
+    focus: 'Keplerian solar metrics, perihelion orbital dynamics, interactive SolarRibbonChart hover hairline, and PolarSunlightDial 24h circular polar sector dial'
+  },
+  {
+    domain: 'Lunar Almanac Widget',
+    file: 'src/components/widgets/lunar/LunarWidget.test.tsx',
+    focus: '30-day synodic daily phase discs, 365-day annual braided ribbon, polar circumpolar statuses (24h moonlight / down all day), and TidalWaveOscillator ocean deformation wave'
+  },
+  {
+    domain: 'Eclipse Demonstrator Widget',
+    file: 'src/components/widgets/eclipse/EclipseWidget.test.tsx',
+    focus: 'Historic Great American Eclipse data, 520x220 viewBox parity, dual-zone masking, nodal depth muting behind Earth, and prograde right-to-left SkyViewSimulator transit without bounce'
+  },
+  {
+    domain: 'Terminator Map Widget',
+    file: 'src/components/widgets/terminator/TerminatorMap.test.tsx',
+    focus: 'Dynamic observer meridian centering, wrapped landmass polygons, topocentric YOU pin crosshairs, distance-scaled Subsolar (AU) and Sublunar (km) disc markers, and 4-tier twilight shadow boundaries'
+  },
+  {
+    domain: 'Macro Orbit Widget',
+    file: 'src/components/widgets/macro/MacroOrbitWidget.test.tsx',
+    focus: 'Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD'
+  },
+  {
+    domain: 'Micro Tide Widget',
+    file: 'src/components/widgets/tides/TidesWidget.test.tsx',
+    focus: 'MicroTideView Earth tidal gravity, MiniGlobe 3D vector integration, segmented Nodal Loop and potential toggles, and counter-clockwise prograde Moon revolution'
+  },
+  {
+    domain: 'Armillary Visualizer Widget',
+    file: 'src/components/widgets/armillary/ArmillaryWidget.test.tsx',
+    focus: 'Continuum model generation, camera staging timing (pitch/yaw at $\lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification'
+  },
+  {
+    domain: 'Staged Camera Hook',
+    file: 'src/components/widgets/armillary/useStagedCamera.test.ts',
+    focus: '2-phase Euler angle interpolation ($\lambda \le 0.45$), canonical pole locking ($\lambda \ge 0.45$), memory angle retention, and reverse transition unwinding'
+  },
+  {
+    domain: 'Camera Staging Adversarial',
+    file: 'src/components/widgets/armillary/m2_adversarial.test.ts',
+    focus: 'Camera alignment timing ($0 \le \lambda \le 0.45$), canonical pole lock ($0.45 \le \lambda \le 1.0$), geodesic wrapping, and custom user 3D angle restoration'
+  },
+  {
+    domain: 'Depth Stroke Unification',
+    file: 'src/components/widgets/depthUnificationStress.test.ts',
+    focus: 'Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\lambda \in [0.85, 1.0]$'
+  },
+  {
+    domain: 'Observatory Barrel Re-Exports',
+    file: 'src/components/widgets/widgets.test.ts',
+    focus: 'Central barrel re-exports, contract assertions, and public API preservation across all 8 observatory visualizers and decomposed child layers'
   }
 ];
 

@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 27 modules, 429 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 37 modules, 454 tests)
 
 ### Essential Commands
 
@@ -110,7 +110,8 @@ Cosmic Engine V2.0/
 │       ├── 0009-ground-truth-heliocentric-and-geocentric-prograde-kinematics.md
 │       ├── 0010-domain-invariant-and-physics-conservation-hardening.md
 │       ├── 0011-axial-sightline-anti-solar-camera-rectification.md
-│       └── 0012-lunar-orbit-dual-depth-sorting-and-node-muting.md
+│       ├── 0012-lunar-orbit-dual-depth-sorting-and-node-muting.md
+│       └── 0013-codebase-consolidation-code-splitting-and-shared-primitives.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -182,9 +183,13 @@ Cosmic Engine V2.0/
 │   └── components/              # Grouped component architecture
 │       ├── widgets/             # Core visualization widgets
 │       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets (44 tests)
+│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets barrel re-exports (2 tests)
 │       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (11 tests)
+│       │   ├── common/          # Shared widget hooks & utilities
+│       │   │   ├── useRibbonScrubber.ts      # Shared bidirectional 2D timeline coordinate & dragging hook
+│       │   │   └── useRibbonScrubber.test.ts # Vitest unit tests for ribbon scrubber (9 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
+│       │   │   ├── ArmillaryWidget.test.tsx  # Vitest unit tests for Armillary visualizer (17 tests)
 │       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook
 │       │   │   ├── useStagedCamera.test.ts   # Vitest tests for camera staging & memory (9 tests)
 │       │   │   ├── m2_adversarial.test.ts    # Vitest tests for 2-phase camera staging & memory (9 tests)
@@ -209,9 +214,11 @@ Cosmic Engine V2.0/
 │       │   │   └── index.ts                    # Barrel export
 │       │   ├── terminator/      # Decomposed daylight terminator map subsystem modules
 │       │   │   ├── TerminatorMap.tsx           # Centered daylight terminator map with subsolar & sublunar points
+│       │   │   ├── TerminatorMap.test.tsx      # Vitest unit tests for daylight terminator map (6 tests)
 │       │   │   └── index.ts                    # Barrel export
 │       │   ├── tides/           # Decomposed gravitational tidal force subsystem modules
 │       │   │   ├── MicroTideView.tsx           # Earth gravitational tidal force micro-view & ocean wave oscillator
+│       │   │   ├── TidesWidget.test.tsx        # Vitest unit tests for tides widget (3 tests)
 │       │   │   └── index.ts                    # Barrel export
 │       │   ├── macro/           # Decomposed heliocentric macro-orbit subsystem modules
 │       │   │   ├── OrbitSvgCanvas.tsx      # SVG heliocentric viewport & orbital ellipses
@@ -221,12 +228,14 @@ Cosmic Engine V2.0/
 │       │   │   ├── milestones.ts           # Extracted seasonal orbital milestones
 │       │   │   ├── types.ts                # Macro-orbit domain interfaces & props
 │       │   │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
+│       │   │   ├── MacroOrbitWidget.test.tsx # Vitest unit tests for macro orbit widget (3 tests)
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── solar/           # Decomposed solar almanac subsystem modules
 │       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
 │       │   │   ├── PolarSunlightDial.tsx   # 24-hour circular polar sunlight sector clock
 │       │   │   ├── SolarShortcutsRail.tsx  # Solstice & equinox fast-jump shortcut pills
 │       │   │   ├── SolarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   ├── SolarWidget.test.tsx    # Vitest unit tests for solar almanac widget (4 tests)
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── today/           # Decomposed today's horizon subsystem modules
 │       │   │   ├── SkyDomeBase.tsx         # Reusable 260x120 SVG elevation arc primitive & cardinal cues
@@ -234,12 +243,14 @@ Cosmic Engine V2.0/
 │       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
 │       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
 │       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
+│       │   │   ├── TodayWidget.test.tsx    # Vitest unit tests for today's horizon widget (3 tests)
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
 │       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
 │       │   │   ├── TidalWaveOscillator.tsx # Harmonized ocean tidal bulge oscillator
 │       │   │   ├── LunarShortcutsRail.tsx  # Fast-jump phase & solstice shortcut pills
 │       │   │   ├── LunarAlmanacCard.tsx    # Subsystem coordinator container
+│       │   │   ├── LunarWidget.test.tsx    # Vitest unit tests for lunar almanac widget (5 tests)
 │       │   │   └── index.ts                # Barrel export
 │       │   └── eclipse/         # Decomposed eclipse demonstrator subsystem modules
 │       │       ├── EclipseDemonstrator.tsx     # Master eclipse demonstrator container
@@ -251,6 +262,7 @@ Cosmic Engine V2.0/
 │       │       ├── NodalPlaneVisualizer.tsx    # 5.14° nodal plane corridor & alignment bar
 │       │       ├── SkyViewSimulator.tsx        # Central Path Totality Track & Lunar POV sky viewport (Corona, Blood Moon & Lunar POV)
 │       │       ├── EclipseScanner.tsx          # Historical presets & 365-day scanner list
+│       │       ├── EclipseWidget.test.tsx      # Vitest unit tests for eclipse widget (9 tests)
 │       │       └── index.ts                    # Barrel export
 │       ├── controls/            # Interactive astrolabe inputs
 │       │   ├── ArmillaryRail.tsx          # Slider control rail
@@ -263,6 +275,7 @@ Cosmic Engine V2.0/
 │       │   ├── ObsNavbar.tsx              # Top observatory brand navbar, presets & simulation layers
 │       │   ├── DashboardWindow.tsx        # Draggable, resizable, lockable window wrapper
 │       │   ├── DashboardWindow.test.tsx   # Unit tests for window layout & drag-and-drop (17 tests)
+│       │   ├── layout.test.tsx            # Unit tests for layout, chronometer dock & readouts (8 tests)
 │       │   ├── OrbitalChronometer.tsx     # Master astrolabe dock container
 │       │   └── chronometer/     # Decomposed astrolabe chronometer subsystem modules
 │       │       ├── AstrolabeDial.tsx           # 4-concentric interactive SVG astrolabe dial
