@@ -154,15 +154,15 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 38 specialized domain suites (**476 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 38 specialized domain suites (**478 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
 | **Core Astronomy & Time** | `src/utils/cosmicMath/core.test.ts` (36 tests) | Julian date engines, UTC date invariance & `createUTCDate`, time parsing & formatting, spherical linear interpolation (`slerp3D`), physical constants (`astroConstants`), and floating-point degeneracy protection |
 | **Solar Ephemeris & Twilight** | `src/utils/cosmicMath/solar.test.ts` (16 tests) | Solar declination, equation of time, daily solar events (rise/set), civil/nautical/astronomical twilight bands, polar boundaries (midnight sun, polar night), and annual solar matrix |
 | **Lunar Ephemeris & Illumination** | `src/utils/cosmicMath/lunar.test.ts` (16 tests) | Meeus lunar series, true geocentric phase angle ($i$), disc illumination ($k$), 2-step iterative rise/set solver, parallactic angle, nodal precession, and annual lunar matrix |
-| **Today Sky & Diurnal Kinematics** | `src/utils/cosmicMath/todaySky.test.ts` (15 tests) | Sky dome coordinate projection ($X, Y$), diurnal path generation (circumpolar, polar night, normal rise/set), monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification |
-| **Eclipse Geometry & Presets** | `src/utils/cosmicMath/eclipse.test.ts` (21 tests) | Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`) |
+| **Today Sky & Diurnal Kinematics** | `src/utils/cosmicMath/todaySky.test.ts` (16 tests) | Sky dome coordinate projection ($X, Y$), diurnal path generation (circumpolar, polar night, normal rise/set), monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification |
+| **Eclipse Geometry & Presets** | `src/utils/cosmicMath/eclipse.test.ts` (22 tests) | Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`) |
 | **3D Obliquity & Earth Projections** | `src/utils/cosmicMath/projection.test.ts` (11 tests) | Earth axial obliquity ($23.439^circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping |
 | **Armillary Continuum & Projections** | `src/utils/cosmicMath/armillary/armillary.test.ts` (34 tests) | Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0secepsilon$) |
 | **Armillary Benchmark** | `src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts` (5 tests) | 1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation |

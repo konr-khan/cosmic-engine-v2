@@ -303,6 +303,20 @@ describe('Cosmic Math: Eclipse Presets & Syzygy Geometry', () => {
       const events2026 = findUpcomingEclipses(start2026, 4);
       expect(events2026.length).toBeGreaterThanOrEqual(1);
     });
+
+    it('synchronizes isAscendingHemisphere with true ecliptic latitude beta >= 0', () => {
+      // 9/23/2026 15:17 UTC: Mean F = 0, but beta = -0.631° (still South of ecliptic)
+      const jd23 = getJulianDate(new Date('2026-09-23T00:00:00Z'), 15 + 17 / 60);
+      const data23 = calculateEclipseData(jd23);
+      expect(data23.beta).toBeLessThan(0);
+      expect(data23.isAscendingHemisphere).toBe(false);
+
+      // 9/24/2026 04:34 UTC: True crossing beta >= 0 (North of ecliptic)
+      const jd24 = getJulianDate(new Date('2026-09-24T00:00:00Z'), 4 + 34 / 60);
+      const data24 = calculateEclipseData(jd24);
+      expect(data24.beta).toBeGreaterThanOrEqual(0);
+      expect(data24.isAscendingHemisphere).toBe(true);
+    });
   });
 
 });

@@ -146,9 +146,7 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
   const argumentOfLatitude = lunarPos.argumentOfLatitude !== undefined
     ? parseFloat((((lunarPos.argumentOfLatitude % 360) + 360) % 360).toFixed(4))
     : undefined;
-  const isAscendingHemisphere = lunarPos.argumentOfLatitude !== undefined
-    ? ((((lunarPos.argumentOfLatitude % 360) + 360) % 360) < 180)
-    : beta >= 0;
+  const isAscendingHemisphere = beta >= 0;
   const nodeLongitude = lunarPos.nodeLongitude !== undefined
     ? parseFloat(lunarPos.nodeLongitude.toFixed(4))
     : undefined;

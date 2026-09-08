@@ -256,11 +256,19 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
             const color = isAsc ? '#38bdf8' : '#f43f5e';
             const symbol = isAsc ? '☊' : '☋';
             const dist = nodalData.nearestNodeDistDays;
-            const labelText = dist <= 0.4
-              ? `${symbol} Crossing Today`
-              : nodalData.isApproachingNearestNode
-              ? `${symbol} in ${dist.toFixed(1)}d`
-              : `${symbol} ${dist.toFixed(1)}d ago`;
+            let labelText: string;
+            if (dist <= 0.05) {
+              labelText = `${symbol} Crossing Now`;
+            } else if (dist <= 0.5) {
+              const hours = Math.max(1, Math.round(dist * 24));
+              labelText = nodalData.isApproachingNearestNode
+                ? `${symbol} in ${hours}h`
+                : `${symbol} ${hours}h ago`;
+            } else {
+              labelText = nodalData.isApproachingNearestNode
+                ? `${symbol} in ${dist.toFixed(1)}d`
+                : `${symbol} ${dist.toFixed(1)}d ago`;
+            }
 
             return (
               <g
@@ -280,7 +288,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
                 <text x="0" y="-7.5" textAnchor="middle" className="text-[6.5px] font-mono font-semibold pointer-events-none select-none" fill={color}>
                   {labelText}
                 </text>
-                <title>{`${isAsc ? 'Ascending Node (☊)' : 'Descending Node (☋)'}: Ecliptic Crossing at El ${node.elevation.toFixed(1)}°, Dec ${node.declination.toFixed(1)}°`}</title>
+                <title>{`${isAsc ? 'Ascending Node (☊)' : 'Descending Node (☋)'}: True Ecliptic Crossing (β = 0°) at El ${node.elevation.toFixed(1)}°, Dec ${node.declination.toFixed(1)}° (${node.isAboveHorizon ? 'Above Horizon' : 'Sub-Horizon / Setting'})`}</title>
               </g>
             );
           })()}
@@ -412,7 +420,10 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
             <div className="flex items-center gap-1 min-w-0 truncate">
               <span className="text-slate-500 font-sans">Past:</span>
               <strong className={nodalData.prevNodeType === 'ascending' ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
-                {nodalData.prevNodeType === 'ascending' ? '☊' : '☋'} {nodalData.daysSincePrevNode}d ago
+                {nodalData.prevNodeType === 'ascending' ? '☊' : '☋'}{' '}
+                {nodalData.daysSincePrevNode <= 0.5
+                  ? `${Math.max(1, Math.round(nodalData.daysSincePrevNode * 24))}h ago`
+                  : `${nodalData.daysSincePrevNode}d ago`}
               </strong>
             </div>
 
@@ -429,7 +440,10 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
             <div className="flex items-center gap-1 min-w-0 truncate justify-end">
               <span className="text-slate-500 font-sans">Next:</span>
               <strong className={nodalData.upcomingNodeType === 'ascending' ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
-                {nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'} in {nodalData.daysToNextNode}d
+                {nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'}{' '}
+                {nodalData.daysToNextNode <= 0.5
+                  ? `in ${Math.max(1, Math.round(nodalData.daysToNextNode * 24))}h`
+                  : `in ${nodalData.daysToNextNode}d`}
               </strong>
             </div>
           </div>

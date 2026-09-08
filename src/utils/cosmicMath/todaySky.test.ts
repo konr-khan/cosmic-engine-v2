@@ -282,4 +282,39 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
     expect(nodesDistant.nearestNodeDistDays).toBeGreaterThan(1.0);
     expect(nodesDistant.isNearNode).toBe(false);
   });
+
+  it('accurately tracks the September 22-24, 2026 True Ascending Node Crossing (beta = 0)', () => {
+    // 9/22/2026 23:17 UTC: ~29 hours before true crossing
+    const jd22 = getJulianDate(new Date('2026-09-22T00:00:00Z'), 23 + 17 / 60);
+    const nodes22 = calculateSkyDomeLunarNodes(47.06, jd22, 23 + 17 / 60);
+    expect(nodes22.upcomingNodeType).toBe('ascending');
+    expect(nodes22.isMoonAscending).toBe(false);
+    expect(nodes22.daysToNextNode).toBeCloseTo(1.2, 1);
+    expect(nodes22.isNearNode).toBe(false);
+
+    // 9/23/2026 15:17 UTC: Mean argument F reaches 0°, but true beta is still -0.631°
+    const jd23 = getJulianDate(new Date('2026-09-23T00:00:00Z'), 15 + 17 / 60);
+    const nodes23 = calculateSkyDomeLunarNodes(47.06, jd23, 15 + 17 / 60);
+    // True crossing is still upcoming in ~13.3 hours (0.6d)
+    expect(nodes23.upcomingNodeType).toBe('ascending');
+    expect(nodes23.daysToNextNode).toBeCloseTo(0.6, 1);
+    expect(nodes23.isMoonAscending).toBe(false); // Arc is still Rose Red
+    expect(nodes23.moonBeta).toBeLessThan(-0.6);
+    expect(nodes23.isNearNode).toBe(true);
+
+    // 9/24/2026 04:34 UTC: True node crossing where beta = 0.000°
+    const jd24Crossing = getJulianDate(new Date('2026-09-24T00:00:00Z'), 4 + 34 / 60);
+    const nodes24Crossing = calculateSkyDomeLunarNodes(47.06, jd24Crossing, 4 + 34 / 60);
+    expect(nodes24Crossing.nearestNodeType).toBe('ascending');
+    expect(nodes24Crossing.nearestNodeDistDays).toBeLessThanOrEqual(0.05);
+    expect(nodes24Crossing.isNearNode).toBe(true);
+    expect(nodes24Crossing.isMoonAscending).toBe(true); // Arc turns Sky Blue
+
+    // 9/24/2026 06:00 UTC: Past the node
+    const jd24Past = getJulianDate(new Date('2026-09-24T00:00:00Z'), 6);
+    const nodes24Past = calculateSkyDomeLunarNodes(47.06, jd24Past, 6);
+    expect(nodes24Past.prevNodeType).toBe('ascending');
+    expect(nodes24Past.daysSincePrevNode).toBeLessThanOrEqual(0.1);
+    expect(nodes24Past.isMoonAscending).toBe(true);
+  });
 });

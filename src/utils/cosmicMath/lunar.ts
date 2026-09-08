@@ -11,7 +11,7 @@ import {
   LUNAR_APOGEE_THRESHOLD_KM 
 } from './astroConstants';
 import { calculateSolarPosition } from './solar';
-import { JulianDate, Latitude, Longitude, Degrees, asDegrees, HoursDecimal, julianDateToCenturies } from '../../types/units';
+import { JulianDate, Latitude, Longitude, Degrees, asDegrees, asJulianDate, HoursDecimal, julianDateToCenturies } from '../../types/units';
 import { 
   LunarPhaseName, 
   LunarPosition, 
@@ -135,6 +135,136 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
     angularRadiusDeg: parseFloat(angularRadiusDeg.toFixed(4)),
     parallaxDeg: parseFloat(parallaxDeg.toFixed(4)),
     argumentOfLatitude: parseFloat(F.toFixed(4))
+  };
+};
+
+export interface TrueLunarNodeCrossing {
+  jd: JulianDate;
+  daysOffset: number;
+  type: 'ascending' | 'descending';
+  isAscending: boolean;
+  betaDeg: number;
+}
+
+export interface TrueLunarNodeEventsResult {
+  daysToNextNode: number;
+  daysSincePrevNode: number;
+  upcomingNodeType: 'ascending' | 'descending';
+  prevNodeType: 'ascending' | 'descending';
+  nearestNodeType: 'ascending' | 'descending';
+  nearestNodeDistDays: number;
+  isApproachingNearestNode: boolean;
+  isNearNode: boolean;
+  allCrossings: TrueLunarNodeCrossing[];
+}
+
+/**
+ * Solves the exact Julian Date when the Moon's true ecliptic latitude crosses 0° (true nodal passage)
+ * starting from an approximate JD (e.g. from the mean argument of latitude F).
+ * Uses Newton-Raphson iteration with central finite differences on beta(t) = 0.
+ *
+ * @param approxJD - Initial approximate Julian Date
+ * @returns Converged crossing JD, crossing type (ascending or descending), and residual beta
+ */
+export const findTrueLunarNodeCrossing = (
+  approxJD: JulianDate | number
+): { jd: JulianDate; type: 'ascending' | 'descending'; isAscending: boolean; betaDeg: number } => {
+  let jd = Number(approxJD);
+  const h = 0.005; // 7.2 minutes finite-difference step
+  for (let iter = 0; iter < 8; iter++) {
+    const b = Number(calculateLunarPosition(jd).beta);
+    const bPlus = Number(calculateLunarPosition(jd + h).beta);
+    const bMinus = Number(calculateLunarPosition(jd - h).beta);
+    const dBetaDt = (bPlus - bMinus) / (2 * h);
+    if (Math.abs(dBetaDt) < 1e-7) break;
+    const step = b / dBetaDt;
+    jd -= step;
+    if (Math.abs(step) < 0.00001) break; // < 0.86 seconds precision
+  }
+  const posAtJd = calculateLunarPosition(jd);
+  const posPlus = calculateLunarPosition(jd + h);
+  const isAscending = Number(posPlus.beta) > Number(posAtJd.beta);
+  return {
+    jd: asJulianDate(jd),
+    type: isAscending ? 'ascending' : 'descending',
+    isAscending,
+    betaDeg: parseFloat(Number(posAtJd.beta).toFixed(6))
+  };
+};
+
+/**
+ * Calculates all true lunar node crossings (where true ecliptic latitude beta = 0)
+ * within a specified time window centered on targetJD.
+ *
+ * @param targetJD - Evaluation epoch Julian Date
+ * @param windowDays - Window span in days around targetJD (default 16 days to cover +-15d)
+ * @returns True node events result
+ */
+export const calculateTrueLunarNodeEvents = (
+  targetJD: JulianDate | number,
+  windowDays: number = 16
+): TrueLunarNodeEventsResult => {
+  const currentJD = Number(targetJD);
+  const currentPos = calculateLunarPosition(currentJD);
+  const currentF = Number(currentPos.argumentOfLatitude ?? 0);
+  const normF = ((currentF % 360) + 360) % 360;
+  const DRACONIC_PERIOD_DAYS = 27.21222;
+
+  // Find candidate mean node offsets k within [-windowDays - 14, +windowDays + 14]
+  // Node crossings occur every ~180° in F (approx every 13.6 days)
+  const crossingsMap = new Map<number, TrueLunarNodeCrossing>();
+
+  // Offset to mean ascending node (F = 0 or 360):
+  const dAsc = normF <= 180 ? -normF : (360 - normF);
+  const tMeanAsc = currentJD + (dAsc / 360) * DRACONIC_PERIOD_DAYS;
+
+  // Scan k from -3 to +3 half-draconic steps (~+-40 days):
+  for (let k = -3; k <= 3; k++) {
+    const approxJD = tMeanAsc + (k * DRACONIC_PERIOD_DAYS) / 2;
+    const solved = findTrueLunarNodeCrossing(approxJD);
+    const key = Math.round(Number(solved.jd) * 100);
+    if (!crossingsMap.has(key)) {
+      crossingsMap.set(key, {
+        jd: solved.jd,
+        daysOffset: Number(solved.jd) - currentJD,
+        type: solved.type,
+        isAscending: solved.isAscending,
+        betaDeg: solved.betaDeg
+      });
+    }
+  }
+
+  const allCrossings = Array.from(crossingsMap.values()).sort((a, b) => Number(a.jd) - Number(b.jd));
+
+  // Identify most recent past node (daysOffset <= 0) and upcoming node (daysOffset > 0)
+  const pastCrossings = allCrossings.filter((c) => c.daysOffset <= 0.0001);
+  const futureCrossings = allCrossings.filter((c) => c.daysOffset > 0.0001);
+
+  const prevNode = pastCrossings.length > 0 
+    ? pastCrossings[pastCrossings.length - 1] 
+    : allCrossings[0];
+  const nextNode = futureCrossings.length > 0 
+    ? futureCrossings[0] 
+    : allCrossings[allCrossings.length - 1];
+
+  const daysToNextNode = Math.max(0, parseFloat((Number(nextNode.jd) - currentJD).toFixed(1)));
+  const daysSincePrevNode = Math.max(0, parseFloat((currentJD - Number(prevNode.jd)).toFixed(1)));
+
+  const isApproachingNearestNode = daysToNextNode <= daysSincePrevNode;
+  const nearestNodeType = isApproachingNearestNode ? nextNode.type : prevNode.type;
+  const nearestNodeDistDays = Math.min(daysToNextNode, daysSincePrevNode);
+  const isNearNode = nearestNodeDistDays <= 1.0;
+
+  return {
+    daysToNextNode,
+    daysSincePrevNode,
+    upcomingNodeType: nextNode.type,
+    prevNodeType: prevNode.type,
+    nearestNodeType,
+    nearestNodeDistDays,
+    isApproachingNearestNode,
+    isNearNode,
+    allCrossings
   };
 };
 

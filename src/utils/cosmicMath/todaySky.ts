@@ -1,5 +1,5 @@
 import { toRadians, toDegrees, clamp, getJulianDate } from './core';
-import { calculateLunarPosition } from './lunar';
+import { calculateLunarPosition, calculateTrueLunarNodeEvents } from './lunar';
 
 export const EL_R = 92;
 export const EL_CX = 130;
@@ -375,82 +375,31 @@ export const calculateSkyDomeLunarNodes = (
   const normF = ((F % 360) + 360) % 360;
   const orbitalProgressPercent = (normF / 360) * 100;
 
-  // Draconic orbit constants
-  const DRACONIC_PERIOD_DAYS = 27.21222;
-  const HALF_DRACONIC_DAYS = DRACONIC_PERIOD_DAYS / 2; // ~13.606 days
+  // Solve true lunar node crossing events (where true ecliptic latitude beta = 0)
+  const trueEvents = calculateTrueLunarNodeEvents(julianDate);
+  const {
+    daysToNextNode,
+    daysSincePrevNode,
+    upcomingNodeType,
+    prevNodeType,
+    nearestNodeType,
+    nearestNodeDistDays,
+    isApproachingNearestNode,
+    isNearNode
+  } = trueEvents;
 
-  // Determine upcoming and previous nodes along the prograde orbital path
-  let upcomingNodeType: 'ascending' | 'descending';
-  let prevNodeType: 'ascending' | 'descending';
-  let deltaFNext: number;
-  let deltaFPrev: number;
+  // Build sorted list of true node events within the [-15, +15] days window
+  const timelineNodes: TimelineNodeEvent[] = trueEvents.allCrossings
+    .filter((c) => c.daysOffset >= -15.2 && c.daysOffset <= 15.2)
+    .map((c) => ({
+      type: c.type,
+      daysOffset: parseFloat(c.daysOffset.toFixed(1)),
+      symbol: c.type === 'ascending' ? '☊' : '☋',
+      color: c.type === 'ascending' ? '#38bdf8' : '#f43f5e',
+      isUpcoming: c.daysOffset > 0
+    }));
 
-  if (normF < 180) {
-    upcomingNodeType = 'descending';
-    prevNodeType = 'ascending';
-    deltaFNext = 180 - normF;
-    deltaFPrev = normF;
-  } else {
-    upcomingNodeType = 'ascending';
-    prevNodeType = 'descending';
-    deltaFNext = 360 - normF;
-    deltaFPrev = normF - 180;
-  }
-
-  const daysToNextNode = parseFloat(((deltaFNext / 360) * DRACONIC_PERIOD_DAYS).toFixed(1));
-  const daysSincePrevNode = parseFloat(((deltaFPrev / 360) * DRACONIC_PERIOD_DAYS).toFixed(1));
-
-  // Build sorted list of node events within the [-15, +15] days window
-  const timelineNodes: TimelineNodeEvent[] = [];
-
-  // Primary upcoming node (in future: daysOffset > 0)
-  timelineNodes.push({
-    type: upcomingNodeType,
-    daysOffset: daysToNextNode,
-    symbol: upcomingNodeType === 'ascending' ? '☊' : '☋',
-    color: upcomingNodeType === 'ascending' ? '#38bdf8' : '#f43f5e',
-    isUpcoming: true
-  });
-
-  // Second upcoming node if within +15 days
-  const secondNextDays = daysToNextNode + HALF_DRACONIC_DAYS;
-  if (secondNextDays <= 15.0) {
-    const secondType = prevNodeType;
-    timelineNodes.push({
-      type: secondType,
-      daysOffset: parseFloat(secondNextDays.toFixed(1)),
-      symbol: secondType === 'ascending' ? '☊' : '☋',
-      color: secondType === 'ascending' ? '#38bdf8' : '#f43f5e',
-      isUpcoming: true
-    });
-  }
-
-  // Primary previous node (in past: daysOffset < 0)
-  timelineNodes.push({
-    type: prevNodeType,
-    daysOffset: -daysSincePrevNode,
-    symbol: prevNodeType === 'ascending' ? '☊' : '☋',
-    color: prevNodeType === 'ascending' ? '#38bdf8' : '#f43f5e',
-    isUpcoming: false
-  });
-
-  // Second previous node if within -15 days
-  const secondPrevDays = -(daysSincePrevNode + HALF_DRACONIC_DAYS);
-  if (secondPrevDays >= -15.0) {
-    const secondType = upcomingNodeType;
-    timelineNodes.push({
-      type: secondType,
-      daysOffset: parseFloat(secondPrevDays.toFixed(1)),
-      symbol: secondType === 'ascending' ? '☊' : '☋',
-      color: secondType === 'ascending' ? '#38bdf8' : '#f43f5e',
-      isUpcoming: false
-    });
-  }
-
-  // Sort chronologically by daysOffset
-  timelineNodes.sort((a, b) => a.daysOffset - b.daysOffset);
-
-  // Generate continuous color track segments spanning [-15, +15]
+  // Generate continuous color track segments spanning [-15, +15] based on true beta >= 0
   const timelineSegments: TimelineTrackSegment[] = [];
   const cutPoints = [-15, ...timelineNodes.map((n) => n.daysOffset), 15];
 
@@ -460,8 +409,8 @@ export const calculateSkyDomeLunarNodes = (
     if (endDays - startDays < 0.05) continue;
 
     const midDays = (startDays + endDays) / 2;
-    const fMid = (((normF + (midDays / DRACONIC_PERIOD_DAYS) * 360) % 360) + 360) % 360;
-    const isNorth = fMid < 180;
+    const sampleBeta = Number(calculateLunarPosition(julianDate + midDays).beta);
+    const isNorth = sampleBeta >= 0;
 
     timelineSegments.push({
       startDays,
@@ -517,14 +466,7 @@ export const calculateSkyDomeLunarNodes = (
   const descendingNode = projectNode(descLon);
   const upcomingNode = upcomingNodeType === 'ascending' ? ascendingNode : descendingNode;
   const prevNode = prevNodeType === 'ascending' ? ascendingNode : descendingNode;
-
-  const isApproachingNearestNode = daysToNextNode <= daysSincePrevNode;
-  const nearestNodeType = isApproachingNearestNode ? upcomingNodeType : prevNodeType;
   const nearestNode = isApproachingNearestNode ? upcomingNode : prevNode;
-  const nearestNodeDistDays = Math.min(daysToNextNode, daysSincePrevNode);
-
-  // A node crossing event is happening TODAY if within <= 1.0 day of the nearest node
-  const isNearNode = nearestNodeDistDays <= 1.0;
 
   const quadrantLabel = `${isWaxing ? 'Waxing' : 'Waning'} ${isMoonAscending ? 'North (☊)' : 'South (☋)'}`;
 
