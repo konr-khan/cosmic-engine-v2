@@ -24,6 +24,7 @@ export interface MoonElevationDomeProps {
   latitude: number;
   currentDate?: Date;
   onSetTime?: (time: number) => void;
+  initialNodalMode?: boolean;
 }
 
 export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
@@ -33,9 +34,10 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   latitude,
   currentDate = new Date(),
   onSetTime,
+  initialNodalMode = false,
 }) => {
   const [isHoveringMoonMetrics, setIsHoveringMoonMetrics] = useState(false);
-  const [isNodalMode, setIsNodalMode] = useState(false);
+  const [isNodalMode, setIsNodalMode] = useState(initialNodalMode);
 
   // --- Moon Elevation & Phase Math ---
   const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
@@ -111,9 +113,12 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       jd,
       displayTime,
       solarNoon,
-      sunLambda
+      sunLambda,
+      {
+        phaseValue: phase.value !== undefined ? Number(phase.value) : undefined
+      }
     );
-  }, [latitude, jd, displayTime, solarNoon, sunLambda]);
+  }, [latitude, jd, displayTime, solarNoon, sunLambda, phase.value]);
 
   const eclipticPathResult = useMemo(
     () => generateDiurnalPath(latitude, sunDeclination),
@@ -164,16 +169,23 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     });
   }
 
-  // 2. Active Today's Moon Path (Glowing silver/indigo track) - Shown in both modes
+  // Eclipse-Convention Diurnal Track Styling:
+  // Sky Blue (#38bdf8) for North/Ascending (beta >= 0) vs Rose Red (#f43f5e) for South/Descending (beta < 0)
+  // Solid stroke for Waxing vs Dashed ('4 3') for Waning
+  const moonTrackColor = nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e';
+  const moonTrackDash = nodalData.isWaxing ? undefined : '4 3';
+
+  // 2. Active Today's Moon Path (Eclipse-Convention track) - Shown in both modes
   if (todayPathResult.pathD) {
     diurnalPaths.push({
       id: 'today-moon-path',
       d: todayPathResult.pathD,
-      stroke: '#c084fc',
+      stroke: moonTrackColor,
       strokeWidth: 1.5,
-      strokeOpacity: 0.9,
+      strokeDasharray: moonTrackDash,
+      strokeOpacity: 0.95,
       isGlowing: true,
-      title: `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}°`
+      title: `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}° (${nodalData.quadrantLabel})`
     });
   }
 
@@ -182,7 +194,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     diurnalPaths.push({
       id: 'today-moon-twilight-path',
       d: todayPathResult.twilightD,
-      stroke: '#c084fc',
+      stroke: moonTrackColor,
       strokeWidth: 1.0,
       strokeDasharray: '2 2',
       strokeOpacity: 0.35,
@@ -227,42 +239,40 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       diurnalPaths={diurnalPaths}
       bodyX={moonX}
       bodyY={moonY}
-      bodyVectorStroke={currentMoonElevation >= 0 ? '#94a3b8' : '#475569'}
-      extraSvgContent={isNodalMode && (
-        <g className="lunar-nodes-layer">
-          {/* Ascending Node Pin (☊ Sky Blue #38bdf8) */}
-          {nodalData.ascendingNode.isVisible && (
-            <g
-              transform={`translate(${nodalData.ascendingNode.x.toFixed(1)}, ${nodalData.ascendingNode.y.toFixed(1)})`}
-              className="drop-shadow-md cursor-default"
-              opacity={nodalData.ascendingNode.isAboveHorizon ? 1.0 : 0.45}
-            >
-              <circle cx="0" cy="0" r="7" fill="#38bdf8" fillOpacity="0.15" />
-              <circle cx="0" cy="0" r="4.5" fill="#020617" stroke="#38bdf8" strokeWidth="1.2" />
-              <text x="0" y="2.5" textAnchor="middle" className="text-[7px] font-bold fill-sky-300 pointer-events-none select-none">☊</text>
-              <text x="0" y="-7" textAnchor="middle" className="text-[6.5px] font-mono fill-sky-400 font-semibold pointer-events-none select-none">
-                ☊ {nodalData.ascendingNode.elevation >= 0 ? `+${nodalData.ascendingNode.elevation.toFixed(0)}°` : `${nodalData.ascendingNode.elevation.toFixed(0)}°`}
-              </text>
-              <title>{`Ascending Node (☊): Elevation ${nodalData.ascendingNode.elevation.toFixed(1)}°, RA ${nodalData.ascendingNode.rightAscension.toFixed(1)}°, Dec ${nodalData.ascendingNode.declination.toFixed(1)}°`}</title>
-            </g>
-          )}
+      bodyVectorStroke={currentMoonElevation >= 0 ? moonTrackColor : '#475569'}
+      extraSvgContent={isNodalMode && nodalData.isNearNode && nodalData.upcomingNode.isVisible && (
+        <g className="lunar-upcoming-node-layer">
+          {(() => {
+            const node = nodalData.upcomingNode;
+            const isAsc = nodalData.upcomingNodeType === 'ascending';
+            const color = isAsc ? '#38bdf8' : '#f43f5e';
+            const symbol = isAsc ? '☊' : '☋';
+            const labelText = Math.abs(nodalData.moonBeta) <= 0.6 
+              ? `${symbol} Node Crossing Today`
+              : `${symbol} Node in ${nodalData.daysToNextNode}d`;
 
-          {/* Descending Node Pin (☋ Rose Red #f43f5e) */}
-          {nodalData.descendingNode.isVisible && (
-            <g
-              transform={`translate(${nodalData.descendingNode.x.toFixed(1)}, ${nodalData.descendingNode.y.toFixed(1)})`}
-              className="drop-shadow-md cursor-default"
-              opacity={nodalData.descendingNode.isAboveHorizon ? 1.0 : 0.45}
-            >
-              <circle cx="0" cy="0" r="7" fill="#f43f5e" fillOpacity="0.15" />
-              <circle cx="0" cy="0" r="4.5" fill="#020617" stroke="#f43f5e" strokeWidth="1.2" />
-              <text x="0" y="2.5" textAnchor="middle" className="text-[7px] font-bold fill-rose-300 pointer-events-none select-none">☋</text>
-              <text x="0" y="-7" textAnchor="middle" className="text-[6.5px] font-mono fill-rose-400 font-semibold pointer-events-none select-none">
-                ☋ {nodalData.descendingNode.elevation >= 0 ? `+${nodalData.descendingNode.elevation.toFixed(0)}°` : `${nodalData.descendingNode.elevation.toFixed(0)}°`}
-              </text>
-              <title>{`Descending Node (☋): Elevation ${nodalData.descendingNode.elevation.toFixed(1)}°, RA ${nodalData.descendingNode.rightAscension.toFixed(1)}°, Dec ${nodalData.descendingNode.declination.toFixed(1)}°`}</title>
-            </g>
-          )}
+            return (
+              <g
+                transform={`translate(${node.x.toFixed(1)}, ${node.y.toFixed(1)})`}
+                className="drop-shadow-md cursor-default"
+                opacity={node.isAboveHorizon ? 1.0 : 0.5}
+              >
+                {/* Outer glowing halo */}
+                <circle cx="0" cy="0" r="8" fill={color} fillOpacity="0.2" className="animate-pulse" />
+                {/* Core disc */}
+                <circle cx="0" cy="0" r="4.5" fill="#020617" stroke={color} strokeWidth="1.2" />
+                {/* Node symbol */}
+                <text x="0" y="2.5" textAnchor="middle" className="text-[7px] font-bold pointer-events-none select-none" fill={color}>
+                  {symbol}
+                </text>
+                {/* Proximity / countdown label */}
+                <text x="0" y="-7.5" textAnchor="middle" className="text-[6.5px] font-mono font-semibold pointer-events-none select-none" fill={color}>
+                  {labelText}
+                </text>
+                <title>{`${isAsc ? 'Ascending Node (☊)' : 'Descending Node (☋)'}: Ecliptic Crossing at El ${node.elevation.toFixed(1)}°, Dec ${node.declination.toFixed(1)}°`}</title>
+              </g>
+            );
+          })()}
         </g>
       )}
       renderBodyGraphic={() => (
@@ -361,7 +371,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
         </div>
       </div>
 
-      {/* Lunar Standstill Limits (Std Mode) or Nodal State & Ecliptic Latitude (Nodal Mode) */}
+      {/* Lunar Standstill Limits (Std Mode) or 4-Quadrant Draconic Orbital Progress Micro-Rail (Nodal Mode) */}
       {!isNodalMode ? (
         <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
           <div className="flex items-center gap-1.5">
@@ -385,29 +395,69 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
-          <div className="flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${nodalData.isMoonAscending ? 'bg-sky-400' : 'bg-rose-400'}`} />
-            <span className="text-slate-400">Ecliptic (β):</span>
-            <strong className={`font-semibold ${nodalData.isMoonAscending ? 'text-sky-300' : 'text-rose-300'}`}>
-              {nodalData.moonBeta >= 0 ? `+${nodalData.moonBeta.toFixed(1)}°` : `${nodalData.moonBeta.toFixed(1)}°`}
-            </strong>
+        <div className="flex flex-col gap-1 bg-slate-950/70 px-2.5 py-1 rounded-lg border border-slate-800/50 text-slate-400 mt-1 font-mono">
+          {/* Top Line: Draconic Regime & Live Ecliptic Coordinates */}
+          <div className="flex items-center justify-between text-[9.5px]">
+            <div className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${nodalData.isMoonAscending ? 'bg-sky-400' : 'bg-rose-400'}`} />
+              <span className="text-slate-400">Draconic:</span>
+              <strong className={`font-semibold ${nodalData.isMoonAscending ? 'text-sky-300' : 'text-rose-300'}`}>
+                {nodalData.quadrantLabel}
+              </strong>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">β:</span>
+              <strong className={`font-semibold ${nodalData.isMoonAscending ? 'text-sky-300' : 'text-rose-300'}`}>
+                {nodalData.moonBeta >= 0 ? `+${nodalData.moonBeta.toFixed(1)}°` : `${nodalData.moonBeta.toFixed(1)}°`}
+              </strong>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-slate-600">·</span>
+              <span className="text-slate-400">Next:</span>
+              <strong className={`font-semibold ${nodalData.upcomingNodeType === 'ascending' ? 'text-sky-300' : 'text-rose-300'}`}>
+                {nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'} in {nodalData.daysToNextNode}d
+              </strong>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">Regime:</span>
-            <strong className={`font-semibold ${nodalData.isMoonAscending ? 'text-sky-300' : 'text-rose-300'}`}>
-              {nodalData.isMoonAscending ? '☊ Ascending' : '☋ Descending'}
-            </strong>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-600">·</span>
-            <span className="text-slate-400">Nodes:</span>
-            <span className="text-sky-300 font-medium">
-              ☊ {nodalData.ascendingNode.isAboveHorizon ? `+${nodalData.ascendingNode.elevation.toFixed(0)}°` : 'Set'}
-            </span>
-            <span className="text-rose-300 font-medium ml-1">
-              ☋ {nodalData.descendingNode.isAboveHorizon ? `+${nodalData.descendingNode.elevation.toFixed(0)}°` : 'Set'}
-            </span>
+
+          {/* Bottom Line: 4-Quadrant Orbital Progress Micro-Rail SVG */}
+          <div className="w-full relative py-0.5" title={`Draconic Progress F = ${nodalData.argumentOfLatitude.toFixed(1)}° (${nodalData.quadrantLabel})`}>
+            <svg viewBox="0 0 240 14" className="w-full h-3.5 block overflow-visible">
+              {/* Subtle background track */}
+              <line x1="12" y1="8" x2="228" y2="8" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
+
+              {/* 4 Quadrant Segments (color and stroke coded to match Eclipse Mechanics convention) */}
+              {/* Q1: 0° -> 90° (Waxing Ascending North: Sky Blue Solid) */}
+              <line x1="12" y1="8" x2="66" y2="8" stroke="#38bdf8" strokeWidth="2.5" strokeOpacity="0.85" />
+              {/* Q2: 90° -> 180° (Waxing Descending North to Node: Sky Blue Dashed) */}
+              <line x1="66" y1="8" x2="120" y2="8" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="3 2" strokeOpacity="0.85" />
+              {/* Q3: 180° -> 270° (Waning Descending South: Rose Red Solid) */}
+              <line x1="120" y1="8" x2="174" y2="8" stroke="#f43f5e" strokeWidth="2.5" strokeOpacity="0.85" />
+              {/* Q4: 270° -> 360° (Waning Ascending South to Node: Rose Red Dashed) */}
+              <line x1="174" y1="8" x2="228" y2="8" stroke="#f43f5e" strokeWidth="2.5" strokeDasharray="3 2" strokeOpacity="0.85" />
+
+              {/* Node Markers: 0° Ascending (☊), 180° Descending (☋), 360° Ascending (☊) */}
+              <circle cx="12" cy="8" r="2.5" fill="#020617" stroke="#38bdf8" strokeWidth="1" />
+              <text x="12" y="3.5" textAnchor="middle" className="text-[6.5px] font-bold select-none fill-sky-400 pointer-events-none">☊</text>
+
+              <circle cx="120" cy="8" r="2.5" fill="#020617" stroke="#f43f5e" strokeWidth="1" />
+              <text x="120" y="3.5" textAnchor="middle" className="text-[6.5px] font-bold select-none fill-rose-400 pointer-events-none">☋</text>
+
+              <circle cx="228" cy="8" r="2.5" fill="#020617" stroke="#38bdf8" strokeWidth="1" />
+              <text x="228" y="3.5" textAnchor="middle" className="text-[6.5px] font-bold select-none fill-sky-400 pointer-events-none">☊</text>
+
+              {/* Active Moon Draconic Orbit Position Bead */}
+              {(() => {
+                const beadX = 12 + (nodalData.argumentOfLatitude / 360) * (228 - 12);
+                const beadColor = nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e';
+                return (
+                  <g transform={`translate(${beadX.toFixed(1)}, 8)`}>
+                    <circle cx="0" cy="0" r="4.5" fill={beadColor} fillOpacity="0.35" className="animate-pulse" />
+                    <circle cx="0" cy="0" r="2.5" fill="#f8fafc" stroke={beadColor} strokeWidth="1" />
+                  </g>
+                );
+              })()}
+            </svg>
           </div>
         </div>
       )}

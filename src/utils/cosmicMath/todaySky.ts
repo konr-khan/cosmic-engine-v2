@@ -300,11 +300,20 @@ export interface SkyDomeLunarNodesResult {
   descendingNode: SkyDomeLunarNode;
   moonBeta: number;
   isMoonAscending: boolean;
+  isWaxing: boolean;
+  argumentOfLatitude: number;
+  orbitalProgressPercent: number;
+  daysToNextNode: number;
+  upcomingNodeType: 'ascending' | 'descending';
+  upcomingNode: SkyDomeLunarNode;
+  isNearNode: boolean;
+  quadrantLabel: string;
 }
 
 /**
  * Calculates the exact instantaneous Sky Dome positions and elevation angles for the
- * Moon's Ascending Node (☊) and Descending Node (☋).
+ * Moon's Ascending Node (☊) and Descending Node (☋), along with 4-quadrant orbital
+ * progress, argument of latitude, and approaching node intersection geometry.
  *
  * The nodes lie on the Ecliptic plane (beta = 0). Their right ascension and declination
  * are solved from the nodal longitude Omega and obliquity epsilon, and projected into
@@ -320,6 +329,8 @@ export const calculateSkyDomeLunarNodes = (
     cx?: number;
     cy?: number;
     r?: number;
+    phaseValue?: number;
+    moonBeta?: number;
   }
 ): SkyDomeLunarNodesResult => {
   const cx = options?.cx ?? EL_CX;
@@ -329,8 +340,30 @@ export const calculateSkyDomeLunarNodes = (
   const lunarPos = calculateLunarPosition(julianDate);
   const ascLon = Number(lunarPos.nodeLongitude);
   const descLon = Number(lunarPos.descendingNodeLongitude);
-  const moonBeta = Number(lunarPos.beta ?? lunarPos.eclipticLatitude ?? 0);
+  const moonBeta = options?.moonBeta !== undefined 
+    ? options.moonBeta 
+    : Number(lunarPos.beta ?? lunarPos.eclipticLatitude ?? 0);
   const isMoonAscending = moonBeta >= 0;
+  const phaseVal = options?.phaseValue !== undefined 
+    ? options.phaseValue 
+    : Number(lunarPos.phase ?? 0);
+  const isWaxing = phaseVal < 0.5;
+  const F = Number(lunarPos.argumentOfLatitude ?? 0);
+  const normF = ((F % 360) + 360) % 360;
+  const orbitalProgressPercent = (normF / 360) * 100;
+
+  // Determine which node is upcoming along the prograde orbital path
+  let upcomingNodeType: 'ascending' | 'descending';
+  let deltaF: number;
+  if (normF < 180) {
+    upcomingNodeType = 'descending';
+    deltaF = 180 - normF;
+  } else {
+    upcomingNodeType = 'ascending';
+    deltaF = 360 - normF;
+  }
+  const daysToNextNode = parseFloat(((deltaF / 360) * 27.21222).toFixed(1));
+  const isNearNode = Math.abs(moonBeta) <= 2.0 || daysToNextNode <= 2.0;
 
   const OBLIQUITY = 23.439281;
   const epsRad = toRadians(OBLIQUITY);
@@ -374,11 +407,24 @@ export const calculateSkyDomeLunarNodes = (
     };
   };
 
+  const ascendingNode = projectNode(ascLon);
+  const descendingNode = projectNode(descLon);
+  const upcomingNode = upcomingNodeType === 'ascending' ? ascendingNode : descendingNode;
+  const quadrantLabel = `${isWaxing ? 'Waxing' : 'Waning'} ${isMoonAscending ? 'North (☊)' : 'South (☋)'}`;
+
   return {
-    ascendingNode: projectNode(ascLon),
-    descendingNode: projectNode(descLon),
+    ascendingNode,
+    descendingNode,
     moonBeta,
-    isMoonAscending
+    isMoonAscending,
+    isWaxing,
+    argumentOfLatitude: normF,
+    orbitalProgressPercent,
+    daysToNextNode,
+    upcomingNodeType,
+    upcomingNode,
+    isNearNode,
+    quadrantLabel
   };
 };
 

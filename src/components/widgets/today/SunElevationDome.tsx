@@ -20,6 +20,7 @@ export interface SunElevationDomeProps {
   latitude: number;
   currentDate?: Date;
   onSetTime?: (time: number) => void;
+  initialTwilightMode?: boolean;
 }
 
 export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
@@ -28,9 +29,10 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   latitude,
   currentDate = new Date(),
   onSetTime,
+  initialTwilightMode = false,
 }) => {
   const [isHoveringSunMetrics, setIsHoveringSunMetrics] = useState(false);
-  const [isTwilightMode, setIsTwilightMode] = useState(false);
+  const [isTwilightMode, setIsTwilightMode] = useState(initialTwilightMode);
 
   // Earth-Sun Distance & Orbital Physics from Canonical Solver
   const fallbackPhysics = useMemo(

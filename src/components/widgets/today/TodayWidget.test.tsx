@@ -195,4 +195,147 @@ describe('Today Horizon Subsystem', () => {
     expect(moonHtml).toContain('Lunar Nodes View');
     expect(moonHtml).toContain('☊ Nodes');
   });
+
+  it('renders Sun twilight strata view with harmonized color bands when twilight mode is active', () => {
+    const sunTwilightHtml = renderToStaticMarkup(
+      React.createElement(SunElevationDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        initialTwilightMode: true,
+        solarData: {
+          sunrise: 6,
+          sunset: 18,
+          solarNoon: 12,
+          declination: 10,
+          noonElevation: 50,
+          equationOfTime: 0,
+          dayLength: 12,
+          civil: 0.5,
+          nautical: 1,
+          astronomical: 1.5,
+          distanceAU: 1.0,
+          distanceKm: 149597870,
+          daysSinceEpoch: 100,
+          lambda: 0,
+          eclipticLongitude: 0,
+          isMidnightSun: false,
+          isPolarNight: false
+        }
+      })
+    );
+
+    // Verify presence of harmonized twilight strata bands and labels
+    expect(sunTwilightHtml).toContain('twilight-strata');
+    expect(sunTwilightHtml).toContain('fill="#f59e0b"'); // Civil twilight
+    expect(sunTwilightHtml).toContain('stroke="#d97706"'); // Civil twilight boundary
+    expect(sunTwilightHtml).toContain('fill="#64748b"'); // Nautical twilight
+    expect(sunTwilightHtml).toContain('stroke="#475569"'); // Nautical boundary
+    expect(sunTwilightHtml).toContain('fill="#334155"'); // Astronomical twilight
+    expect(sunTwilightHtml).toContain('CIVIL');
+    expect(sunTwilightHtml).toContain('NAUT');
+    expect(sunTwilightHtml).toContain('ASTRO');
+  });
+
+  it('renders Moon diurnal path with Eclipse-convention stroke styling (color and dash)', () => {
+    // Waxing Moon (phase = 0.25)
+    const waxingMoonHtml = renderToStaticMarkup(
+      React.createElement(MoonElevationDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        currentDate: new Date('2026-09-08T12:00:00Z'),
+        orbitalData: {
+          phase: { value: 0.25, name: 'First Quarter' },
+          lunarEvents: {
+            moonrise: 12,
+            transit: 18,
+            moonset: 0,
+            distanceKm: 384400,
+            distanceEarthRadii: 60.3,
+            isPerigee: false,
+            isApogee: false,
+            declination: 15,
+            parallacticAngle: 0
+          }
+        } as unknown as OrbitalData
+      })
+    );
+
+    // Waning Moon (phase = 0.75)
+    const waningMoonHtml = renderToStaticMarkup(
+      React.createElement(MoonElevationDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        currentDate: new Date('2026-09-08T12:00:00Z'),
+        orbitalData: {
+          phase: { value: 0.75, name: 'Last Quarter' },
+          lunarEvents: {
+            moonrise: 0,
+            transit: 6,
+            moonset: 12,
+            distanceKm: 384400,
+            distanceEarthRadii: 60.3,
+            isPerigee: false,
+            isApogee: false,
+            declination: 15,
+            parallacticAngle: 0
+          }
+        } as unknown as OrbitalData
+      })
+    );
+
+    // Both should contain today-moon-path group
+    expect(waxingMoonHtml).toContain('id="today-moon-path"');
+    expect(waningMoonHtml).toContain('id="today-moon-path"');
+
+    // Extract the today-moon-path segment from both HTML strings
+    const waxingMatch = waxingMoonHtml.match(/<g[^>]*id="today-moon-path"[^>]*>([\s\S]*?)<\/g>/);
+    const waningMatch = waningMoonHtml.match(/<g[^>]*id="today-moon-path"[^>]*>([\s\S]*?)<\/g>/);
+
+    expect(waxingMatch).not.toBeNull();
+    expect(waningMatch).not.toBeNull();
+
+    // Waxing Moon path should have no dash array (solid), Waning Moon path should have stroke-dasharray="4 3"
+    expect(waxingMatch![1]).not.toContain('stroke-dasharray="4 3"');
+    expect(waningMatch![1]).toContain('stroke-dasharray="4 3"');
+
+    // Both should exhibit valid Eclipse-convention color (#38bdf8 or #f43f5e)
+    const hasValidColor = waxingMoonHtml.includes('#38bdf8') || waxingMoonHtml.includes('#f43f5e');
+    expect(hasValidColor).toBe(true);
+  });
+
+  it('renders 4-Quadrant Draconic Orbital Progress Micro-Rail when initialNodalMode is true', () => {
+    const nodalMoonHtml = renderToStaticMarkup(
+      React.createElement(MoonElevationDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        initialNodalMode: true,
+        currentDate: new Date('2026-09-08T12:00:00Z'),
+        orbitalData: {
+          phase: { value: 0.35, name: 'Waxing Gibbous' },
+          lunarEvents: {
+            moonrise: 14,
+            transit: 20,
+            moonset: 2,
+            distanceKm: 384400,
+            distanceEarthRadii: 60.3,
+            isPerigee: false,
+            isApogee: false,
+            declination: 12,
+            parallacticAngle: 0
+          }
+        } as unknown as OrbitalData
+      })
+    );
+
+    // Verify presence of Draconic regime telemetry & 4-Quadrant progress micro-rail
+    expect(nodalMoonHtml).toContain('Draconic:');
+    expect(nodalMoonHtml).toContain('β:');
+    expect(nodalMoonHtml).toContain('Next:');
+    expect(nodalMoonHtml).toContain('viewBox="0 0 240 14"');
+    expect(nodalMoonHtml).toContain('☊');
+    expect(nodalMoonHtml).toContain('☋');
+    // Verify 4-quadrant segmented rail colors
+    expect(nodalMoonHtml).toContain('stroke="#38bdf8"');
+    expect(nodalMoonHtml).toContain('stroke="#f43f5e"');
+  });
 });

@@ -220,5 +220,18 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
     expect(typeof nodes.moonBeta).toBe('number');
     expect(typeof nodes.isMoonAscending).toBe('boolean');
     expect(nodes.isMoonAscending).toBe(nodes.moonBeta >= 0);
+
+    // Orbital progress and upcoming node properties
+    expect(nodes.orbitalProgressPercent).toBeGreaterThanOrEqual(0);
+    expect(nodes.orbitalProgressPercent).toBeLessThanOrEqual(100);
+    expect(nodes.argumentOfLatitude).toBeGreaterThanOrEqual(0);
+    expect(nodes.argumentOfLatitude).toBeLessThan(360);
+    expect(nodes.daysToNextNode).toBeGreaterThanOrEqual(0);
+    expect(nodes.daysToNextNode).toBeLessThanOrEqual(14); // half draconic cycle max ~13.6d
+    expect(['ascending', 'descending']).toContain(nodes.upcomingNodeType);
+    expect(nodes.upcomingNode).toBeDefined();
+    expect(typeof nodes.isNearNode).toBe('boolean');
+    expect(typeof nodes.quadrantLabel).toBe('string');
+    expect(nodes.quadrantLabel.length).toBeGreaterThan(0);
   });
 });

@@ -180,7 +180,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
 
           {/* Diurnal Transit Path Arcs */}
           {diurnalPaths.map((path) => (
-            <g key={path.id}>
+            <g key={path.id} id={path.id}>
               {path.isGlowing && path.d && (
                 <path
                   d={path.d}
@@ -193,6 +193,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
               )}
               {path.d && (
                 <path
+                  id={`${path.id}-core`}
                   d={path.d}
                   fill="none"
                   stroke={path.stroke}
