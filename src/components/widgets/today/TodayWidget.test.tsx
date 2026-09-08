@@ -236,12 +236,30 @@ describe('Today Horizon Subsystem', () => {
     expect(sunTwilightHtml).toContain('ASTRO');
   });
 
-  it('renders Moon diurnal path with Eclipse-convention stroke styling (color and dash)', () => {
-    // Waxing Moon (phase = 0.25)
+  it('renders silver Moon arc in Std view and Eclipse-convention stroke styling in Nodal view', () => {
+    // Standard view: serene lunar silver (#e2e8f0) and solid stroke
+    const stdMoonHtml = renderToStaticMarkup(
+      React.createElement(MoonElevationDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        initialNodalMode: false,
+        currentDate: new Date('2026-09-08T12:00:00Z'),
+        orbitalData: {
+          phase: { value: 0.75, name: 'Last Quarter' }
+        } as unknown as OrbitalData
+      })
+    );
+    expect(stdMoonHtml).toContain('stroke="#e2e8f0"');
+    const stdPathMatch = stdMoonHtml.match(/<g[^>]*id="today-moon-path"[^>]*>([\s\S]*?)<\/g>/);
+    expect(stdPathMatch).not.toBeNull();
+    expect(stdPathMatch![1]).not.toContain('stroke-dasharray="4 3"');
+
+    // Nodal view Waxing Moon (phase = 0.25): solid stroke
     const waxingMoonHtml = renderToStaticMarkup(
       React.createElement(MoonElevationDome, {
         displayTime: 12,
         latitude: 47.06,
+        initialNodalMode: true,
         currentDate: new Date('2026-09-08T12:00:00Z'),
         orbitalData: {
           phase: { value: 0.25, name: 'First Quarter' },
@@ -260,11 +278,12 @@ describe('Today Horizon Subsystem', () => {
       })
     );
 
-    // Waning Moon (phase = 0.75)
+    // Nodal view Waning Moon (phase = 0.75): dashed stroke ('4 3')
     const waningMoonHtml = renderToStaticMarkup(
       React.createElement(MoonElevationDome, {
         displayTime: 12,
         latitude: 47.06,
+        initialNodalMode: true,
         currentDate: new Date('2026-09-08T12:00:00Z'),
         orbitalData: {
           phase: { value: 0.75, name: 'Last Quarter' },
@@ -303,7 +322,7 @@ describe('Today Horizon Subsystem', () => {
     expect(hasValidColor).toBe(true);
   });
 
-  it('renders 4-Quadrant Draconic Orbital Progress Micro-Rail when initialNodalMode is true', () => {
+  it('renders centered ±15-day Draconic Orbital Progress Micro-Rail when initialNodalMode is true', () => {
     const nodalMoonHtml = renderToStaticMarkup(
       React.createElement(MoonElevationDome, {
         displayTime: 12,
@@ -327,14 +346,17 @@ describe('Today Horizon Subsystem', () => {
       })
     );
 
-    // Verify presence of Draconic regime telemetry & 4-Quadrant progress micro-rail
-    expect(nodalMoonHtml).toContain('Draconic:');
+    // Verify presence of centered timeline telemetry & ±15-day micro-rail
+    expect(nodalMoonHtml).toContain('Past:');
+    expect(nodalMoonHtml).toContain('Today');
     expect(nodalMoonHtml).toContain('β:');
     expect(nodalMoonHtml).toContain('Next:');
-    expect(nodalMoonHtml).toContain('viewBox="0 0 240 14"');
+    expect(nodalMoonHtml).toContain('viewBox="0 0 240 16"');
     expect(nodalMoonHtml).toContain('☊');
     expect(nodalMoonHtml).toContain('☋');
-    // Verify 4-quadrant segmented rail colors
+    expect(nodalMoonHtml).toContain('−15d');
+    expect(nodalMoonHtml).toContain('+15d');
+    // Verify timeline continuous colored segments
     expect(nodalMoonHtml).toContain('stroke="#38bdf8"');
     expect(nodalMoonHtml).toContain('stroke="#f43f5e"');
   });

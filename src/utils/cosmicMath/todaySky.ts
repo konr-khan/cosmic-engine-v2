@@ -295,6 +295,21 @@ export interface SkyDomeLunarNode {
   isVisible: boolean; // elevation >= -18
 }
 
+export interface TimelineNodeEvent {
+  type: 'ascending' | 'descending';
+  daysOffset: number; // relative to Today (t=0) within [-15, +15]
+  symbol: '☊' | '☋';
+  color: string;
+  isUpcoming: boolean;
+}
+
+export interface TimelineTrackSegment {
+  startDays: number;
+  endDays: number;
+  isNorth: boolean;
+  color: string;
+}
+
 export interface SkyDomeLunarNodesResult {
   ascendingNode: SkyDomeLunarNode;
   descendingNode: SkyDomeLunarNode;
@@ -304,10 +319,14 @@ export interface SkyDomeLunarNodesResult {
   argumentOfLatitude: number;
   orbitalProgressPercent: number;
   daysToNextNode: number;
+  daysSincePrevNode: number;
   upcomingNodeType: 'ascending' | 'descending';
+  prevNodeType: 'ascending' | 'descending';
   upcomingNode: SkyDomeLunarNode;
   isNearNode: boolean;
   quadrantLabel: string;
+  timelineNodes: TimelineNodeEvent[];
+  timelineSegments: TimelineTrackSegment[];
 }
 
 /**
@@ -352,18 +371,104 @@ export const calculateSkyDomeLunarNodes = (
   const normF = ((F % 360) + 360) % 360;
   const orbitalProgressPercent = (normF / 360) * 100;
 
-  // Determine which node is upcoming along the prograde orbital path
+  // Draconic orbit constants
+  const DRACONIC_PERIOD_DAYS = 27.21222;
+  const HALF_DRACONIC_DAYS = DRACONIC_PERIOD_DAYS / 2; // ~13.606 days
+
+  // Determine upcoming and previous nodes along the prograde orbital path
   let upcomingNodeType: 'ascending' | 'descending';
-  let deltaF: number;
+  let prevNodeType: 'ascending' | 'descending';
+  let deltaFNext: number;
+  let deltaFPrev: number;
+
   if (normF < 180) {
     upcomingNodeType = 'descending';
-    deltaF = 180 - normF;
+    prevNodeType = 'ascending';
+    deltaFNext = 180 - normF;
+    deltaFPrev = normF;
   } else {
     upcomingNodeType = 'ascending';
-    deltaF = 360 - normF;
+    prevNodeType = 'descending';
+    deltaFNext = 360 - normF;
+    deltaFPrev = normF - 180;
   }
-  const daysToNextNode = parseFloat(((deltaF / 360) * 27.21222).toFixed(1));
-  const isNearNode = Math.abs(moonBeta) <= 2.0 || daysToNextNode <= 2.0;
+
+  const daysToNextNode = parseFloat(((deltaFNext / 360) * DRACONIC_PERIOD_DAYS).toFixed(1));
+  const daysSincePrevNode = parseFloat(((deltaFPrev / 360) * DRACONIC_PERIOD_DAYS).toFixed(1));
+
+  // Gated strictly to within 1.0 day / 0.8° of the node crossing to eliminate buzzing
+  const isNearNode = Math.abs(moonBeta) <= 0.8 || daysToNextNode <= 1.0 || daysSincePrevNode <= 1.0;
+
+  // Build sorted list of node events within the [-15, +15] days window
+  const timelineNodes: TimelineNodeEvent[] = [];
+
+  // Primary upcoming node (in future: daysOffset > 0)
+  timelineNodes.push({
+    type: upcomingNodeType,
+    daysOffset: daysToNextNode,
+    symbol: upcomingNodeType === 'ascending' ? '☊' : '☋',
+    color: upcomingNodeType === 'ascending' ? '#38bdf8' : '#f43f5e',
+    isUpcoming: true
+  });
+
+  // Second upcoming node if within +15 days
+  const secondNextDays = daysToNextNode + HALF_DRACONIC_DAYS;
+  if (secondNextDays <= 15.0) {
+    const secondType = prevNodeType;
+    timelineNodes.push({
+      type: secondType,
+      daysOffset: parseFloat(secondNextDays.toFixed(1)),
+      symbol: secondType === 'ascending' ? '☊' : '☋',
+      color: secondType === 'ascending' ? '#38bdf8' : '#f43f5e',
+      isUpcoming: true
+    });
+  }
+
+  // Primary previous node (in past: daysOffset < 0)
+  timelineNodes.push({
+    type: prevNodeType,
+    daysOffset: -daysSincePrevNode,
+    symbol: prevNodeType === 'ascending' ? '☊' : '☋',
+    color: prevNodeType === 'ascending' ? '#38bdf8' : '#f43f5e',
+    isUpcoming: false
+  });
+
+  // Second previous node if within -15 days
+  const secondPrevDays = -(daysSincePrevNode + HALF_DRACONIC_DAYS);
+  if (secondPrevDays >= -15.0) {
+    const secondType = upcomingNodeType;
+    timelineNodes.push({
+      type: secondType,
+      daysOffset: parseFloat(secondPrevDays.toFixed(1)),
+      symbol: secondType === 'ascending' ? '☊' : '☋',
+      color: secondType === 'ascending' ? '#38bdf8' : '#f43f5e',
+      isUpcoming: false
+    });
+  }
+
+  // Sort chronologically by daysOffset
+  timelineNodes.sort((a, b) => a.daysOffset - b.daysOffset);
+
+  // Generate continuous color track segments spanning [-15, +15]
+  const timelineSegments: TimelineTrackSegment[] = [];
+  const cutPoints = [-15, ...timelineNodes.map((n) => n.daysOffset), 15];
+
+  for (let i = 0; i < cutPoints.length - 1; i++) {
+    const startDays = cutPoints[i];
+    const endDays = cutPoints[i + 1];
+    if (endDays - startDays < 0.05) continue;
+
+    const midDays = (startDays + endDays) / 2;
+    const fMid = (((normF + (midDays / DRACONIC_PERIOD_DAYS) * 360) % 360) + 360) % 360;
+    const isNorth = fMid < 180;
+
+    timelineSegments.push({
+      startDays,
+      endDays,
+      isNorth,
+      color: isNorth ? '#38bdf8' : '#f43f5e'
+    });
+  }
 
   const OBLIQUITY = 23.439281;
   const epsRad = toRadians(OBLIQUITY);
@@ -421,10 +526,14 @@ export const calculateSkyDomeLunarNodes = (
     argumentOfLatitude: normF,
     orbitalProgressPercent,
     daysToNextNode,
+    daysSincePrevNode,
     upcomingNodeType,
+    prevNodeType,
     upcomingNode,
     isNearNode,
-    quadrantLabel
+    quadrantLabel,
+    timelineNodes,
+    timelineSegments
   };
 };
 

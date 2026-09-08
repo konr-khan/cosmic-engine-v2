@@ -169,13 +169,19 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     });
   }
 
-  // Eclipse-Convention Diurnal Track Styling:
+  // Diurnal Track Styling:
+  // In Std View: Classic lunar silver (#e2e8f0), solid stroke
+  // In Nodal View: Eclipse-Convention track:
   // Sky Blue (#38bdf8) for North/Ascending (beta >= 0) vs Rose Red (#f43f5e) for South/Descending (beta < 0)
   // Solid stroke for Waxing vs Dashed ('4 3') for Waning
-  const moonTrackColor = nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e';
-  const moonTrackDash = nodalData.isWaxing ? undefined : '4 3';
+  const moonTrackColor = isNodalMode
+    ? (nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e')
+    : '#e2e8f0';
+  const moonTrackDash = isNodalMode
+    ? (nodalData.isWaxing ? undefined : '4 3')
+    : undefined;
 
-  // 2. Active Today's Moon Path (Eclipse-Convention track) - Shown in both modes
+  // 2. Active Today's Moon Path
   if (todayPathResult.pathD) {
     diurnalPaths.push({
       id: 'today-moon-path',
@@ -185,19 +191,21 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       strokeDasharray: moonTrackDash,
       strokeOpacity: 0.95,
       isGlowing: true,
-      title: `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}° (${nodalData.quadrantLabel})`
+      title: isNodalMode
+        ? `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}° (${nodalData.quadrantLabel})`
+        : `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}°`
     });
   }
 
-  // 2b. Today's Moon Sub-Horizon Continuation
+  // 2b. Today's Moon Sub-Horizon Continuation (Subdued opacity, no dashes to avoid conflict with waning phase)
   if (todayPathResult.twilightD) {
     diurnalPaths.push({
       id: 'today-moon-twilight-path',
       d: todayPathResult.twilightD,
-      stroke: moonTrackColor,
-      strokeWidth: 1.0,
-      strokeDasharray: '2 2',
-      strokeOpacity: 0.35,
+      stroke: isNodalMode ? moonTrackColor : '#94a3b8',
+      strokeWidth: 0.8,
+      strokeDasharray: isNodalMode ? moonTrackDash : undefined,
+      strokeOpacity: 0.20,
       title: "Today's Sub-Horizon Lunar Track"
     });
   }
@@ -395,68 +403,126 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-1 bg-slate-950/70 px-2.5 py-1 rounded-lg border border-slate-800/50 text-slate-400 mt-1 font-mono">
-          {/* Top Line: Draconic Regime & Live Ecliptic Coordinates */}
+        <div className="flex flex-col gap-1 bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1 font-mono">
+          {/* Top Line: Past Node, Live Today State, and Next Node */}
           <div className="flex items-center justify-between text-[9.5px]">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 min-w-0 truncate">
+              <span className="text-slate-500 font-sans">Past:</span>
+              <strong className={nodalData.prevNodeType === 'ascending' ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                {nodalData.prevNodeType === 'ascending' ? '☊' : '☋'} {nodalData.daysSincePrevNode}d ago
+              </strong>
+            </div>
+
+            <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-800/60 shadow-xs">
               <span className={`w-1.5 h-1.5 rounded-full ${nodalData.isMoonAscending ? 'bg-sky-400' : 'bg-rose-400'}`} />
-              <span className="text-slate-400">Draconic:</span>
-              <strong className={`font-semibold ${nodalData.isMoonAscending ? 'text-sky-300' : 'text-rose-300'}`}>
-                {nodalData.quadrantLabel}
-              </strong>
+              <span className="text-slate-200 font-semibold text-[9.5px]">
+                {nodalData.isMoonAscending ? 'North (☊)' : 'South (☋)'}
+              </span>
+              <span className={`font-mono font-medium ${nodalData.isMoonAscending ? 'text-sky-300' : 'text-rose-300'}`}>
+                β: {nodalData.moonBeta >= 0 ? `+${nodalData.moonBeta.toFixed(1)}°` : `${nodalData.moonBeta.toFixed(1)}°`}
+              </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-400">β:</span>
-              <strong className={`font-semibold ${nodalData.isMoonAscending ? 'text-sky-300' : 'text-rose-300'}`}>
-                {nodalData.moonBeta >= 0 ? `+${nodalData.moonBeta.toFixed(1)}°` : `${nodalData.moonBeta.toFixed(1)}°`}
-              </strong>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-slate-600">·</span>
-              <span className="text-slate-400">Next:</span>
-              <strong className={`font-semibold ${nodalData.upcomingNodeType === 'ascending' ? 'text-sky-300' : 'text-rose-300'}`}>
+
+            <div className="flex items-center gap-1 min-w-0 truncate justify-end">
+              <span className="text-slate-500 font-sans">Next:</span>
+              <strong className={nodalData.upcomingNodeType === 'ascending' ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
                 {nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'} in {nodalData.daysToNextNode}d
               </strong>
             </div>
           </div>
 
-          {/* Bottom Line: 4-Quadrant Orbital Progress Micro-Rail SVG */}
-          <div className="w-full relative py-0.5" title={`Draconic Progress F = ${nodalData.argumentOfLatitude.toFixed(1)}° (${nodalData.quadrantLabel})`}>
-            <svg viewBox="0 0 240 14" className="w-full h-3.5 block overflow-visible">
-              {/* Subtle background track */}
+          {/* Bottom Line: Centered +-15-Day Draconic Rail SVG */}
+          <div 
+            className="w-full relative py-0.5" 
+            title={`Monthly Draconic Window (±15 Days): Today centered, Past node: ${nodalData.prevNodeType === 'ascending' ? '☊' : '☋'} (${nodalData.daysSincePrevNode}d ago), Next node: ${nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'} (in ${nodalData.daysToNextNode}d)`}
+          >
+            <svg viewBox="0 0 240 16" className="w-full h-4 block overflow-visible">
+              {/* Subtle background rail track */}
               <line x1="12" y1="8" x2="228" y2="8" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
 
-              {/* 4 Quadrant Segments (color and stroke coded to match Eclipse Mechanics convention) */}
-              {/* Q1: 0° -> 90° (Waxing Ascending North: Sky Blue Solid) */}
-              <line x1="12" y1="8" x2="66" y2="8" stroke="#38bdf8" strokeWidth="2.5" strokeOpacity="0.85" />
-              {/* Q2: 90° -> 180° (Waxing Descending North to Node: Sky Blue Dashed) */}
-              <line x1="66" y1="8" x2="120" y2="8" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="3 2" strokeOpacity="0.85" />
-              {/* Q3: 180° -> 270° (Waning Descending South: Rose Red Solid) */}
-              <line x1="120" y1="8" x2="174" y2="8" stroke="#f43f5e" strokeWidth="2.5" strokeOpacity="0.85" />
-              {/* Q4: 270° -> 360° (Waning Ascending South to Node: Rose Red Dashed) */}
-              <line x1="174" y1="8" x2="228" y2="8" stroke="#f43f5e" strokeWidth="2.5" strokeDasharray="3 2" strokeOpacity="0.85" />
-
-              {/* Node Markers: 0° Ascending (☊), 180° Descending (☋), 360° Ascending (☊) */}
-              <circle cx="12" cy="8" r="2.5" fill="#020617" stroke="#38bdf8" strokeWidth="1" />
-              <text x="12" y="3.5" textAnchor="middle" className="text-[6.5px] font-bold select-none fill-sky-400 pointer-events-none">☊</text>
-
-              <circle cx="120" cy="8" r="2.5" fill="#020617" stroke="#f43f5e" strokeWidth="1" />
-              <text x="120" y="3.5" textAnchor="middle" className="text-[6.5px] font-bold select-none fill-rose-400 pointer-events-none">☋</text>
-
-              <circle cx="228" cy="8" r="2.5" fill="#020617" stroke="#38bdf8" strokeWidth="1" />
-              <text x="228" y="3.5" textAnchor="middle" className="text-[6.5px] font-bold select-none fill-sky-400 pointer-events-none">☊</text>
-
-              {/* Active Moon Draconic Orbit Position Bead */}
-              {(() => {
-                const beadX = 12 + (nodalData.argumentOfLatitude / 360) * (228 - 12);
-                const beadColor = nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e';
+              {/* Day markers / ticks (-10d, -5d, +5d, +10d) */}
+              {[-10, -5, 5, 10].map((day) => {
+                const tickX = 120 + day * 7.2;
                 return (
-                  <g transform={`translate(${beadX.toFixed(1)}, 8)`}>
-                    <circle cx="0" cy="0" r="4.5" fill={beadColor} fillOpacity="0.35" className="animate-pulse" />
-                    <circle cx="0" cy="0" r="2.5" fill="#f8fafc" stroke={beadColor} strokeWidth="1" />
+                  <line
+                    key={day}
+                    x1={tickX}
+                    y1="6"
+                    x2={tickX}
+                    y2="10"
+                    stroke="#334155"
+                    strokeWidth="0.75"
+                    strokeOpacity="0.6"
+                  />
+                );
+              })}
+
+              {/* Dynamic continuous timeline segments colored by ecliptic hemisphere (Sky Blue North / Rose Red South) */}
+              {nodalData.timelineSegments.map((seg, idx) => {
+                const x1 = Math.max(12, Math.min(228, 120 + seg.startDays * 7.2));
+                const x2 = Math.max(12, Math.min(228, 120 + seg.endDays * 7.2));
+                return (
+                  <line
+                    key={idx}
+                    x1={x1.toFixed(1)}
+                    y1="8"
+                    x2={x2.toFixed(1)}
+                    y2="8"
+                    stroke={seg.color}
+                    strokeWidth="2.5"
+                    strokeOpacity="0.85"
+                  />
+                );
+              })}
+
+              {/* Pinned Node Markers along the timeline */}
+              {nodalData.timelineNodes.map((node, idx) => {
+                const x = 120 + node.daysOffset * 7.2;
+                if (x < 10 || x > 230) return null;
+                return (
+                  <g key={idx} transform={`translate(${x.toFixed(1)}, 8)`}>
+                    <circle cx="0" cy="0" r="2.8" fill="#020617" stroke={node.color} strokeWidth="1.2" />
+                    <text
+                      x="0"
+                      y="-4.5"
+                      textAnchor="middle"
+                      className="text-[6.5px] font-bold select-none pointer-events-none"
+                      fill={node.color}
+                    >
+                      {node.symbol}
+                    </text>
+                    <title>{`${node.type === 'ascending' ? 'Ascending Node (☊)' : 'Descending Node (☋)'}: ${node.daysOffset >= 0 ? `in ${node.daysOffset.toFixed(1)}d` : `${Math.abs(node.daysOffset).toFixed(1)}d ago`}`}</title>
                   </g>
                 );
-              })()}
+              })}
+
+              {/* Center Target: Today / Now (T = 0, X = 120) */}
+              <g transform="translate(120, 8)">
+                {/* Vertical Center Guide */}
+                <line x1="0" y1="-5" x2="0" y2="5" stroke="#64748b" strokeWidth="0.75" strokeDasharray="1 1" strokeOpacity="0.5" />
+                {/* Pulsing Active Moon Bead */}
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="4.5"
+                  fill={nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e'}
+                  fillOpacity="0.35"
+                  className="animate-pulse"
+                />
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="2.5"
+                  fill="#f8fafc"
+                  stroke={nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e'}
+                  strokeWidth="1.2"
+                />
+              </g>
+
+              {/* Timeline Axis Micro-Labels */}
+              <text x="14" y="15" textAnchor="start" className="text-[5.5px] font-mono fill-slate-600 select-none pointer-events-none">−15d</text>
+              <text x="120" y="15" textAnchor="middle" className="text-[5.5px] font-mono fill-slate-400 font-semibold select-none pointer-events-none">Today</text>
+              <text x="226" y="15" textAnchor="end" className="text-[5.5px] font-mono fill-slate-600 select-none pointer-events-none">+15d</text>
             </svg>
           </div>
         </div>

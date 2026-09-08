@@ -221,17 +221,38 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
     expect(typeof nodes.isMoonAscending).toBe('boolean');
     expect(nodes.isMoonAscending).toBe(nodes.moonBeta >= 0);
 
-    // Orbital progress and upcoming node properties
+    // Orbital progress and upcoming / previous node properties
     expect(nodes.orbitalProgressPercent).toBeGreaterThanOrEqual(0);
     expect(nodes.orbitalProgressPercent).toBeLessThanOrEqual(100);
     expect(nodes.argumentOfLatitude).toBeGreaterThanOrEqual(0);
     expect(nodes.argumentOfLatitude).toBeLessThan(360);
     expect(nodes.daysToNextNode).toBeGreaterThanOrEqual(0);
     expect(nodes.daysToNextNode).toBeLessThanOrEqual(14); // half draconic cycle max ~13.6d
+    expect(nodes.daysSincePrevNode).toBeGreaterThanOrEqual(0);
+    expect(nodes.daysSincePrevNode).toBeLessThanOrEqual(14);
     expect(['ascending', 'descending']).toContain(nodes.upcomingNodeType);
+    expect(['ascending', 'descending']).toContain(nodes.prevNodeType);
+    expect(nodes.upcomingNodeType).not.toBe(nodes.prevNodeType);
     expect(nodes.upcomingNode).toBeDefined();
     expect(typeof nodes.isNearNode).toBe('boolean');
     expect(typeof nodes.quadrantLabel).toBe('string');
     expect(nodes.quadrantLabel.length).toBeGreaterThan(0);
+
+    // Centered ±15-day timeline nodes & segments
+    expect(nodes.timelineNodes.length).toBeGreaterThanOrEqual(2);
+    for (const node of nodes.timelineNodes) {
+      expect(node.daysOffset).toBeGreaterThanOrEqual(-15);
+      expect(node.daysOffset).toBeLessThanOrEqual(15);
+      expect(['☊', '☋']).toContain(node.symbol);
+      expect(['#38bdf8', '#f43f5e']).toContain(node.color);
+    }
+
+    expect(nodes.timelineSegments.length).toBeGreaterThanOrEqual(2);
+    expect(nodes.timelineSegments[0].startDays).toBe(-15);
+    expect(nodes.timelineSegments[nodes.timelineSegments.length - 1].endDays).toBe(15);
+    for (const seg of nodes.timelineSegments) {
+      expect(seg.startDays).toBeLessThan(seg.endDays);
+      expect(['#38bdf8', '#f43f5e']).toContain(seg.color);
+    }
   });
 });
