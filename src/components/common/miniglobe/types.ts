@@ -67,6 +67,7 @@ export interface MiniGlobeSphereProps {
   showParallels: boolean;
   showPolarAxis: boolean;
   showObserverPin: boolean;
+  observerPinScale?: number;
   topdownGeometry: TopdownGlobeGeometry | null;
   transverseGeometry: TransverseGlobeGeometry | null;
   axialGeometry: AxialGlobeGeometry | null;

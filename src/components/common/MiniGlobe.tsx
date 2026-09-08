@@ -80,6 +80,7 @@ export interface MiniGlobeProps {
   showParallels?: boolean;      // Equator and Tropics of Cancer/Capricorn (default: true)
   showPolarAxis?: boolean;      // 23.44° Rotational polar axis line (default: true)
   showObserverPin?: boolean;    // Observer location pin "YOU" (default: true)
+  observerPinScale?: number;    // Relative scale multiplier for observer pin (default: 1.0)
   showAtmosphereGlow?: boolean; // Outer cyan atmospheric glow halo (default: true)
   showLabel?: boolean;          // Monospace text label below globe (default: false)
   label?: string;               // Custom label string (default: "EARTH")
@@ -113,6 +114,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   showParallels = true,
   showPolarAxis = true,
   showObserverPin = true,
+  observerPinScale = 1.0,
   showAtmosphereGlow = true,
   showLabel = false,
   label = 'EARTH',
@@ -360,6 +362,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
           showParallels={showParallels}
           showPolarAxis={showPolarAxis}
           showObserverPin={showObserverPin}
+          observerPinScale={observerPinScale}
           topdownGeometry={topdownGeometry}
           transverseGeometry={transverseGeometry}
           axialGeometry={axialGeometry}

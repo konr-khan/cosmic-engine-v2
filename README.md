@@ -128,7 +128,7 @@ Cosmic Engine V2.0/
         ├── widgets/             # 8 core observatory subsystems (Armillary, Solar, Lunar, etc.)
         ├── controls/            # Interactive astrolabe dials, sliders & longitude selector
         ├── layout/              # Observatory navbar, window wrappers & chronometer dock
-        └── common/              # Shared error boundaries, mini globe, LivingMarble & phase discs
+        └── common/              # Shared error boundaries, mini globe & phase discs
 ```
 
 > [!TIP]

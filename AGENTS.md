@@ -278,7 +278,6 @@ Cosmic Engine V2.0/
 │           │   ├── MiniGlobeFlat.tsx           # 2D flattened astrolabe plate pin
 │           │   ├── MiniGlobeSphere.tsx         # 9-layer 3D sphere with analytical limb clipping
 │           │   └── types.ts                    # MiniGlobe sub-renderer interfaces & geometry types
-│           ├── LivingMarble.tsx                # Non-tearing 3D Earth globe visualizer
 │           └── PhaseVisual.tsx                 # Lunar phase disc with parallactic tilt
 ```
 

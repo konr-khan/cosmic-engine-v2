@@ -21,6 +21,7 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
   showParallels,
   showPolarAxis,
   showObserverPin,
+  observerPinScale = 1.0,
   topdownGeometry,
   transverseGeometry,
   axialGeometry,
@@ -298,11 +299,11 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
             <g transform={`translate(${eulerGeometry.obsPx.toFixed(2)}, ${eulerGeometry.obsPy.toFixed(2)})`}>
               {eulerGeometry.isObsDay ? (
                 <>
-                  <circle r="3.0" fill="#38bdf8" opacity="0.3" className="animate-pulse" />
-                  <circle r="1.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.6" />
+                  <circle r={(3.0 * observerPinScale).toFixed(2)} fill="#38bdf8" opacity="0.3" className="animate-pulse" />
+                  <circle r={(1.5 * observerPinScale).toFixed(2)} fill="#38bdf8" stroke="#ffffff" strokeWidth={0.6 * observerPinScale} />
                 </>
               ) : (
-                <circle r="1.4" fill="none" stroke="#94a3b8" strokeWidth="0.75" opacity="0.85" />
+                <circle r={(1.4 * observerPinScale).toFixed(2)} fill="none" stroke="#94a3b8" strokeWidth={0.75 * observerPinScale} opacity="0.85" />
               )}
             </g>
           )}

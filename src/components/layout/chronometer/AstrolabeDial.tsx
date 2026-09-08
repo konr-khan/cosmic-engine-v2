@@ -1,8 +1,8 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { toDegrees, getDaysInYear, getDayOfYear } from '../../../utils/cosmicMath';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { toDegrees, toRadians, getDaysInYear, getDayOfYear } from '../../../utils/cosmicMath';
 import { ControlRing } from '../../controls/ControlRing';
 import { ArmillaryRail } from '../../controls/ArmillaryRail';
-import { LivingMarble } from '../../common/LivingMarble';
+import { MiniGlobe } from '../../common/MiniGlobe';
 
 export interface AstrolabeDialProps {
   date: Date;
@@ -54,6 +54,21 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
 
   const totalDays = getDaysInYear(date.getUTCFullYear());
   const dayOfYear = getDayOfYear(date);
+
+  // Observer-locked camera: azimuthal yaw locks the observer's geographic meridian to the central vertical axis (X = 0).
+  // Eliminates timeOfDay from the continents' frame (lonDeg - longitude), keeping Earth stationary relative to the viewer
+  // while allowing the daylight/night terminator (sCam) to sweep smoothly from East to West across the globe.
+  const hourAngleDeg = ((timeOfDay - 12) * 15) + longitude;
+  const globeCamera = useMemo(() => ({
+    pitch: 0,
+    yaw: -hourAngleDeg,
+    roll: 0
+  }), [hourAngleDeg]);
+
+  // Observer latitude targeting: maps geographic latitude phi to vertical position Y on the sphere
+  const latRad = toRadians(latitude);
+  const yObs = -45 * Math.sin(latRad);
+  const latChordHalfWidth = 45 * Math.cos(latRad);
 
   useEffect(() => {
     prevTimeRef.current = timeOfDay;
@@ -266,19 +281,66 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
         />
 
         {/* Central Living Earth Globe Hub (R=45) */}
-        <LivingMarble 
-          declination={declination} 
-          timeOfDay={timeOfDay} 
-          longitude={longitude} 
+        <MiniGlobe 
+          cx={0}
+          cy={0}
           radius={45} 
+          viewMode="euler3d"
+          camera={globeCamera}
+          declination={declination} 
+          latitude={latitude}
+          longitude={longitude} 
+          timeOfDay={timeOfDay} 
+          showContinents={true}
+          showTerminator={true}
+          showTwilightBands={true}
+          showParallels={true}
+          showPolarAxis={true}
+          showObserverPin={true}
+          observerPinScale={1.2}
+          showAtmosphereGlow={true}
         />
 
-        {/* Crosshair Horizon & Meridian Sights */}
-        <line x1="0" y1="-45" x2="0" y2="45" stroke="#38bdf8" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.4" pointerEvents="none" />
-        <line x1="-45" y1="0" x2="45" y2="0" stroke="#38bdf8" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.4" pointerEvents="none" />
-        
-        {/* Center Pivot Point */}
-        <circle cx="0" cy="0" r="2.5" fill="#f8fafc" stroke="#0f172a" strokeWidth="1" pointerEvents="none" />
+        {/* Meridian Sighting Line (North-South, X = 0, Gold matching Longitude selector) */}
+        <line 
+          x1="0" 
+          y1="-45" 
+          x2="0" 
+          y2="45" 
+          stroke={THEME.lon} 
+          strokeWidth="0.75" 
+          strokeDasharray="2.5 1.5" 
+          opacity="0.65" 
+          pointerEvents="none" 
+        />
+
+        {/* Equator Reference Chord (Subtle, Y = 0) */}
+        <line 
+          x1="-45" 
+          y1="0" 
+          x2="45" 
+          y2="0" 
+          stroke="#38bdf8" 
+          strokeWidth="0.5" 
+          strokeDasharray="2 2" 
+          opacity="0.25" 
+          pointerEvents="none" 
+        />
+
+        {/* Dynamic Latitude Armillary Reticle (Rose, tracking observer pin at yObs) */}
+        {Math.abs(latitude) > 0.5 && (
+          <line 
+            x1={-latChordHalfWidth} 
+            y1={yObs} 
+            x2={latChordHalfWidth} 
+            y2={yObs} 
+            stroke={THEME.lat} 
+            strokeWidth="0.8" 
+            strokeDasharray="3 1.5" 
+            opacity="0.8" 
+            pointerEvents="none" 
+          />
+        )}
 
         {/* TOP-LEVEL FLOATING TOOLTIP (Highest z-index in SVG to prevent occlusion) */}
         {currentDisplayRing && (
