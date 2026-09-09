@@ -1077,3 +1077,68 @@ To provide empirical monthly transit bounds for the Moon dome:
 \delta_{\text{min}} = \min_{t \in [-15, +15]} \delta_{\text{moon}}(t_0 + t), \quad \delta_{\text{max}} = \max_{t \in [-15, +15]} \delta_{\text{moon}}(t_0 + t)
 \]
 Because the Moon's tropical month cycle is $27.32158\text{ days} < 30\text{ days}$, a symmetric 30-day window centered on $t_0$ is mathematically guaranteed to capture both the northernmost peak and southernmost trough of the active lunar declination cycle.
+
+### H. Dynamic Culmination Bearing & Observer Sighting Perspective (`calculateCulminationBearing`)
+
+At meridian culmination ($H = 0$), a celestial body crosses the observer's celestial meridian. The bearing of this transit relative to the observer's zenith is governed strictly by the signed difference angle:
+\[
+\Delta = \delta - \phi
+\]
+where $\delta$ is the celestial body's declination and $\phi$ is the topocentric observer's latitude.
+
+1. **Peak Altitude Formulation**:
+   \[
+   h_{\text{peak}} = \operatorname{clamp}(90^\circ - |\delta - \phi|, -90^\circ, +90^\circ)
+   \]
+
+2. **Tri-State Meridian Bearing & Sighting Perspective**:
+   * **Zenith Overhead Transit ($|\Delta| < 0.25^\circ$)**:
+     - The celestial body transits through the observer's local zenith ($h_{\text{peak}} = 90.0^\circ$).
+     - Meridian tag: `Z`, Peak Suffix: `ZENITH`.
+     - Observer perspective cue: `"Overhead Zenith Transit"`.
+     - Represents subsolar ("Lahaina Noon") and sublunar zenith alignments.
+   * **South Culmination ($\Delta < 0$, i.e. $\delta < \phi$)**:
+     - The celestial body peaks in the **Southern sky** ($\text{Az} = 180^\circ$).
+     - Meridian tag: `S`, Peak Suffix: `S`.
+     - Observer perspective cue: `"Looking South · S-Sky Arc"`.
+     - Vertical gnomon shadows point due North.
+   * **North Culmination ($\Delta > 0$, i.e. $\delta > \phi$)**:
+     - The celestial body peaks in the **Northern sky** ($\text{Az} = 0^\circ$).
+     - Meridian tag: `N`, Peak Suffix: `N`.
+     - Observer perspective cue: `"Looking North · N-Sky Arc"`.
+     - Vertical gnomon shadows point due South.
+
+3. **Tropical & Standstill Culmination Inversion Boundaries**:
+   * **Solar Tropics ($-23.44^\circ \le \phi \le +23.44^\circ$)**:
+     As the Sun oscillates across $\delta_\odot \in [-\varepsilon, +\varepsilon]$, $\Delta$ changes sign twice annually, causing the Sun's midday culmination to actively alternate between the Northern and Southern sky.
+   * **Lunar Super-Tropics ($-28.58^\circ \le \phi \le +28.58^\circ$)**:
+     During major lunar standstills, the Moon's declination spans $\delta_{\text{moon}} \in [-(\varepsilon + i), +(\varepsilon + i)] \approx [-28.58^\circ, +28.58^\circ]$. Observers up to $\pm 28.58^\circ$ latitude experience the Moon alternating between Northern and Southern culminations within every 27.3-day tropical month cycle.
+
+### I. Horizon Rise & Set Azimuths & 16-Point Compass Octants (`calculateRiseSetAzimuth`)
+
+For a body with declination $\delta$ and observer latitude $\phi$, the true horizon contact azimuths ($\text{Az}$ measured clockwise from North $= 0^\circ$) are given by spherical trigonometry:
+
+1. **Polar Regime Filtering**:
+   * If $\tan\phi \tan\delta \le -1$: **Polar Night** (body never rises above horizon). Returns `null` azimuths and `"--"` octants.
+   * If $\tan\phi \tan\delta \ge 1$: **Midnight Sun / Circumpolar** (body never sets below horizon). Returns `null` azimuths and `"--"` octants.
+
+2. **Analytical Horizon Azimuths**:
+   \[
+   \cos(\text{Az}_{\text{rise}}) = \frac{\sin\delta}{\cos\phi} \implies \text{Az}_{\text{rise}} = \arccos\left(\operatorname{clamp}\left(\frac{\sin\delta}{\cos\phi}, -1, 1\right)\right) \in [0^\circ, 180^\circ]
+   \]
+   \[
+   \text{Az}_{\text{set}} = (360^\circ - \text{Az}_{\text{rise}}) \bmod 360^\circ \in [180^\circ, 360^\circ]
+   \]
+   - For $\delta > 0^\circ$: $\text{Az}_{\text{rise}} \in (0^\circ, 90^\circ)$ (Northeastern quadrant), $\text{Az}_{\text{set}} \in (270^\circ, 360^\circ)$ (Northwestern quadrant).
+   - For $\delta < 0^\circ$: $\text{Az}_{\text{rise}} \in (90^\circ, 180^\circ)$ (Southeastern quadrant), $\text{Az}_{\text{set}} \in (180^\circ, 270^\circ)$ (Southwestern quadrant).
+   - For $\delta = 0^\circ$: $\text{Az}_{\text{rise}} = 90.0^\circ$ (Due East), $\text{Az}_{\text{set}} = 270.0^\circ$ (Due West).
+
+3. **16-Point Compass Octant Mapping**:
+   For normalized azimuth angle $\theta = ((\text{Az} \bmod 360^\circ) + 360^\circ) \bmod 360^\circ$:
+   \[
+   \text{index} = \left\lfloor \frac{\theta + 11.25^\circ}{22.5^\circ} \right\rfloor \bmod 16
+   \]
+   mapped to the standard nautical array:
+   \[
+   [\text{N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW}]
+   \]

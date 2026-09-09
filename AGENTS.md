@@ -112,7 +112,9 @@ Cosmic Engine V2.0/
 │       ├── 0011-axial-sightline-anti-solar-camera-rectification.md
 │       ├── 0012-lunar-orbit-dual-depth-sorting-and-node-muting.md
 │       ├── 0013-codebase-consolidation-code-splitting-and-shared-primitives.md
-│       └── 0014-sky-dome-symmetrical-viewbox-twilight-strata-and-draconic-nodal-kinematics.md
+│       ├── 0014-sky-dome-symmetrical-viewbox-twilight-strata-and-draconic-nodal-kinematics.md
+│       ├── 0015-true-ecliptic-lunar-node-crossing-kinematics.md
+│       └── 0016-dynamic-sighting-aware-horizon-dome-and-tropical-culmination.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container

@@ -298,4 +298,26 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
   - Horizontal timeline $X \in [12, 228]$, centered at $X = 120$ for Today ($T = 0$).
   - Track segments continuously colored Sky Blue for $\beta \ge 0$ and Rose Red for $\beta < 0$.
   - Pinned node beads $\Omega$ and $\mho$ glide along the rail based on exact true crossing epochs.
+* **Observer Sighting Perspective Micro-Banner**:
+  - Rendered inside the live elevation bar: `bg-slate-900/90 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1`.
+  - Monospace micro-typography: `text-[9px] font-mono text-slate-400`.
+  - Line-of-sight states:
+    - `[ 👁️ Looking South · S-Sky Arc ]` (Observer facing South; Sun/Moon culminates in Southern sky).
+    - `[ 👁️ Looking North · N-Sky Arc ]` (Observer facing North; Sun/Moon culminates in Northern sky).
+    - `[ 👁️ Overhead Zenith Transit ]` (Observer experiencing subsolar/sublunar zero-shadow transit, $|\delta - \phi| < 0.25^\circ$).
+* **Dynamic Meridian Cardinal Indicators**:
+  - Positioned at $X = 130, Y = 101$ with `text-[7.5px] font-mono fill-slate-500 font-medium`.
+  - Tri-state values: `S` (South culmination), `N` (North culmination), `Z` (Zenith transit).
+  - Encapsulated in `<g>` with native `<title>` for accessible hover tooltips (`Culmination meridian bearing: North/South/Zenith`).
+* **Signed Peak Elevation Readout Tokens**:
+  - Header peak altitude formatted with signed directional suffix: `<strong className="text-white font-semibold">{peakElevation.toFixed(1)}° {peakDirectionSuffix}</strong>`.
+  - Readout values: `87.9° N` vs `45.3° S` vs `90.0° ZENITH`.
+* **Canvas Uncluttering & Reference Line Hierarchy**:
+  - Floating `<text>` elements along diurnal reference curves inside the 260x138 SVG canvas are strictly prohibited to avoid clustering and collisions at mid-to-high altitudes.
+  - Reference curves (summer solstice, winter solstice, equinox) render as clean, elegant dashed hairlines with native SVG `<title>` tooltips (`Summer Solstice Noon Peak: 87.9° N`).
+  - Precise signed bounds and physical directions are consolidated cleanly in the dedicated stats strip below the dome (`Summer Sol: 87.9° N · Winter Sol: 45.3° S · Zenith Cap: None (90°)`).
+* **Horizon Compass Octant Badges**:
+  - Compact micro-subline beneath sunrise/sunset and moonrise/moonset times: `text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5`.
+  - Displays 16-point compass octants (e.g. `ENE · WNW`), with exact decimal azimuths available in hover tooltips (`Sunrise: 068° ENE · Sunset: 292° WNW`).
+
 
