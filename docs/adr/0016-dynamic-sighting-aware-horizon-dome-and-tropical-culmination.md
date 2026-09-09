@@ -50,10 +50,10 @@ Implemented in [`src/utils/cosmicMath/todaySky.ts`](../../src/utils/cosmicMath/t
 - Renders 16-point compass octants as a compact subline under the sunrise/sunset and moonrise/moonset badges (e.g., `068° ENE` / `292° WNW` in tooltips, `ENE · WNW` on card).
 
 ### 4. Canvas Uncluttering & Reference Line Hierarchy
-- Suppressed floating canvas text labels on diurnal reference curves (summer solstice, winter solstice, equinox).
+- Suppressed floating canvas text labels on diurnal reference curves (summer solstice, winter solstice, equinox, monthly lunar extrema).
 - **Preserved Information Architecture**:
   - Reference curves render as clean, elegant dashed hairlines with native SVG `<title>` tooltips on hover.
-  - Precise numerical limits and physical sky directions are consolidated cleanly in the dedicated stats strip below the dome (`Summer Sol: 87.9° N · Winter Sol: 45.3° S · Zenith Cap: None (90°)`).
+  - Precise numerical limits and physical sky directions are consolidated cleanly in the dedicated stats strips below the domes (`Summer Sol: 87.9° N · Winter Sol: 45.3° S` and `Max Standstill: 87.2° N · Min Standstill: 35.6° S`).
 
 ---
 

@@ -314,8 +314,8 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
   - Readout values: `87.9° N` vs `45.3° S` vs `90.0° ZENITH`.
 * **Canvas Uncluttering & Reference Line Hierarchy**:
   - Floating `<text>` elements along diurnal reference curves inside the 260x138 SVG canvas are strictly prohibited to avoid clustering and collisions at mid-to-high altitudes.
-  - Reference curves (summer solstice, winter solstice, equinox) render as clean, elegant dashed hairlines with native SVG `<title>` tooltips (`Summer Solstice Noon Peak: 87.9° N`).
-  - Precise signed bounds and physical directions are consolidated cleanly in the dedicated stats strip below the dome (`Summer Sol: 87.9° N · Winter Sol: 45.3° S · Zenith Cap: None (90°)`).
+  - Reference curves (summer solstice, winter solstice, equinox, monthly lunar extrema) render as clean, elegant dashed hairlines with native SVG `<title>` tooltips (`Summer Solstice Noon Peak: 87.9° N`, `Max Possible Lunar Altitude: 87.2° N`).
+  - Precise signed bounds and physical directions are consolidated cleanly in the dedicated stats strip below the dome (`Summer Sol: 87.9° N · Winter Sol: 45.3° S` and `Max Standstill: 87.2° N · Min Standstill: 35.6° S`).
 * **Horizon Compass Octant Badges**:
   - Compact micro-subline beneath sunrise/sunset and moonrise/moonset times: `text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5`.
   - Displays 16-point compass octants (e.g. `ENE · WNW`), with exact decimal azimuths available in hover tooltips (`Sunrise: 068° ENE · Sunset: 292° WNW`).
