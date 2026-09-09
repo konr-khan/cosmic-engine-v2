@@ -91,21 +91,14 @@ export const useEphemerisWorker = ({
     return { lunarEvents, eclipse };
   }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, isWorkerActive, workerResult !== null]);
 
-  // If worker is unavailable, return synchronous fallback immediately.
-  // If worker is available, prefer workerResult if available, fallback to syncResult.
-  if (!isWorkerActive) {
-    return {
-      lunarEvents: syncResult ? syncResult.lunarEvents : null,
-      eclipse: syncResult ? syncResult.eclipse : null,
-      isWorkerActive: false
-    };
-  }
+  const lunarEvents = workerResult ? workerResult.lunarEvents : (syncResult ? syncResult.lunarEvents : null);
+  const eclipse = workerResult ? workerResult.eclipse : (syncResult ? syncResult.eclipse : null);
 
-  return {
-    lunarEvents: workerResult ? workerResult.lunarEvents : (syncResult ? syncResult.lunarEvents : null),
-    eclipse: workerResult ? workerResult.eclipse : (syncResult ? syncResult.eclipse : null),
-    isWorkerActive: true
-  };
+  return useMemo(() => ({
+    lunarEvents,
+    eclipse,
+    isWorkerActive
+  }), [lunarEvents, eclipse, isWorkerActive]);
 };
 
 /**
@@ -139,15 +132,15 @@ export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitud
   }, [year, latitude]);
 
   const syncSolar = useMemo(() => {
-    if (isWorkerActive && workerSolar !== null) return null;
+    if (isWorkerActive) return null;
     return calculateAnnualSolarMatrix(year, latitude);
-  }, [year, latitude, isWorkerActive, workerSolar !== null]);
+  }, [year, latitude, isWorkerActive]);
 
   if (!isWorkerActive) {
     return syncSolar || [];
   }
 
-  return workerSolar || syncSolar || [];
+  return workerSolar || [];
 };
 
 /**
@@ -189,13 +182,13 @@ export const useAnnualLunarWorker = ({
   }, [year, latitude, longitude]);
 
   const syncLunar = useMemo(() => {
-    if (isWorkerActive && workerLunar !== null) return null;
+    if (isWorkerActive) return null;
     return calculateAnnualLunarMatrix(year, latitude, longitude);
-  }, [year, latitude, longitude, isWorkerActive, workerLunar !== null]);
+  }, [year, latitude, longitude, isWorkerActive]);
 
   if (!isWorkerActive) {
     return syncLunar || [];
   }
 
-  return workerLunar || syncLunar || [];
+  return workerLunar || [];
 };

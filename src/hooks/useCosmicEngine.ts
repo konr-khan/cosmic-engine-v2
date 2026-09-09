@@ -61,7 +61,7 @@ export const useCosmicEngine = (
 
   const julianDate = useMemo(() => getJulianDate(date, timeOfDay), [date, timeOfDay]);
 
-  const ephemeris = useEphemerisWorker({
+  const { lunarEvents, eclipse } = useEphemerisWorker({
     latitude,
     longitude,
     julianDate,
@@ -145,11 +145,11 @@ export const useCosmicEngine = (
         phase: { value: phase0to1, name: getPhaseName(phase0to1) },
         tides: { rx: tideRx, ry: baseOceanSize, type: tideType, alignment: alignmentFactor },
         localTideStatus,
-        lunarEvents: ephemeris.lunarEvents,
-        eclipse: ephemeris.eclipse
+        lunarEvents,
+        eclipse
       };
     }
 
     return { solarData, orbitalData, julianDate: JD };
-  }, [date, timeOfDay, latitude, longitude, useAnalemma, isLunarActive, isEclipseActive, isOrbitalActive, julianDate, ephemeris]);
+  }, [date, timeOfDay, latitude, longitude, useAnalemma, isLunarActive, isEclipseActive, isOrbitalActive, julianDate, lunarEvents, eclipse]);
 };

@@ -7,6 +7,9 @@ import { CosmicStoreState, StateSelector, StateUpdater } from '../types/store';
  */
 export function shallowEqual(objA: unknown, objB: unknown): boolean {
   if (Object.is(objA, objB)) return true;
+  if (objA instanceof Date && objB instanceof Date) {
+    return objA.getTime() === objB.getTime();
+  }
   if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
     return false;
   }
@@ -17,9 +20,16 @@ export function shallowEqual(objA: unknown, objB: unknown): boolean {
   if (keysA.length !== keysB.length) return false;
   for (let i = 0; i < keysA.length; i++) {
     const key = keysA[i];
-    if (!Object.prototype.hasOwnProperty.call(b, key) || !Object.is(a[key], b[key])) {
+    if (!Object.prototype.hasOwnProperty.call(b, key)) {
       return false;
     }
+    const valA = a[key];
+    const valB = b[key];
+    if (Object.is(valA, valB)) continue;
+    if (valA instanceof Date && valB instanceof Date && valA.getTime() === valB.getTime()) {
+      continue;
+    }
+    return false;
   }
   return true;
 }
@@ -186,11 +196,7 @@ export function useChronometerStore<T = CosmicStoreState>(
     return nextSelected;
   }, []);
 
-  try {
-    return useSyncExternalStore(cosmicStore.subscribe, getSnapshot, getSnapshot);
-  } catch (e) {
-    return selector(cosmicStore.getState());
-  }
+  return useSyncExternalStore(cosmicStore.subscribe, getSnapshot, getSnapshot);
 }
 
 export const cosmicActions = {

@@ -21,7 +21,9 @@ vi.mock('react', async (importOriginal) => {
       stateSetters[id] = setter;
       return [stateStore[id], setter];
     },
-    useEffect: (effect: () => any) => { effect(); }
+    useEffect: (effect: () => any) => { effect(); },
+    useCallback: (fn: any) => fn,
+    useMemo: (factory: () => any) => factory()
   };
 });
 

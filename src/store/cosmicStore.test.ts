@@ -83,6 +83,10 @@ describe('Cosmic Store & State Isolation Suite', () => {
     expect(shallowEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
     expect(shallowEqual(42, 42)).toBe(true);
     expect(shallowEqual(42, 43)).toBe(false);
+    expect(shallowEqual(new Date(1700000000000), new Date(1700000000000))).toBe(true);
+    expect(shallowEqual(new Date(1700000000000), new Date(1700000001000))).toBe(false);
+    expect(shallowEqual({ d: new Date(1700000000000) }, { d: new Date(1700000000000) })).toBe(true);
+    expect(shallowEqual({ d: new Date(1700000000000) }, { d: new Date(1700000001000) })).toBe(false);
   });
 
   it('clamps deltaMs to 500ms when resuming or catching up in animation frame ticker', () => {

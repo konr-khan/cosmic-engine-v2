@@ -118,13 +118,13 @@ export function useCosmicScene(options?: UseCosmicSceneOptions): CosmicSceneData
     );
   }, [julianDate, latitude, longitude, useAnalemma]);
 
-  return {
+  return useMemo(() => ({
     julianDate,
     timestamp: date,
     scene3D,
     scaleMode,
     ephemerisFrame
-  };
+  }), [julianDate, date, scene3D, scaleMode, ephemerisFrame]);
 }
 
 /** Configuration options for Heliocentric Macro Orbit Sub-Hook */
@@ -224,7 +224,7 @@ export function useHeliocentricScene(
     }));
   }, [scene3D.milestones, scene3D.scaleMode, orbitalRadius, scaleFactor]);
 
-  return {
+  return useMemo(() => ({
     julianDate,
     scaleMode,
     scene3D,
@@ -261,7 +261,20 @@ export function useHeliocentricScene(
     sunLambdaDeg,
     orbitPath: projected2D.elements.orbitPath,
     lunarOrbitPath: projected2D.elements.lunarOrbitPath
-  };
+  }), [
+    julianDate,
+    scaleMode,
+    scene3D,
+    projected2D,
+    physics,
+    focus2X,
+    focus2Y,
+    bRatio,
+    orbitalRadius,
+    milestones,
+    axialTiltDeg,
+    sunLambdaDeg
+  ]);
 }
 
 /** Configuration options for Eclipse Demonstrator Sub-Hook */
@@ -321,84 +334,86 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData {
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
     ?? (((scene3D.earth.heliocentricLongitude + 180) % 360 + 360) % 360);
 
-  // Transverse Node Coordinates
-  const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg ?? 0));
-  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return useMemo(() => {
+    // Transverse Node Coordinates
+    const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg ?? 0));
+    const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
 
-  // Transverse Node Coordinates
-  const transAscNode = transverseProjected.elements.nodeMarkers?.asc ?? {
-    x: 310 - Math.cos(tAsc) * 85,
-    y: 110
-  };
-  const transDescNode = transverseProjected.elements.nodeMarkers?.desc ?? {
-    x: 310 - Math.cos(tDesc) * 85,
-    y: 110
-  };
+    // Transverse Node Coordinates
+    const transAscNode = transverseProjected.elements.nodeMarkers?.asc ?? {
+      x: 310 - Math.cos(tAsc) * 85,
+      y: 110
+    };
+    const transDescNode = transverseProjected.elements.nodeMarkers?.desc ?? {
+      x: 310 - Math.cos(tDesc) * 85,
+      y: 110
+    };
 
-  // Axial Node Coordinates
-  const axialAscNode = axialProjected.elements.nodeMarkers?.asc ?? {
-    x: 260 - Math.sin(tAsc) * 150,
-    y: 110
-  };
-  const axialDescNode = axialProjected.elements.nodeMarkers?.desc ?? {
-    x: 260 - Math.sin(tDesc) * 150,
-    y: 110
-  };
+    // Axial Node Coordinates
+    const axialAscNode = axialProjected.elements.nodeMarkers?.asc ?? {
+      x: 260 - Math.sin(tAsc) * 150,
+      y: 110
+    };
+    const axialDescNode = axialProjected.elements.nodeMarkers?.desc ?? {
+      x: 260 - Math.sin(tDesc) * 150,
+      y: 110
+    };
 
-  return {
-    julianDate,
-    scene3D,
-    eclipse,
-    transverseProjected,
-    axialProjected,
-    sunLambdaDeg,
-    transverseProfile: {
-      sun: {
-        x: transverseProjected.elements.sun.x,
-        y: transverseProjected.elements.sun.y,
-        r: transverseProjected.elements.sun.r
+    return {
+      julianDate,
+      scene3D,
+      eclipse,
+      transverseProjected,
+      axialProjected,
+      sunLambdaDeg,
+      transverseProfile: {
+        sun: {
+          x: transverseProjected.elements.sun.x,
+          y: transverseProjected.elements.sun.y,
+          r: transverseProjected.elements.sun.r
+        },
+        earth: {
+          x: transverseProjected.elements.earth.x,
+          y: transverseProjected.elements.earth.y,
+          r: transverseProjected.elements.earth.r,
+          axialTiltAngle2D: transverseProjected.elements.earth.axialTiltAngle2D
+        },
+        moon: {
+          x: transverseProjected.elements.moon.x,
+          y: transverseProjected.elements.moon.y,
+          r: transverseProjected.elements.moon.r
+        },
+        umbraCone: transverseProjected.elements.shadowCones?.umbraPath ?? '',
+        penumbraCone: transverseProjected.elements.shadowCones?.penumbraPath ?? '',
+        axisLine: transverseProjected.elements.shadowCones?.axisLine ?? { x1: 50, y1: 110, x2: 510, y2: 110 },
+        orbitalSegments: transverseProjected.elements.lunarOrbitSegments ?? [],
+        ascendingNode: transAscNode,
+        descendingNode: transDescNode
       },
-      earth: {
-        x: transverseProjected.elements.earth.x,
-        y: transverseProjected.elements.earth.y,
-        r: transverseProjected.elements.earth.r,
-        axialTiltAngle2D: transverseProjected.elements.earth.axialTiltAngle2D
-      },
-      moon: {
-        x: transverseProjected.elements.moon.x,
-        y: transverseProjected.elements.moon.y,
-        r: transverseProjected.elements.moon.r
-      },
-      umbraCone: transverseProjected.elements.shadowCones?.umbraPath ?? '',
-      penumbraCone: transverseProjected.elements.shadowCones?.penumbraPath ?? '',
-      axisLine: transverseProjected.elements.shadowCones?.axisLine ?? { x1: 50, y1: 110, x2: 510, y2: 110 },
-      orbitalSegments: transverseProjected.elements.lunarOrbitSegments ?? [],
-      ascendingNode: transAscNode,
-      descendingNode: transDescNode
-    },
-    axialSightline: {
-      sun: {
-        x: axialProjected.elements.sun.x,
-        y: axialProjected.elements.sun.y,
-        r: axialProjected.elements.sun.r
-      },
-      earth: {
-        x: axialProjected.elements.earth.x,
-        y: axialProjected.elements.earth.y,
-        r: axialProjected.elements.earth.r,
-        axialTiltAngle2D: axialProjected.elements.earth.axialTiltAngle2D
-      },
-      moon: {
-        x: axialProjected.elements.moon.x,
-        y: axialProjected.elements.moon.y,
-        r: axialProjected.elements.moon.r
-      },
-      orbitalSegments: axialProjected.elements.lunarOrbitSegments ?? [],
-      ascendingNode: axialAscNode,
-      descendingNode: axialDescNode
-    }
-  };
+      axialSightline: {
+        sun: {
+          x: axialProjected.elements.sun.x,
+          y: axialProjected.elements.sun.y,
+          r: axialProjected.elements.sun.r
+        },
+        earth: {
+          x: axialProjected.elements.earth.x,
+          y: axialProjected.elements.earth.y,
+          r: axialProjected.elements.earth.r,
+          axialTiltAngle2D: axialProjected.elements.earth.axialTiltAngle2D
+        },
+        moon: {
+          x: axialProjected.elements.moon.x,
+          y: axialProjected.elements.moon.y,
+          r: axialProjected.elements.moon.r
+        },
+        orbitalSegments: axialProjected.elements.lunarOrbitSegments ?? [],
+        ascendingNode: axialAscNode,
+        descendingNode: axialDescNode
+      }
+    };
+  }, [julianDate, scene3D, eclipse, transverseProjected, axialProjected, sunLambdaDeg]);
 }
 
 /** Configuration options for Gyro-Morph Armillary Sub-Hook */
@@ -449,7 +464,7 @@ export function useArmillaryScene(options?: UseArmillaryOptions): ArmillaryScene
   const sunLambdaDeg = scene3D.sun.eclipticLongitude 
     ?? (((scene3D.earth.heliocentricLongitude + 180) % 360 + 360) % 360);
 
-  return {
+  return useMemo(() => ({
     julianDate,
     scene3D,
     projected2D,
@@ -473,5 +488,5 @@ export function useArmillaryScene(options?: UseArmillaryOptions): ArmillaryScene
       yaw: asDegrees(typeof yaw === 'number' ? yaw : Number(yaw)),
       roll: asDegrees(typeof roll === 'number' ? roll : Number(roll))
     }
-  };
+  }), [julianDate, scene3D, projected2D, sunLambdaDeg, pitch, yaw, roll]);
 }

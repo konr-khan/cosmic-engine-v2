@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ComponentType } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, ComponentType } from 'react';
 import { 
   Sun, 
   Moon, 
@@ -172,29 +172,29 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     } catch {}
   }, [windows]);
 
-  const handleSelectPreset = (key: string) => {
+  const handleSelectPreset = useCallback((key: string) => {
     const preset = PRESET_LAYOUTS[key];
     if (!preset) return;
     setActivePresetKey(key);
     setWidgets(preset.widgets);
     setWindows(preset.windows);
-  };
+  }, []);
 
-  const toggleWidget = (key: string) => {
+  const toggleWidget = useCallback((key: string) => {
     setWidgets(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+  }, []);
 
-  const handleDragStart = (e: React.DragEvent<HTMLElement>, id: string) => {
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLElement>, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent<HTMLElement>, targetId: string) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLElement>, targetId: string) => {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData('text/plain');
     if (!sourceId || sourceId === targetId) return;
@@ -209,9 +209,9 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       newOrder.splice(targetIdx, 0, removed);
       return newOrder;
     });
-  };
+  }, []);
 
-  const handleResize = (id: string, _newWidth: number, newHeight: number | string) => {
+  const handleResize = useCallback((id: string, _newWidth: number, newHeight: number | string) => {
     setWindows(prev => prev.map(w => {
       if (w.id === id) {
         const heightVal = typeof newHeight === 'string' ? (newHeight.endsWith('px') ? newHeight : `${newHeight}px`) : `${newHeight}px`;
@@ -219,13 +219,13 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       }
       return w;
     }));
-  };
+  }, []);
 
-  const handleToggleLock = (id: string) => {
+  const handleToggleLock = useCallback((id: string) => {
     setLockedWindows(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  }, []);
 
-  const handleToggleColSpan = (id: string) => {
+  const handleToggleColSpan = useCallback((id: string) => {
     setWindows(prev => prev.map(w => {
       if (w.id === id) {
         // Toggle between 12 (panoramic 2-col) and 6 (standard 1-col)
@@ -234,9 +234,9 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       }
       return w;
     }));
-  };
+  }, []);
 
-  const handleResetLayout = () => {
+  const handleResetLayout = useCallback(() => {
     setActivePresetKey('master');
     setWindows(PRESET_LAYOUTS.master.windows);
     setWidgets(PRESET_LAYOUTS.master.widgets);
@@ -248,9 +248,9 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
         localStorage.removeItem(i === 1 ? 'cosmic_window_layout' : `cosmic_window_layout_v${i}`);
       }
     } catch {}
-  };
+  }, []);
 
-  return {
+  return useMemo(() => ({
     activePresetKey,
     widgets,
     windows,
@@ -267,5 +267,20 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     handleToggleLock,
     handleToggleColSpan,
     handleResetLayout
-  };
+  }), [
+    activePresetKey,
+    widgets,
+    windows,
+    lockedWindows,
+    isAllLocked,
+    toggleWidget,
+    handleSelectPreset,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    handleResize,
+    handleToggleLock,
+    handleToggleColSpan,
+    handleResetLayout
+  ]);
 }
