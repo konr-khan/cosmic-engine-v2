@@ -179,8 +179,6 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   // 1. Monthly Max Lunar Transit Arc (Soft silver dashed hairline) - Shown in standard mode
   if (!isNodalMode && maxPathResult.pathD && maxPathResult.peakAlt > 0) {
     const maxPeak = extremaCulminations.maxBound.altitude;
-    const labelY = EL_CY - EL_R * Math.sin(toRadians(maxPeak));
-    const labelX = EL_CX + EL_R * Math.cos(toRadians(maxPeak)) + 3;
     diurnalPaths.push({
       id: 'moon-monthly-max',
       d: maxPathResult.pathD,
@@ -188,10 +186,6 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.7,
-      label: `${maxPeak.toFixed(0)}° ${extremaCulminations.maxBound.shortTag}`,
-      labelColor: 'fill-slate-400',
-      labelX,
-      labelY: labelY + 2.5,
       title: `Max Possible Lunar Altitude (Monthly ±15d Peak: ${monthlyBounds.maxDec.toFixed(1)}° Dec): ${maxPeak.toFixed(1)}° ${extremaCulminations.maxBound.shortTag}`
     });
   }
@@ -240,8 +234,6 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   // 3. Monthly Min Lunar Transit Arc (Muted slate dashed hairline) - Shown in standard mode
   if (!isNodalMode && minPathResult.pathD && minPathResult.peakAlt > 0) {
     const minPeak = extremaCulminations.minBound.altitude;
-    const labelY = EL_CY - EL_R * Math.sin(toRadians(minPeak));
-    const labelX = EL_CX + EL_R * Math.cos(toRadians(minPeak)) + 3;
     diurnalPaths.push({
       id: 'moon-monthly-min',
       d: minPathResult.pathD,
@@ -249,10 +241,6 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.6,
-      label: `${minPeak.toFixed(0)}° ${extremaCulminations.minBound.shortTag}`,
-      labelColor: 'fill-slate-500',
-      labelX,
-      labelY: labelY + 2.5,
       title: `Min Possible Lunar Altitude (Monthly ±15d Trough: ${monthlyBounds.minDec.toFixed(1)}° Dec): ${minPeak.toFixed(1)}° ${extremaCulminations.minBound.shortTag}`
     });
   }
