@@ -74,6 +74,21 @@ export interface LunarExtremaCulminations {
   minBound: CulminationInfo;
 }
 
+export interface MeridianPoint {
+  x: number;
+  y: number;
+  thetaDeg: number;
+  altitudeDeg: number;
+  bearing: CulminationDirection;
+}
+
+export interface RadialTickLine {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 /**
  * Projects a sky dome coordinate (hour angle, declination, observer latitude)
  * into 2D SVG canvas space (260x120), matching the canonical SkyDome geometry.
@@ -741,5 +756,98 @@ export const calculateLunarExtremaCulminations = (
   return {
     maxBound: calculateCulminationBearing(latitudeDeg, maxDec),
     minBound: calculateCulminationBearing(latitudeDeg, minDec)
+  };
+};
+
+/**
+ * Maps a celestial body's culmination altitude and meridian bearing to 2D SVG canvas coordinates
+ * on the canonical 260x138 Sky Dome coordinate space (EL_R = 92, EL_CX = 130, EL_CY = 104).
+ *
+ * Angle theta is measured from the North horizon (0° = North, 90° = Zenith, 180° = South):
+ *   theta = 180° - h  if South
+ *   theta = 90°       if Zenith
+ *   theta = h         if North
+ *
+ * Coordinates:
+ *   X = EL_CX + EL_R * cos(theta)
+ *   Y = EL_CY - EL_R * sin(theta)
+ */
+export const calculateMeridianPoint = (
+  altitudeDeg: number,
+  bearing: CulminationDirection,
+  cx: number = EL_CX,
+  cy: number = EL_CY,
+  r: number = EL_R
+): MeridianPoint => {
+  const clAlti = Math.max(0, Math.min(90, altitudeDeg));
+  let thetaDeg: number;
+  if (bearing === 'South') {
+    thetaDeg = 180 - clAlti;
+  } else if (bearing === 'North') {
+    thetaDeg = clAlti;
+  } else {
+    thetaDeg = 90;
+  }
+
+  const rad = toRadians(thetaDeg);
+  const x = cx + r * Math.cos(rad);
+  const y = cy - r * Math.sin(rad);
+
+  return {
+    x: parseFloat(x.toFixed(2)),
+    y: parseFloat(y.toFixed(2)),
+    thetaDeg: parseFloat(thetaDeg.toFixed(2)),
+    altitudeDeg: clAlti,
+    bearing
+  };
+};
+
+/**
+ * Generates an SVG circular arc path string along the R=92 dome between two meridian angles.
+ * In SVG screen space where Y is inverted downward:
+ * radMin is closer to North (Right, 3 o'clock) and radMax is closer to South (Left, 9 o'clock).
+ * Sweeping counter-clockwise (sweep-flag = 0) travels along the upper semicircle (Y < 104).
+ */
+export const generateMeridianSwathD = (
+  startThetaDeg: number,
+  endThetaDeg: number,
+  cx: number = EL_CX,
+  cy: number = EL_CY,
+  r: number = EL_R
+): string => {
+  const tMin = Math.min(startThetaDeg, endThetaDeg);
+  const tMax = Math.max(startThetaDeg, endThetaDeg);
+  if (Math.abs(tMax - tMin) < 0.01) return '';
+
+  const radMin = toRadians(tMin);
+  const radMax = toRadians(tMax);
+
+  const x1 = cx + r * Math.cos(radMin);
+  const y1 = cy - r * Math.sin(radMin);
+  const x2 = cx + r * Math.cos(radMax);
+  const y2 = cy - r * Math.sin(radMax);
+
+  return `M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 0 0 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+};
+
+/**
+ * Computes normal perpendicular radial tick mark coordinates on the dome arc
+ * for solstice, standstill, and equinox pins.
+ */
+export const calculateMeridianRadialTick = (
+  thetaDeg: number,
+  rInner: number = 88,
+  rOuter: number = 96,
+  cx: number = EL_CX,
+  cy: number = EL_CY
+): RadialTickLine => {
+  const rad = toRadians(thetaDeg);
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return {
+    x1: parseFloat((cx + rInner * cos).toFixed(1)),
+    y1: parseFloat((cy - rInner * sin).toFixed(1)),
+    x2: parseFloat((cx + rOuter * cos).toFixed(1)),
+    y2: parseFloat((cy - rOuter * sin).toFixed(1))
   };
 };

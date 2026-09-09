@@ -18,6 +18,9 @@ import {
   calculateSolsticeCulminations,
   calculateLunarExtremaCulminations,
   azimuthToCompassOctant,
+  calculateMeridianPoint,
+  generateMeridianSwathD,
+  calculateMeridianRadialTick,
   EL_R, 
   EL_CX, 
   EL_CY 
@@ -465,5 +468,140 @@ describe('Solstice and Lunar Extrema Culminations', () => {
     expect(azimuthToCompassOctant(315)).toBe('NW');
     expect(azimuthToCompassOctant(67.5)).toBe('ENE');
     expect(azimuthToCompassOctant(292.5)).toBe('WNW');
+  });
+});
+
+describe('Meridian Profile Coordinate Projections and Swaths', () => {
+  describe('calculateMeridianPoint', () => {
+    it('projects South horizon (0° S) exactly to left baseline (38, 104) at theta = 180°', () => {
+      const pt = calculateMeridianPoint(0, 'South');
+      expect(pt.thetaDeg).toBe(180);
+      expect(pt.altitudeDeg).toBe(0);
+      expect(pt.bearing).toBe('South');
+      expect(pt.x).toBeCloseTo(EL_CX - EL_R, 2); // 130 - 92 = 38
+      expect(pt.y).toBeCloseTo(EL_CY, 2); // 104
+    });
+
+    it('projects North horizon (0° N) exactly to right baseline (222, 104) at theta = 0°', () => {
+      const pt = calculateMeridianPoint(0, 'North');
+      expect(pt.thetaDeg).toBe(0);
+      expect(pt.altitudeDeg).toBe(0);
+      expect(pt.bearing).toBe('North');
+      expect(pt.x).toBeCloseTo(EL_CX + EL_R, 2); // 130 + 92 = 222
+      expect(pt.y).toBeCloseTo(EL_CY, 2); // 104
+    });
+
+    it('projects Zenith (90° Z) exactly to upper apex (130, 12) at theta = 90°', () => {
+      const pt = calculateMeridianPoint(90, 'Zenith');
+      expect(pt.thetaDeg).toBe(90);
+      expect(pt.altitudeDeg).toBe(90);
+      expect(pt.bearing).toBe('Zenith');
+      expect(pt.x).toBeCloseTo(EL_CX, 2); // 130
+      expect(pt.y).toBeCloseTo(EL_CY - EL_R, 2); // 104 - 92 = 12
+    });
+
+    it('projects South culmination (45° S) with theta = 135° in upper-left quadrant', () => {
+      const pt = calculateMeridianPoint(45, 'South');
+      expect(pt.thetaDeg).toBe(135);
+      expect(pt.altitudeDeg).toBe(45);
+      expect(pt.x).toBeLessThan(EL_CX);
+      expect(pt.x).toBeCloseTo(130 + 92 * Math.cos((135 * Math.PI) / 180), 2);
+      expect(pt.y).toBeLessThan(EL_CY);
+      expect(pt.y).toBeCloseTo(104 - 92 * Math.sin((135 * Math.PI) / 180), 2);
+    });
+
+    it('projects North culmination (45° N) with theta = 45° in upper-right quadrant', () => {
+      const pt = calculateMeridianPoint(45, 'North');
+      expect(pt.thetaDeg).toBe(45);
+      expect(pt.altitudeDeg).toBe(45);
+      expect(pt.x).toBeGreaterThan(EL_CX);
+      expect(pt.x).toBeCloseTo(130 + 92 * Math.cos((45 * Math.PI) / 180), 2);
+      expect(pt.y).toBeLessThan(EL_CY);
+      expect(pt.y).toBeCloseTo(104 - 92 * Math.sin((45 * Math.PI) / 180), 2);
+    });
+
+    it('clamps negative (sub-horizon) altitudes to 0° baseline', () => {
+      const pt = calculateMeridianPoint(-15, 'South');
+      expect(pt.altitudeDeg).toBe(0);
+      expect(pt.thetaDeg).toBe(180);
+      expect(pt.x).toBeCloseTo(38, 2);
+      expect(pt.y).toBeCloseTo(104, 2);
+    });
+
+    it('clamps excess altitudes > 90° to 90° zenith', () => {
+      const pt = calculateMeridianPoint(95, 'North');
+      expect(pt.altitudeDeg).toBe(90);
+      expect(pt.thetaDeg).toBe(90);
+      expect(pt.x).toBeCloseTo(130, 2);
+      expect(pt.y).toBeCloseTo(12, 2);
+    });
+  });
+
+  describe('generateMeridianSwathD', () => {
+    it('generates a valid SVG arc path string spanning between two angles', () => {
+      const pathD = generateMeridianSwathD(114.16, 161.04);
+      expect(pathD.startsWith('M ')).toBe(true);
+      expect(pathD).toContain('A 92 92 0 0 0');
+      expect(pathD).not.toContain('NaN');
+    });
+
+    it('generates cross-zenith arc connecting North and South hemispheres in the tropics', () => {
+      // Honolulu: Summer Solstice 87.9°N (theta = 87.9°) to Winter Solstice 45.3°S (theta = 134.7°)
+      const pathD = generateMeridianSwathD(87.9, 134.7);
+      expect(pathD.startsWith('M ')).toBe(true);
+      expect(pathD).toContain('A 92 92 0 0 0');
+
+      // The arc must sweep counter-clockwise through the apex
+      const matches = pathD.match(/M ([\d.]+) ([\d.]+) A 92 92 0 0 0 ([\d.]+) ([\d.]+)/);
+      expect(matches).not.toBeNull();
+      const [, x1, y1, x2, y2] = matches!;
+      // x1 at radMin (87.9° - North of apex, slightly right)
+      expect(parseFloat(x1)).toBeGreaterThan(130);
+      // x2 at radMax (134.7° - South of apex, left)
+      expect(parseFloat(x2)).toBeLessThan(130);
+    });
+
+    it('is order-independent for start and end theta angles', () => {
+      const pathA = generateMeridianSwathD(60, 120);
+      const pathB = generateMeridianSwathD(120, 60);
+      expect(pathA).toBe(pathB);
+    });
+
+    it('returns empty string for degenerate zero-delta angles', () => {
+      expect(generateMeridianSwathD(90, 90)).toBe('');
+      expect(generateMeridianSwathD(45.001, 45.005)).toBe('');
+    });
+  });
+
+  describe('calculateMeridianRadialTick', () => {
+    it('calculates vertical radial tick at Zenith (90°)', () => {
+      const tick = calculateMeridianRadialTick(90, 88, 96);
+      expect(tick.x1).toBeCloseTo(EL_CX, 1);
+      expect(tick.x2).toBeCloseTo(EL_CX, 1);
+      // R_inner = 88 => Y = 104 - 88 = 16
+      expect(tick.y1).toBeCloseTo(16, 1);
+      // R_outer = 96 => Y = 104 - 96 = 8
+      expect(tick.y2).toBeCloseTo(8, 1);
+    });
+
+    it('calculates horizontal radial tick at South horizon (180°)', () => {
+      const tick = calculateMeridianRadialTick(180, 88, 96);
+      expect(tick.y1).toBeCloseTo(EL_CY, 1);
+      expect(tick.y2).toBeCloseTo(EL_CY, 1);
+      // R_inner = 88 => X = 130 - 88 = 42
+      expect(tick.x1).toBeCloseTo(42, 1);
+      // R_outer = 96 => X = 130 - 96 = 34
+      expect(tick.x2).toBeCloseTo(34, 1);
+    });
+
+    it('calculates horizontal radial tick at North horizon (0°)', () => {
+      const tick = calculateMeridianRadialTick(0, 88, 96);
+      expect(tick.y1).toBeCloseTo(EL_CY, 1);
+      expect(tick.y2).toBeCloseTo(EL_CY, 1);
+      // R_inner = 88 => X = 130 + 88 = 218
+      expect(tick.x1).toBeCloseTo(218, 1);
+      // R_outer = 96 => X = 130 + 96 = 226
+      expect(tick.x2).toBeCloseTo(226, 1);
+    });
   });
 });
