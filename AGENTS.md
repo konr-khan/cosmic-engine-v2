@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 38 modules, 532 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 559 tests)
 
 ### Essential Commands
 
@@ -87,7 +87,6 @@ Cosmic Engine V2.0/
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── tsconfig.node.json           # TypeScript build tooling configuration
 ├── vite.config.ts               # Vite configuration & plugin setup
-├── tailwind.config.js           # Tailwind CSS configuration
 ├── postcss.config.js            # PostCSS configuration
 ├── README.md                    # Repository documentation & getting started
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
@@ -115,10 +114,12 @@ Cosmic Engine V2.0/
 │       ├── 0014-sky-dome-symmetrical-viewbox-twilight-strata-and-draconic-nodal-kinematics.md
 │       ├── 0015-true-ecliptic-lunar-node-crossing-kinematics.md
 │       ├── 0016-dynamic-sighting-aware-horizon-dome-and-tropical-culmination.md
-│       └── 0017-quad-view-celestial-meridian-profiles.md
+│       ├── 0017-quad-view-celestial-meridian-profiles.md
+│       └── 0018-performance-optimization-modular-ephemeris-decoupling-and-build-hardening.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
+│   ├── App.test.tsx             # Root dashboard mounting, layout grid & dock tests (5 tests)
 │   ├── vite-env.d.ts            # Vite client environment types
 │   ├── index.css                # Global styles & Tailwind imports
 │   ├── types/                   # Foundational TypeScript domain models
@@ -138,9 +139,14 @@ Cosmic Engine V2.0/
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
-│   │   │   ├── todaySky.ts      # Topocentric sky dome projection, diurnal paths & draconic nodal kinematics
+│   │   │   ├── today/           # Decomposed Topocentric Sky Dome & Meridian Submodules
+│   │   │   │   ├── elevation.ts     # Prime vertical dome projection, diurnal paths & rise/set azimuths
+│   │   │   │   ├── meridian.ts      # S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
+│   │   │   │   └── draconic.ts      # True lunar node crossings, 18.6y standstills & micro-rail
+│   │   │   ├── todaySky.ts      # Facade re-exporting elevation, meridian & draconic submodules
 │   │   │   ├── todaySky.test.ts # Unit tests for sky dome projections & draconic kinematics (53 tests)
 │   │   │   ├── globe.ts         # Pure continent spherical projection & analytical limb clipping
+│   │   │   ├── globe.test.ts    # Unit tests for continent projections & analytical limb clipping (14 tests)
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   ├── geoData.ts       # World landmass continent outline polygons
 │   │   │   ├── milestones.ts    # Canonical Earth orbital milestones (single source of truth)
@@ -173,7 +179,9 @@ Cosmic Engine V2.0/
 │   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (134 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
-│   │   └── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
+│   │   ├── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
+│   │   ├── hoverStore.ts        # Atomic external store for 60 FPS ribbon scrubber isolation
+│   │   └── hoverStore.test.ts   # Vitest unit tests for hover store & state subscription (4 tests)
 │   ├── workers/                 # Web Worker offload scripts
 │   │   ├── ephemerisWorker.ts   # Dedicated worker for Meeus ephemeris, eclipse geometry & 365-day matrices
 │   │   └── ephemerisWorkerManager.ts # Application singleton worker manager, deduplication & matrix cache
@@ -183,13 +191,11 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicScene.ts    # Reactive 3D scene hook & specialized projection selectors
 │   │   ├── useCosmicScene.test.ts # Vitest hook tests for scene selectors (9 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (17 tests: worker integration, coalescing, matrix caching & fallback)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (20 tests: worker integration, coalescing, matrix caching & fallback)
 │   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (8 tests)
 │   └── components/              # Grouped component architecture
-│       ├── widgets/             # Core visualization widgets
-│       │   ├── index.ts         # Central barrel export for all 8 observatory subsystems
-│       │   ├── widgets.test.ts  # Vitest unit tests for 8 observatory widgets barrel re-exports (2 tests)
+│       ├── widgets/             # Core visualization widgets (code-split dynamically via React.lazy)
 │       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (11 tests)
 │       │   ├── common/          # Shared widget hooks & utilities
 │       │   │   ├── useRibbonScrubber.ts      # Shared bidirectional 2D timeline coordinate & dragging hook
@@ -246,6 +252,7 @@ Cosmic Engine V2.0/
 │       │   ├── today/           # Decomposed today's horizon subsystem modules
 │       │   │   ├── SkyDomeBase.tsx         # Reusable 260x138 SVG elevation arc primitive, vertical zenith axis & cardinal cues
 │       │   │   ├── SkyDomeBase.test.tsx    # Vitest unit tests for SkyDomeBase (16 tests)
+│       │   │   ├── MeridianDomeBase.tsx    # Reusable 260x138 SVG celestial colure primitive, S-Z-N baseline, swaths & chords
 │       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & diurnal path
 │       │   │   ├── SunMeridianDome.tsx      # Symmetrical +90° Sun meridian profile, Solstice swath & twilight mode
 │       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc

@@ -275,7 +275,9 @@ The Eclipse Demonstrator renders two synchronized, mathematically aligned perspe
 
 ## 8. Today's Sky Dome Symmetrical Horizon & Nodal Tokens
 
-The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout, and visual conventions:
+The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout, and visual conventions, powered by two shared component primitives:
+- **[`SkyDomeBase.tsx`](../src/components/widgets/today/SkyDomeBase.tsx)**: Reusable primitive for East-to-West diurnal elevation arcs, horizon baseline, reachability cap, and twilight strata.
+- **[`MeridianDomeBase.tsx`](../src/components/widgets/today/MeridianDomeBase.tsx)**: Reusable primitive for South-to-North celestial colure meridian profiles, encapsulating S-Z-N horizon baseline, vertical Zenith axis ($+90^\circ$ at $X=130, Y=12$), Solstice/Standstill corridor swaths (`MeridianSwath`), radial tick pins (`MeridianRadialTick`), inclined colure diurnal chords (`MeridianDiurnalChordPath`), and Approach C parked gate anchors (`MeridianGateAnchor`).
 
 * **Symmetrical Sky Dome Geometry**:
   - Viewport: `viewBox="0 0 260 138"`, baseline horizon at $Y = 104$ (`EL_CY`), center meridian at $X = 130$ (`EL_CX`), dome radius $R = 92\text{px}$ (`EL_R`).

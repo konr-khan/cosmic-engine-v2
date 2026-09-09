@@ -256,9 +256,14 @@ const CANONICAL_SUITES = [
     focus: 'Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\lambda \in [0.85, 1.0]$'
   },
   {
-    domain: 'Observatory Barrel Re-Exports',
-    file: 'src/components/widgets/widgets.test.ts',
-    focus: 'Central barrel re-exports, contract assertions, and public API preservation across all 8 observatory visualizers and decomposed child layers'
+    domain: 'Spherical Globe Projection & Clipping',
+    file: 'src/utils/cosmicMath/globe.test.ts',
+    focus: 'Spherical continent projection across 5 camera projections, analytical limb horizon clipping, polar edge cases, and twilight solar elevation limits'
+  },
+  {
+    domain: 'Observatory Root Dashboard',
+    file: 'src/App.test.tsx',
+    focus: '12-column responsive layout grid, master preset windows, ObsNavbar branding, and OrbitalChronometer dock integration'
   }
 ];
 

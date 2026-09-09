@@ -55,6 +55,25 @@ Given calendar year $Y$, month index $M \in [1, 12]$, and day $D$ evaluated in U
 > [!NOTE]
 > All Gregorian calendar inputs ($Y, M, D$) are strictly evaluated via UTC accessors (`getUTCFullYear`, `getUTCMonth`, `getUTCDate`, `Date.UTC`) to guarantee timezone invariance across client runtimes.
 
+### D. Greenwich Mean Sidereal Time ($\text{GMST}$) & Local Sidereal Time ($\text{LST}$)
+
+Given ephemeris day offset $d = \text{JD} - 2451545.0$ from epoch J2000.0:
+
+1. **Greenwich Mean Sidereal Time ($\text{GMST}$)**:
+   \[
+   \text{GMST} = (280.46061837^\circ + 360.98564736629^\circ \cdot d) \bmod 360^\circ
+   \]
+   Normalizing into the positive canonical angular domain $[0^\circ, 360^\circ)$:
+   \[
+   \text{GMST} = ((\text{GMST} \bmod 360^\circ) + 360^\circ) \bmod 360^\circ
+   \]
+
+2. **Local Sidereal Time ($\text{LST}$)**:
+   Given observer topocentric longitude $\lambda_{\text{obs}} \in [-180^\circ, +180^\circ]$:
+   \[
+   \text{LST} = ((\text{GMST} + \lambda_{\text{obs}}) \bmod 360^\circ + 360^\circ) \bmod 360^\circ
+   \]
+
 ---
 
 ## 3. Solar Ephemeris & Keplerian Orbital Dynamics
@@ -923,6 +942,8 @@ All computational pipelines throughout Cosmic Engine V2.0 derive their physical 
 | $e_{\text{true}}$ | `EARTH_ECCENTRICITY_TRUE` | $0.01671022$ | dimensionless | Physical Earth Orbital Eccentricity |
 | $e_{\text{exagg}}$ | `EARTH_ECCENTRICITY_EXAGGERATED` | $0.25$ | dimensionless | Exaggerated Eccentricity for Visual Analysis |
 | $\varpi_0$ | `EARTH_PERIHELION_LONGITUDE_DEG` | $102.937^\circ$ | $\text{Degrees}$ | Earth Longitude of Perihelion at Epoch J2000.0 |
+| $T_{\text{draconic}}$ | `MOON_DRACONIC_PERIOD_DAYS` | $27.212220817$ | $\text{days}$ | Mean Nodal / Draconic Month Period |
+| $h_{\text{twilight}}$ | `SOLAR_TWILIGHT_THRESHOLDS` | `{-6.0°, -12.0°, -18.0°}` | $\text{Degrees}$ | Civil, Nautical, and Astronomical Twilight Depression Thresholds |
 
 ### B. Temporal Epoch Purity & Determinism Invariant
 
@@ -939,6 +960,13 @@ To guarantee absolute mathematical reproducibility, eliminate runtime timezone l
 ## 12. Sky Dome Projection & Diurnal Transit Kinematics (`todaySky.ts`)
 
 The **Today's Sky Horizon Dome** subsystem projects topocentric celestial coordinates (hour angle $H$, declination $\delta$, and observer latitude $\phi$) into symmetrical 2D SVG canvas viewports (`viewBox="0 0 260 138"`), modeling diurnal paths, atmospheric twilight boundaries, and draconic nodal crossings.
+
+> [!NOTE]
+> Following the modular decoupling in ADR 0018, the computational engines of this subsystem are factored into three focused domain modules under [`src/utils/cosmicMath/today/`](../src/utils/cosmicMath/today/):
+> - **[`elevation.ts`](../src/utils/cosmicMath/today/elevation.ts)**: Subsections A, B, C, D, I (Orthographic dome projections, diurnal arcs, twilight classification, horizon rise/set azimuths).
+> - **[`meridian.ts`](../src/utils/cosmicMath/today/meridian.ts)**: Subsections H, J (S-Z-N celestial meridian colure kinematics, Solstice/Standstill corridor swaths, radial ticks, diurnal chords, Approach C parked gate anchors).
+> - **[`draconic.ts`](../src/utils/cosmicMath/today/draconic.ts)**: Subsections E, F, G (True ecliptic nodal crossings, 18.6-year standstill bounds, monthly 30-day declination envelopes, draconic micro-rail).
+> The root [`src/utils/cosmicMath/todaySky.ts`](../src/utils/cosmicMath/todaySky.ts) functions as a pure, lightweight facade re-exporting all submodules without breaking changes.
 
 ### A. Orthographic Prime Vertical Projection (`projectSkyDomePoint`)
 
