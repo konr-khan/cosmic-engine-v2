@@ -317,7 +317,20 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
   - Reference curves (summer solstice, winter solstice, equinox, monthly lunar extrema) render as clean, elegant dashed hairlines with native SVG `<title>` tooltips (`Summer Solstice Noon Peak: 87.9° N`, `Max Possible Lunar Altitude: 87.2° N`).
   - Precise signed bounds and physical directions are consolidated cleanly in the dedicated stats strip below the dome (`Summer Sol: 87.9° N · Winter Sol: 45.3° S` and `Max Standstill: 87.2° N · Min Standstill: 35.6° S`).
 * **Horizon Compass Octant Badges**:
-  - Compact micro-subline beneath sunrise/sunset and moonrise/moonset times: `text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5`.
-  - Displays 16-point compass octants (e.g. `ENE · WNW`), with exact decimal azimuths available in hover tooltips (`Sunrise: 068° ENE · Sunset: 292° WNW`).
-
-
+   - Compact micro-subline beneath sunrise/sunset and moonrise/moonset times: `text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5`.
+   - Displays 16-point compass octants (e.g. `ENE · WNW`), with exact decimal azimuths available in hover tooltips (`Sunrise: 068° ENE · Sunset: 292° WNW`).
+* **Meridian Profile Diurnal Chord Encodings**:
+  - **Solar Daytime Chord**: Solid warm amber line (`#fbbf24`, `strokeWidth="1.5"`, `opacity="0.85"`), tracing the daytime transit from rise to set and touching the meridian arc at Solar Noon.
+  - **Solar Sub-Horizon Twilight Chord**: Dashed deep amber line (`#d97706`, `strokeWidth="1.0"`, `strokeDasharray="2 2"`, `opacity="0.40"`), descending into the sub-horizon twilight strata down to $-18^\circ$.
+  - **Lunar Daytime Chord**: Solid silver line (`#e2e8f0`, `strokeWidth="1.5"`, `opacity="0.85"`) in Standard mode, or Eclipse-convention colored (`#38bdf8` / `#f43f5e`) in Nodal mode.
+* **Approach C Parked Ghost Anchor Tokens**:
+  - **Twilight Gate Anchor Ring (`#sun-twilight-gate-anchor`)**: Static guide ring at $-18^\circ$ astronomical twilight threshold with radius $R=3.5\text{px}$, subtle slate stroke (`#64748b`, `strokeDasharray="1.5 1.5"`, `opacity="0.60"`).
+  - **Horizon Gate Anchor Ring (`#moon-horizon-gate-anchor`)**: Static guide ring at $0^\circ$ horizon contact threshold with radius $R=3.5\text{px}$, subtle slate stroke (`#64748b`, `strokeDasharray="1.5 1.5"`, `opacity="0.60"`).
+  - **Parked Ghost Bead**: Translucent dark fill (`#1e293b`), dashed perimeter stroke, subdued $0.35$ opacity, and radius $R=4.5\text{px}$, indicating a celestial body parked at its observation gate during nocturnal hours.
+* **Central Ribbon Architecture & Consolidated Footer Tokens**:
+  - **Upper Card Expansion (`isQuadMode={true}`)**: Automatically expands the diurnal card footer into a unified 4-column responsive grid (`grid-cols-4 gap-2`) consolidating:
+    - *Column 1*: Solar Solstice Span ($\Delta\delta = 46.9^\circ$) / Lunar Standstill Span ($\Delta\delta = 57.2^\circ$).
+    - *Column 2*: Summer Solstice Peak / Maximum Standstill Peak.
+    - *Column 3*: Winter Solstice Peak / 30-Day Monthly Range.
+    - *Column 4*: Hoisted `[Std | Twilight]` / `[Std | ☊ Nodes]` segmented toggle control.
+  - **Lower Meridian Viewport (`hideFooter={true}`)**: Strips all redundant bottom bars, rendering a borderless flush bottom dome that visually anchors directly to the card floor.

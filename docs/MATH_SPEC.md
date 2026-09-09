@@ -1142,3 +1142,92 @@ For a body with declination $\delta$ and observer latitude $\phi$, the true hori
    \[
    [\text{N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW}]
    \]
+
+### J. Celestial Meridian Colure Profile & 3D Diurnal Chord Kinematics (`todaySky.ts`)
+
+The **Celestial Meridian Profile** subsystem (`SunMeridianDome.tsx`, `MoonMeridianDome.tsx`) projects the observer's sky onto the North–South celestial colure ($S \longleftrightarrow Z \longleftrightarrow N$) side-on plane, visualizing annual solstice corridors, lunar standstill swaths, and instantaneous diurnal transits.
+
+#### 1. 3D Topocentric Direction Cosines & Side-On Colure Projection (`calculateMeridianDiurnalPoint`)
+
+Let observer topocentric latitude be $\phi$, body declination be $\delta$, and local hour angle be $H$. In the topocentric horizon frame $(\mathbf{e}_{\text{East}}, \mathbf{e}_{\text{North}}, \mathbf{e}_{\text{Zenith}})$:
+\[
+\vec{u}_{\text{topo}}(H) = \begin{pmatrix} x_{\text{east}} \\ y_{\text{north}} \\ z_{\text{zenith}} \end{pmatrix} = \begin{pmatrix} \cos\delta \sin H \\ \cos\phi \sin\delta - \sin\phi \cos\delta \cos H \\ \sin\phi \sin\delta + \cos\phi \cos\delta \cos H \end{pmatrix}
+\]
+The side-on view looking along the East-West axis projects $(y_{\text{north}}, z_{\text{zenith}})$ onto the 2D canvas with canonical dome geometry $CX = 130$, $CY = 104$, and radius $R = 92$:
+\[
+X = CX + R \cdot y_{\text{north}} = CX + R (\cos\phi \sin\delta - \sin\phi \cos\delta \cos H)
+\]
+\[
+Y = CY - R \cdot z_{\text{zenith}} = CY - R (\sin\phi \sin\delta + \cos\phi \cos\delta \cos H)
+\]
+where South is oriented screen-left ($X < CX$), Zenith is screen-top ($Y < CY$), and North is screen-right ($X > CX$).
+
+#### 2. Proof of Diurnal Collinearity & Invariant Slope
+
+Differentiating $X(H)$ and $Y(H)$ with respect to hour angle $H$:
+\[
+\frac{dX}{dH} = R \sin\phi \cos\delta \sin H
+\]
+\[
+\frac{dY}{dH} = -R \cos\phi \cos\delta \sin H
+\]
+The instantaneous slope in the 2D canvas plane is:
+\[
+\frac{dY}{dX} = \frac{dY/dH}{dX/dH} = \frac{-R \cos\phi \cos\delta \sin H}{R \sin\phi \cos\delta \sin H} = -\cot\phi
+\]
+Taking the geometric slope on Cartesian axes (where upward is $+Y$):
+\[
+\text{Slope} = \cot\phi
+\]
+**Theorem**: The projection of any celestial body's diurnal trajectory onto the celestial meridian colure is strictly collinear, tracing a straight-line chord whose slope depends exclusively on the observer's latitude $\phi$ and is completely invariant with respect to body declination $\delta$ and hour angle $H$.
+
+#### 3. Proof of Tangential Meridian Arc Contact at Culmination ($H = 0$)
+
+At meridian culmination ($H = 0$), $\cos H = 1$:
+\[
+y_{\text{north}}(0) = \cos\phi \sin\delta - \sin\phi \cos\delta = \sin(\delta - \phi)
+\]
+\[
+z_{\text{zenith}}(0) = \sin\phi \sin\delta + \cos\phi \cos\delta = \cos(\delta - \phi)
+\]
+The radial distance squared from the canvas center $(CX, CY)$ is:
+\[
+d^2(0) = R^2 \left( y_{\text{north}}^2(0) + z_{\text{zenith}}^2(0) \right) = R^2 \left( \sin^2(\delta - \phi) + \cos^2(\delta - \phi) \right) = R^2
+\]
+\[
+d(0) = R = 92\text{px}
+\]
+**Theorem**: At the culmination moment (Solar Noon or Lunar Transit), the body's diurnal chord touches the circular meridian dome perimeter $R = 92$ with exact tangential contact.
+
+#### 4. Analytical Horizon Contact & Twilight Gate Coordinates (`calculateMeridianDiurnalChord`)
+
+1. **Horizon Contact ($h = 0^\circ \iff z_{\text{zenith}} = 0$)**:
+   \[
+   \sin\phi \sin\delta + \cos\phi \cos\delta \cos H_0 = 0 \implies \cos H_0 = -\tan\phi \tan\delta
+   \]
+   Substituting $\cos H_0$ into $X$:
+   \[
+   X_{\text{horizon}} = CX + R \left( \cos\phi \sin\delta - \sin\phi \cos\delta (-\tan\phi \tan\delta) \right) = CX + R \frac{\sin\delta}{\cos\phi} = CX + R \sin\delta \sec\phi
+   \]
+   \[
+   Y_{\text{horizon}} = CY = 104
+   \]
+2. **Sun Astronomical Twilight Gate ($h = -18^\circ \iff z_{\text{zenith}} = \sin(-18^\circ)$)**:
+   \[
+   \cos H_{18} = \frac{\sin(-18^\circ) - \sin\phi \sin\delta}{\cos\phi \cos\delta}
+   \]
+   Yielding twilight gate coordinates $(X_{\text{gate}}, Y_{\text{gate}})$ when $\cos H_{18} \in [-1, 1]$.
+
+#### 5. Projection Degeneracy & Approach C Parked Ghost Anchors
+
+Because the projection functions $X(H)$ and $Y(H)$ depend on $H$ strictly via $\cos H$, the transformation exhibits mirror symmetry between morning and evening:
+\[
+X(-H) = X(+H), \quad Y(-H) = Y(+H)
+\]
+In reality, the body transits through the 3D half-space behind the meridian plane ($x_{\text{east}} < 0$). In the 2D side-on projection, advancing $H$ past sunset ($H > H_0$) or twilight ($H > H_{18}$) causes $\cos H$ to reverse direction as $H \to 180^\circ$ (Nadir), creating an artificial visual rebound back toward the canvas center.
+
+**Approach C Formulation**:
+To prevent deep-night reverse sliding while preserving physical continuity:
+- **Solar Twilight Gate**: For the Sun, observation terminates at astronomical twilight ($h = -18^\circ$). When $z_{\text{zenith}} \le \sin(-18^\circ)$ (or $|H| \ge H_{18}$), the active Sun bead is parked at the static twilight gate anchor $(X_{\text{gate}}, Y_{\text{gate}})$, rendered with ghosted styling (`#1e293b` fill, dashed stroke, $0.35$ opacity).
+- **Lunar Horizon Gate**: Because atmospheric twilight is exclusively a solar phenomenon, the Moon's observational threshold is the physical horizon ($h = 0^\circ$). When $z_{\text{zenith}} \le 0$ (or $|H| \ge H_0$), the active Moon bead is parked at the static horizon gate anchor $(X_{\text{horizon}}, 104)$.
+- **Wakeup Continuity**: As the body approaches morning twilight/rise ($-H_{18}$ or $-H_0$), the bead smoothly un-parks and ascends the diurnal chord toward Solar Noon / Lunar Transit.
