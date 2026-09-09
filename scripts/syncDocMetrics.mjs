@@ -11,6 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
+import { getSourceFiles } from './lintUnitSafety.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -367,13 +368,16 @@ if (fs.existsSync(dossierPath)) {
     { title: 'Design System & Visual Vector Tokens', file: 'docs/DESIGN_SYSTEM.md' },
   ];
 
+  const componentsDir = path.join(rootDir, 'src', 'components');
+  const totalUiComponents = getSourceFiles(componentsDir).length;
+
   let doc = `# Cosmic Engine V2.0 — Master Documentation Dossier
 
 > **Compilation Date**: ${now}
 > **Repository**: konr-khan/cosmic-engine-v2
 > **Version**: 2.0.0 (Production Hardened)
 > **Test Harness**: ${totalTests} passing unit tests across ${totalFiles} test suites
-> **Unit Safety**: Strict branded nominal typing (0 violations across 77 UI components)
+> **Unit Safety**: Strict branded nominal typing (0 violations across ${totalUiComponents} UI components)
 
 ---
 

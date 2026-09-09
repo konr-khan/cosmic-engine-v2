@@ -1,7 +1,7 @@
 # ADR 0004: Hierarchical 3D Astronomical Scene Graph & Canonical Camera Rigs
 
 ## Status
-Accepted (Phase 1)
+Accepted
 
 ## Context
 **Cosmic Engine V2.0** renders complex multi-body celestial phenomena across several distinct visualizer subsystems:
