@@ -88,7 +88,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Today Sky & Diurnal Kinematics',
     file: 'src/utils/cosmicMath/todaySky.test.ts',
-    focus: 'Sky dome coordinate projection ($X, Y$), diurnal path generation (circumpolar, polar night, normal rise/set), monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification'
+    focus: 'Sky dome coordinate projection ($X, Y$), diurnal path generation, celestial meridian coordinate projection and swaths (`calculateMeridianPoint`, `generateMeridianSwathD`), radial tick pins, monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification'
   },
   {
     domain: 'Eclipse Geometry & Presets',
@@ -203,7 +203,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Today Horizon Widget',
     file: 'src/components/widgets/today/TodayWidget.test.tsx',
-    focus: 'SunElevationDome and MoonElevationDome rendering, temperate vs. tropical zenith caps, lunar standstill transit bounds, and SkyDomeBase shared geometry'
+    focus: 'SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles'
   },
   {
     domain: 'Solar Almanac Widget',
