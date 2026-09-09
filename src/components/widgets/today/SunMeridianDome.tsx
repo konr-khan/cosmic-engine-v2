@@ -11,7 +11,7 @@ import {
   calculateMeridianDiurnalChord,
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
-import { SkyDomeBase, EL_CX, EL_CY } from './SkyDomeBase';
+import { MeridianDomeBase } from './MeridianDomeBase';
 
 export interface SunMeridianDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -154,7 +154,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     : 'Night';
 
   return (
-    <SkyDomeBase
+    <MeridianDomeBase
       title="Sun Meridian Profile"
       icon={Sun}
       iconColorClass="text-amber-400"
@@ -168,10 +168,6 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       elevationColorClass={currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}
       elevationStatusSubtitle={elevationSubtitle}
       showTwilightBands={isTwilightModeActive}
-      leftHorizonLabel="S"
-      centerHorizonLabel="Z"
-      rightHorizonLabel="N"
-      showZenithAxis={true}
       latitude={latitude}
       bodyX={activeSunPoint.x}
       bodyY={activeSunPoint.y}
@@ -208,146 +204,76 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
           </circle>
         </g>
       )}
-      extraSvgContent={
-        <g className="meridian-solstice-geometry" id="meridian-solstice-geometry">
-          {/* Annual Solstice Migration Highway Swath (Amber Glowing Arc) */}
-          {solsticeSwathD && (
-            <>
-              <path
-                d={solsticeSwathD}
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth="5"
-                strokeOpacity="0.15"
-                className="blur-[1px] pointer-events-none"
-              />
-              <path
-                id="solstice-swath-core"
-                d={solsticeSwathD}
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth="2.5"
-                strokeOpacity="0.4"
-              >
-                <title>{`Annual Solar Solstice Range: ${winterNoon > 0 ? winterNoon.toFixed(1) + '° ' + winterSolstice.shortTag : 'Below 0°'} to ${summerNoon.toFixed(1)}° ${summerSolstice.shortTag}`}</title>
-              </path>
-            </>
-          )}
-
-          {/* Summer Solstice Tick Pin */}
-          <g id="summer-solstice-tick">
-            <line
-              x1={summerTick.x1}
-              y1={summerTick.y1}
-              x2={summerTick.x2}
-              y2={summerTick.y2}
-              stroke="#f59e0b"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-            <title>{`Summer Solstice Noon Peak: ${summerNoon.toFixed(1)}° ${summerSolstice.shortTag}`}</title>
-          </g>
-
-          {/* Winter Solstice Tick Pin */}
-          <g id="winter-solstice-tick">
-            <line
-              x1={winterTick.x1}
-              y1={winterTick.y1}
-              x2={winterTick.x2}
-              y2={winterTick.y2}
-              stroke="#d97706"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-            <title>{`Winter Solstice Noon Peak: ${winterNoon > 0 ? winterNoon.toFixed(1) + '° ' + winterSolstice.shortTag : 'Below 0° (Polar Night)'}`}</title>
-          </g>
-
-          {/* Equinox Tick Pin */}
-          <g id="equinox-tick">
-            <line
-              x1={equinoxTick.x1}
-              y1={equinoxTick.y1}
-              x2={equinoxTick.x2}
-              y2={equinoxTick.y2}
-              stroke="#64748b"
-              strokeWidth="1.0"
-              strokeLinecap="round"
-            />
-            <title>{`Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`}</title>
-          </g>
-
-          {/* Today's Sun Diurnal Chord (Touching Meridian Arc at Solar Noon) */}
-          {todayChord.daylightD && (
-            <path
-              id="sun-today-diurnal-chord"
-              d={todayChord.daylightD}
-              fill="none"
-              stroke="#fbbf24"
-              strokeWidth="1.5"
-              strokeOpacity="0.85"
-            >
-              <title>{`Today's Solar Diurnal Path (Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`}</title>
-            </path>
-          )}
-
-          {/* Sub-Horizon Twilight Extension Chord down to -18° */}
-          {todayChord.twilightD && (
-            <path
-              id="sun-today-twilight-chord"
-              d={todayChord.twilightD}
-              fill="none"
-              stroke="#d97706"
-              strokeWidth="1.0"
-              strokeDasharray="2 2"
-              strokeOpacity="0.40"
-            >
-              <title>Today's Sub-Horizon Twilight Extension down to −18°</title>
-            </path>
-          )}
-
-          {/* Astronomical Twilight Gate Anchor Marker (-18°) */}
-          <g id="sun-twilight-gate-anchor" transform={`translate(${todayChord.anchorPoint.x}, ${todayChord.anchorPoint.y})`}>
-            <circle
-              cx="0"
-              cy="0"
-              r="3.5"
-              fill="none"
-              stroke="#64748b"
-              strokeWidth="0.8"
-              strokeDasharray="1.5 1.5"
-              strokeOpacity="0.6"
-            >
-              <title>Astronomical Twilight Gate (−18°): Deep Night Station</title>
-            </circle>
-          </g>
-
-          {/* Daily Culmination Peak Target Halo on the Arc */}
-          <g id="meridian-noon-peak-target">
-            <line
-              x1={EL_CX}
-              y1={EL_CY}
-              x2={todayPeakPoint.x}
-              y2={todayPeakPoint.y}
-              stroke="#fbbf24"
-              strokeWidth="0.75"
-              strokeDasharray="2 2"
-              strokeOpacity="0.35"
-            />
-            <circle
-              cx={todayPeakPoint.x}
-              cy={todayPeakPoint.y}
-              r="5.5"
-              fill="none"
-              stroke="#fbbf24"
-              strokeWidth="1.0"
-              strokeDasharray="2 2"
-              strokeOpacity="0.75"
-            >
-              <title>{`Today's Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`}</title>
-            </circle>
-          </g>
-        </g>
+      swaths={
+        solsticeSwathD
+          ? [
+              {
+                id: 'solstice-swath-core',
+                d: solsticeSwathD,
+                stroke: '#f59e0b',
+                strokeWidth: 2.5,
+                strokeOpacity: 0.4,
+                glow: true,
+                glowWidth: 5,
+                glowOpacity: 0.15,
+                title: `Annual Solar Solstice Range: ${winterNoon > 0 ? winterNoon.toFixed(1) + '° ' + winterSolstice.shortTag : 'Below 0°'} to ${summerNoon.toFixed(1)}° ${summerSolstice.shortTag}`,
+              },
+            ]
+          : []
       }
+      radialTicks={[
+        {
+          id: 'summer-solstice-tick',
+          tick: summerTick,
+          stroke: '#f59e0b',
+          strokeWidth: 1.4,
+          title: `Summer Solstice Noon Peak: ${summerNoon.toFixed(1)}° ${summerSolstice.shortTag}`,
+        },
+        {
+          id: 'winter-solstice-tick',
+          tick: winterTick,
+          stroke: '#d97706',
+          strokeWidth: 1.4,
+          title: `Winter Solstice Noon Peak: ${winterNoon > 0 ? winterNoon.toFixed(1) + '° ' + winterSolstice.shortTag : 'Below 0° (Polar Night)'}`,
+        },
+        {
+          id: 'equinox-tick',
+          tick: equinoxTick,
+          stroke: '#64748b',
+          strokeWidth: 1.0,
+          title: `Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`,
+        },
+      ]}
+      geometryGroupId="meridian-solstice-geometry"
+      geometryGroupClassName="meridian-solstice-geometry"
+      todayChordConfig={{
+        daylightId: 'sun-today-diurnal-chord',
+        twilightId: 'sun-today-twilight-chord',
+        chord: todayChord,
+        stroke: '#fbbf24',
+        strokeWidth: 1.5,
+        strokeOpacity: 0.85,
+        twilightStroke: '#d97706',
+        twilightWidth: 1.0,
+        twilightOpacity: 0.40,
+        twilightDasharray: '2 2',
+        daylightTitle: `Today's Solar Diurnal Path (Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`,
+        twilightTitle: "Today's Sub-Horizon Twilight Extension down to −18°",
+      }}
+      gateAnchor={{
+        id: 'sun-twilight-gate-anchor',
+        x: todayChord.anchorPoint.x,
+        y: todayChord.anchorPoint.y,
+        r: 3.5,
+        stroke: '#64748b',
+        title: 'Astronomical Twilight Gate (−18°): Deep Night Station',
+      }}
+      peakTarget={{
+        id: 'meridian-noon-peak-target',
+        peakPoint: todayPeakPoint,
+        stroke: '#fbbf24',
+        title: `Today's Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`,
+      }}
     >
       {!hideFooter && (
         <>
@@ -438,7 +364,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
           </div>
         </>
       )}
-    </SkyDomeBase>
+    </MeridianDomeBase>
   );
 };
 

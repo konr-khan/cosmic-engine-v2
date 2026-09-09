@@ -25,6 +25,11 @@ import { createEulerRotationMatrix } from './transforms';
 import { generateOrbitalSegments } from '../projection';
 import { EARTH_ECCENTRICITY_TRUE, EARTH_ECCENTRICITY_EXAGGERATED } from '../astroConstants';
 
+/** Canonical lunar orbit segment design tokens */
+export const LUNAR_NODE_ASC_STROKE = '#38bdf8';
+export const LUNAR_NODE_DESC_STROKE = '#f43f5e';
+export const LUNAR_NODE_WANING_DASHARRAY = '4 3';
+
 /** Options for standard 2D camera viewport configuration */
 export interface CameraOptions {
   width: number;
@@ -285,10 +290,10 @@ export function projectGeocentricTransverse(
   const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
 
   const lunarOrbitSegments: LunarOrbitSegment2D[] = [
-    { path: waxAsc.join(' '), stroke: '#38bdf8', isFront: true, isAscending: true },
-    { path: waxDesc.join(' '), stroke: '#f43f5e', isFront: true, isAscending: false },
-    { path: wanAsc.join(' '), stroke: '#38bdf8', strokeDasharray: '4 3', isFront: false, isAscending: true },
-    { path: wanDesc.join(' '), stroke: '#f43f5e', strokeDasharray: '4 3', isFront: false, isAscending: false }
+    { path: waxAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, isFront: true, isAscending: true },
+    { path: waxDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, isFront: true, isAscending: false },
+    { path: wanAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: true },
+    { path: wanDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: false }
   ].filter(seg => seg.path.length > 0);
 
   // 5. Projected Syzygy Shadow Cones
@@ -427,10 +432,10 @@ export function projectGeocentricAxial(
   const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
 
   const lunarOrbitSegments: LunarOrbitSegment2D[] = [
-    { path: waxAsc.join(' '), stroke: '#38bdf8', isFront: true, isAscending: true },
-    { path: waxDesc.join(' '), stroke: '#f43f5e', isFront: true, isAscending: false },
-    { path: wanAsc.join(' '), stroke: '#38bdf8', strokeDasharray: '4 3', isFront: false, isAscending: true },
-    { path: wanDesc.join(' '), stroke: '#f43f5e', strokeDasharray: '4 3', isFront: false, isAscending: false }
+    { path: waxAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, isFront: true, isAscending: true },
+    { path: waxDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, isFront: true, isAscending: false },
+    { path: wanAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: true },
+    { path: wanDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: false }
   ].filter(seg => seg.path.length > 0);
 
   // 5. Node Markers (where orbital loop crosses horizontal ecliptic plane cy)

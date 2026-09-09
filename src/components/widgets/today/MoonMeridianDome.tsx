@@ -15,7 +15,7 @@ import {
   calculateMeridianDiurnalChord,
 } from '../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
-import { SkyDomeBase, EL_CX, EL_CY } from './SkyDomeBase';
+import { MeridianDomeBase, EL_CX } from './MeridianDomeBase';
 
 export interface MoonMeridianDomeProps {
   orbitalData?: OrbitalData | null;
@@ -225,7 +225,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
   const standstillSpanDeg = 2 * LUNAR_MAX_DEC;
 
   return (
-    <SkyDomeBase
+    <MeridianDomeBase
       title="Moon Meridian Profile"
       icon={Moon}
       iconColorClass={isNodalModeActive ? (isAscendingBranch ? 'text-sky-400' : 'text-rose-400') : 'text-slate-300'}
@@ -238,10 +238,6 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
       currentElevation={currentMoonElevation}
       elevationColorClass={isNodalModeActive ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-200'}
       elevationStatusSubtitle={currentMoonElevation >= 0 ? 'Above Horizon' : 'Sub-Horizon'}
-      leftHorizonLabel="S"
-      centerHorizonLabel="Z"
-      rightHorizonLabel="N"
-      showZenithAxis={true}
       latitude={latitude}
       bodyX={activeMoonPoint.x}
       bodyY={activeMoonPoint.y}
@@ -299,185 +295,115 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
           </title>
         </g>
       )}
-      extraSvgContent={
-        <g className="meridian-lunar-geometry" id="meridian-lunar-geometry">
-          {/* 18.6-Year Major Standstill Bounds Swath (Ghosted Indigo Arc) */}
-          {standstillSwathD && (
-            <path
-              id="standstill-swath-guide"
-              d={standstillSwathD}
-              fill="none"
-              stroke="#818cf8"
+      swaths={[
+        ...(standstillSwathD
+          ? [
+              {
+                id: 'standstill-swath-guide',
+                d: standstillSwathD,
+                stroke: '#818cf8',
+                strokeWidth: 1.2,
+                strokeDasharray: '3 2',
+                strokeOpacity: 0.35,
+                title: `18.6-Year Major Standstill Range: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'} to ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}`,
+              },
+            ]
+          : []),
+        ...(monthlySwathD
+          ? [
+              {
+                id: 'monthly-lunar-swath-core',
+                d: monthlySwathD,
+                stroke: isNodalModeActive ? nodalThemeColor : '#e2e8f0',
+                strokeWidth: 2.5,
+                strokeOpacity: isNodalModeActive ? 0.6 : 0.45,
+                glow: true,
+                glowWidth: 5,
+                glowOpacity: 0.15,
+                title: `Monthly Lunar Transit Range: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'} to ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}`,
+              },
+            ]
+          : []),
+      ]}
+      radialTicks={[
+        {
+          id: 'standstill-max-tick',
+          tick: standstillMaxTick,
+          stroke: '#818cf8',
+          strokeWidth: 1.2,
+          strokeDasharray: '2 1',
+          title: `Major Standstill Max: ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}`,
+        },
+        {
+          id: 'standstill-min-tick',
+          tick: standstillMinTick,
+          stroke: '#6366f1',
+          strokeWidth: 1.2,
+          strokeDasharray: '2 1',
+          title: `Major Standstill Min: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'}`,
+        },
+        {
+          id: 'monthly-max-tick',
+          tick: monthMaxTick,
+          stroke: '#e2e8f0',
+          strokeWidth: 1.4,
+          title: `Monthly Max Transit Peak: ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}`,
+        },
+        {
+          id: 'monthly-min-tick',
+          tick: monthMinTick,
+          stroke: '#94a3b8',
+          strokeWidth: 1.4,
+          title: `Monthly Min Transit Peak: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'}`,
+        },
+      ]}
+      geometryGroupId="meridian-lunar-geometry"
+      geometryGroupClassName="meridian-lunar-geometry"
+      todayChordConfig={{
+        daylightId: 'moon-today-diurnal-chord',
+        chord: todayChord,
+        stroke: nodalThemeColor,
+        strokeWidth: 1.5,
+        strokeOpacity: 0.85,
+        daylightTitle: `Today's Lunar Diurnal Path (Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`,
+      }}
+      gateAnchor={{
+        id: 'moon-horizon-gate-anchor',
+        x: todayChord.anchorPoint.x,
+        y: todayChord.anchorPoint.y,
+        r: 3.5,
+        stroke: '#64748b',
+        title: 'Lunar Horizon Gate (0°): Setting & Rising Station',
+      }}
+      peakTarget={{
+        id: 'meridian-transit-peak-target',
+        peakPoint: todayPeakPoint,
+        stroke: nodalThemeColor,
+        title: `Today's Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`,
+      }}
+      extraMeridianSvg={
+        isNodalModeActive ? (
+          <g id="meridian-ecliptic-node-marker">
+            <line
+              x1={eclipticNodeTick.x1}
+              y1={eclipticNodeTick.y1}
+              x2={eclipticNodeTick.x2}
+              y2={eclipticNodeTick.y2}
+              stroke="#38bdf8"
               strokeWidth="1.2"
-              strokeDasharray="3 2"
-              strokeOpacity="0.35"
-            >
-              <title>{`18.6-Year Major Standstill Range: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'} to ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}`}</title>
-            </path>
-          )}
-
-          {/* Monthly Declination Migration Highway Swath (Translucent Silver Arc) */}
-          {monthlySwathD && (
-            <>
-              <path
-                d={monthlySwathD}
-                fill="none"
-                stroke={isNodalModeActive ? nodalThemeColor : '#e2e8f0'}
-                strokeWidth="5"
-                strokeOpacity="0.15"
-                className="blur-[1px] pointer-events-none"
-              />
-              <path
-                id="monthly-lunar-swath-core"
-                d={monthlySwathD}
-                fill="none"
-                stroke={isNodalModeActive ? nodalThemeColor : '#e2e8f0'}
-                strokeWidth="2.5"
-                strokeOpacity={isNodalModeActive ? 0.6 : 0.45}
-              >
-                <title>{`Monthly Lunar Transit Range: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'} to ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}`}</title>
-              </path>
-            </>
-          )}
-
-          {/* Major Standstill Max Tick Pin */}
-          <g id="standstill-max-tick">
-            <line
-              x1={standstillMaxTick.x1}
-              y1={standstillMaxTick.y1}
-              x2={standstillMaxTick.x2}
-              y2={standstillMaxTick.y2}
-              stroke="#818cf8"
-              strokeWidth="1.2"
-              strokeDasharray="2 1"
               strokeLinecap="round"
             />
-            <title>{`Major Standstill Max: ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}`}</title>
-          </g>
-
-          {/* Major Standstill Min Tick Pin */}
-          <g id="standstill-min-tick">
-            <line
-              x1={standstillMinTick.x1}
-              y1={standstillMinTick.y1}
-              x2={standstillMinTick.x2}
-              y2={standstillMinTick.y2}
-              stroke="#6366f1"
-              strokeWidth="1.2"
-              strokeDasharray="2 1"
-              strokeLinecap="round"
-            />
-            <title>{`Major Standstill Min: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'}`}</title>
-          </g>
-
-          {/* Monthly Max Culmination Tick Pin */}
-          <g id="monthly-max-tick">
-            <line
-              x1={monthMaxTick.x1}
-              y1={monthMaxTick.y1}
-              x2={monthMaxTick.x2}
-              y2={monthMaxTick.y2}
-              stroke="#e2e8f0"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-            <title>{`Monthly Max Transit Peak: ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}`}</title>
-          </g>
-
-          {/* Monthly Min Culmination Tick Pin */}
-          <g id="monthly-min-tick">
-            <line
-              x1={monthMinTick.x1}
-              y1={monthMinTick.y1}
-              x2={monthMinTick.x2}
-              y2={monthMinTick.y2}
-              stroke="#94a3b8"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-            <title>{`Monthly Min Transit Peak: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'}`}</title>
-          </g>
-
-          {/* Ecliptic Node Crossing Marker (When Nodal Mode Active) */}
-          {isNodalModeActive && (
-            <g id="meridian-ecliptic-node-marker">
-              <line
-                x1={eclipticNodeTick.x1}
-                y1={eclipticNodeTick.y1}
-                x2={eclipticNodeTick.x2}
-                y2={eclipticNodeTick.y2}
-                stroke="#38bdf8"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-              />
-              <text
-                x={eclipticNodePoint.x + (eclipticNodePoint.x > EL_CX ? 7 : -7)}
-                y={eclipticNodePoint.y - 2}
-                textAnchor="middle"
-                className="text-[6.5px] font-mono font-bold fill-sky-300 pointer-events-none select-none"
-              >
-                {nodalData.isMoonAscending ? '☊' : '☋'}
-              </text>
-              <title>{`Ecliptic Node Level (β = 0°): ${eclipticCulmination.altitude.toFixed(1)}° ${eclipticCulmination.shortTag}`}</title>
-            </g>
-          )}
-
-          {/* Today's Moon Diurnal Chord (Touching Meridian Arc at Lunar Transit) */}
-          {todayChord.daylightD && (
-            <path
-              id="moon-today-diurnal-chord"
-              d={todayChord.daylightD}
-              fill="none"
-              stroke={nodalThemeColor}
-              strokeWidth="1.5"
-              strokeOpacity="0.85"
+            <text
+              x={eclipticNodePoint.x + (eclipticNodePoint.x > EL_CX ? 7 : -7)}
+              y={eclipticNodePoint.y - 2}
+              textAnchor="middle"
+              className="text-[6.5px] font-mono font-bold fill-sky-300 pointer-events-none select-none"
             >
-              <title>{`Today's Lunar Diurnal Path (Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`}</title>
-            </path>
-          )}
-
-          {/* Lunar Horizon Gate Anchor Marker (0°) */}
-          <g id="moon-horizon-gate-anchor" transform={`translate(${todayChord.anchorPoint.x}, ${todayChord.anchorPoint.y})`}>
-            <circle
-              cx="0"
-              cy="0"
-              r="3.5"
-              fill="none"
-              stroke="#64748b"
-              strokeWidth="0.8"
-              strokeDasharray="1.5 1.5"
-              strokeOpacity="0.6"
-            >
-              <title>Lunar Horizon Gate (0°): Setting &amp; Rising Station</title>
-            </circle>
+              {nodalData.isMoonAscending ? '☊' : '☋'}
+            </text>
+            <title>{`Ecliptic Node Level (β = 0°): ${eclipticCulmination.altitude.toFixed(1)}° ${eclipticCulmination.shortTag}`}</title>
           </g>
-
-          {/* Daily Culmination Peak Target Halo on the Arc */}
-          <g id="meridian-transit-peak-target">
-            <line
-              x1={EL_CX}
-              y1={EL_CY}
-              x2={todayPeakPoint.x}
-              y2={todayPeakPoint.y}
-              stroke={nodalThemeColor}
-              strokeWidth="0.75"
-              strokeDasharray="2 2"
-              strokeOpacity="0.35"
-            />
-            <circle
-              cx={todayPeakPoint.x}
-              cy={todayPeakPoint.y}
-              r="5.5"
-              fill="none"
-              stroke={nodalThemeColor}
-              strokeWidth="1.0"
-              strokeDasharray="2 2"
-              strokeOpacity="0.75"
-            >
-              <title>{`Today's Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`}</title>
-            </circle>
-          </g>
-        </g>
+        ) : null
       }
     >
       {!hideFooter && (
@@ -594,7 +520,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
           </div>
         </>
       )}
-    </SkyDomeBase>
+    </MeridianDomeBase>
   );
 };
 
