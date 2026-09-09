@@ -6,6 +6,7 @@ import { AnnualSolarMatrixItem, SolarAlmanacData } from '../../../types';
 import { SolarShortcutsRail, SolarShortcut } from './SolarShortcutsRail';
 import { SolarRibbonChart } from './SolarRibbonChart';
 import { PolarSunlightDial } from './PolarSunlightDial';
+import { useHoverTime, useHoverDate, hoverActions } from '../../../store/hoverStore';
 
 export interface SolarAlmanacProps {
   latitude?: number;
@@ -34,6 +35,13 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
   hoverDate,
   onHoverDate
 }) => {
+  const storeHoverTime = useHoverTime();
+  const storeHoverDate = useHoverDate();
+  const effectiveHoverTime = hoverTime !== undefined ? hoverTime : storeHoverTime;
+  const effectiveHoverDate = hoverDate !== undefined ? hoverDate : storeHoverDate;
+  const effectiveOnHoverTime = onHoverTime ?? hoverActions.setHoverTime;
+  const effectiveOnHoverDate = onHoverDate ?? hoverActions.setHoverDate;
+
   const [timeMode, setTimeMode] = useState<'solar' | 'utc'>('solar');
 
   const lonOffsetHours = longitude / 15;
@@ -132,10 +140,10 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
           activeData={activeData}
           mirrorDayData={mirrorDayData}
           keyStats={keyStats}
-          hoverTime={hoverTime}
-          onHoverTime={onHoverTime}
-          hoverDate={hoverDate}
-          onHoverDate={onHoverDate}
+          hoverTime={effectiveHoverTime}
+          onHoverTime={effectiveOnHoverTime}
+          hoverDate={effectiveHoverDate}
+          onHoverDate={effectiveOnHoverDate}
           onDayChange={onDayChange}
           lonOffsetHours={lonOffsetHours}
           eotOffsetHours={eotOffsetHours}
@@ -148,8 +156,8 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
           solarData={solarData}
           activeData={activeData}
           currentTime={currentTime}
-          hoverTime={hoverTime}
-          onHoverTime={onHoverTime}
+          hoverTime={effectiveHoverTime}
+          onHoverTime={effectiveOnHoverTime}
           timeMode={timeMode}
           setTimeMode={setTimeMode}
           lonOffsetHours={lonOffsetHours}

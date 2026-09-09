@@ -9,6 +9,7 @@ import { useAnnualLunarWorker } from '../../../hooks/useEphemerisWorker';
 import { OrbitalData, AnnualLunarMatrixItem, LunarEvents } from '../../../types';
 import { LunarShortcutsRail, LunarShortcutItem } from './LunarShortcutsRail';
 import { LunarRibbonChart } from './LunarRibbonChart';
+import { useHoverTime, useHoverDate, hoverActions } from '../../../store/hoverStore';
 
 export interface LunarAlmanacCardProps {
   orbitalData?: OrbitalData | null;
@@ -34,9 +35,16 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   currentDate = new Date(), 
   hoverDate, 
   onHoverDate,
-  hoverTime,
+  hoverTime, 
   onHoverTime
 }) => {
+  const storeHoverTime = useHoverTime();
+  const storeHoverDate = useHoverDate();
+  const effectiveHoverTime = hoverTime !== undefined ? hoverTime : storeHoverTime;
+  const effectiveHoverDate = hoverDate !== undefined ? hoverDate : storeHoverDate;
+  const effectiveOnHoverTime = onHoverTime ?? hoverActions.setHoverTime;
+  const effectiveOnHoverDate = onHoverDate ?? hoverActions.setHoverDate;
+
   const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
   const phase = safeOrbital.phase || { value: 0, name: 'New Moon' };
   const lunarEvents: Partial<LunarEvents> = safeOrbital.lunarEvents || {};
@@ -49,7 +57,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   const totalDays = getDaysInYear(year);
   const activeDay = Math.min(
     totalDays, 
-    hoverDate ? getDayOfYear(hoverDate) : currentDay
+    effectiveHoverDate ? getDayOfYear(effectiveHoverDate) : currentDay
   );
 
   // 1. 365-Day Annual Lunar Ephemeris Computation (offloaded to Web Worker)
@@ -141,12 +149,12 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         year={year}
         activeData={activeData}
         onDayChange={onDayChange}
-        hoverDate={hoverDate}
-        onHoverDate={onHoverDate}
+        hoverDate={effectiveHoverDate}
+        onHoverDate={effectiveOnHoverDate}
         onHoverDayChange={setHoveredDay}
         getDayLabel={getDayLabel}
-        hoverTime={hoverTime}
-        onHoverTime={onHoverTime}
+        hoverTime={effectiveHoverTime}
+        onHoverTime={effectiveOnHoverTime}
         longitude={longitude}
         timeMode={timeMode}
         onTimeModeChange={setTimeMode}

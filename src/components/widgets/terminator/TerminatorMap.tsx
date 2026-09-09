@@ -8,6 +8,7 @@ import {
   WORLD_LANDMASSES 
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
+import { useHoverTime } from '../../../store/hoverStore';
 
 export interface TerminatorMapProps {
   solarData?: SolarAlmanacData | null;
@@ -28,10 +29,12 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   hoverTime,
   currentDate = new Date()
 }) => {
+  const storeHoverTime = useHoverTime();
+  const effectiveHoverTime = hoverTime !== undefined ? hoverTime : storeHoverTime;
   const [hoveredPoint, setHoveredPoint] = useState<'sun' | 'moon' | 'observer' | null>(null);
 
   const declination = (solarData?.declination ?? 0) as number;
-  const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
+  const activeTime = effectiveHoverTime !== null ? effectiveHoverTime : timeOfDay;
 
   // --- 1. Earth-Sun Keplerian Distance & Dynamic Disc Scaling ---
   const fallbackPhysics = useMemo(

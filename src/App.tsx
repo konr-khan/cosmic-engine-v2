@@ -27,18 +27,10 @@ const selectObserverParams = (state: { date: Date; timeOfDay: number; latitude: 
 
 export interface MemoizedWidgetContentProps {
   id: string;
-  hoverTime: number | null;
-  setHoverTime: (time: number | null) => void;
-  hoverDate: Date | null;
-  setHoverDate: (date: Date | null) => void;
 }
 
 const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function MemoizedWidgetContent({
-  id,
-  hoverTime,
-  setHoverTime,
-  hoverDate,
-  setHoverDate
+  id
 }) {
   const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectObserverParams);
 
@@ -66,7 +58,6 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           currentTime={timeOfDay}
           latitude={latitude}
           currentDate={date}
-          hoverTime={hoverTime}
           onSetTime={cosmicActions.setTimeOfDay}
         />
       );
@@ -80,10 +71,6 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           year={date.getFullYear()} 
           solarData={solarData}
           currentTime={timeOfDay}
-          hoverTime={hoverTime}
-          onHoverTime={setHoverTime}
-          hoverDate={hoverDate}
-          onHoverDate={setHoverDate}
         />
       );
     case 'lunarAlmanac':
@@ -96,10 +83,6 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           currentDay={dayOfYear}
           onDayChange={handleDateSlider}
           currentDate={date}
-          hoverDate={hoverDate}
-          onHoverDate={setHoverDate}
-          hoverTime={hoverTime}
-          onHoverTime={setHoverTime}
         />
       );
     case 'eclipse':
@@ -122,7 +105,6 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           latitude={latitude} 
           longitude={longitude} 
           timeOfDay={timeOfDay} 
-          hoverTime={hoverTime}
           currentDate={date}
         />
       );
@@ -144,8 +126,6 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           currentDate={date}
           onSetTime={cosmicActions.setTimeOfDay}
           onSetDate={cosmicActions.setDate}
-          hoverTime={hoverTime}
-          onHoverTime={setHoverTime}
         />
       );
     case 'microTides':
@@ -217,10 +197,6 @@ export default function App() {
     };
   }, []);
 
-  // Shared Cross-Card Interactive Hover Sync
-  const [hoverTime, setHoverTime] = useState<number | null>(null);
-  const [hoverDate, setHoverDate] = useState<Date | null>(null);
-
   const {
     activePresetKey,
     widgets,
@@ -278,13 +254,7 @@ export default function App() {
                   onToggleColSpan={handleToggleColSpan}
                   onResetSize={() => handleResize(win.id, 0, defaultHeight)}
                 >
-                  <MemoizedWidgetContent 
-                    id={win.id}
-                    hoverTime={hoverTime}
-                    setHoverTime={setHoverTime}
-                    hoverDate={hoverDate}
-                    setHoverDate={setHoverDate}
-                  />
+                  <MemoizedWidgetContent id={win.id} />
                 </DashboardWindow>
               );
             })}

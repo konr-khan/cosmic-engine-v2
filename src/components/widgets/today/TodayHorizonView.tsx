@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
+import { useHoverTime } from '../../../store/hoverStore';
 import { SunElevationDome } from './SunElevationDome';
 import { MoonElevationDome } from './MoonElevationDome';
 import { SunMeridianDome } from './SunMeridianDome';
@@ -26,10 +27,12 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
   onSetTime,
   initialDomeMode = '2-dome',
 }) => {
+  const storeHoverTime = useHoverTime();
+  const effectiveHoverTime = hoverTime !== undefined ? hoverTime : storeHoverTime;
   const [domeMode, setDomeMode] = useState<'2-dome' | '4-dome'>(initialDomeMode);
   const [isTwilightMode, setIsTwilightMode] = useState(false);
   const [isNodalMode, setIsNodalMode] = useState(false);
-  const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : currentTime;
+  const displayTime = effectiveHoverTime !== null ? effectiveHoverTime : currentTime;
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none relative">
@@ -41,10 +44,10 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               ? 'Instantaneous local sky dome elevations for Sun and Moon with astronomical metrics'
               : 'Quad-View: Diurnal elevation arcs paired with orthogonal celestial meridian profiles'}
           </p>
-          {hoverTime !== null && hoverTime !== undefined && (
+          {effectiveHoverTime !== null && (
             <div className="bg-sky-950/90 text-sky-300 border border-sky-500/80 px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold shadow-md shrink-0">
-              Scrubbing: {Math.floor(hoverTime).toString().padStart(2, '0')}:
-              {Math.floor((hoverTime - Math.floor(hoverTime)) * 60).toString().padStart(2, '0')}Z
+              Scrubbing: {Math.floor(effectiveHoverTime).toString().padStart(2, '0')}:
+              {Math.floor((effectiveHoverTime - Math.floor(effectiveHoverTime)) * 60).toString().padStart(2, '0')}Z
             </div>
           )}
         </div>
