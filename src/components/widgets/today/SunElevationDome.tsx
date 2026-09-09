@@ -107,8 +107,6 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
 
   // 1. Summer Solstice Arc (Amber dashed hairline)
   if (summerPathResult.pathD && summerSolsticeNoon > 0) {
-    const labelY = EL_CY - EL_R * Math.sin(toRadians(summerSolsticeNoon));
-    const labelX = EL_CX + EL_R * Math.cos(toRadians(summerSolsticeNoon)) + 3;
     diurnalPaths.push({
       id: 'summer-solstice',
       d: summerPathResult.pathD,
@@ -116,10 +114,6 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.7,
-      label: `${summerSolsticeNoon.toFixed(0)}° ${solsticeCulminations.summer.shortTag}`,
-      labelColor: 'fill-amber-400/90',
-      labelX,
-      labelY: labelY + 2.5,
       title: `Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}° ${solsticeCulminations.summer.shortTag}`
     });
   }
@@ -153,8 +147,6 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   // 3. Equinox Arc (Muted slate dashed hairline)
   if (equinoxPathResult.pathD && equinoxPathResult.peakAlt > 0) {
     const eqPeak = equinoxPathResult.peakAlt;
-    const labelY = EL_CY - EL_R * Math.sin(toRadians(eqPeak));
-    const labelX = EL_CX + EL_R * Math.cos(toRadians(eqPeak)) + 3;
     diurnalPaths.push({
       id: 'equinox-path',
       d: equinoxPathResult.pathD,
@@ -162,18 +154,12 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '2 3',
       strokeOpacity: 0.5,
-      label: `${eqPeak.toFixed(0)}°`,
-      labelColor: 'fill-slate-400/80',
-      labelX,
-      labelY: labelY + 2.5,
       title: `Equinox Noon Peak: ${eqPeak.toFixed(1)}°`
     });
   }
 
   // 4. Winter Solstice Arc (Bronze dashed hairline)
   if (winterPathResult.pathD && winterSolsticeNoon > 0) {
-    const labelY = EL_CY - EL_R * Math.sin(toRadians(winterSolsticeNoon));
-    const labelX = EL_CX + EL_R * Math.cos(toRadians(winterSolsticeNoon)) + 3;
     diurnalPaths.push({
       id: 'winter-solstice',
       d: winterPathResult.pathD,
@@ -181,10 +167,6 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.7,
-      label: `${winterSolsticeNoon.toFixed(0)}° ${solsticeCulminations.winter.shortTag}`,
-      labelColor: 'fill-amber-600/90',
-      labelX,
-      labelY: labelY + 2.5,
       title: `Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}° ${solsticeCulminations.winter.shortTag}`
     });
   }
