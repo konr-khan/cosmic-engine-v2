@@ -578,6 +578,11 @@ describe('Today Horizon Subsystem', () => {
     expect(sunMeridianHtml).toContain('id="winter-solstice-tick"');
     expect(sunMeridianHtml).toContain('id="equinox-tick"');
 
+    // Today Sun Diurnal Chord and Twilight Gate Anchor
+    expect(sunMeridianHtml).toContain('id="sun-today-diurnal-chord"');
+    expect(sunMeridianHtml).toContain('id="sun-today-twilight-chord"');
+    expect(sunMeridianHtml).toContain('id="sun-twilight-gate-anchor"');
+
     // Active solar noon bead
     expect(sunMeridianHtml).toContain('id="active-solar-noon-bead"');
 
@@ -650,6 +655,10 @@ describe('Today Horizon Subsystem', () => {
     expect(moonMeridianHtml).toContain('id="standstill-min-tick"');
     expect(moonMeridianHtml).toContain('id="monthly-max-tick"');
     expect(moonMeridianHtml).toContain('id="monthly-min-tick"');
+
+    // Today Moon Diurnal Chord and Horizon Gate Anchor
+    expect(moonMeridianHtml).toContain('id="moon-today-diurnal-chord"');
+    expect(moonMeridianHtml).toContain('id="moon-horizon-gate-anchor"');
 
     // Active lunar transit bead
     expect(moonMeridianHtml).toContain('id="active-lunar-transit-bead"');
@@ -739,10 +748,30 @@ describe('Today Horizon Subsystem', () => {
       })
     );
     expect(midnightSunHtml).toContain('id="active-solar-noon-bead"');
-    // Active bead has sub-horizon styling (darker slate fill, dashed stroke)
-    expect(midnightSunHtml).toContain('stroke-dasharray="2 2"');
+    // Active bead has sub-horizon styling and parks at twilight gate
+    expect(midnightSunHtml).toContain('Parked at Twilight Gate');
     // Sub-horizon vertical line to center is eliminated
     expect(midnightSunHtml).not.toContain('stroke-opacity="0.6" stroke-width="0.75"');
+  });
+
+  it('parks sub-horizon Moon bead at horizon gate without floor sliding', () => {
+    const moonDownHtml = renderToStaticMarkup(
+      React.createElement(MoonMeridianDome, {
+        displayTime: 0,
+        latitude: 47.06,
+        orbitalData: {
+          phase: { value: 0.5, name: 'Full Moon' },
+          lunarEvents: {
+            moonrise: 6,
+            transit: 12,
+            moonset: 18,
+            declination: 10,
+          },
+        } as unknown as OrbitalData,
+      })
+    );
+    expect(moonDownHtml).toContain('id="active-lunar-transit-bead"');
+    expect(moonDownHtml).toContain('Parked at Horizon Gate');
   });
 });
 

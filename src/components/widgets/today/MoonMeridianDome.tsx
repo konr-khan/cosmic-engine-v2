@@ -12,6 +12,7 @@ import {
   generateMeridianSwathD,
   calculateMeridianRadialTick,
   calculateMeridianDiurnalPoint,
+  calculateMeridianDiurnalChord,
 } from '../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
 import { SkyDomeBase, EL_CX, EL_CY } from './SkyDomeBase';
@@ -76,8 +77,14 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
 
   // Real-time instantaneous Moon position along continuous 3D diurnal path
   const activeMoonPoint = useMemo(
-    () => calculateMeridianDiurnalPoint(latitude, Number(moonDeclination), moonHourAngle),
+    () => calculateMeridianDiurnalPoint(latitude, Number(moonDeclination), moonHourAngle, 0),
     [latitude, moonDeclination, moonHourAngle]
+  );
+
+  // Today's Diurnal Chord in the Meridian projection (touching Meridian Arc at Lunar Transit)
+  const todayChord = useMemo(
+    () => calculateMeridianDiurnalChord(latitude, Number(moonDeclination), 0),
+    [latitude, moonDeclination]
   );
 
   // --- Culminations & Bearings ---
@@ -244,7 +251,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
           id="active-lunar-transit-bead"
           transform={`translate(${activeMoonPoint.x}, ${activeMoonPoint.y})`}
           className="drop-shadow-md"
-          opacity={currentMoonElevation >= 0 ? 1.0 : 0.45}
+          opacity={activeMoonPoint.isParked ? 0.35 : (currentMoonElevation >= 0 ? 1.0 : 0.45)}
         >
           {/* Dark Body Base Disc */}
           <circle cx="0" cy="0" r="5.5" fill="#020617" stroke="#334155" strokeWidth="0.75" />
@@ -282,9 +289,14 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
             fill="none"
             stroke={nodalThemeColor}
             strokeWidth="1.2"
-            strokeOpacity={0.9}
+            strokeDasharray={activeMoonPoint.isParked ? '1.5 1.5' : undefined}
+            strokeOpacity={activeMoonPoint.isParked ? 0.5 : 0.9}
           />
-          <title>{`Current Moon Elevation: ${currentMoonElevation >= 0 ? '+' : ''}${currentMoonElevation.toFixed(1)}° (${isNodalModeActive ? (isAscendingBranch ? 'β ≥ 0° North of Ecliptic' : 'β < 0° South of Ecliptic') : phase.name})`}</title>
+          <title>
+            {activeMoonPoint.isParked
+              ? 'Moon below Horizon · Parked at Horizon Gate'
+              : `Current Moon Elevation: ${currentMoonElevation >= 0 ? '+' : ''}${currentMoonElevation.toFixed(1)}° (${isNodalModeActive ? (isAscendingBranch ? 'β ≥ 0° North of Ecliptic' : 'β < 0° South of Ecliptic') : phase.name})`}
+          </title>
         </g>
       )}
       extraSvgContent={
@@ -409,6 +421,36 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
               <title>{`Ecliptic Node Level (β = 0°): ${eclipticCulmination.altitude.toFixed(1)}° ${eclipticCulmination.shortTag}`}</title>
             </g>
           )}
+
+          {/* Today's Moon Diurnal Chord (Touching Meridian Arc at Lunar Transit) */}
+          {todayChord.daylightD && (
+            <path
+              id="moon-today-diurnal-chord"
+              d={todayChord.daylightD}
+              fill="none"
+              stroke={nodalThemeColor}
+              strokeWidth="1.5"
+              strokeOpacity="0.85"
+            >
+              <title>{`Today's Lunar Diurnal Path (Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`}</title>
+            </path>
+          )}
+
+          {/* Lunar Horizon Gate Anchor Marker (0°) */}
+          <g id="moon-horizon-gate-anchor" transform={`translate(${todayChord.anchorPoint.x}, ${todayChord.anchorPoint.y})`}>
+            <circle
+              cx="0"
+              cy="0"
+              r="3.5"
+              fill="none"
+              stroke="#64748b"
+              strokeWidth="0.8"
+              strokeDasharray="1.5 1.5"
+              strokeOpacity="0.6"
+            >
+              <title>Lunar Horizon Gate (0°): Setting &amp; Rising Station</title>
+            </circle>
+          </g>
 
           {/* Daily Culmination Peak Target Halo on the Arc */}
           <g id="meridian-transit-peak-target">

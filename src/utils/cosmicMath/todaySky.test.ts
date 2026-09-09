@@ -22,6 +22,7 @@ import {
   generateMeridianSwathD,
   calculateMeridianRadialTick,
   calculateMeridianDiurnalPoint,
+  calculateMeridianDiurnalChord,
   EL_R, 
   EL_CX, 
   EL_CY 
@@ -654,13 +655,82 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       expect(ptTwilight.x).toBeGreaterThan(EL_CX);
     });
 
-    it('clamps deep nocturnal depth to astronomical twilight boundary (Y <= 133)', () => {
-      // Midnight lower culmination (H = 180°)
+    it('clamps deep nocturnal depth to astronomical twilight boundary and parks gracefully', () => {
+      // Midnight lower culmination (H = 180°) for Sun with default -18° threshold
       const ptMidnight = calculateMeridianDiurnalPoint(51.5, -23.44, 180);
       expect(ptMidnight.isSubHorizon).toBe(true);
-      // Should not exceed canvas bounds (viewBox height is 138, clamped at ~132.4)
+      expect(ptMidnight.isParked).toBe(true);
+      // Clamped to astronomical twilight gate ~132.4
       expect(ptMidnight.y).toBeLessThanOrEqual(133);
       expect(ptMidnight.y).toBeGreaterThan(125);
+    });
+
+    it('parks Moon at horizon baseline (Y = 104) when below horizon (threshold = 0°)', () => {
+      // Moon with minElevationDeg = 0 below horizon
+      const ptMoonDown = calculateMeridianDiurnalPoint(47.06, 10.0, 180, 0);
+      expect(ptMoonDown.isSubHorizon).toBe(true);
+      expect(ptMoonDown.isParked).toBe(true);
+      expect(ptMoonDown.y).toBe(EL_CY);
+    });
+  });
+
+  describe('Meridian Diurnal Chord Generator (calculateMeridianDiurnalChord)', () => {
+    it('generates diurnal chord touching the Meridian Arc (R = 92) at upper culmination peak', () => {
+      // Equinox at 47.06°N: Peak altitude = 90 - 47.06 = 42.94°
+      const chord = calculateMeridianDiurnalChord(47.06, 0.0, -18);
+      // Peak point distance from center must equal exactly EL_R = 92
+      const distFromCenter = Math.hypot(chord.peakPoint.x - EL_CX, chord.peakPoint.y - EL_CY);
+      expect(distFromCenter).toBeCloseTo(EL_R, 1);
+      // Culmination is South of zenith (X < 130)
+      expect(chord.peakPoint.x).toBeLessThan(EL_CX);
+      // Above horizon (Y < 104)
+      expect(chord.peakPoint.y).toBeLessThan(EL_CY);
+    });
+
+    it('crosses horizon line (Y = 104) and maintains collinear slope cot(latitude)', () => {
+      const chord = calculateMeridianDiurnalChord(47.06, 0.0, -18);
+      expect(chord.horizonPoint).not.toBeNull();
+      expect(chord.horizonPoint!.y).toBe(EL_CY);
+      // At Equinox, rise/set is due East/West => in N-S projection, X = EL_CX = 130
+      expect(chord.horizonPoint!.x).toBeCloseTo(EL_CX, 1);
+
+      // Verify collinear slope cot(phi) = 1 / tan(47.06°) ~ 0.9307
+      const slopeDay = (EL_CY - chord.peakPoint.y) / (EL_CX - chord.peakPoint.x);
+      const cotPhi = 1 / Math.tan(47.06 * Math.PI / 180);
+      expect(slopeDay).toBeCloseTo(cotPhi, 2);
+
+      // Twilight extension slope
+      const slopeTwilight = (chord.anchorPoint.y - EL_CY) / (chord.anchorPoint.x - EL_CX);
+      expect(slopeTwilight).toBeCloseTo(cotPhi, 2);
+    });
+
+    it('generates daylight path and twilight path for solar threshold (-18°)', () => {
+      const sunChord = calculateMeridianDiurnalChord(47.06, 15.0, -18);
+      expect(sunChord.daylightD).toContain('M ');
+      expect(sunChord.daylightD).toContain('L ');
+      expect(sunChord.twilightD).toContain('M ');
+      expect(sunChord.twilightD).toContain('L ');
+      expect(sunChord.anchorPoint.y).toBeGreaterThan(EL_CY);
+    });
+
+    it('terminates directly at horizon baseline for lunar threshold (0°)', () => {
+      const moonChord = calculateMeridianDiurnalChord(47.06, 15.0, 0);
+      expect(moonChord.daylightD).toContain('M ');
+      expect(moonChord.daylightD).toContain('L ');
+      // Moon has no twilight extension
+      expect(moonChord.twilightD).toBe('');
+      // Anchor point is coincident with horizon point
+      expect(moonChord.anchorPoint.y).toBe(EL_CY);
+      expect(moonChord.anchorPoint.x).toBeCloseTo(moonChord.horizonPoint!.x, 2);
+    });
+
+    it('handles circumpolar midnight sun without horizon crossing', () => {
+      // Tromsø (69.6°N) at Summer Solstice (23.44°): 69.6 + 23.44 = 93.04° > 90°
+      const polarChord = calculateMeridianDiurnalChord(69.6, 23.44, -18);
+      expect(polarChord.isCircumpolar).toBe(true);
+      expect(polarChord.horizonPoint).toBeNull();
+      expect(polarChord.daylightD).toContain('M ');
+      expect(polarChord.twilightD).toBe('');
     });
   });
 });

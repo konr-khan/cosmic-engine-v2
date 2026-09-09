@@ -8,6 +8,7 @@ import {
   generateMeridianSwathD,
   calculateMeridianRadialTick,
   calculateMeridianDiurnalPoint,
+  calculateMeridianDiurnalChord,
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
 import { SkyDomeBase, EL_CX, EL_CY } from './SkyDomeBase';
@@ -60,8 +61,14 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
 
   // Real-time instantaneous Sun position along continuous 3D diurnal path
   const activeSunPoint = useMemo(
-    () => calculateMeridianDiurnalPoint(latitude, Number(sunDeclination), sunHourAngle),
+    () => calculateMeridianDiurnalPoint(latitude, Number(sunDeclination), sunHourAngle, -18),
     [latitude, sunDeclination, sunHourAngle]
+  );
+
+  // Today's Diurnal Chord in the Meridian projection (touching Meridian Arc at Solar Noon)
+  const todayChord = useMemo(
+    () => calculateMeridianDiurnalChord(latitude, Number(sunDeclination), -18),
+    [latitude, sunDeclination]
   );
 
   // --- Culminations & Bearings ---
@@ -174,9 +181,11 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
           <circle
             cx={activeSunPoint.x}
             cy={activeSunPoint.y}
-            r="5"
+            r={activeSunPoint.isParked ? 4.5 : 5}
             fill={
-              currentSunElevation >= 0
+              activeSunPoint.isParked
+                ? '#1e293b'
+                : currentSunElevation >= 0
                 ? '#fbbf24'
                 : currentSunElevation >= -6
                 ? '#f59e0b'
@@ -184,13 +193,18 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
                 ? '#64748b'
                 : '#334155'
             }
-            fillOpacity={currentSunElevation >= -18 ? 0.95 : 0.45}
-            stroke="#ffffff"
+            fillOpacity={activeSunPoint.isParked ? 0.35 : (currentSunElevation >= -18 ? 0.95 : 0.45)}
+            stroke={activeSunPoint.isParked ? '#94a3b8' : '#ffffff'}
             strokeWidth="1.2"
-            strokeOpacity={currentSunElevation >= -18 ? 0.9 : 0.4}
+            strokeDasharray={activeSunPoint.isParked ? '1.5 1.5' : undefined}
+            strokeOpacity={activeSunPoint.isParked ? 0.5 : (currentSunElevation >= -18 ? 0.9 : 0.4)}
             className="drop-shadow"
           >
-            <title>{`Current Solar Altitude: ${currentSunElevation >= 0 ? '+' : ''}${currentSunElevation.toFixed(1)}° (${elevationSubtitle})`}</title>
+            <title>
+              {activeSunPoint.isParked
+                ? `Sun below −18° (${elevationSubtitle}) · Parked at Twilight Gate`
+                : `Current Solar Altitude: ${currentSunElevation >= 0 ? '+' : ''}${currentSunElevation.toFixed(1)}° (${elevationSubtitle})`}
+            </title>
           </circle>
         </g>
       )}
@@ -227,7 +241,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
               y1={summerTick.y1}
               x2={summerTick.x2}
               y2={summerTick.y2}
-              stroke="#fbbf24"
+              stroke="#f59e0b"
               strokeWidth="1.4"
               strokeLinecap="round"
             />
@@ -260,6 +274,51 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
               strokeLinecap="round"
             />
             <title>{`Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`}</title>
+          </g>
+
+          {/* Today's Sun Diurnal Chord (Touching Meridian Arc at Solar Noon) */}
+          {todayChord.daylightD && (
+            <path
+              id="sun-today-diurnal-chord"
+              d={todayChord.daylightD}
+              fill="none"
+              stroke="#fbbf24"
+              strokeWidth="1.5"
+              strokeOpacity="0.85"
+            >
+              <title>{`Today's Solar Diurnal Path (Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`}</title>
+            </path>
+          )}
+
+          {/* Sub-Horizon Twilight Extension Chord down to -18° */}
+          {todayChord.twilightD && (
+            <path
+              id="sun-today-twilight-chord"
+              d={todayChord.twilightD}
+              fill="none"
+              stroke="#d97706"
+              strokeWidth="1.0"
+              strokeDasharray="2 2"
+              strokeOpacity="0.40"
+            >
+              <title>Today's Sub-Horizon Twilight Extension down to −18°</title>
+            </path>
+          )}
+
+          {/* Astronomical Twilight Gate Anchor Marker (-18°) */}
+          <g id="sun-twilight-gate-anchor" transform={`translate(${todayChord.anchorPoint.x}, ${todayChord.anchorPoint.y})`}>
+            <circle
+              cx="0"
+              cy="0"
+              r="3.5"
+              fill="none"
+              stroke="#64748b"
+              strokeWidth="0.8"
+              strokeDasharray="1.5 1.5"
+              strokeOpacity="0.6"
+            >
+              <title>Astronomical Twilight Gate (−18°): Deep Night Station</title>
+            </circle>
           </g>
 
           {/* Daily Culmination Peak Target Halo on the Arc */}

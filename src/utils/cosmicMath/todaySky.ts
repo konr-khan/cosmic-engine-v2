@@ -858,10 +858,139 @@ export interface MeridianDiurnalPoint {
   altitude: number;
   isAboveHorizon: boolean;
   isSubHorizon: boolean;
+  isParked: boolean;
+}
+
+export interface MeridianDiurnalChord {
+  peakPoint: { x: number; y: number };
+  horizonPoint: { x: number; y: number } | null;
+  anchorPoint: { x: number; y: number };
+  daylightD: string;
+  twilightD: string;
+  isCircumpolar: boolean;
+  isNeverVisible: boolean;
 }
 
 /**
- * Calculates the exact 2D projection of a celestial body's 3D diurnal path onto the
+ * Calculates the exact 2D projection of Today's Diurnal Chord in the celestial
+ * meridian plane (South <-> Zenith <-> North).
+ *
+ * Every diurnal parallel of constant declination delta viewed from the side projects
+ * as an inclined straight chord parallel to the celestial equator (slope cot(phi)).
+ *
+ * - The chord ascends through the sky and touches the outer R=92 Meridian Arc at the
+ *   exact upper culmination peak altitude for today.
+ * - For bodies with normal rise/set, it crosses the horizon baseline (Y=104) at X_horizon = cx + r*sin(delta)*sec(phi).
+ * - For the Sun, it extends into twilight strata down to thresholdElevationDeg (-18°), terminating at the Twilight Gate anchor.
+ * - For the Moon (threshold = 0°), twilight does not apply, so the chord terminates directly at the Horizon Gate anchor (Y=104).
+ */
+export const calculateMeridianDiurnalChord = (
+  latitudeDeg: number,
+  declinationDeg: number,
+  thresholdElevationDeg: number = -18,
+  cx: number = EL_CX,
+  cy: number = EL_CY,
+  r: number = EL_R
+): MeridianDiurnalChord => {
+  const phi = toRadians(latitudeDeg);
+  const delta = toRadians(declinationDeg);
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+  const cosDelta = Math.cos(delta);
+  const sinDelta = Math.sin(delta);
+
+  // Peak Upper Culmination Point (H = 0)
+  // Touches the R circle at angle (delta - phi) from zenith
+  const yNorthPeak = Math.sin(delta - phi);
+  const zZenithPeak = Math.cos(delta - phi);
+  const peakX = parseFloat((cx + r * yNorthPeak).toFixed(2));
+  const peakY = parseFloat((cy - r * zZenithPeak).toFixed(2));
+
+  // Check horizon crossing: cos(H_0) = -tan(phi)*tan(delta)
+  const tanPhi = Math.abs(cosPhi) > 1e-6 ? sinPhi / cosPhi : 0;
+  const tanDelta = Math.abs(cosDelta) > 1e-6 ? sinDelta / cosDelta : 0;
+  const cosH0 = -tanPhi * tanDelta;
+
+  let horizonPoint: { x: number; y: number } | null = null;
+  let daylightD = '';
+  let twilightD = '';
+  let isCircumpolar = false;
+  let isNeverVisible = false;
+
+  if (cosH0 < -1) {
+    // Circumpolar (Midnight Sun) - Entire 24h diurnal path is above horizon
+    isCircumpolar = true;
+    // Lower culmination (H = 180°)
+    const yNorthMin = Math.sin(phi + delta);
+    const zZenithMin = -Math.cos(phi + delta);
+    const minX = parseFloat((cx + r * yNorthMin).toFixed(2));
+    const minY = parseFloat((cy - r * zZenithMin).toFixed(2));
+    daylightD = `M ${minX} ${minY} L ${peakX} ${peakY}`;
+    return {
+      peakPoint: { x: peakX, y: peakY },
+      horizonPoint: null,
+      anchorPoint: { x: minX, y: minY },
+      daylightD,
+      twilightD: '',
+      isCircumpolar: true,
+      isNeverVisible: false,
+    };
+  }
+
+  if (cosH0 > 1) {
+    // Polar Night - Never rises above horizon
+    isNeverVisible = true;
+    daylightD = '';
+  } else {
+    // Crosses horizon at y_north = sin(delta) / cos(phi)
+    const yNorthHorizon = Math.abs(cosPhi) > 1e-6 ? sinDelta / cosPhi : 0;
+    const horizonX = parseFloat((cx + r * yNorthHorizon).toFixed(2));
+    const horizonY = cy; // exactly baseline 104
+    horizonPoint = { x: horizonX, y: horizonY };
+    daylightD = `M ${horizonX} ${horizonY} L ${peakX} ${peakY}`;
+  }
+
+  // Anchor Point at thresholdElevationDeg (e.g. -18° for Sun, 0° for Moon)
+  if (thresholdElevationDeg >= 0) {
+    // For Moon (threshold = 0°): Anchor is exactly the horizon crossing!
+    const anchorX = horizonPoint ? horizonPoint.x : cx;
+    const anchorY = cy;
+    return {
+      peakPoint: { x: peakX, y: peakY },
+      horizonPoint,
+      anchorPoint: { x: anchorX, y: anchorY },
+      daylightD,
+      twilightD: '',
+      isCircumpolar,
+      isNeverVisible,
+    };
+  }
+
+  // Sub-horizon / Twilight extension down to thresholdElevationDeg (e.g. -18°)
+  const zThresh = Math.sin(toRadians(thresholdElevationDeg));
+  const zZenithMin = -Math.cos(phi + delta);
+  const effectiveZ = Math.max(zZenithMin, zThresh);
+  const anchorY = parseFloat((cy - r * effectiveZ).toFixed(2));
+  const horizonX = horizonPoint ? horizonPoint.x : (cx + r * (Math.abs(cosPhi) > 1e-6 ? sinDelta / cosPhi : 0));
+  const anchorX = parseFloat((horizonX + (anchorY - cy) * tanPhi).toFixed(2));
+
+  if (horizonPoint) {
+    twilightD = `M ${anchorX} ${anchorY} L ${horizonPoint.x} ${horizonPoint.y}`;
+  }
+
+  return {
+    peakPoint: { x: peakX, y: peakY },
+    horizonPoint,
+    anchorPoint: { x: anchorX, y: anchorY },
+    daylightD,
+    twilightD,
+    isCircumpolar,
+    isNeverVisible,
+  };
+};
+
+/**
+ * Calculates the exact 2D projection of a celestial body's 3D diurnal position onto the
  * North-South vertical meridian plane (South <-> Zenith <-> North).
  *
  * In 3D horizontal coordinates:
@@ -871,16 +1000,17 @@ export interface MeridianDiurnalPoint {
  * Screen coordinates (where South is Left at X=38, Zenith is Top at Y=12, North is Right at X=222,
  * and the horizon is baseline Y=104):
  *   x = cx + r * y_north
- *   y = cy - r * z_zenith (clamped to max downward depth for astronomical twilight Y=132.4)
+ *   y = cy - r * z_zenith
  *
- * When setting, the celestial body glides smoothly across the horizon line (Y=104) at its
- * true setting azimuth offset and continues downward into the twilight/nocturnal strata
- * along its natural inclined diurnal slope.
+ * When the celestial body's altitude drops below minElevationDeg (-18° for Sun, 0° for Moon),
+ * the body gracefully parks at the static Anchor Point (Approach C), avoiding horizontal
+ * sliding along the canvas floor during irrelevant nocturnal hours.
  */
 export const calculateMeridianDiurnalPoint = (
   latitudeDeg: number,
   declinationDeg: number,
   hourAngleDeg: number,
+  minElevationDeg: number = -18,
   cx: number = EL_CX,
   cy: number = EL_CY,
   r: number = EL_R
@@ -902,20 +1032,29 @@ export const calculateMeridianDiurnalPoint = (
   // True horizontal altitude in degrees
   const altitudeDeg = toDegrees(Math.asin(clamp(zZenith, -1, 1)));
 
-  // Clamp zZenith to astronomical twilight depth (sin(-18°) = -0.30902)
-  // so the bead rests gracefully at the bottom boundary of astronomical twilight (Y ~ 132.4)
-  // rather than clipping past the bottom edge of the 260x138 SVG canvas
-  const clampedZ = Math.max(-0.30902, zZenith);
+  // If elevation is below minElevationDeg, park quietly at the Anchor Point
+  if (altitudeDeg < minElevationDeg) {
+    const chord = calculateMeridianDiurnalChord(latitudeDeg, declinationDeg, minElevationDeg, cx, cy, r);
+    return {
+      x: chord.anchorPoint.x,
+      y: chord.anchorPoint.y,
+      altitude: parseFloat(altitudeDeg.toFixed(2)),
+      isAboveHorizon: altitudeDeg >= 0,
+      isSubHorizon: altitudeDeg < 0,
+      isParked: true,
+    };
+  }
 
   const x = parseFloat((cx + r * yNorth).toFixed(2));
-  const y = parseFloat((cy - r * clampedZ).toFixed(2));
+  const y = parseFloat((cy - r * zZenith).toFixed(2));
 
   return {
     x,
     y,
     altitude: parseFloat(altitudeDeg.toFixed(2)),
     isAboveHorizon: altitudeDeg >= 0,
-    isSubHorizon: altitudeDeg < 0
+    isSubHorizon: altitudeDeg < 0,
+    isParked: false,
   };
 };
 
