@@ -851,3 +851,71 @@ export const calculateMeridianRadialTick = (
     y2: parseFloat((cy - rOuter * sin).toFixed(1))
   };
 };
+
+export interface MeridianDiurnalPoint {
+  x: number;
+  y: number;
+  altitude: number;
+  isAboveHorizon: boolean;
+  isSubHorizon: boolean;
+}
+
+/**
+ * Calculates the exact 2D projection of a celestial body's 3D diurnal path onto the
+ * North-South vertical meridian plane (South <-> Zenith <-> North).
+ *
+ * In 3D horizontal coordinates:
+ *   y_north = cos(phi) * sin(delta) - sin(phi) * cos(delta) * cos(H)
+ *   z_zenith = sin(phi) * sin(delta) + cos(phi) * cos(delta) * cos(H) = sin(altitude)
+ *
+ * Screen coordinates (where South is Left at X=38, Zenith is Top at Y=12, North is Right at X=222,
+ * and the horizon is baseline Y=104):
+ *   x = cx + r * y_north
+ *   y = cy - r * z_zenith (clamped to max downward depth for astronomical twilight Y=132.4)
+ *
+ * When setting, the celestial body glides smoothly across the horizon line (Y=104) at its
+ * true setting azimuth offset and continues downward into the twilight/nocturnal strata
+ * along its natural inclined diurnal slope.
+ */
+export const calculateMeridianDiurnalPoint = (
+  latitudeDeg: number,
+  declinationDeg: number,
+  hourAngleDeg: number,
+  cx: number = EL_CX,
+  cy: number = EL_CY,
+  r: number = EL_R
+): MeridianDiurnalPoint => {
+  const phi = toRadians(latitudeDeg);
+  const delta = toRadians(declinationDeg);
+  const H = toRadians(hourAngleDeg);
+
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+  const cosDelta = Math.cos(delta);
+  const sinDelta = Math.sin(delta);
+  const cosH = Math.cos(H);
+
+  // 3D Horizontal Direction Cosines
+  const yNorth = cosPhi * sinDelta - sinPhi * cosDelta * cosH;
+  const zZenith = sinPhi * sinDelta + cosPhi * cosDelta * cosH;
+
+  // True horizontal altitude in degrees
+  const altitudeDeg = toDegrees(Math.asin(clamp(zZenith, -1, 1)));
+
+  // Clamp zZenith to astronomical twilight depth (sin(-18°) = -0.30902)
+  // so the bead rests gracefully at the bottom boundary of astronomical twilight (Y ~ 132.4)
+  // rather than clipping past the bottom edge of the 260x138 SVG canvas
+  const clampedZ = Math.max(-0.30902, zZenith);
+
+  const x = parseFloat((cx + r * yNorth).toFixed(2));
+  const y = parseFloat((cy - r * clampedZ).toFixed(2));
+
+  return {
+    x,
+    y,
+    altitude: parseFloat(altitudeDeg.toFixed(2)),
+    isAboveHorizon: altitudeDeg >= 0,
+    isSubHorizon: altitudeDeg < 0
+  };
+};
+

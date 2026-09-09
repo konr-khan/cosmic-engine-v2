@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 38 modules, 518 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 38 modules, 525 tests)
 
 ### Essential Commands
 
@@ -139,7 +139,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
 │   │   │   ├── todaySky.ts      # Topocentric sky dome projection, diurnal paths & draconic nodal kinematics
-│   │   │   ├── todaySky.test.ts # Unit tests for sky dome projections & draconic kinematics (42 tests)
+│   │   │   ├── todaySky.test.ts # Unit tests for sky dome projections & draconic kinematics (47 tests)
 │   │   │   ├── globe.ts         # Pure continent spherical projection & analytical limb clipping
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   ├── geoData.ts       # World landmass continent outline polygons
@@ -251,7 +251,7 @@ Cosmic Engine V2.0/
 │       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
 │       │   │   ├── MoonMeridianDome.tsx    # Symmetrical +90° Moon meridian profile, Standstill swath & nodal mode
 │       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container (2-Dome Diurnal vs 4-Dome Quad)
-│       │   │   ├── TodayWidget.test.tsx    # Vitest unit tests for today's horizon widget (16 tests)
+│       │   │   ├── TodayWidget.test.tsx    # Vitest unit tests for today's horizon widget (18 tests)
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
 │       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart

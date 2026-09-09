@@ -24,6 +24,9 @@ export interface SunElevationDomeProps {
   currentDate?: Date;
   onSetTime?: (time: number) => void;
   initialTwilightMode?: boolean;
+  isTwilightMode?: boolean;
+  onToggleTwilight?: () => void;
+  isQuadMode?: boolean;
 }
 
 export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
@@ -33,9 +36,23 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   currentDate = new Date(),
   onSetTime,
   initialTwilightMode = false,
+  isTwilightMode,
+  onToggleTwilight,
+  isQuadMode = false,
 }) => {
   const [isHoveringSunMetrics, setIsHoveringSunMetrics] = useState(false);
-  const [isTwilightMode, setIsTwilightMode] = useState(initialTwilightMode);
+  const [localTwilightMode, setLocalTwilightMode] = useState(initialTwilightMode);
+  const isTwilightModeActive = isTwilightMode !== undefined ? isTwilightMode : localTwilightMode;
+
+  const handleToggleTwilight = (val: boolean) => {
+    if (onToggleTwilight) {
+      if (val !== isTwilightModeActive) {
+        onToggleTwilight();
+      }
+    } else {
+      setLocalTwilightMode(val);
+    }
+  };
 
   // Earth-Sun Distance & Orbital Physics from Canonical Solver
   const fallbackPhysics = useMemo(
@@ -187,7 +204,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       currentElevation={currentSunElevation}
       elevationColorClass={twilightStatus.badgeClass}
       elevationStatusSubtitle={twilightStatus.label}
-      showTwilightBands={isTwilightMode}
+      showTwilightBands={isTwilightModeActive}
       latitude={latitude}
       capPathD={capPathD}
       diurnalPaths={diurnalPaths}
@@ -293,6 +310,13 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
             {winterSolsticeNoon > 0 ? `${winterSolsticeNoon.toFixed(1)}° ${solsticeCulminations.winter.shortTag}` : 'Below 0°'}
           </strong>
         </div>
+        {isQuadMode && (
+          <div className="flex items-center gap-1.5" title="Annual Solstice Migration Corridor: Δδ = 46.9°">
+            <span className="text-slate-600">·</span>
+            <span className="text-slate-400">Solstice Span:</span>
+            <strong className="text-amber-300 font-semibold">Δδ {(2 * OBLIQUITY).toFixed(1)}°</strong>
+          </div>
+        )}
         <div className="flex items-center gap-1.5">
           <span className="text-slate-600">·</span>
           <span className="text-slate-400">Zenith Cap:</span>
@@ -328,21 +352,31 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
           </span>
           <span className="text-amber-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">{formatTime(solarNoon).substring(0, 5)} <span className="text-amber-400/80 text-[9px] font-normal font-sans">UTC</span></span>
         </div>
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Declination (δ)</span>
+        <div 
+          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
+          title={isQuadMode ? `Solar Declination: ${(sunDeclination as number).toFixed(1)}° · Annual Solstice Corridor: Δδ ${(2 * OBLIQUITY).toFixed(1)}°` : undefined}
+        >
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">
+            {isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}
+          </span>
           <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${(sunDeclination as number) >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
             {(sunDeclination as number) >= 0 ? `+${(sunDeclination as number).toFixed(1)}°` : `${(sunDeclination as number).toFixed(1)}°`}
           </span>
+          {isQuadMode && (
+            <span className="text-[8px] text-amber-400/80 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+              Δδ {(2 * OBLIQUITY).toFixed(1)}° Span
+            </span>
+          )}
         </div>
         <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap mb-0.5">Mode View</span>
           <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
             <button
               type="button"
-              onClick={() => setIsTwilightMode(false)}
+              onClick={() => handleToggleTwilight(false)}
               aria-label="Standard Solar View"
               className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                !isTwilightMode
+                !isTwilightModeActive
                   ? 'bg-slate-800 text-amber-400 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -351,10 +385,10 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setIsTwilightMode(true)}
+              onClick={() => handleToggleTwilight(true)}
               aria-label="Twilight Strata View"
               className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                isTwilightMode
+                isTwilightModeActive
                   ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}

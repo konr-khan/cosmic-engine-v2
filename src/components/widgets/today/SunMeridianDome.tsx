@@ -7,9 +7,10 @@ import {
   calculateMeridianPoint,
   generateMeridianSwathD,
   calculateMeridianRadialTick,
+  calculateMeridianDiurnalPoint,
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
-import { SkyDomeBase, EL_R, EL_CX, EL_CY } from './SkyDomeBase';
+import { SkyDomeBase, EL_CX, EL_CY } from './SkyDomeBase';
 
 export interface SunMeridianDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -18,6 +19,9 @@ export interface SunMeridianDomeProps {
   currentDate?: Date;
   onSetTime?: (time: number) => void;
   initialTwilightMode?: boolean;
+  isTwilightMode?: boolean;
+  onToggleTwilight?: () => void;
+  hideFooter?: boolean;
 }
 
 export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
@@ -27,18 +31,38 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   currentDate: _currentDate = new Date(),
   onSetTime: _onSetTime,
   initialTwilightMode = false,
+  isTwilightMode,
+  onToggleTwilight,
+  hideFooter = false,
 }) => {
-  const [isTwilightMode, setIsTwilightMode] = useState(initialTwilightMode);
+  const [localTwilightMode, setLocalTwilightMode] = useState(initialTwilightMode);
+  const isTwilightModeActive = isTwilightMode !== undefined ? isTwilightMode : localTwilightMode;
+
+  const handleToggleTwilight = (val: boolean) => {
+    if (onToggleTwilight) {
+      if (val !== isTwilightModeActive) {
+        onToggleTwilight();
+      }
+    } else {
+      setLocalTwilightMode(val);
+    }
+  };
 
   const {
     solarNoon = 12,
     declination: sunDeclination = 0,
   } = solarData || {};
 
-  // --- Real-Time Sun Elevation ---
+  // --- Real-Time Sun Elevation & Meridian Diurnal Trajectory ---
   const sunHourAngle = (displayTime - solarNoon) * 15;
   const currentSunPos = projectSkyDomePoint(sunHourAngle, Number(sunDeclination), latitude);
   const currentSunElevation = currentSunPos.elevation;
+
+  // Real-time instantaneous Sun position along continuous 3D diurnal path
+  const activeSunPoint = useMemo(
+    () => calculateMeridianDiurnalPoint(latitude, Number(sunDeclination), sunHourAngle),
+    [latitude, sunDeclination, sunHourAngle]
+  );
 
   // --- Culminations & Bearings ---
   const todayCulmination = useMemo(
@@ -86,27 +110,6 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     () => calculateMeridianPoint(equinoxCulmination.altitude, equinoxCulmination.direction),
     [equinoxCulmination]
   );
-
-  // --- Real-Time Instantaneous Sun Position in Meridian Profile ---
-  // Ascends/descends radially from observer horizon center (130, 104) to peak at noon,
-  // or drops vertically below horizon into twilight strata at night
-  const activeSunPoint = useMemo(() => {
-    if (currentSunElevation >= 0) {
-      const ratio = peakAlt > 0 ? Math.min(1, Math.max(0, currentSunElevation / peakAlt)) : 0;
-      return {
-        x: EL_CX + (todayPeakPoint.x - EL_CX) * ratio,
-        y: EL_CY + (todayPeakPoint.y - EL_CY) * ratio,
-      };
-    } else {
-      // Sub-horizon: drops vertically from (130, 104) into twilight strata below EL_CY
-      const clampedSub = Math.max(-18, Math.min(0, currentSunElevation));
-      const subY = EL_CY + (-clampedSub / 18) * 28.4;
-      return {
-        x: EL_CX,
-        y: subY,
-      };
-    }
-  }, [currentSunElevation, peakAlt, todayPeakPoint]);
 
   // --- Solstice Swath Arc (along R=92 dome) ---
   const solsticeSwathD = useMemo(
@@ -157,7 +160,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       currentElevation={currentSunElevation}
       elevationColorClass={currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}
       elevationStatusSubtitle={elevationSubtitle}
-      showTwilightBands={isTwilightMode}
+      showTwilightBands={isTwilightModeActive}
       leftHorizonLabel="S"
       centerHorizonLabel="Z"
       rightHorizonLabel="N"
@@ -284,108 +287,98 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
               <title>{`Today's Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`}</title>
             </circle>
           </g>
-
-          {/* Sub-horizon vertical line to active bead when sun is below horizon */}
-          {currentSunElevation < 0 && (
-            <line
-              x1={EL_CX}
-              y1={EL_CY}
-              x2={EL_CX}
-              y2={activeSunPoint.y}
-              stroke="#475569"
-              strokeWidth="0.75"
-              strokeDasharray="2 2"
-              strokeOpacity="0.6"
-            />
-          )}
         </g>
       }
     >
-      {/* Solstice Noon Limits & Zenith Transit Stats Strip (Dedicated to Meridian Geometry) */}
-      <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span className="text-slate-400">Summer Sol:</span>
-          <strong className="text-amber-300 font-semibold">{summerNoon.toFixed(1)}° {summerSolstice.shortTag}</strong>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-          <span className="text-slate-400">Winter Sol:</span>
-          <strong className="text-amber-500 font-semibold">
-            {winterNoon > 0 ? `${winterNoon.toFixed(1)}° ${winterSolstice.shortTag}` : 'Below 0°'}
-          </strong>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-600">·</span>
-          <span className="text-slate-400">Lahaina Transit:</span>
-          <strong className={isTropical ? 'text-emerald-400 font-semibold' : 'text-slate-300 font-semibold'}>
-            {isTropical ? 'Yes (Crosses Zenith)' : 'Outside Tropics'}
-          </strong>
-        </div>
-      </div>
-
-      {/* Mirrored 4-Badge Summary Footer with Mode View Toggle (Std vs Twilight) */}
-      <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-        <div 
-          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-          title={`Annual Solstice Range: Δδ = ${solsticeSpanDeg.toFixed(1)}° between ±${OBLIQUITY.toFixed(1)}°`}
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Solstice Span</span>
-          <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            Δδ {solsticeSpanDeg.toFixed(1)}°
-          </span>
-          <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-            Min ↔ Max
-          </span>
-        </div>
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Summer Peak</span>
-          <span className="text-amber-300 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            {summerNoon.toFixed(1)}° {summerSolstice.shortTag}
-          </span>
-          <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-            Highest Noon
-          </span>
-        </div>
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Winter Peak</span>
-          <span className="text-amber-500 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            {winterNoon > 0 ? `${winterNoon.toFixed(1)}° ${winterSolstice.shortTag}` : 'Below 0°'}
-          </span>
-          <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-            Lowest Noon
-          </span>
-        </div>
-        <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
-          <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
-            <button
-              type="button"
-              onClick={() => setIsTwilightMode(false)}
-              aria-label="Standard Solar Meridian View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                !isTwilightMode
-                  ? 'bg-slate-800 text-amber-400 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Std
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsTwilightMode(true)}
-              aria-label="Twilight Strata Meridian View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                isTwilightMode
-                  ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Twilight
-            </button>
+      {!hideFooter && (
+        <>
+          {/* Solstice Noon Limits & Zenith Transit Stats Strip (Dedicated to Meridian Geometry) */}
+          <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span className="text-slate-400">Summer Sol:</span>
+              <strong className="text-amber-300 font-semibold">{summerNoon.toFixed(1)}° {summerSolstice.shortTag}</strong>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+              <span className="text-slate-400">Winter Sol:</span>
+              <strong className="text-amber-500 font-semibold">
+                {winterNoon > 0 ? `${winterNoon.toFixed(1)}° ${winterSolstice.shortTag}` : 'Below 0°'}
+              </strong>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-600">·</span>
+              <span className="text-slate-400">Lahaina Transit:</span>
+              <strong className={isTropical ? 'text-emerald-400 font-semibold' : 'text-slate-300 font-semibold'}>
+                {isTropical ? 'Yes (Crosses Zenith)' : 'Outside Tropics'}
+              </strong>
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Mirrored 4-Badge Summary Footer with Mode View Toggle (Std vs Twilight) */}
+          <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
+            <div 
+              className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
+              title={`Annual Solstice Range: Δδ = ${solsticeSpanDeg.toFixed(1)}° between ±${OBLIQUITY.toFixed(1)}°`}
+            >
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Solstice Span</span>
+              <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
+                Δδ {solsticeSpanDeg.toFixed(1)}°
+              </span>
+              <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+                Min ↔ Max
+              </span>
+            </div>
+            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Summer Peak</span>
+              <span className="text-amber-300 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
+                {summerNoon.toFixed(1)}° {summerSolstice.shortTag}
+              </span>
+              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+                Highest Noon
+              </span>
+            </div>
+            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Winter Peak</span>
+              <span className="text-amber-500 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
+                {winterNoon > 0 ? `${winterNoon.toFixed(1)}° ${winterSolstice.shortTag}` : 'Below 0°'}
+              </span>
+              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+                Lowest Noon
+              </span>
+            </div>
+            <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
+              <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
+                <button
+                  type="button"
+                  onClick={() => handleToggleTwilight(false)}
+                  aria-label="Standard Solar Meridian View"
+                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                    !isTwilightModeActive
+                      ? 'bg-slate-800 text-amber-400 font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Std
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleTwilight(true)}
+                  aria-label="Twilight Strata Meridian View"
+                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                    isTwilightModeActive
+                      ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Twilight
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </SkyDomeBase>
   );
 };

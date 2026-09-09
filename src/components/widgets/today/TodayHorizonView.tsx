@@ -27,6 +27,8 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
   initialDomeMode = '2-dome',
 }) => {
   const [domeMode, setDomeMode] = useState<'2-dome' | '4-dome'>(initialDomeMode);
+  const [isTwilightMode, setIsTwilightMode] = useState(false);
+  const [isNodalMode, setIsNodalMode] = useState(false);
   const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : currentTime;
 
   return (
@@ -85,6 +87,9 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
             latitude={latitude}
             currentDate={currentDate}
             onSetTime={onSetTime}
+            isTwilightMode={isTwilightMode}
+            onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
+            isQuadMode={false}
           />
           <MoonElevationDome
             orbitalData={orbitalData}
@@ -93,6 +98,9 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
             latitude={latitude}
             currentDate={currentDate}
             onSetTime={onSetTime}
+            isNodalMode={isNodalMode}
+            onToggleNodal={() => setIsNodalMode((prev) => !prev)}
+            isQuadMode={false}
           />
         </div>
       ) : (
@@ -105,6 +113,9 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               latitude={latitude}
               currentDate={currentDate}
               onSetTime={onSetTime}
+              isTwilightMode={isTwilightMode}
+              onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
+              isQuadMode={true}
             />
             <SunMeridianDome
               solarData={solarData}
@@ -112,6 +123,9 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               latitude={latitude}
               currentDate={currentDate}
               onSetTime={onSetTime}
+              isTwilightMode={isTwilightMode}
+              onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
+              hideFooter={true}
             />
           </div>
 
@@ -124,6 +138,9 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               latitude={latitude}
               currentDate={currentDate}
               onSetTime={onSetTime}
+              isNodalMode={isNodalMode}
+              onToggleNodal={() => setIsNodalMode((prev) => !prev)}
+              isQuadMode={true}
             />
             <MoonMeridianDome
               orbitalData={orbitalData}
@@ -132,6 +149,9 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               latitude={latitude}
               currentDate={currentDate}
               onSetTime={onSetTime}
+              isNodalMode={isNodalMode}
+              onToggleNodal={() => setIsNodalMode((prev) => !prev)}
+              hideFooter={true}
             />
           </div>
         </div>

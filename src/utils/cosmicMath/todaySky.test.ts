@@ -21,6 +21,7 @@ import {
   calculateMeridianPoint,
   generateMeridianSwathD,
   calculateMeridianRadialTick,
+  calculateMeridianDiurnalPoint,
   EL_R, 
   EL_CX, 
   EL_CY 
@@ -602,6 +603,64 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       expect(tick.x1).toBeCloseTo(218, 1);
       // R_outer = 96 => X = 130 + 96 = 226
       expect(tick.x2).toBeCloseTo(226, 1);
+    });
+  });
+
+  describe('Meridian Diurnal Trajectory Projection (calculateMeridianDiurnalPoint)', () => {
+    it('projects noon upper culmination (H = 0) to expected altitude and bearing', () => {
+      // London (51.5°N), Summer Solstice (23.44°) -> Peak altitude = 90 - (51.5 - 23.44) = 61.94° South
+      const pt = calculateMeridianDiurnalPoint(51.5, 23.44, 0);
+      expect(pt.isAboveHorizon).toBe(true);
+      expect(pt.isSubHorizon).toBe(false);
+      expect(pt.altitude).toBeCloseTo(61.94, 1);
+      // South of zenith -> X < EL_CX
+      expect(pt.x).toBeLessThan(EL_CX);
+      // Above horizon -> Y < EL_CY
+      expect(pt.y).toBeLessThan(EL_CY);
+      // Lies on upper semicircle R = 92
+      const dist = Math.hypot(pt.x - EL_CX, pt.y - EL_CY);
+      expect(dist).toBeCloseTo(EL_R, 1);
+    });
+
+    it('projects overhead Zenith culmination (Lahaina transit, lat = dec = 20.0°) at X = EL_CX, Y = EL_CY - EL_R', () => {
+      const pt = calculateMeridianDiurnalPoint(20.0, 20.0, 0);
+      expect(pt.altitude).toBeCloseTo(90, 1);
+      expect(pt.x).toBeCloseTo(EL_CX, 1);
+      expect(pt.y).toBeCloseTo(EL_CY - EL_R, 1);
+    });
+
+    it('projects setting point onto the horizon line (Y = EL_CY) at true setting azimuth offset', () => {
+      // London (51.5°N), Summer Solstice (23.44°).
+      // cos(H_set) = -tan(51.5)*tan(23.44) = -0.545 => H_set = 123.03°
+      const H_set = (Math.acos(-Math.tan(51.5 * Math.PI / 180) * Math.tan(23.44 * Math.PI / 180)) * 180) / Math.PI;
+      const pt = calculateMeridianDiurnalPoint(51.5, 23.44, H_set);
+      // Exactly on the horizon baseline Y = 104
+      expect(pt.altitude).toBeCloseTo(0, 1);
+      expect(pt.y).toBeCloseTo(EL_CY, 1);
+      // Sets in the Northwest -> X > EL_CX, NOT collapsed to observer center (130)
+      expect(pt.x).toBeGreaterThan(EL_CX + 50);
+    });
+
+    it('continues smoothly below horizon into twilight strata (Y > EL_CY) without diving to center', () => {
+      // 1 hour after sunset (H = H_set + 15°)
+      const H_set = (Math.acos(-Math.tan(51.5 * Math.PI / 180) * Math.tan(23.44 * Math.PI / 180)) * 180) / Math.PI;
+      const ptTwilight = calculateMeridianDiurnalPoint(51.5, 23.44, H_set + 15);
+      expect(ptTwilight.isAboveHorizon).toBe(false);
+      expect(ptTwilight.isSubHorizon).toBe(true);
+      expect(ptTwilight.altitude).toBeLessThan(0);
+      // Deep below horizon baseline Y = 104
+      expect(ptTwilight.y).toBeGreaterThan(EL_CY);
+      // Smooth continuation along X, still in Northwest quadrant
+      expect(ptTwilight.x).toBeGreaterThan(EL_CX);
+    });
+
+    it('clamps deep nocturnal depth to astronomical twilight boundary (Y <= 133)', () => {
+      // Midnight lower culmination (H = 180°)
+      const ptMidnight = calculateMeridianDiurnalPoint(51.5, -23.44, 180);
+      expect(ptMidnight.isSubHorizon).toBe(true);
+      // Should not exceed canvas bounds (viewBox height is 138, clamped at ~132.4)
+      expect(ptMidnight.y).toBeLessThanOrEqual(133);
+      expect(ptMidnight.y).toBeGreaterThan(125);
     });
   });
 });

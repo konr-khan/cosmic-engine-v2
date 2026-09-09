@@ -681,5 +681,68 @@ describe('Today Horizon Subsystem', () => {
     expect(nodalHtml).toContain('Next Node:');
     expect(nodalHtml).toContain('id="meridian-ecliptic-node-marker"');
   });
+
+  it('hides footer in SunMeridianDome and MoonMeridianDome when hideFooter is true', () => {
+    const sunHiddenHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        hideFooter: true,
+      })
+    );
+    // Canvas and headers are preserved
+    expect(sunHiddenHtml).toContain('Sun Meridian Profile');
+    expect(sunHiddenHtml).toContain('Looking South · S-Sky Arc');
+    // Footer & stats strip are omitted
+    expect(sunHiddenHtml).not.toContain('Summer Peak');
+    expect(sunHiddenHtml).not.toContain('Winter Peak');
+
+    const moonHiddenHtml = renderToStaticMarkup(
+      React.createElement(MoonMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        hideFooter: true,
+      })
+    );
+    expect(moonHiddenHtml).toContain('Moon Meridian Profile');
+    expect(moonHiddenHtml).toContain('Looking South · S-Sky Arc');
+    // Standstill limits and 4-badge footer omitted
+    expect(moonHiddenHtml).not.toContain('Standstill Span');
+    expect(moonHiddenHtml).not.toContain('Monthly Range');
+  });
+
+  it('renders sub-horizon active bead on physical diurnal trajectory without vertical line to center', () => {
+    // Sun at midnight (displayTime: 0, solarNoon: 12) -> deep below horizon
+    const midnightSunHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 0,
+        latitude: 47.06,
+        solarData: {
+          solarNoon: 12,
+          declination: -10,
+          noonElevation: 32.9,
+          equationOfTime: 0,
+          sunrise: 7.5,
+          sunset: 16.5,
+          distanceAU: 1,
+          distanceKm: 149597870,
+          dayLength: 9,
+          civil: 0.5,
+          nautical: 1,
+          astronomical: 1.5,
+          daysSinceEpoch: 100,
+          lambda: 0,
+          eclipticLongitude: 0,
+          isMidnightSun: false,
+          isPolarNight: false,
+        },
+      })
+    );
+    expect(midnightSunHtml).toContain('id="active-solar-noon-bead"');
+    // Active bead has sub-horizon styling (darker slate fill, dashed stroke)
+    expect(midnightSunHtml).toContain('stroke-dasharray="2 2"');
+    // Sub-horizon vertical line to center is eliminated
+    expect(midnightSunHtml).not.toContain('stroke-opacity="0.6" stroke-width="0.75"');
+  });
 });
 

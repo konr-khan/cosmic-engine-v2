@@ -11,9 +11,10 @@ import {
   calculateMeridianPoint,
   generateMeridianSwathD,
   calculateMeridianRadialTick,
+  calculateMeridianDiurnalPoint,
 } from '../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
-import { SkyDomeBase, EL_R, EL_CX, EL_CY } from './SkyDomeBase';
+import { SkyDomeBase, EL_CX, EL_CY } from './SkyDomeBase';
 
 export interface MoonMeridianDomeProps {
   orbitalData?: OrbitalData | null;
@@ -23,6 +24,9 @@ export interface MoonMeridianDomeProps {
   currentDate?: Date;
   onSetTime?: (time: number) => void;
   initialNodalMode?: boolean;
+  isNodalMode?: boolean;
+  onToggleNodal?: () => void;
+  hideFooter?: boolean;
 }
 
 export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
@@ -33,8 +37,22 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
   currentDate = new Date(),
   onSetTime: _onSetTime,
   initialNodalMode = false,
+  isNodalMode,
+  onToggleNodal,
+  hideFooter = false,
 }) => {
-  const [isNodalMode, setIsNodalMode] = useState(initialNodalMode);
+  const [localNodalMode, setLocalNodalMode] = useState(initialNodalMode);
+  const isNodalModeActive = isNodalMode !== undefined ? isNodalMode : localNodalMode;
+
+  const handleToggleNodal = (val: boolean) => {
+    if (onToggleNodal) {
+      if (val !== isNodalModeActive) {
+        onToggleNodal();
+      }
+    } else {
+      setLocalNodalMode(val);
+    }
+  };
 
   const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
   const phase = safeOrbital.phase || { value: 0, name: 'New Moon' };
@@ -51,10 +69,16 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
 
   const moonDeclination = (orbitalData?.lunarPos?.declination ?? declination ?? 0) as number;
 
-  // --- Real-Time Moon Elevation ---
+  // --- Real-Time Moon Elevation & Meridian Diurnal Trajectory ---
   const moonHourAngle = (displayTime - transit) * 15;
   const currentMoonPos = projectSkyDomePoint(moonHourAngle, Number(moonDeclination), latitude);
   const currentMoonElevation = currentMoonPos.elevation;
+
+  // Real-time instantaneous Moon position along continuous 3D diurnal path
+  const activeMoonPoint = useMemo(
+    () => calculateMeridianDiurnalPoint(latitude, Number(moonDeclination), moonHourAngle),
+    [latitude, moonDeclination, moonHourAngle]
+  );
 
   // --- Culminations & Bearings ---
   const todayCulmination = useMemo(
@@ -112,7 +136,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
 
   const isAscendingBranch = nodalData.isMoonAscending;
   // Eclipse-convention: Sky Blue for β >= 0 (North of ecliptic), Rose Red for β < 0 (South of ecliptic)
-  const nodalThemeColor = isNodalMode
+  const nodalThemeColor = isNodalModeActive
     ? (isAscendingBranch ? '#38bdf8' : '#f43f5e')
     : '#e2e8f0';
 
@@ -158,27 +182,6 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
     [monthMin]
   );
 
-  // --- Real-Time Instantaneous Moon Position in Meridian Profile ---
-  // Ascends/descends radially from observer horizon center (130, 104) to peak at transit,
-  // or drops vertically below horizon into twilight/night strata at night
-  const activeMoonPoint = useMemo(() => {
-    if (currentMoonElevation >= 0) {
-      const ratio = peakAlt > 0 ? Math.min(1, Math.max(0, currentMoonElevation / peakAlt)) : 0;
-      return {
-        x: EL_CX + (todayPeakPoint.x - EL_CX) * ratio,
-        y: EL_CY + (todayPeakPoint.y - EL_CY) * ratio,
-      };
-    } else {
-      // Sub-horizon: drops vertically from (130, 104) below EL_CY
-      const clampedSub = Math.max(-18, Math.min(0, currentMoonElevation));
-      const subY = EL_CY + (-clampedSub / 18) * 28.4;
-      return {
-        x: EL_CX,
-        y: subY,
-      };
-    }
-  }, [currentMoonElevation, peakAlt, todayPeakPoint]);
-
   // --- Swath Arcs (along R=92 dome) ---
   const monthlySwathD = useMemo(
     () => generateMeridianSwathD(monthMinPoint.thetaDeg, monthMaxPoint.thetaDeg),
@@ -218,7 +221,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
     <SkyDomeBase
       title="Moon Meridian Profile"
       icon={Moon}
-      iconColorClass={isNodalMode ? (isAscendingBranch ? 'text-sky-400' : 'text-rose-400') : 'text-slate-300'}
+      iconColorClass={isNodalModeActive ? (isAscendingBranch ? 'text-sky-400' : 'text-rose-400') : 'text-slate-300'}
       peakLabel="Transit Peak"
       peakElevation={peakAlt}
       peakDirectionSuffix={todayCulmination.shortTag}
@@ -226,7 +229,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
       culminationDirection={todayCulmination.direction}
       sightingBanner={todayCulmination.sightingSummary}
       currentElevation={currentMoonElevation}
-      elevationColorClass={isNodalMode ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-200'}
+      elevationColorClass={isNodalModeActive ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-200'}
       elevationStatusSubtitle={currentMoonElevation >= 0 ? 'Above Horizon' : 'Sub-Horizon'}
       leftHorizonLabel="S"
       centerHorizonLabel="Z"
@@ -281,7 +284,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
             strokeWidth="1.2"
             strokeOpacity={0.9}
           />
-          <title>{`Current Moon Elevation: ${currentMoonElevation >= 0 ? '+' : ''}${currentMoonElevation.toFixed(1)}° (${isNodalMode ? (isAscendingBranch ? 'β ≥ 0° North of Ecliptic' : 'β < 0° South of Ecliptic') : phase.name})`}</title>
+          <title>{`Current Moon Elevation: ${currentMoonElevation >= 0 ? '+' : ''}${currentMoonElevation.toFixed(1)}° (${isNodalModeActive ? (isAscendingBranch ? 'β ≥ 0° North of Ecliptic' : 'β < 0° South of Ecliptic') : phase.name})`}</title>
         </g>
       )}
       extraSvgContent={
@@ -307,7 +310,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
               <path
                 d={monthlySwathD}
                 fill="none"
-                stroke={isNodalMode ? nodalThemeColor : '#e2e8f0'}
+                stroke={isNodalModeActive ? nodalThemeColor : '#e2e8f0'}
                 strokeWidth="5"
                 strokeOpacity="0.15"
                 className="blur-[1px] pointer-events-none"
@@ -316,9 +319,9 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
                 id="monthly-lunar-swath-core"
                 d={monthlySwathD}
                 fill="none"
-                stroke={isNodalMode ? nodalThemeColor : '#e2e8f0'}
+                stroke={isNodalModeActive ? nodalThemeColor : '#e2e8f0'}
                 strokeWidth="2.5"
-                strokeOpacity={isNodalMode ? 0.6 : 0.45}
+                strokeOpacity={isNodalModeActive ? 0.6 : 0.45}
               >
                 <title>{`Monthly Lunar Transit Range: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'} to ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}`}</title>
               </path>
@@ -384,7 +387,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
           </g>
 
           {/* Ecliptic Node Crossing Marker (When Nodal Mode Active) */}
-          {isNodalMode && (
+          {isNodalModeActive && (
             <g id="meridian-ecliptic-node-marker">
               <line
                 x1={eclipticNodeTick.x1}
@@ -432,133 +435,123 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
               <title>{`Today's Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`}</title>
             </circle>
           </g>
-
-          {/* Sub-horizon vertical line to active bead when moon is below horizon */}
-          {currentMoonElevation < 0 && (
-            <line
-              x1={EL_CX}
-              y1={EL_CY}
-              x2={EL_CX}
-              y2={activeMoonPoint.y}
-              stroke="#475569"
-              strokeWidth="0.75"
-              strokeDasharray="2 2"
-              strokeOpacity="0.6"
-            />
-          )}
         </g>
       }
     >
-      {/* Standstill Limits & Monthly Range or Nodal Telemetry Stats Strip */}
-      {!isNodalMode ? (
-        <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-            <span className="text-slate-400">Max Standstill:</span>
-            <strong className="text-indigo-300 font-semibold">{standstillMax.altitude.toFixed(1)}° {standstillMax.shortTag}</strong>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
-            <span className="text-slate-400">Min Standstill:</span>
-            <strong className="text-indigo-500 font-semibold">
-              {standstillMin.altitude > 0 ? `${standstillMin.altitude.toFixed(1)}° ${standstillMin.shortTag}` : 'Below 0°'}
-            </strong>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-600">·</span>
-            <span className="text-slate-400">Monthly:</span>
-            <strong className="text-slate-300 font-semibold">
-              {monthMin.altitude.toFixed(1)}° ↔ {monthMax.altitude.toFixed(1)}°
-            </strong>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
-          <div className="flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${isAscendingBranch ? 'bg-sky-400' : 'bg-rose-400'}`} />
-            <span className="text-slate-400">Ecliptic Lat (β):</span>
-            <strong className={isAscendingBranch ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
-              {nodalData.moonBeta >= 0 ? `+${nodalData.moonBeta.toFixed(2)}°` : `${nodalData.moonBeta.toFixed(2)}°`}
-            </strong>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-sans">Next Node:</span>
-            <strong className={nodalData.upcomingNodeType === 'ascending' ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
-              {nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'} {nodalData.daysToNextNode <= 0.5 ? `${Math.max(1, Math.round(nodalData.daysToNextNode * 24))}h` : `${nodalData.daysToNextNode.toFixed(1)}d`}
-            </strong>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-600">·</span>
-            <span className="text-slate-400">Branch:</span>
-            <strong className={isAscendingBranch ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
-              {isAscendingBranch ? 'North (+β)' : 'South (−β)'}
-            </strong>
-          </div>
-        </div>
-      )}
+      {!hideFooter && (
+        <>
+          {/* Standstill Limits & Monthly Range or Nodal Telemetry Stats Strip */}
+          {!isNodalModeActive ? (
+            <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                <span className="text-slate-400">Max Standstill:</span>
+                <strong className="text-indigo-300 font-semibold">{standstillMax.altitude.toFixed(1)}° {standstillMax.shortTag}</strong>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                <span className="text-slate-400">Min Standstill:</span>
+                <strong className="text-indigo-500 font-semibold">
+                  {standstillMin.altitude > 0 ? `${standstillMin.altitude.toFixed(1)}° ${standstillMin.shortTag}` : 'Below 0°'}
+                </strong>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-600">·</span>
+                <span className="text-slate-400">Monthly:</span>
+                <strong className="text-slate-300 font-semibold">
+                  {monthMin.altitude.toFixed(1)}° ↔ {monthMax.altitude.toFixed(1)}°
+                </strong>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isAscendingBranch ? 'bg-sky-400' : 'bg-rose-400'}`} />
+                <span className="text-slate-400">Ecliptic Lat (β):</span>
+                <strong className={isAscendingBranch ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {nodalData.moonBeta >= 0 ? `+${nodalData.moonBeta.toFixed(2)}°` : `${nodalData.moonBeta.toFixed(2)}°`}
+                </strong>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500 font-sans">Next Node:</span>
+                <strong className={nodalData.upcomingNodeType === 'ascending' ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'} {nodalData.daysToNextNode <= 0.5 ? `${Math.max(1, Math.round(nodalData.daysToNextNode * 24))}h` : `${nodalData.daysToNextNode.toFixed(1)}d`}
+                </strong>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-600">·</span>
+                <span className="text-slate-400">Branch:</span>
+                <strong className={isAscendingBranch ? 'text-sky-300 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {isAscendingBranch ? 'North (+β)' : 'South (−β)'}
+                </strong>
+              </div>
+            </div>
+          )}
 
-      {/* Mirrored 4-Badge Summary Footer with Mode View Toggle (Std vs ☊ Nodes) */}
-      <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-        <div 
-          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-          title={`18.6-Year Standstill Range: Δδ = ${standstillSpanDeg.toFixed(1)}° between ±${LUNAR_MAX_DEC.toFixed(1)}°`}
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Standstill Span</span>
-          <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            Δδ {standstillSpanDeg.toFixed(1)}°
-          </span>
-          <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-            18.6y Cycle
-          </span>
-        </div>
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Monthly Range</span>
-          <span className="text-indigo-300 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            {(monthMax.altitude - Math.max(0, monthMin.altitude)).toFixed(1)}°
-          </span>
-          <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-            30d Envelope
-          </span>
-        </div>
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Nodal State</span>
-          <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${isNodalMode ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-300'}`}>
-            {isNodalMode ? (isAscendingBranch ? '☊ Ascending' : '☋ Descending') : 'Mean Orbit'}
-          </span>
-          <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-            {isNodalMode ? (isAscendingBranch ? 'North (+β)' : 'South (−β)') : '18.6y Precession'}
-          </span>
-        </div>
-        <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
-          <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
-            <button
-              type="button"
-              onClick={() => setIsNodalMode(false)}
-              aria-label="Standard Lunar Meridian View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                !isNodalMode
-                  ? 'bg-slate-800 text-slate-200 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+          {/* Mirrored 4-Badge Summary Footer with Mode View Toggle (Std vs ☊ Nodes) */}
+          <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
+            <div 
+              className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
+              title={`18.6-Year Standstill Range: Δδ = ${standstillSpanDeg.toFixed(1)}° between ±${LUNAR_MAX_DEC.toFixed(1)}°`}
             >
-              Std
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsNodalMode(true)}
-              aria-label="Lunar Nodes Meridian View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                isNodalMode
-                  ? 'bg-sky-950/80 text-sky-300 border border-sky-500/40 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              ☊ Nodes
-            </button>
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Standstill Span</span>
+              <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
+                Δδ {standstillSpanDeg.toFixed(1)}°
+              </span>
+              <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+                18.6y Cycle
+              </span>
+            </div>
+            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Monthly Range</span>
+              <span className="text-indigo-300 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
+                {(monthMax.altitude - Math.max(0, monthMin.altitude)).toFixed(1)}°
+              </span>
+              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+                30d Envelope
+              </span>
+            </div>
+            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Nodal State</span>
+              <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${isNodalModeActive ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-300'}`}>
+                {isNodalModeActive ? (isAscendingBranch ? '☊ Ascending' : '☋ Descending') : 'Mean Orbit'}
+              </span>
+              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+                {isNodalModeActive ? (isAscendingBranch ? 'North (+β)' : 'South (−β)') : '18.6y Precession'}
+              </span>
+            </div>
+            <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
+              <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
+                <button
+                  type="button"
+                  onClick={() => handleToggleNodal(false)}
+                  aria-label="Standard Lunar Meridian View"
+                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                    !isNodalModeActive
+                      ? 'bg-slate-800 text-slate-200 font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Std
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleNodal(true)}
+                  aria-label="Lunar Nodes Meridian View"
+                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                    isNodalModeActive
+                      ? 'bg-sky-950/80 text-sky-300 border border-sky-500/40 font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  ☊ Nodes
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </SkyDomeBase>
   );
 };

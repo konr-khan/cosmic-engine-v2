@@ -28,6 +28,9 @@ export interface MoonElevationDomeProps {
   currentDate?: Date;
   onSetTime?: (time: number) => void;
   initialNodalMode?: boolean;
+  isNodalMode?: boolean;
+  onToggleNodal?: () => void;
+  isQuadMode?: boolean;
 }
 
 export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
@@ -38,9 +41,23 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   currentDate = new Date(),
   onSetTime,
   initialNodalMode = false,
+  isNodalMode,
+  onToggleNodal,
+  isQuadMode = false,
 }) => {
   const [isHoveringMoonMetrics, setIsHoveringMoonMetrics] = useState(false);
-  const [isNodalMode, setIsNodalMode] = useState(initialNodalMode);
+  const [localNodalMode, setLocalNodalMode] = useState(initialNodalMode);
+  const isNodalModeActive = isNodalMode !== undefined ? isNodalMode : localNodalMode;
+
+  const handleToggleNodal = (val: boolean) => {
+    if (onToggleNodal) {
+      if (val !== isNodalModeActive) {
+        onToggleNodal();
+      }
+    } else {
+      setLocalNodalMode(val);
+    }
+  };
 
   // --- Moon Elevation & Phase Math ---
   const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
@@ -160,7 +177,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   const diurnalPaths: SkyDomeDiurnalPath[] = [];
 
   // In Nodal Mode: Show Ecliptic Reference diurnal curve (Amber hairline dashed)
-  if (isNodalMode && eclipticPathResult.pathD) {
+  if (isNodalModeActive && eclipticPathResult.pathD) {
     diurnalPaths.push({
       id: 'ecliptic-reference-path',
       d: eclipticPathResult.pathD,
@@ -177,7 +194,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   }
 
   // 1. Monthly Max Lunar Transit Arc (Soft silver dashed hairline) - Shown in standard mode
-  if (!isNodalMode && maxPathResult.pathD && maxPathResult.peakAlt > 0) {
+  if (!isNodalModeActive && maxPathResult.pathD && maxPathResult.peakAlt > 0) {
     const maxPeak = extremaCulminations.maxBound.altitude;
     diurnalPaths.push({
       id: 'moon-monthly-max',
@@ -195,10 +212,10 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   // In Nodal View: Eclipse-Convention track:
   // Sky Blue (#38bdf8) for North/Ascending (beta >= 0) vs Rose Red (#f43f5e) for South/Descending (beta < 0)
   // Solid stroke for Waxing vs Dashed ('4 3') for Waning
-  const moonTrackColor = isNodalMode
+  const moonTrackColor = isNodalModeActive
     ? (nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e')
     : '#e2e8f0';
-  const moonTrackDash = isNodalMode
+  const moonTrackDash = isNodalModeActive
     ? (nodalData.isWaxing ? undefined : '4 3')
     : undefined;
 
@@ -212,7 +229,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       strokeDasharray: moonTrackDash,
       strokeOpacity: 0.95,
       isGlowing: true,
-      title: isNodalMode
+      title: isNodalModeActive
         ? `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}° (${nodalData.quadrantLabel})`
         : `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}°`
     });
@@ -223,16 +240,16 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     diurnalPaths.push({
       id: 'today-moon-twilight-path',
       d: todayPathResult.twilightD,
-      stroke: isNodalMode ? moonTrackColor : '#94a3b8',
+      stroke: isNodalModeActive ? moonTrackColor : '#94a3b8',
       strokeWidth: 0.8,
-      strokeDasharray: isNodalMode ? moonTrackDash : undefined,
+      strokeDasharray: isNodalModeActive ? moonTrackDash : undefined,
       strokeOpacity: 0.20,
       title: "Today's Sub-Horizon Lunar Track"
     });
   }
 
   // 3. Monthly Min Lunar Transit Arc (Muted slate dashed hairline) - Shown in standard mode
-  if (!isNodalMode && minPathResult.pathD && minPathResult.peakAlt > 0) {
+  if (!isNodalModeActive && minPathResult.pathD && minPathResult.peakAlt > 0) {
     const minPeak = extremaCulminations.minBound.altitude;
     diurnalPaths.push({
       id: 'moon-monthly-min',
@@ -267,7 +284,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       bodyX={moonX}
       bodyY={moonY}
       bodyVectorStroke={currentMoonElevation >= 0 ? moonTrackColor : '#475569'}
-      extraSvgContent={isNodalMode && nodalData.isNearNode && nodalData.nearestNode.isVisible && (
+      extraSvgContent={isNodalModeActive && nodalData.isNearNode && nodalData.nearestNode.isVisible && (
         <g className="lunar-upcoming-node-layer">
           {(() => {
             const node = nodalData.nearestNode;
@@ -410,7 +427,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       </div>
 
       {/* Lunar Standstill Limits (Std Mode) or 4-Quadrant Draconic Orbital Progress Micro-Rail (Nodal Mode) */}
-      {!isNodalMode ? (
+      {!isNodalModeActive ? (
         <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
@@ -424,6 +441,22 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
               {minAnnualMoonNoon > 0 ? `${minAnnualMoonNoon.toFixed(1)}° ${standstillMinCulmination.shortTag}` : 'Below 0°'}
             </strong>
           </div>
+          {isQuadMode && (
+            <>
+              <div className="flex items-center gap-1.5" title="18.6-Year Major Lunar Standstill Span: Δδ = 57.2°">
+                <span className="text-slate-600">·</span>
+                <span className="text-slate-400">Standstill Span:</span>
+                <strong className="text-indigo-300 font-semibold">Δδ {(2 * LUNAR_MAX_DEC).toFixed(1)}°</strong>
+              </div>
+              <div className="flex items-center gap-1.5" title="Monthly Lunar Declination Bounds over rolling 30-day window">
+                <span className="text-slate-600">·</span>
+                <span className="text-slate-400">Monthly:</span>
+                <strong className="text-indigo-300 font-semibold">
+                  {(extremaCulminations.maxBound.altitude - Math.max(0, extremaCulminations.minBound.altitude)).toFixed(1)}°
+                </strong>
+              </div>
+            </>
+          )}
           <div className="flex items-center gap-1.5">
             <span className="text-slate-600">·</span>
             <span className="text-slate-400">Zenith Cap:</span>
@@ -590,21 +623,31 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
           </span>
           <span className="text-indigo-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">{formatTime(transit).substring(0, 5)} <span className="text-indigo-400/80 text-[9px] font-normal font-sans">UTC</span></span>
         </div>
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Declination (δ)</span>
+        <div 
+          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
+          title={isQuadMode ? `Lunar Declination: ${moonDeclination.toFixed(1)}° · 18.6-Year Standstill Range: Δδ = ${(2 * LUNAR_MAX_DEC).toFixed(1)}°` : undefined}
+        >
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">
+            {isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}
+          </span>
           <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${moonDeclination >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
             {moonDeclination >= 0 ? `+${(moonDeclination as number).toFixed(1)}°` : `${(moonDeclination as number).toFixed(1)}°`}
           </span>
+          {isQuadMode && (
+            <span className="text-[8px] text-indigo-400/80 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+              Δδ {(2 * LUNAR_MAX_DEC).toFixed(1)}° Span
+            </span>
+          )}
         </div>
         <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap mb-0.5">Mode View</span>
           <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
             <button
               type="button"
-              onClick={() => setIsNodalMode(false)}
+              onClick={() => handleToggleNodal(false)}
               aria-label="Standard Lunar View"
               className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                !isNodalMode
+                !isNodalModeActive
                   ? 'bg-slate-800 text-slate-200 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -613,10 +656,10 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setIsNodalMode(true)}
+              onClick={() => handleToggleNodal(true)}
               aria-label="Lunar Nodes View"
               className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                isNodalMode
+                isNodalModeActive
                   ? 'bg-sky-950/80 text-sky-300 border border-sky-500/40 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
