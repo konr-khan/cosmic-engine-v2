@@ -5,18 +5,22 @@ import {
   TodayHorizonView, 
   SunElevationDome, 
   MoonElevationDome,
+  SunMeridianDome,
+  MoonMeridianDome,
   SkyDomeBase,
   EL_R,
   EL_CX,
   EL_CY
 } from './index';
-import { OrbitalData } from '../../../types';
+import { OrbitalData, SolarAlmanacData } from '../../../types';
 
 describe('Today Horizon Subsystem', () => {
   it('exports all decomposed today sub-components cleanly', () => {
     expect(TodayHorizonView).toBeDefined();
     expect(SunElevationDome).toBeDefined();
     expect(MoonElevationDome).toBeDefined();
+    expect(SunMeridianDome).toBeDefined();
+    expect(MoonMeridianDome).toBeDefined();
     expect(SkyDomeBase).toBeDefined();
     expect(EL_R).toBe(92);
     expect(EL_CX).toBe(130);
@@ -446,4 +450,207 @@ describe('Today Horizon Subsystem', () => {
     expect(tropicalMoonHtml).toContain('Min Standstill:');
     expect(tropicalMoonHtml).toContain('35.6° S');
   });
+
+  it('renders TodayHorizonView in default 2-dome mode with segmented toggle buttons', () => {
+    const defaultHtml = renderToStaticMarkup(
+      React.createElement(TodayHorizonView, {
+        currentTime: 12,
+        latitude: 47.06,
+      })
+    );
+
+    // Segmented toggle controls are present
+    expect(defaultHtml).toContain('2-Dome Diurnal');
+    expect(defaultHtml).toContain('⊞ 4-Dome Quad');
+
+    // Default renders the 2 diurnal domes
+    expect(defaultHtml).toContain('Sun Elevation Arc');
+    expect(defaultHtml).toContain('Moon Elevation Arc');
+
+    // Meridian domes are NOT mounted in 2-dome mode
+    expect(defaultHtml).not.toContain('Sun Meridian Profile');
+    expect(defaultHtml).not.toContain('Moon Meridian Profile');
+  });
+
+  it('renders TodayHorizonView in 4-dome mode when initialDomeMode is "4-dome"', () => {
+    const quadHtml = renderToStaticMarkup(
+      React.createElement(TodayHorizonView, {
+        currentTime: 12,
+        latitude: 47.06,
+        initialDomeMode: '4-dome',
+        solarData: {
+          noonElevation: 50,
+          solarNoon: 12,
+          equationOfTime: 0,
+          sunrise: 6,
+          sunset: 18,
+          declination: 10,
+          distanceAU: 1,
+          distanceKm: 149597870,
+          dayLength: 12,
+          civil: 0.5,
+          nautical: 1,
+          astronomical: 1.5,
+          daysSinceEpoch: 100,
+          lambda: 0,
+          eclipticLongitude: 0,
+          isMidnightSun: false,
+          isPolarNight: false,
+        },
+        orbitalData: {
+          phase: { value: 0.25, name: 'First Quarter' },
+          lunarEvents: {
+            moonrise: 10,
+            transit: 18,
+            moonset: 2,
+            distanceKm: 384400,
+            distanceEarthRadii: 60.3,
+            isPerigee: false,
+            isApogee: false,
+            declination: 15,
+            parallacticAngle: 45,
+          },
+        } as unknown as OrbitalData,
+      })
+    );
+
+    // All 4 domes are present
+    expect(quadHtml).toContain('Sun Elevation Arc');
+    expect(quadHtml).toContain('Moon Elevation Arc');
+    expect(quadHtml).toContain('Sun Meridian Profile');
+    expect(quadHtml).toContain('Moon Meridian Profile');
+
+    // Vertical Zenith axes are rendered in meridian domes
+    expect(quadHtml).toContain('x1="130" y1="104" x2="130" y2="12"');
+
+    // Solstice and monthly swaths are rendered
+    expect(quadHtml).toContain('meridian-solstice-geometry');
+    expect(quadHtml).toContain('meridian-lunar-geometry');
+
+    // Profile axis footer tags are rendered
+    expect(quadHtml).toContain('Profile Axis');
+    expect(quadHtml).toContain('S ↔ Z ↔ N');
+  });
+
+  it('renders SunMeridianDome standalone with solstice swath, tick pins, active bead, and bottom stats', () => {
+    const sunMeridianHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        solarData: {
+          noonElevation: 50,
+          solarNoon: 12,
+          declination: 10,
+          distanceAU: 1.0,
+          distanceKm: 149597870,
+          equationOfTime: -3.2,
+          sunrise: 6,
+          sunset: 18,
+          dayLength: 12,
+          civil: 0.5,
+          nautical: 1,
+          astronomical: 1.5,
+          daysSinceEpoch: 100,
+          lambda: 0,
+          eclipticLongitude: 0,
+          isMidnightSun: false,
+          isPolarNight: false,
+        },
+      })
+    );
+
+    expect(sunMeridianHtml).toContain('Sun Meridian Profile');
+    expect(sunMeridianHtml).toContain('Noon Peak');
+    expect(sunMeridianHtml).toContain('Noon Meridian Culmination');
+
+    // S, Z, N horizon baseline
+    expect(sunMeridianHtml).toContain('>S</text>');
+    expect(sunMeridianHtml).toContain('>Z</text>');
+    expect(sunMeridianHtml).toContain('>N</text>');
+
+    // Vertical dashed Zenith axis
+    expect(sunMeridianHtml).toContain('x1="130" y1="104" x2="130" y2="12"');
+
+    // Solstice swath and tick pins
+    expect(sunMeridianHtml).toContain('id="solstice-swath-core"');
+    expect(sunMeridianHtml).toContain('id="summer-solstice-tick"');
+    expect(sunMeridianHtml).toContain('id="winter-solstice-tick"');
+    expect(sunMeridianHtml).toContain('id="equinox-tick"');
+
+    // Active solar noon bead
+    expect(sunMeridianHtml).toContain('id="active-solar-noon-bead"');
+
+    // Stats strip
+    expect(sunMeridianHtml).toContain('Summer Sol:');
+    expect(sunMeridianHtml).toContain('Winter Sol:');
+    expect(sunMeridianHtml).toContain('Lahaina Transit:');
+
+    // 4-badge footer
+    expect(sunMeridianHtml).toContain('Solstice Span');
+    expect(sunMeridianHtml).toContain('Δδ 46.9°');
+    expect(sunMeridianHtml).toContain('Solar Noon');
+    expect(sunMeridianHtml).toContain('Declination (δ)');
+    expect(sunMeridianHtml).toContain('Profile Axis');
+  });
+
+  it('renders MoonMeridianDome standalone with monthly swath, standstill bounds, and active bead', () => {
+    const moonMeridianHtml = renderToStaticMarkup(
+      React.createElement(MoonMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        orbitalData: {
+          phase: { value: 0.5, name: 'Full Moon' },
+          lunarEvents: {
+            moonrise: 18,
+            transit: 0,
+            moonset: 6,
+            distanceKm: 384400,
+            distanceEarthRadii: 60.3,
+            isPerigee: false,
+            isApogee: false,
+            declination: -5,
+            parallacticAngle: 30,
+          },
+        } as unknown as OrbitalData,
+      })
+    );
+
+    expect(moonMeridianHtml).toContain('Moon Meridian Profile');
+    expect(moonMeridianHtml).toContain('Transit Peak');
+    expect(moonMeridianHtml).toContain('Meridian Transit Culmination');
+
+    // S, Z, N horizon baseline
+    expect(moonMeridianHtml).toContain('>S</text>');
+    expect(moonMeridianHtml).toContain('>Z</text>');
+    expect(moonMeridianHtml).toContain('>N</text>');
+
+    // Vertical dashed Zenith axis
+    expect(moonMeridianHtml).toContain('x1="130" y1="104" x2="130" y2="12"');
+
+    // Standstill and monthly swaths
+    expect(moonMeridianHtml).toContain('id="standstill-swath-guide"');
+    expect(moonMeridianHtml).toContain('id="monthly-lunar-swath-core"');
+
+    // Standstill and monthly ticks
+    expect(moonMeridianHtml).toContain('id="standstill-max-tick"');
+    expect(moonMeridianHtml).toContain('id="standstill-min-tick"');
+    expect(moonMeridianHtml).toContain('id="monthly-max-tick"');
+    expect(moonMeridianHtml).toContain('id="monthly-min-tick"');
+
+    // Active lunar transit bead
+    expect(moonMeridianHtml).toContain('id="active-lunar-transit-bead"');
+
+    // Stats strip
+    expect(moonMeridianHtml).toContain('Max Standstill:');
+    expect(moonMeridianHtml).toContain('Min Standstill:');
+    expect(moonMeridianHtml).toContain('Monthly:');
+
+    // 4-badge footer
+    expect(moonMeridianHtml).toContain('Standstill Span');
+    expect(moonMeridianHtml).toContain('Δδ 57.2°');
+    expect(moonMeridianHtml).toContain('Lunar Transit');
+    expect(moonMeridianHtml).toContain('Declination (δ)');
+    expect(moonMeridianHtml).toContain('Profile Axis');
+  });
 });
+
