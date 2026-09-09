@@ -29,9 +29,12 @@ export interface MemoizedWidgetContentProps {
   id: string;
 }
 
-const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function MemoizedWidgetContent({
-  id
-}) {
+const MacroOrbitWidgetContent: React.FC = () => {
+  const date = useChronometerStore(s => s.date);
+  return <MacroOrbitView currentDate={date} />;
+};
+
+const StandardWidgetContent: React.FC<{ id: string }> = ({ id }) => {
   const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectObserverParams);
 
   const { solarData, orbitalData, julianDate } = useCosmicEngine(
@@ -108,13 +111,6 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
           currentDate={date}
         />
       );
-    case 'macroOrbit':
-      return (
-        <MacroOrbitView 
-          eclipse={orbitalData?.eclipse} 
-          currentDate={date}
-        />
-      );
     case 'armillary':
       return (
         <GyroArmillaryView
@@ -148,6 +144,15 @@ const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function Me
     default:
       return null;
   }
+};
+
+const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function MemoizedWidgetContent({
+  id
+}) {
+  if (id === 'macroOrbit') {
+    return <MacroOrbitWidgetContent />;
+  }
+  return <StandardWidgetContent id={id} />;
 });
 
 export interface MemoizedChronometerDockProps {

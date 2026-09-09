@@ -18,6 +18,7 @@ export interface UseEphemerisWorkerParams {
   isLunarActive?: boolean;
   isEclipseActive?: boolean;
   isOrbitalActive?: boolean;
+  throttleMs?: number;
 }
 
 export interface UseEphemerisWorkerResult {
@@ -37,7 +38,8 @@ export const useEphemerisWorker = ({
   timeOfDay,
   isLunarActive = true,
   isEclipseActive = true,
-  isOrbitalActive = true
+  isOrbitalActive = true,
+  throttleMs = 100
 }: UseEphemerisWorkerParams): UseEphemerisWorkerResult => {
   const [workerResult, setWorkerResult] = useState<EphemerisWorkerPayload | null>(null);
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
@@ -63,7 +65,8 @@ export const useEphemerisWorker = ({
         julianDate,
         timeOfDay,
         calculateLunar: isLunarActive,
-        calculateEclipse: isEclipseActive
+        calculateEclipse: isEclipseActive,
+        throttleMs
       },
       (payload) => {
         setWorkerResult(payload);
@@ -73,7 +76,7 @@ export const useEphemerisWorker = ({
     return () => {
       unsubscribe();
     };
-  }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive]);
+  }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, throttleMs]);
 
   // Synchronous calculation fallback (used only when worker is unavailable or pending initial result)
   const syncResult = useMemo(() => {

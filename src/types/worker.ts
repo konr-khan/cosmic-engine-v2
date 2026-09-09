@@ -15,6 +15,7 @@ export interface EphemerisCalculationParams {
   isLunarActive?: boolean;
   isEclipseActive?: boolean;
   isOrbitalActive?: boolean;
+  throttleMs?: number;
 }
 
 /** Instantaneous ephemeris calculation worker payload output */

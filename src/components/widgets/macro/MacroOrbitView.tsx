@@ -46,7 +46,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
     milestones
   } = helioScene;
 
-  const isEclipse = Boolean(eclipse && eclipse.isEclipseActive);
+  const isEclipse = helioScene.isEclipse ?? Boolean(eclipse && eclipse.isEclipseActive);
 
   const {
     distanceAU = 1.00,

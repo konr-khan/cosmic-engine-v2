@@ -162,6 +162,8 @@ export interface HeliocentricSceneData {
   sunLambdaDeg: number;
   orbitPath: string;
   lunarOrbitPath?: string;
+  eclipse?: EclipseData;
+  isEclipse?: boolean;
 }
 
 /**
@@ -215,6 +217,12 @@ export function useHeliocentricScene(
     return calculateEarthOrbitalPhysics(julianDate);
   }, [julianDate]);
 
+  const eclipse: EclipseData = useMemo(() => {
+    return calculateEclipseData(julianDate);
+  }, [julianDate]);
+
+  const isEclipse = Boolean(eclipse && eclipse.isEclipseActive);
+
   const milestones = useMemo(() => {
     const posScale = scene3D.scaleMode === 'true' ? orbitalRadius : scaleFactor;
     return scene3D.milestones.map(m => ({
@@ -260,7 +268,9 @@ export function useHeliocentricScene(
     axialTiltDeg,
     sunLambdaDeg,
     orbitPath: projected2D.elements.orbitPath,
-    lunarOrbitPath: projected2D.elements.lunarOrbitPath
+    lunarOrbitPath: projected2D.elements.lunarOrbitPath,
+    eclipse,
+    isEclipse
   }), [
     julianDate,
     scaleMode,
@@ -273,7 +283,9 @@ export function useHeliocentricScene(
     orbitalRadius,
     milestones,
     axialTiltDeg,
-    sunLambdaDeg
+    sunLambdaDeg,
+    eclipse,
+    isEclipse
   ]);
 }
 

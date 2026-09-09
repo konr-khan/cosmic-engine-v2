@@ -17,6 +17,15 @@ import {
 import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude } from '../types/units';
 
+export interface PendingThrottledEphemerisEntry {
+  signature: string;
+  params: EphemerisCalculationParams;
+  calculateLunar: boolean;
+  calculateEclipse: boolean;
+  callbacks: Set<(payload: EphemerisWorkerPayload) => void>;
+  dispatchedEntry: PendingEphemerisEntry | null;
+}
+
 export type { 
   PendingRequestEntry, 
   PendingEphemerisEntry, 
@@ -40,6 +49,10 @@ export class EphemerisWorkerManager {
   public annualSolarCache: Map<string, AnnualSolarMatrixItem[]>;
   public annualLunarCache: Map<string, AnnualLunarMatrixItem[]>;
   public _isAvailable: boolean;
+  public latestProcessedEphemerisId: number;
+  public lastEphemerisDispatchTime: number;
+  public ephemerisThrottleTimer: ReturnType<typeof setTimeout> | null;
+  public pendingThrottledEntry: PendingThrottledEphemerisEntry | null;
 
   constructor() {
     this.worker = null;
@@ -49,6 +62,10 @@ export class EphemerisWorkerManager {
     this.annualSolarCache = new Map();
     this.annualLunarCache = new Map();
     this._isAvailable = typeof Worker !== 'undefined';
+    this.latestProcessedEphemerisId = 0;
+    this.lastEphemerisDispatchTime = 0;
+    this.ephemerisThrottleTimer = null;
+    this.pendingThrottledEntry = null;
 
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', () => this.terminate());
@@ -126,7 +143,28 @@ export class EphemerisWorkerManager {
    */
   public _handleWorkerFailure(error?: unknown): void {
     this._isAvailable = false;
+    if (this.ephemerisThrottleTimer) {
+      clearTimeout(this.ephemerisThrottleTimer);
+      this.ephemerisThrottleTimer = null;
+    }
     const pending = Array.from(this.pendingRequests.values());
+    if (this.pendingThrottledEntry && this.pendingThrottledEntry.callbacks.size > 0) {
+      const throttled = this.pendingThrottledEntry;
+      pending.push({
+        type: 'EPHEMERIS',
+        signature: throttled.signature,
+        callbacks: throttled.callbacks,
+        params: {
+          latitude: throttled.params.latitude,
+          longitude: throttled.params.longitude,
+          julianDate: throttled.params.julianDate,
+          timeOfDay: throttled.params.timeOfDay,
+          calculateLunar: throttled.calculateLunar,
+          calculateEclipse: throttled.calculateEclipse
+        }
+      });
+    }
+    this.pendingThrottledEntry = null;
     this.pendingRequests.clear();
     this.signatureToRequestId.clear();
 
@@ -168,6 +206,13 @@ export class EphemerisWorkerManager {
             if (requestEntry && requestEntry.type === 'EPHEMERIS') {
               this.pendingRequests.delete(id);
               this.signatureToRequestId.delete(requestEntry.signature);
+
+              // Discard stale responses that completed out of order
+              if (id < this.latestProcessedEphemerisId) {
+                return;
+              }
+              this.latestProcessedEphemerisId = id;
+
               requestEntry.callbacks.forEach((cb) => {
                 try {
                   cb(response.payload);
@@ -181,7 +226,9 @@ export class EphemerisWorkerManager {
             if (requestEntry) {
               this.pendingRequests.delete(id);
               this.signatureToRequestId.delete(requestEntry.signature);
-              this._executeSyncFallbackForEntry(requestEntry);
+              if (id >= this.latestProcessedEphemerisId) {
+                this._executeSyncFallbackForEntry(requestEntry);
+              }
             }
           } else if (type === 'ANNUAL_SOLAR_SUCCESS') {
             const requestEntry = this.pendingRequests.get(id);
@@ -246,32 +293,15 @@ export class EphemerisWorkerManager {
   }
 
   /**
-   * Requests an asynchronous ephemeris calculation from the singleton worker with in-flight request deduplication.
+   * Internal helper to dispatch an ephemeris calculation request directly to the worker.
    */
-  requestCalculation(
+  public _dispatchEphemerisRequest(
+    signature: string,
     params: EphemerisCalculationParams & { calculateLunar?: boolean; calculateEclipse?: boolean },
+    calculateLunar: boolean,
+    calculateEclipse: boolean,
     onResult: (payload: EphemerisWorkerPayload) => void
   ): () => void {
-    if (!this.isAvailable()) {
-      return () => {};
-    }
-
-    const calculateLunar = params.calculateLunar !== false && params.isLunarActive !== false;
-    const calculateEclipse = params.calculateEclipse !== false && params.isEclipseActive !== false;
-    const signature = `EPHEMERIS_${params.latitude}_${params.longitude}_${params.julianDate}_${params.timeOfDay}_${calculateLunar}_${calculateEclipse}`;
-
-    // In-flight request deduplication / coalescing
-    if (this.signatureToRequestId.has(signature)) {
-      const existingId = this.signatureToRequestId.get(signature)!;
-      const existingEntry = this.pendingRequests.get(existingId);
-      if (existingEntry && existingEntry.type === 'EPHEMERIS') {
-        existingEntry.callbacks.add(onResult);
-        return () => {
-          existingEntry.callbacks.delete(onResult);
-        };
-      }
-    }
-
     const worker = this._getWorker();
     if (!worker) {
       return () => {};
@@ -309,6 +339,140 @@ export class EphemerisWorkerManager {
     return () => {
       requestEntry.callbacks.delete(onResult);
     };
+  }
+
+  /**
+   * Dispatches the pending throttled entry to the worker once the throttle interval elapses.
+   */
+  public _dispatchPendingThrottledEntry(): void {
+    if (!this.pendingThrottledEntry) return;
+    const entry = this.pendingThrottledEntry;
+    this.pendingThrottledEntry = null;
+
+    if (entry.callbacks.size === 0) return;
+
+    const worker = this._getWorker();
+    if (!worker) return;
+
+    const requestId = ++this.nextRequestId;
+    const requestEntry: PendingEphemerisEntry = {
+      type: 'EPHEMERIS',
+      signature: entry.signature,
+      callbacks: new Set(entry.callbacks),
+      params: {
+        latitude: entry.params.latitude,
+        longitude: entry.params.longitude,
+        julianDate: entry.params.julianDate,
+        timeOfDay: entry.params.timeOfDay,
+        calculateLunar: entry.calculateLunar,
+        calculateEclipse: entry.calculateEclipse
+      }
+    };
+
+    entry.dispatchedEntry = requestEntry;
+    this.pendingRequests.set(requestId, requestEntry);
+    this.signatureToRequestId.set(entry.signature, requestId);
+
+    try {
+      const message: EphemerisWorkerRequest = {
+        type: 'CALCULATE_EPHEMERIS',
+        id: requestId,
+        payload: requestEntry.params
+      };
+      worker.postMessage(message);
+    } catch (error) {
+      this._handleWorkerFailure(error);
+    }
+  }
+
+  /**
+   * Requests an asynchronous ephemeris calculation from the singleton worker with in-flight request
+   * deduplication, rate throttling, and monotonic sequence tracking.
+   */
+  requestCalculation(
+    params: EphemerisCalculationParams & { 
+      calculateLunar?: boolean; 
+      calculateEclipse?: boolean;
+      throttleMs?: number;
+    },
+    onResult: (payload: EphemerisWorkerPayload) => void
+  ): () => void {
+    if (!this.isAvailable()) {
+      return () => {};
+    }
+
+    const calculateLunar = params.calculateLunar !== false && params.isLunarActive !== false;
+    const calculateEclipse = params.calculateEclipse !== false && params.isEclipseActive !== false;
+    const signature = `EPHEMERIS_${params.latitude}_${params.longitude}_${params.julianDate}_${params.timeOfDay}_${calculateLunar}_${calculateEclipse}`;
+
+    // 1. In-flight request deduplication / coalescing
+    if (this.signatureToRequestId.has(signature)) {
+      const existingId = this.signatureToRequestId.get(signature)!;
+      const existingEntry = this.pendingRequests.get(existingId);
+      if (existingEntry && existingEntry.type === 'EPHEMERIS') {
+        existingEntry.callbacks.add(onResult);
+        return () => {
+          existingEntry.callbacks.delete(onResult);
+        };
+      }
+    }
+
+    // 2. Throttle handling if throttleMs is requested (> 0)
+    const throttleMs = params.throttleMs ?? 0;
+    if (throttleMs > 0) {
+      const now = Date.now();
+      const elapsed = now - this.lastEphemerisDispatchTime;
+
+      // Outside throttle window: dispatch immediately (leading-edge)
+      if (elapsed >= throttleMs) {
+        if (this.ephemerisThrottleTimer) {
+          clearTimeout(this.ephemerisThrottleTimer);
+          this.ephemerisThrottleTimer = null;
+        }
+        this.pendingThrottledEntry = null;
+        this.lastEphemerisDispatchTime = now;
+        return this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult);
+      }
+
+      // Within throttle window: coalesce into pendingThrottledEntry (trailing-edge)
+      if (this.pendingThrottledEntry) {
+        this.pendingThrottledEntry.signature = signature;
+        this.pendingThrottledEntry.params = params;
+        this.pendingThrottledEntry.calculateLunar = calculateLunar;
+        this.pendingThrottledEntry.calculateEclipse = calculateEclipse;
+        this.pendingThrottledEntry.callbacks.add(onResult);
+      } else {
+        this.pendingThrottledEntry = {
+          signature,
+          params,
+          calculateLunar,
+          calculateEclipse,
+          callbacks: new Set([onResult]),
+          dispatchedEntry: null
+        };
+      }
+
+      const throttledEntry = this.pendingThrottledEntry;
+
+      if (!this.ephemerisThrottleTimer) {
+        const remaining = Math.max(0, throttleMs - elapsed);
+        this.ephemerisThrottleTimer = setTimeout(() => {
+          this.ephemerisThrottleTimer = null;
+          this.lastEphemerisDispatchTime = Date.now();
+          this._dispatchPendingThrottledEntry();
+        }, remaining);
+      }
+
+      return () => {
+        throttledEntry.callbacks.delete(onResult);
+        if (throttledEntry.dispatchedEntry) {
+          throttledEntry.dispatchedEntry.callbacks.delete(onResult);
+        }
+      };
+    }
+
+    // Default un-throttled immediate dispatch
+    return this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult);
   }
 
   /**
@@ -471,6 +635,14 @@ export class EphemerisWorkerManager {
    * Terminates the active singleton worker instance and resets pending requests and caches.
    */
   terminate(): void {
+    if (this.ephemerisThrottleTimer) {
+      clearTimeout(this.ephemerisThrottleTimer);
+      this.ephemerisThrottleTimer = null;
+    }
+    this.pendingThrottledEntry = null;
+    this.lastEphemerisDispatchTime = 0;
+    this.latestProcessedEphemerisId = 0;
+
     if (this.worker) {
       try {
         this.worker.terminate();

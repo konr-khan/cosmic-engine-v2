@@ -595,4 +595,223 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     (globalThis as any).window = originalWindow;
   });
+
+  it('discards stale out-of-order ephemeris worker responses via monotonic sequence stamping', () => {
+    class MockWorker {
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
+    }
+
+    globalThis.Worker = MockWorker as any;
+    const manager = new EphemerisWorkerManager();
+
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+    const cb3 = vi.fn();
+
+    // Dispatch request 1 and 2
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      calculateLunar: true,
+      calculateEclipse: true
+    }, cb1);
+
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451546.0,
+      timeOfDay: 12,
+      calculateLunar: true,
+      calculateEclipse: true
+    }, cb2);
+
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
+
+    // Simulate response 2 arriving BEFORE response 1 (out-of-order completion)
+    (manager.worker as any).onmessage({
+      data: {
+        type: 'EPHEMERIS_SUCCESS',
+        id: 2,
+        payload: { lunarEvents: { day: 2 }, eclipse: null, timestamp: 200 }
+      }
+    });
+
+    expect(cb2).toHaveBeenCalledWith({ lunarEvents: { day: 2 }, eclipse: null, timestamp: 200 });
+    expect(manager.latestProcessedEphemerisId).toBe(2);
+
+    // Response 1 arrives later (stale sequence id: 1 < 2)
+    (manager.worker as any).onmessage({
+      data: {
+        type: 'EPHEMERIS_SUCCESS',
+        id: 1,
+        payload: { lunarEvents: { day: 1 }, eclipse: null, timestamp: 100 }
+      }
+    });
+
+    // cb1 should be discarded and NOT called
+    expect(cb1).not.toHaveBeenCalled();
+
+    // Now dispatch request 3 (id: 3)
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451547.0,
+      timeOfDay: 12,
+      calculateLunar: true,
+      calculateEclipse: true
+    }, cb3);
+
+    (manager.worker as any).onmessage({
+      data: {
+        type: 'EPHEMERIS_SUCCESS',
+        id: 3,
+        payload: { lunarEvents: { day: 3 }, eclipse: null, timestamp: 300 }
+      }
+    });
+
+    expect(cb3).toHaveBeenCalledWith({ lunarEvents: { day: 3 }, eclipse: null, timestamp: 300 });
+    expect(manager.latestProcessedEphemerisId).toBe(3);
+  });
+
+  it('throttles rapid calculation requests and coalesces them into trailing worker calls', () => {
+    vi.useFakeTimers();
+
+    class MockWorker {
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
+    }
+
+    globalThis.Worker = MockWorker as any;
+    const manager = new EphemerisWorkerManager();
+
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+    const cb3 = vi.fn();
+
+    // 1. Initial request with throttleMs: 100 fires immediately (leading-edge)
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      throttleMs: 100
+    }, cb1);
+
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    expect((manager.worker as any).postMessage).toHaveBeenLastCalledWith({
+      type: 'CALCULATE_EPHEMERIS',
+      id: 1,
+      payload: expect.objectContaining({ julianDate: 2451545.0 })
+    });
+
+    // Advance 20ms: inside the 100ms throttle window
+    vi.advanceTimersByTime(20);
+
+    // 2. Second request during throttle window is queued
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.02,
+      timeOfDay: 12.5,
+      throttleMs: 100
+    }, cb2);
+
+    // Still only 1 message posted
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+
+    // Advance another 20ms (now 40ms from start)
+    vi.advanceTimersByTime(20);
+
+    // 3. Third request updates the pending throttled entry with newest frame
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.04,
+      timeOfDay: 13.0,
+      throttleMs: 100
+    }, cb3);
+
+    // Still only 1 message posted
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+
+    // Advance timers to elapse the remaining 60ms (total 100ms)
+    vi.advanceTimersByTime(60);
+
+    // Trailing timer should have fired, posting request 3 (the latest state)
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
+    expect((manager.worker as any).postMessage).toHaveBeenLastCalledWith({
+      type: 'CALCULATE_EPHEMERIS',
+      id: 2,
+      payload: expect.objectContaining({ julianDate: 2451545.04, timeOfDay: 13.0 })
+    });
+
+    // Simulate worker response for request 2
+    (manager.worker as any).onmessage({
+      data: {
+        type: 'EPHEMERIS_SUCCESS',
+        id: 2,
+        payload: { lunarEvents: { day: 3 }, eclipse: null, timestamp: 999 }
+      }
+    });
+
+    expect(cb3).toHaveBeenCalledWith({ lunarEvents: { day: 3 }, eclipse: null, timestamp: 999 });
+
+    vi.useRealTimers();
+  });
+
+  it('safely drops throttled request when unsubscribed before timer fires', () => {
+    vi.useFakeTimers();
+
+    class MockWorker {
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
+    }
+
+    globalThis.Worker = MockWorker as any;
+    const manager = new EphemerisWorkerManager();
+
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
+
+    // Leading request
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      throttleMs: 100
+    }, cb1);
+
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(20);
+
+    // Throttled request that gets unsubscribed
+    const unsubscribe2 = manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.02,
+      timeOfDay: 12.5,
+      throttleMs: 100
+    }, cb2);
+
+    unsubscribe2();
+
+    // Advance timers beyond 100ms
+    vi.advanceTimersByTime(100);
+
+    // No second message should be posted since callbacks became empty
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
+  });
 });
