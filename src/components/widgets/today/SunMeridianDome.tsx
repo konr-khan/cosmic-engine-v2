@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
-import { Sun, Compass } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Sun } from 'lucide-react';
 import {
-  formatTime,
+  projectSkyDomePoint,
   calculateCulminationBearing,
   calculateSolsticeCulminations,
   calculateMeridianPoint,
@@ -9,7 +9,7 @@ import {
   calculateMeridianRadialTick,
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
-import { SkyDomeBase } from './SkyDomeBase';
+import { SkyDomeBase, EL_R, EL_CX, EL_CY } from './SkyDomeBase';
 
 export interface SunMeridianDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -17,28 +17,35 @@ export interface SunMeridianDomeProps {
   latitude: number;
   currentDate?: Date;
   onSetTime?: (time: number) => void;
+  initialTwilightMode?: boolean;
 }
 
 export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   solarData,
-  displayTime: _displayTime,
+  displayTime,
   latitude,
   currentDate: _currentDate = new Date(),
-  onSetTime,
+  onSetTime: _onSetTime,
+  initialTwilightMode = false,
 }) => {
+  const [isTwilightMode, setIsTwilightMode] = useState(initialTwilightMode);
+
   const {
     solarNoon = 12,
     declination: sunDeclination = 0,
-    distanceAU = 1.0,
-    distanceKm = 149597870,
-    equationOfTime = 0,
   } = solarData || {};
+
+  // --- Real-Time Sun Elevation ---
+  const sunHourAngle = (displayTime - solarNoon) * 15;
+  const currentSunPos = projectSkyDomePoint(sunHourAngle, Number(sunDeclination), latitude);
+  const currentSunElevation = currentSunPos.elevation;
 
   // --- Culminations & Bearings ---
   const todayCulmination = useMemo(
     () => calculateCulminationBearing(latitude, Number(sunDeclination)),
     [latitude, sunDeclination]
   );
+  const peakAlt = todayCulmination.altitude;
 
   const solsticeCulminations = useMemo(
     () => calculateSolsticeCulminations(latitude),
@@ -59,10 +66,10 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   const summerNoon = summerSolstice.altitude;
   const winterNoon = winterSolstice.altitude;
 
-  // --- Meridian Coordinate Points ---
-  const todayPoint = useMemo(
-    () => calculateMeridianPoint(todayCulmination.altitude, todayCulmination.direction),
-    [todayCulmination]
+  // --- Meridian Coordinate Points on Dome Arc (R=92) ---
+  const todayPeakPoint = useMemo(
+    () => calculateMeridianPoint(peakAlt, todayCulmination.direction),
+    [peakAlt, todayCulmination]
   );
 
   const summerPoint = useMemo(
@@ -79,6 +86,27 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     () => calculateMeridianPoint(equinoxCulmination.altitude, equinoxCulmination.direction),
     [equinoxCulmination]
   );
+
+  // --- Real-Time Instantaneous Sun Position in Meridian Profile ---
+  // Ascends/descends radially from observer horizon center (130, 104) to peak at noon,
+  // or drops vertically below horizon into twilight strata at night
+  const activeSunPoint = useMemo(() => {
+    if (currentSunElevation >= 0) {
+      const ratio = peakAlt > 0 ? Math.min(1, Math.max(0, currentSunElevation / peakAlt)) : 0;
+      return {
+        x: EL_CX + (todayPeakPoint.x - EL_CX) * ratio,
+        y: EL_CY + (todayPeakPoint.y - EL_CY) * ratio,
+      };
+    } else {
+      // Sub-horizon: drops vertically from (130, 104) into twilight strata below EL_CY
+      const clampedSub = Math.max(-18, Math.min(0, currentSunElevation));
+      const subY = EL_CY + (-clampedSub / 18) * 28.4;
+      return {
+        x: EL_CX,
+        y: subY,
+      };
+    }
+  }, [currentSunElevation, peakAlt, todayPeakPoint]);
 
   // --- Solstice Swath Arc (along R=92 dome) ---
   const solsticeSwathD = useMemo(
@@ -105,49 +133,61 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   // Solstice Span in declination: 2 * 23.439° = 46.88°
   const solsticeSpanDeg = 2 * OBLIQUITY;
 
+  const elevationSubtitle = currentSunElevation >= 0
+    ? 'Daylight'
+    : currentSunElevation >= -6
+    ? 'Civil Twilight'
+    : currentSunElevation >= -12
+    ? 'Nautical Twilight'
+    : currentSunElevation >= -18
+    ? 'Astro Twilight'
+    : 'Night';
+
   return (
     <SkyDomeBase
       title="Sun Meridian Profile"
       icon={Sun}
       iconColorClass="text-amber-400"
       peakLabel="Noon Peak"
-      peakElevation={todayCulmination.altitude}
+      peakElevation={peakAlt}
       peakDirectionSuffix={todayCulmination.shortTag}
       meridianDirection={todayCulmination.meridianLabel}
       culminationDirection={todayCulmination.direction}
       sightingBanner={todayCulmination.sightingSummary}
-      currentElevation={todayCulmination.altitude}
-      elevationColorClass="text-amber-400"
-      elevationStatusSubtitle="Noon Meridian Culmination"
+      currentElevation={currentSunElevation}
+      elevationColorClass={currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}
+      elevationStatusSubtitle={elevationSubtitle}
+      showTwilightBands={isTwilightMode}
       leftHorizonLabel="S"
       centerHorizonLabel="Z"
       rightHorizonLabel="N"
       showZenithAxis={true}
       latitude={latitude}
-      bodyX={todayPoint.x}
-      bodyY={todayPoint.y}
-      bodyVectorStroke="#fbbf24"
+      bodyX={activeSunPoint.x}
+      bodyY={activeSunPoint.y}
+      bodyVectorStroke={currentSunElevation >= 0 ? '#fbbf24' : '#475569'}
       renderBodyGraphic={() => (
         <g id="active-solar-noon-bead">
           <circle
-            cx={todayPoint.x}
-            cy={todayPoint.y}
-            r="7"
-            fill="#fbbf24"
-            fillOpacity="0.25"
-            className="animate-ping"
-          />
-          <circle
-            cx={todayPoint.x}
-            cy={todayPoint.y}
+            cx={activeSunPoint.x}
+            cy={activeSunPoint.y}
             r="5"
-            fill={todayCulmination.altitude >= 0 ? '#fbbf24' : '#64748b'}
-            fillOpacity={0.95}
+            fill={
+              currentSunElevation >= 0
+                ? '#fbbf24'
+                : currentSunElevation >= -6
+                ? '#f59e0b'
+                : currentSunElevation >= -12
+                ? '#64748b'
+                : '#334155'
+            }
+            fillOpacity={currentSunElevation >= -18 ? 0.95 : 0.45}
             stroke="#ffffff"
             strokeWidth="1.2"
+            strokeOpacity={currentSunElevation >= -18 ? 0.9 : 0.4}
             className="drop-shadow"
           >
-            <title>{`Today's Solar Noon Culmination: ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag}`}</title>
+            <title>{`Current Solar Altitude: ${currentSunElevation >= 0 ? '+' : ''}${currentSunElevation.toFixed(1)}° (${elevationSubtitle})`}</title>
           </circle>
         </g>
       )}
@@ -218,43 +258,50 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
             />
             <title>{`Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`}</title>
           </g>
+
+          {/* Daily Culmination Peak Target Halo on the Arc */}
+          <g id="meridian-noon-peak-target">
+            <line
+              x1={EL_CX}
+              y1={EL_CY}
+              x2={todayPeakPoint.x}
+              y2={todayPeakPoint.y}
+              stroke="#fbbf24"
+              strokeWidth="0.75"
+              strokeDasharray="2 2"
+              strokeOpacity="0.35"
+            />
+            <circle
+              cx={todayPeakPoint.x}
+              cy={todayPeakPoint.y}
+              r="5.5"
+              fill="none"
+              stroke="#fbbf24"
+              strokeWidth="1.0"
+              strokeDasharray="2 2"
+              strokeOpacity="0.75"
+            >
+              <title>{`Today's Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`}</title>
+            </circle>
+          </g>
+
+          {/* Sub-horizon vertical line to active bead when sun is below horizon */}
+          {currentSunElevation < 0 && (
+            <line
+              x1={EL_CX}
+              y1={EL_CY}
+              x2={EL_CX}
+              y2={activeSunPoint.y}
+              stroke="#475569"
+              strokeWidth="0.75"
+              strokeDasharray="2 2"
+              strokeOpacity="0.6"
+            />
+          )}
         </g>
       }
     >
-      {/* Symmetrical Sun State & Analemma Bar */}
-      <div 
-        className="bg-slate-950/60 p-2 rounded-xl border border-slate-800/40 flex items-center justify-between gap-3 mt-1"
-        title={`Earth-Sun Distance: ${distanceAU.toFixed(3)} AU (${distanceKm.toLocaleString()} km)`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 w-[52px] h-[52px] rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-            <Sun className="w-6 h-6 text-amber-400 drop-shadow-sm" />
-          </div>
-          <div className="font-mono text-left">
-            <div className="text-xs font-semibold text-slate-200">Meridian Axis</div>
-            <div className="text-[10px] text-slate-400 font-medium">
-              Eq of Time: <span className={equationOfTime >= 0 ? 'text-indigo-300' : 'text-rose-300'}>{equationOfTime >= 0 ? `+${equationOfTime.toFixed(1)}m` : `${equationOfTime.toFixed(1)}m`}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="font-mono text-right text-[10px] space-y-0.5">
-          <div className="text-slate-400">
-            Peak Altitude: <strong className="text-amber-300 font-semibold">{todayCulmination.altitude.toFixed(1)}° {todayCulmination.shortTag}</strong>
-          </div>
-          <div>
-            <span className={`font-semibold px-1.5 py-0.5 rounded border text-[9px] ${
-              isTropical
-                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/60'
-                : 'bg-slate-900/60 text-slate-400 border-slate-800/60'
-            }`}>
-              {isTropical ? 'Tropical (Lahaina Cross)' : 'Temperate Arc'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Solstice Noon Limits & Zenith Transit Stats Strip */}
+      {/* Solstice Noon Limits & Zenith Transit Stats Strip (Dedicated to Meridian Geometry) */}
       <div className="flex items-center justify-between text-[10px] font-mono bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/50 text-slate-400 mt-1">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -277,7 +324,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
         </div>
       </div>
 
-      {/* Mirrored Footer Summary Badges: Solstice Range, Solar Noon Snap Button, Declination, Profile Tag */}
+      {/* Mirrored 4-Badge Summary Footer with Mode View Toggle (Std vs Twilight) */}
       <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
         <div 
           className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
@@ -291,30 +338,52 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
             Min ↔ Max
           </span>
         </div>
-        <div 
-          onClick={() => solarNoon && onSetTime && onSetTime(solarNoon)}
-          className="text-center bg-amber-950/60 hover:bg-amber-900/80 transition-all cursor-pointer p-1.5 rounded-lg border border-amber-500/40 text-amber-300 shadow-sm flex flex-col justify-center min-w-0"
-          title="Click to jump clock to Solar Noon"
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-amber-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap flex items-center justify-center gap-0.5 truncate">
-            <Compass className="w-2.5 h-2.5 shrink-0" /> Solar Noon
-          </span>
-          <span className="text-amber-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">{formatTime(solarNoon).substring(0, 5)} <span className="text-amber-400/80 text-[9px] font-normal font-sans">UTC</span></span>
-        </div>
         <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Declination (δ)</span>
-          <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${(sunDeclination as number) >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
-            {(sunDeclination as number) >= 0 ? `+${(sunDeclination as number).toFixed(1)}°` : `${(sunDeclination as number).toFixed(1)}°`}
-          </span>
-        </div>
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Profile Axis</span>
-          <span className="text-amber-400 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            S ↔ Z ↔ N
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Summer Peak</span>
+          <span className="text-amber-300 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
+            {summerNoon.toFixed(1)}° {summerSolstice.shortTag}
           </span>
           <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-            Meridian
+            Highest Noon
           </span>
+        </div>
+        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Winter Peak</span>
+          <span className="text-amber-500 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
+            {winterNoon > 0 ? `${winterNoon.toFixed(1)}° ${winterSolstice.shortTag}` : 'Below 0°'}
+          </span>
+          <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+            Lowest Noon
+          </span>
+        </div>
+        <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
+          <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
+            <button
+              type="button"
+              onClick={() => setIsTwilightMode(false)}
+              aria-label="Standard Solar Meridian View"
+              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                !isTwilightMode
+                  ? 'bg-slate-800 text-amber-400 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Std
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsTwilightMode(true)}
+              aria-label="Twilight Strata Meridian View"
+              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
+                isTwilightMode
+                  ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Twilight
+            </button>
+          </div>
         </div>
       </div>
     </SkyDomeBase>

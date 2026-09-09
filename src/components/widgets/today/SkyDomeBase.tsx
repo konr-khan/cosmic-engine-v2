@@ -91,7 +91,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   showZenithAxis = false,
 }) => {
   const isAboveHorizon = currentElevation > 0;
-  const isVisible = currentElevation > -18;
+  const isVisible = showZenithAxis ? true : currentElevation > -18;
   const defaultElevationColor = currentElevation >= 0 ? 'text-amber-400' : 'text-slate-400';
   const meridianLabel = meridianDirection !== undefined 
     ? meridianDirection 

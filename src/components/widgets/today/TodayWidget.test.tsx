@@ -527,9 +527,11 @@ describe('Today Horizon Subsystem', () => {
     expect(quadHtml).toContain('meridian-solstice-geometry');
     expect(quadHtml).toContain('meridian-lunar-geometry');
 
-    // Profile axis footer tags are rendered
-    expect(quadHtml).toContain('Profile Axis');
-    expect(quadHtml).toContain('S ↔ Z ↔ N');
+    // Dedicated meridian profile limits and mode views are rendered
+    expect(quadHtml).toContain('Summer Sol:');
+    expect(quadHtml).toContain('Max Standstill:');
+    expect(quadHtml).toContain('Solstice Span');
+    expect(quadHtml).toContain('Standstill Span');
   });
 
   it('renders SunMeridianDome standalone with solstice swath, tick pins, active bead, and bottom stats', () => {
@@ -561,7 +563,6 @@ describe('Today Horizon Subsystem', () => {
 
     expect(sunMeridianHtml).toContain('Sun Meridian Profile');
     expect(sunMeridianHtml).toContain('Noon Peak');
-    expect(sunMeridianHtml).toContain('Noon Meridian Culmination');
 
     // S, Z, N horizon baseline
     expect(sunMeridianHtml).toContain('>S</text>');
@@ -585,12 +586,26 @@ describe('Today Horizon Subsystem', () => {
     expect(sunMeridianHtml).toContain('Winter Sol:');
     expect(sunMeridianHtml).toContain('Lahaina Transit:');
 
-    // 4-badge footer
+    // 4-badge footer with mode view toggle
     expect(sunMeridianHtml).toContain('Solstice Span');
     expect(sunMeridianHtml).toContain('Δδ 46.9°');
-    expect(sunMeridianHtml).toContain('Solar Noon');
-    expect(sunMeridianHtml).toContain('Declination (δ)');
-    expect(sunMeridianHtml).toContain('Profile Axis');
+    expect(sunMeridianHtml).toContain('Summer Peak');
+    expect(sunMeridianHtml).toContain('Winter Peak');
+    expect(sunMeridianHtml).toContain('Mode View');
+    expect(sunMeridianHtml).toContain('Std');
+    expect(sunMeridianHtml).toContain('Twilight');
+  });
+
+  it('renders SunMeridianDome with twilight strata when twilight mode active', () => {
+    const twilightHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        initialTwilightMode: true,
+      })
+    );
+    expect(twilightHtml).toContain('twilight-strata');
+    expect(twilightHtml).toContain('CIVIL');
   });
 
   it('renders MoonMeridianDome standalone with monthly swath, standstill bounds, and active bead', () => {
@@ -617,7 +632,6 @@ describe('Today Horizon Subsystem', () => {
 
     expect(moonMeridianHtml).toContain('Moon Meridian Profile');
     expect(moonMeridianHtml).toContain('Transit Peak');
-    expect(moonMeridianHtml).toContain('Meridian Transit Culmination');
 
     // S, Z, N horizon baseline
     expect(moonMeridianHtml).toContain('>S</text>');
@@ -645,12 +659,27 @@ describe('Today Horizon Subsystem', () => {
     expect(moonMeridianHtml).toContain('Min Standstill:');
     expect(moonMeridianHtml).toContain('Monthly:');
 
-    // 4-badge footer
+    // 4-badge footer with mode view toggle
     expect(moonMeridianHtml).toContain('Standstill Span');
     expect(moonMeridianHtml).toContain('Δδ 57.2°');
-    expect(moonMeridianHtml).toContain('Lunar Transit');
-    expect(moonMeridianHtml).toContain('Declination (δ)');
-    expect(moonMeridianHtml).toContain('Profile Axis');
+    expect(moonMeridianHtml).toContain('Monthly Range');
+    expect(moonMeridianHtml).toContain('Nodal State');
+    expect(moonMeridianHtml).toContain('Mode View');
+    expect(moonMeridianHtml).toContain('Std');
+    expect(moonMeridianHtml).toContain('☊ Nodes');
+  });
+
+  it('renders MoonMeridianDome with nodal telemetry and node marker when nodal mode active', () => {
+    const nodalHtml = renderToStaticMarkup(
+      React.createElement(MoonMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        initialNodalMode: true,
+      })
+    );
+    expect(nodalHtml).toContain('Ecliptic Lat (β):');
+    expect(nodalHtml).toContain('Next Node:');
+    expect(nodalHtml).toContain('id="meridian-ecliptic-node-marker"');
   });
 });
 
