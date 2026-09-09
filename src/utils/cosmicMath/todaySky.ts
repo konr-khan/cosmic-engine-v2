@@ -1,5 +1,6 @@
 import { toRadians, toDegrees, clamp, getJulianDate } from './core';
 import { calculateLunarPosition, calculateTrueLunarNodeEvents } from './lunar';
+import { calculateSolarPosition } from './solar';
 import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from './astroConstants';
 
 export const EL_R = 92;
@@ -467,20 +468,18 @@ export const calculateSkyDomeLunarNodes = (
     });
   }
 
-  const OBLIQUITY = 23.439281;
-  const epsRad = toRadians(OBLIQUITY);
+  const epsRad = toRadians(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
 
   // Derive solar right ascension to establish local sidereal time (LST)
-  let solLam = sunLambdaDeg;
-  if (solLam === undefined) {
-    const n = julianDate - 2451545.0;
-    const L = (280.460 + 0.9856474 * n) % 360;
-    const g = (357.528 + 0.9856003 * n) % 360;
-    solLam = L + 1.915 * Math.sin(toRadians(g)) + 0.020 * Math.sin(toRadians(2 * g));
+  let sunRa: number;
+  if (sunLambdaDeg === undefined) {
+    const solPos = calculateSolarPosition(julianDate);
+    sunRa = solPos.rightAscension;
+  } else {
+    const solLamRad = toRadians(sunLambdaDeg);
+    sunRa = Number(toDegrees(Math.atan2(Math.cos(epsRad) * Math.sin(solLamRad), Math.cos(solLamRad))));
+    if (sunRa < 0) sunRa += 360;
   }
-  const solLamRad = toRadians(solLam);
-  let sunRa: number = Number(toDegrees(Math.atan2(Math.cos(epsRad) * Math.sin(solLamRad), Math.cos(solLamRad))));
-  if (sunRa < 0) sunRa += 360;
 
   // LST at the active display time: H_sun = (displayTime - solarNoon) * 15 => LST = H_sun + sunRA
   const lstDeg = (displayTime - solarNoon) * 15 + sunRa;

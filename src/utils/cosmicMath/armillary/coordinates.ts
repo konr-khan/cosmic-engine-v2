@@ -1,25 +1,8 @@
 import { Degrees, Latitude, Longitude, JulianDate, asDegrees } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
-import { toRadians, toDegrees, clamp } from '../core';
-import { J2000_JD } from '../astroConstants';
+import { toRadians, toDegrees, clamp, calculateGMST, calculateLST } from '../core';
 
-/**
- * Computes Greenwich Mean Sidereal Time (GMST) in degrees [0, 360).
- */
-export function calculateGMST(julianDate: JulianDate | number): Degrees {
-  const d = julianDate - J2000_JD;
-  const gmst = (280.46061837 + 360.98564736629 * d) % 360;
-  return asDegrees(((gmst % 360) + 360) % 360);
-}
-
-/**
- * Computes Local Sidereal Time (LST) in degrees [0, 360).
- */
-export function calculateLST(julianDate: JulianDate | number, longitude: Longitude): Degrees {
-  const gmst = calculateGMST(julianDate);
-  const lst = (((gmst + longitude) % 360) + 360) % 360;
-  return asDegrees(lst);
-}
+export { calculateGMST, calculateLST };
 
 /**
  * Converts equatorial coordinates (RA, Dec) into 3D Cartesian coordinates on celestial sphere of radius R0.

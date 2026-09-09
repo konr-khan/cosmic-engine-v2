@@ -4,6 +4,7 @@ import {
   JulianDate, 
   HoursDecimal, 
   DayOfYear,
+  Longitude,
   asDegrees, 
   asRadians, 
   asJulianDate,
@@ -11,6 +12,7 @@ import {
   toDegrees
 } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
+import { J2000_JD } from './astroConstants';
 
 export { toRadians, toDegrees };
 
@@ -379,4 +381,22 @@ export const slerp3D = (v1: Vector3D, v2: Vector3D, t: number): Vector3D => {
     z: uz * rT
   };
 };
+
+/**
+ * Computes Greenwich Mean Sidereal Time (GMST) in degrees [0, 360).
+ */
+export function calculateGMST(julianDate: JulianDate | number): Degrees {
+  const d = (typeof julianDate === 'number' ? julianDate : julianDate) - J2000_JD;
+  const gmst = (280.46061837 + 360.98564736629 * d) % 360;
+  return asDegrees(((gmst % 360) + 360) % 360);
+}
+
+/**
+ * Computes Local Sidereal Time (LST) in degrees [0, 360).
+ */
+export function calculateLST(julianDate: JulianDate | number, longitude: Longitude | number): Degrees {
+  const gmst = calculateGMST(julianDate);
+  const lst = (((gmst + longitude) % 360) + 360) % 360;
+  return asDegrees(lst);
+}
 

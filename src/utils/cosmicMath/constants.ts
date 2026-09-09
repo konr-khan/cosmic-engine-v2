@@ -1,3 +1,5 @@
+import { SOLAR_TWILIGHT_THRESHOLDS } from './astroConstants';
+
 /**
  * Global configuration constants for theme colors, twilight thresholds, orbital scales, and calendar presets.
  */
@@ -16,23 +18,11 @@ export const CONFIG = {
     ACCENT: "#6366f1"         // indigo-500
   },
   SOLAR: {
-    TWILIGHT: { 
-      OFFICIAL: -0.833, 
-      CIVIL: -6.0, 
-      NAUTICAL: -12.0, 
-      ASTRONOMICAL: -18.0 
-    }
+    TWILIGHT: SOLAR_TWILIGHT_THRESHOLDS
   },
   ORBIT: {
-    earthRadius: 12,
-    moonRadius: 6
+    earthRadius: 12
   },
-  DATES: [
-    { day: 79, label: "Spring Equinox (Mar)", short: "Mar Eq" },
-    { day: 172, label: "Summer Solstice (Jun)", short: "Jun Sol" },
-    { day: 266, label: "Autumn Equinox (Sep)", short: "Sep Eq" },
-    { day: 355, label: "Winter Solstice (Dec)", short: "Dec Sol" },
-  ],
   LAT_PRESETS: [
     { lat: 90, label: "N. Pole" },
     { lat: 66.5, label: "Arctic Circle" },

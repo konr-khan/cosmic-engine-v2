@@ -1,4 +1,4 @@
-import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
+import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear, calculateLST } from './core';
 import { 
   J2000_JD,
   ASTRONOMICAL_UNIT_KM,
@@ -8,7 +8,8 @@ import {
   MOON_MEAN_DISTANCE_KM,
   EARTH_AXIAL_OBLIQUITY_J2000_DEG,
   LUNAR_PERIGEE_THRESHOLD_KM, 
-  LUNAR_APOGEE_THRESHOLD_KM 
+  LUNAR_APOGEE_THRESHOLD_KM,
+  DRACONIC_PERIOD_DAYS
 } from './astroConstants';
 import { calculateSolarPosition } from './solar';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees, asJulianDate, HoursDecimal, julianDateToCenturies } from '../../types/units';
@@ -93,14 +94,9 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
   const parallaxDeg = toDegrees(Math.asin(clamp(EARTH_RADIUS_WGS84_KM / safeDistanceKm, -1, 1)));
 
   // --- Meeus Ch. 48 Geocentric Phase Angle (i) & True Illumination Fraction (k) ---
-  const n = julianDate - J2000_JD;
-  const solarL = (280.460 + 0.9856474 * n) % 360;
-  const solarG = (357.528 + 0.9856003 * n) % 360;
-  const solarGRad = toRadians(solarG);
-  const solarLambda = solarL + 1.915 * Math.sin(solarGRad) + 0.020 * Math.sin(2 * solarGRad);
-  const solarLambdaRad = toRadians(solarLambda);
-  const solarDistAU = 1.00014 - 0.01671 * Math.cos(solarGRad) - 0.00014 * Math.cos(2 * solarGRad);
-  const solarDistKm = solarDistAU * ASTRONOMICAL_UNIT_KM;
+  const solarPos = calculateSolarPosition(julianDate);
+  const solarLambdaRad = toRadians(solarPos.lambda);
+  const solarDistKm = solarPos.distanceKm;
 
   // Geocentric elongation psi: cos(psi) = cos(beta) * cos(lambda - lambda_sun)
   const cosPsi = Math.cos(bRad) * Math.cos(lRad - solarLambdaRad);
@@ -208,7 +204,6 @@ export const calculateTrueLunarNodeEvents = (
   const currentPos = calculateLunarPosition(currentJD);
   const currentF = Number(currentPos.argumentOfLatitude ?? 0);
   const normF = ((currentF % 360) + 360) % 360;
-  const DRACONIC_PERIOD_DAYS = 27.21222;
 
   // Find candidate mean node offsets k within [-windowDays - 14, +windowDays + 14]
   // Node crossings occur every ~180° in F (approx every 13.6 days)
@@ -284,9 +279,7 @@ export const calculateParallacticAngle = (
   decDeg: Degrees | number, 
   raDeg: Degrees | HoursDecimal | number
 ): number => {
-  const d = julianDate - J2000_JD;
-  const gmst = (280.46061837 + 360.98564736629 * d) % 360;
-  const lst = (((gmst + lon) % 360) + 360) % 360;
+  const lst = calculateLST(julianDate, lon);
   let H = (((lst - raDeg) % 360) + 360) % 360;
 
   const latRad = toRadians(clamp(lat, -89.9, 89.9));

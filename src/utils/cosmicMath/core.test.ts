@@ -38,7 +38,9 @@ import {
   SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
   EARTH_AXIAL_OBLIQUITY_J2000_DEG,
   LUNAR_PERIGEE_THRESHOLD_KM,
-  LUNAR_APOGEE_THRESHOLD_KM
+  LUNAR_APOGEE_THRESHOLD_KM,
+  calculateGMST,
+  calculateLST
 } from './index';
 import { 
   Vector3D, 
@@ -505,6 +507,34 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
       expect(Number.isNaN(sceneExag.shadowCones.penumbraAngle)).toBe(false);
       expect(sceneExag.shadowCones.umbraLengthKm).toBeGreaterThan(0);
       expect(sceneExag.shadowCones.penumbraLengthKm).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Sidereal Time: GMST & LST', () => {
+    it('computes Greenwich Mean Sidereal Time (GMST) accurately at epoch J2000.0', () => {
+      const gmstJ2000 = calculateGMST(J2000_JD);
+      expect(gmstJ2000).toBeCloseTo(280.4606, 3);
+    });
+
+    it('advances GMST by approximately 360.9856 degrees per solar day', () => {
+      const gmst0 = calculateGMST(J2000_JD);
+      const gmst1 = calculateGMST(J2000_JD + 1);
+      const delta = ((gmst1 - gmst0) % 360 + 360) % 360;
+      expect(delta).toBeCloseTo(360.9856 % 360, 3);
+    });
+
+    it('computes Local Sidereal Time (LST) incorporating observer longitude with proper modulo wrap', () => {
+      const gmst = calculateGMST(J2000_JD);
+      const lonEast: Longitude = 45;
+      const lonWest: Longitude = -120;
+
+      const lstEast = calculateLST(J2000_JD, lonEast);
+      expect(lstEast).toBeCloseTo((gmst + lonEast) % 360, 4);
+
+      const lstWest = calculateLST(J2000_JD, lonWest);
+      expect(lstWest).toBeCloseTo(((gmst + lonWest) % 360 + 360) % 360, 4);
+      expect(lstWest).toBeGreaterThanOrEqual(0);
+      expect(lstWest).toBeLessThan(360);
     });
   });
 });

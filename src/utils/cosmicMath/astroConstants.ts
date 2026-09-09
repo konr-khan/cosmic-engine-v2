@@ -110,3 +110,24 @@ export const EARTH_ECCENTRICITY_EXAGGERATED = 0.25;
  * Earth heliocentric longitude of perihelion at epoch J2000.0 in degrees (~102.937°).
  */
 export const EARTH_PERIHELION_LONGITUDE_DEG: Degrees = asDegrees(102.937);
+
+/**
+ * Mean draconic (nodical) month period in days (period between successive ascending node crossings).
+ */
+export const MOON_DRACONIC_PERIOD_DAYS = 27.21222;
+export const DRACONIC_PERIOD_DAYS = MOON_DRACONIC_PERIOD_DAYS;
+
+/**
+ * Solar altitude thresholds for civil, nautical, and astronomical twilights (degrees).
+ */
+export const TWILIGHT_OFFICIAL_DEG = -0.833;
+export const TWILIGHT_CIVIL_DEG = -6.0;
+export const TWILIGHT_NAUTICAL_DEG = -12.0;
+export const TWILIGHT_ASTRONOMICAL_DEG = -18.0;
+
+export const SOLAR_TWILIGHT_THRESHOLDS = {
+  OFFICIAL: TWILIGHT_OFFICIAL_DEG,
+  CIVIL: TWILIGHT_CIVIL_DEG,
+  NAUTICAL: TWILIGHT_NAUTICAL_DEG,
+  ASTRONOMICAL: TWILIGHT_ASTRONOMICAL_DEG
+} as const;

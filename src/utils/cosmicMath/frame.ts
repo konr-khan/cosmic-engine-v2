@@ -9,7 +9,7 @@ import { JulianDate, Latitude, Longitude, asJulianDate, asDegrees } from '../../
 import { EphemerisFrame } from '../../types/astronomy';
 import { calculateSolarPosition, calculateDaylightDurationPrecise } from './solar';
 import { calculateLunarPosition } from './lunar';
-import { calculateGMST, calculateLST } from './armillary/coordinates';
+import { calculateGMST, calculateLST } from './core';
 
 /**
  * Calculates a complete, immutable EphemerisFrame snapshot containing instantaneous
