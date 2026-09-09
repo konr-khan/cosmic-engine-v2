@@ -278,4 +278,49 @@ describe('SkyDomeBase Primitive Component Test Suite', () => {
     expect(html).toContain('ASTRO');
     expect(html).toContain('(Below Horizon) · Civil Twilight');
   });
+
+  it('renders dynamic culmination meridian indicator, peak direction suffix, and sighting banner', () => {
+    const html = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Elevation Arc"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={87.9}
+        peakDirectionSuffix="N"
+        meridianDirection="N"
+        sightingBanner="Looking North · N-Sky Arc"
+        currentElevation={50.0}
+        latitude={21.3}
+      />
+    );
+
+    // Peak suffix in header
+    expect(html).toContain('87.9° N');
+    // Dynamic meridian indicator
+    expect(html).toContain('>N</text>');
+    expect(html).toContain('Culmination meridian bearing: North');
+    // Sighting orientation banner
+    expect(html).toContain('Looking North · N-Sky Arc');
+  });
+
+  it('renders Zenith meridian indicator "Z" for overhead tropical transit', () => {
+    const html = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Elevation Arc"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={90.0}
+        peakDirectionSuffix="ZENITH"
+        meridianDirection="Z"
+        sightingBanner="Overhead Zenith Transit"
+        currentElevation={90.0}
+        latitude={21.3}
+      />
+    );
+
+    expect(html).toContain('90.0° ZENITH');
+    expect(html).toContain('>Z</text>');
+    expect(html).toContain('Culmination meridian bearing: Zenith (Overhead)');
+    expect(html).toContain('Overhead Zenith Transit');
+  });
 });

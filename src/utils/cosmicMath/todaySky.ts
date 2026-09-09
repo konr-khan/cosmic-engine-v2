@@ -1,5 +1,6 @@
 import { toRadians, toDegrees, clamp, getJulianDate } from './core';
 import { calculateLunarPosition, calculateTrueLunarNodeEvents } from './lunar';
+import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from './astroConstants';
 
 export const EL_R = 92;
 export const EL_CX = 130;
@@ -40,6 +41,37 @@ export interface TwilightStatusInfo {
   label: string;
   subtitle: string;
   badgeClass: string;
+}
+
+export type CulminationDirection = 'South' | 'North' | 'Zenith';
+
+export interface CulminationInfo {
+  direction: CulminationDirection;
+  meridianLabel: 'S' | 'N' | 'Z';
+  altitude: number;
+  shortTag: string;
+  sightingSummary: string;
+}
+
+export interface RiseSetAzimuthInfo {
+  riseAzimuth: number | null;
+  setAzimuth: number | null;
+  riseOctant: string;
+  setOctant: string;
+  riseFormatted: string;
+  setFormatted: string;
+  isCircumpolar: boolean;
+  isPolarNight: boolean;
+}
+
+export interface SolsticeCulminations {
+  summer: CulminationInfo;
+  winter: CulminationInfo;
+}
+
+export interface LunarExtremaCulminations {
+  maxBound: CulminationInfo;
+  minBound: CulminationInfo;
 }
 
 /**
@@ -550,5 +582,164 @@ export const calculateMonthlyLunarDeclinationBounds = (
   return {
     minDec: parseFloat(minDec.toFixed(2)),
     maxDec: parseFloat(maxDec.toFixed(2))
+  };
+};
+
+const COMPASS_OCTANTS = [
+  'N', 'NNE', 'NE', 'ENE',
+  'E', 'ESE', 'SE', 'SSE',
+  'S', 'SSW', 'SW', 'WSW',
+  'W', 'WNW', 'NW', 'NNW'
+] as const;
+
+/**
+ * Converts a decimal azimuth angle [0, 360) into a standard 16-wind compass octant code.
+ */
+export const azimuthToCompassOctant = (azimuthDeg: number): string => {
+  const norm = ((azimuthDeg % 360) + 360) % 360;
+  const idx = Math.floor(((norm + 11.25) % 360) / 22.5) % 16;
+  return COMPASS_OCTANTS[idx] || 'N';
+};
+
+/**
+ * Computes the exact culmination meridian bearing, signed peak altitude,
+ * and observer sighting orientation for a celestial body at meridian transit (H = 0).
+ *
+ * For an observer at latitude phi and a body at declination delta:
+ * - Delta = delta - phi
+ * - If |Delta| < 0.25°: Zenith overhead transit (Lahaina Noon)
+ * - If Delta < 0: Culmination to the South (Az = 180°, facing South)
+ * - If Delta > 0: Culmination to the North (Az = 0°, facing North)
+ */
+export const calculateCulminationBearing = (
+  latitudeDeg: number,
+  declinationDeg: number
+): CulminationInfo => {
+  const delta = declinationDeg - latitudeDeg;
+  const rawAlt = 90 - Math.abs(delta);
+  const altitude = clamp(rawAlt, -90, 90);
+
+  if (Math.abs(delta) < 0.25) {
+    return {
+      direction: 'Zenith',
+      meridianLabel: 'Z',
+      altitude: 90.0,
+      shortTag: 'ZENITH',
+      sightingSummary: 'Overhead Zenith Transit'
+    };
+  }
+
+  if (delta < 0) {
+    return {
+      direction: 'South',
+      meridianLabel: 'S',
+      altitude,
+      shortTag: 'S',
+      sightingSummary: 'Looking South · S-Sky Arc'
+    };
+  }
+
+  return {
+    direction: 'North',
+    meridianLabel: 'N',
+    altitude,
+    shortTag: 'N',
+    sightingSummary: 'Looking North · N-Sky Arc'
+  };
+};
+
+/**
+ * Computes the rising and setting horizon azimuths and 16-point compass octants
+ * for a body at declination delta for an observer at latitude phi.
+ *
+ * Spherical formula: cos(Az_rise) = sin(delta) / cos(phi)
+ * Az_set = (360° - Az_rise) % 360°
+ */
+export const calculateRiseSetAzimuth = (
+  latitudeDeg: number,
+  declinationDeg: number
+): RiseSetAzimuthInfo => {
+  const phiRad = toRadians(latitudeDeg);
+  const decRad = toRadians(declinationDeg);
+
+  const tanProduct = Math.tan(phiRad) * Math.tan(decRad);
+
+  // Polar Night: body never rises above horizon
+  if (tanProduct <= -1) {
+    return {
+      riseAzimuth: null,
+      setAzimuth: null,
+      riseOctant: '--',
+      setOctant: '--',
+      riseFormatted: '--',
+      setFormatted: '--',
+      isCircumpolar: false,
+      isPolarNight: true
+    };
+  }
+
+  // Midnight Sun / Circumpolar: body never sets below horizon
+  if (tanProduct >= 1) {
+    return {
+      riseAzimuth: null,
+      setAzimuth: null,
+      riseOctant: '--',
+      setOctant: '--',
+      riseFormatted: '--',
+      setFormatted: '--',
+      isCircumpolar: true,
+      isPolarNight: false
+    };
+  }
+
+  const cosPhi = Math.cos(phiRad);
+  const cosRise = cosPhi !== 0 ? Math.sin(decRad) / cosPhi : 0;
+  const riseAz = toDegrees(Math.acos(clamp(cosRise, -1, 1)));
+  const setAz = (360 - riseAz) % 360;
+
+  const riseOctant = azimuthToCompassOctant(riseAz);
+  const setOctant = azimuthToCompassOctant(setAz);
+
+  return {
+    riseAzimuth: parseFloat(riseAz.toFixed(1)),
+    setAzimuth: parseFloat(setAz.toFixed(1)),
+    riseOctant,
+    setOctant,
+    riseFormatted: `${Math.round(riseAz).toString().padStart(3, '0')}° ${riseOctant}`,
+    setFormatted: `${Math.round(setAz).toString().padStart(3, '0')}° ${setOctant}`,
+    isCircumpolar: false,
+    isPolarNight: false
+  };
+};
+
+/**
+ * Computes the Summer and Winter Solstice meridian culminations for a given latitude,
+ * preserving physical Northern vs. Southern sky bearings for tropical and temperate observers.
+ */
+export const calculateSolsticeCulminations = (
+  latitudeDeg: number
+): SolsticeCulminations => {
+  const obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
+  const summerDec = latitudeDeg >= 0 ? obliquity : -obliquity;
+  const winterDec = latitudeDeg >= 0 ? -obliquity : obliquity;
+
+  return {
+    summer: calculateCulminationBearing(latitudeDeg, summerDec),
+    winter: calculateCulminationBearing(latitudeDeg, winterDec)
+  };
+};
+
+/**
+ * Computes the monthly maximum and minimum lunar transit culminations for a given latitude,
+ * identifying when the Moon crosses the Zenith into the opposite sky hemisphere.
+ */
+export const calculateLunarExtremaCulminations = (
+  latitudeDeg: number,
+  maxDec: number,
+  minDec: number
+): LunarExtremaCulminations => {
+  return {
+    maxBound: calculateCulminationBearing(latitudeDeg, maxDec),
+    minBound: calculateCulminationBearing(latitudeDeg, minDec)
   };
 };

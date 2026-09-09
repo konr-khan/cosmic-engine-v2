@@ -43,6 +43,10 @@ export interface SkyDomeBaseProps {
   diurnalPaths?: SkyDomeDiurnalPath[];
   showTwilightBands?: boolean;
   elevationStatusSubtitle?: string;
+  meridianDirection?: 'S' | 'N' | 'Z';
+  culminationDirection?: 'South' | 'North' | 'Zenith';
+  sightingBanner?: string;
+  peakDirectionSuffix?: string;
   bodyX?: number;
   bodyY?: number;
   bodyVectorStroke?: string;
@@ -66,6 +70,10 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   diurnalPaths = [],
   showTwilightBands = false,
   elevationStatusSubtitle,
+  meridianDirection,
+  culminationDirection,
+  sightingBanner,
+  peakDirectionSuffix,
   bodyX = EL_CX,
   bodyY = EL_CY,
   bodyVectorStroke = '#64748b',
@@ -77,7 +85,9 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   const isAboveHorizon = currentElevation > 0;
   const isVisible = currentElevation > -18;
   const defaultElevationColor = currentElevation >= 0 ? 'text-amber-400' : 'text-slate-400';
-  const meridianLabel = latitude !== undefined && latitude < 0 ? 'N' : 'S';
+  const meridianLabel = meridianDirection !== undefined 
+    ? meridianDirection 
+    : (latitude !== undefined && latitude < 0 ? 'N' : 'S');
 
   return (
     <div className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative">
@@ -88,7 +98,9 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
         </div>
         <div className="text-xs text-slate-300 font-mono">
           <span className="text-[10px] text-slate-400 font-sans uppercase mr-1">{peakLabel}:</span>
-          <strong className="text-white font-semibold">{peakElevation.toFixed(1)}°</strong>
+          <strong className="text-white font-semibold">
+            {peakElevation.toFixed(1)}°{peakDirectionSuffix ? ` ${peakDirectionSuffix}` : ''}
+          </strong>
         </div>
       </div>
 
@@ -127,9 +139,14 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
           <text x="16" y="101" textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
           <text x="244" y="101" textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
 
-          {/* Cardinal Compass Indicators (E, S/N, W) */}
+          {/* Cardinal Compass Indicators (E, S/N/Z, W) */}
           <text x="36" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">E</text>
-          <text x={EL_CX} y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">{meridianLabel}</text>
+          <g>
+            <title>{`Culmination meridian bearing: ${meridianLabel === 'Z' ? 'Zenith (Overhead)' : meridianLabel === 'N' ? 'North' : 'South'}`}</title>
+            <text x={EL_CX} y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">
+              {meridianLabel}
+            </text>
+          </g>
           <text x="224" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">W</text>
 
           {/* Semicircular Elevation Arc Dome */}
@@ -245,8 +262,8 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
         </svg>
       </div>
 
-      {/* Live Elevation Readout Badge */}
-      <div className="text-center my-1 bg-slate-950/80 px-3 py-1 rounded-lg border border-slate-800/60 shadow-sm">
+      {/* Live Elevation Readout Badge & Sighting Orientation */}
+      <div className={`my-1 bg-slate-950/80 px-3 py-1 rounded-lg border border-slate-800/60 shadow-sm flex items-center ${sightingBanner ? 'justify-between' : 'justify-center'}`}>
         <div className={`text-sm font-mono font-semibold ${elevationColorClass || defaultElevationColor}`}>
           {currentElevation >= 0 ? `+${currentElevation.toFixed(1)}°` : `${currentElevation.toFixed(1)}°`}
           <span className="text-[10px] text-slate-400 uppercase font-sans ml-1.5 font-normal">
@@ -254,6 +271,15 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
             {elevationStatusSubtitle ? ` · ${elevationStatusSubtitle}` : ''}
           </span>
         </div>
+        {sightingBanner && (
+          <div 
+            className="text-[9px] font-mono text-slate-400 bg-slate-900/90 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1 select-none shrink-0"
+            title={`Observer line-of-sight: ${sightingBanner}`}
+          >
+            <span className="text-slate-500 text-[10px]">👁️</span>
+            <span className="truncate max-w-[130px] sm:max-w-none">{sightingBanner}</span>
+          </div>
+        )}
       </div>
 
       {/* Hover Popover */}

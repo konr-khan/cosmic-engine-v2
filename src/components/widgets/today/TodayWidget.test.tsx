@@ -360,4 +360,90 @@ describe('Today Horizon Subsystem', () => {
     expect(nodalMoonHtml).toContain('stroke="#38bdf8"');
     expect(nodalMoonHtml).toContain('stroke="#f43f5e"');
   });
+
+  it('correctly adapts SunElevationDome to tropical latitudes with North culmination and compass octants', () => {
+    // Honolulu (21.3°N) in June (dec = 23.44°): Sun peaks to the North!
+    const tropicalSunHtml = renderToStaticMarkup(
+      React.createElement(SunElevationDome, {
+        displayTime: 12,
+        latitude: 21.3,
+        solarData: {
+          noonElevation: 87.9,
+          solarNoon: 12,
+          equationOfTime: 0,
+          sunrise: 5.8,
+          sunset: 19.2,
+          declination: 23.439,
+          distanceAU: 1.016,
+          distanceKm: 152000000,
+          dayLength: 13.4,
+          civil: 0.5,
+          nautical: 1,
+          astronomical: 1.5,
+          daysSinceEpoch: 172,
+          lambda: 90,
+          eclipticLongitude: 90,
+          isMidnightSun: false,
+          isPolarNight: false
+        }
+      })
+    );
+
+    // North culmination indicator in peak readout and meridian
+    expect(tropicalSunHtml).toContain('87.9° N');
+    expect(tropicalSunHtml).toContain('>N</text>');
+    expect(tropicalSunHtml).toContain('Looking North · N-Sky Arc');
+
+    // Solstice limits show physical sky directions
+    expect(tropicalSunHtml).toContain('Summer Sol:');
+    expect(tropicalSunHtml).toContain('87.9° N');
+    expect(tropicalSunHtml).toContain('Winter Sol:');
+    expect(tropicalSunHtml).toContain('45.3° S');
+
+    // Sunrise / Sunset compass octants
+    expect(tropicalSunHtml).toContain('ENE');
+    expect(tropicalSunHtml).toContain('WNW');
+  });
+
+  it('correctly adapts MoonElevationDome to sub-tropical latitudes with North culmination and standstill tags', () => {
+    // Miami (25.8°N) with Moon at major northern standstill declination (+28.58°): peaks to the North!
+    const tropicalMoonHtml = renderToStaticMarkup(
+      React.createElement(MoonElevationDome, {
+        displayTime: 12,
+        latitude: 25.8,
+        orbitalData: {
+          phase: { value: 0.5, name: 'Full Moon' },
+          lunarPos: {
+            declination: 28.58,
+            rightAscension: 90,
+            distanceKm: 384400,
+            angularDiameterArcmin: 31.0,
+            eclipticLatitude: 5.14,
+            eclipticLongitude: 90
+          },
+          lunarEvents: {
+            moonrise: 6,
+            transit: 12,
+            moonset: 18,
+            distanceKm: 384400,
+            distanceEarthRadii: 60.3,
+            isPerigee: false,
+            isApogee: false,
+            declination: 28.58,
+            parallacticAngle: 0
+          }
+        } as unknown as OrbitalData
+      })
+    );
+
+    // North culmination indicator in peak readout and meridian
+    expect(tropicalMoonHtml).toContain('>N</text>');
+    expect(tropicalMoonHtml).toContain('Looking North · N-Sky Arc');
+
+    // Standstill limits show physical sky directions
+    expect(tropicalMoonHtml).toContain('Max Standstill:');
+    expect(tropicalMoonHtml).toContain('87.2° N');
+    expect(tropicalMoonHtml).toContain('Min Standstill:');
+    expect(tropicalMoonHtml).toContain('35.6° S');
+  });
 });

@@ -9,7 +9,10 @@ import {
   getJulianDate,
   projectSkyDomePoint,
   generateDiurnalPath,
-  getSolarTwilightStatus
+  getSolarTwilightStatus,
+  calculateCulminationBearing,
+  calculateRiseSetAzimuth,
+  calculateSolsticeCulminations
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
 import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
@@ -58,6 +61,20 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   const sunX = sunPos.x;
   const sunY = sunPos.y;
 
+  // --- Culmination & Sighting Bearing Math ---
+  const culmination = useMemo(
+    () => calculateCulminationBearing(latitude, Number(sunDeclination)),
+    [latitude, sunDeclination]
+  );
+  const riseSetAz = useMemo(
+    () => calculateRiseSetAzimuth(latitude, Number(sunDeclination)),
+    [latitude, sunDeclination]
+  );
+  const solsticeCulminations = useMemo(
+    () => calculateSolsticeCulminations(latitude),
+    [latitude]
+  );
+
   // --- Solstice Peaks & Zenith Cap Math ---
   const OBLIQUITY = 23.439281;
   const absLat = Math.abs(latitude);
@@ -65,12 +82,8 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
 
   // Maximum annual noon elevation ceiling (Zenith Cap boundary)
   const maxAnnualNoon = isTropical ? 90 : (90 - absLat + OBLIQUITY);
-  const summerSolsticeNoon = latitude >= 0
-    ? (90 - Math.abs(latitude - OBLIQUITY))
-    : (90 - Math.abs(latitude + OBLIQUITY));
-  const winterSolsticeNoon = latitude >= 0
-    ? (90 - Math.abs(latitude + OBLIQUITY))
-    : (90 - Math.abs(latitude - OBLIQUITY));
+  const summerSolsticeNoon = solsticeCulminations.summer.altitude;
+  const winterSolsticeNoon = solsticeCulminations.winter.altitude;
 
   // Zenith Cap geometry (unreachable sector when latitude is outside tropics)
   let capPathD = '';
@@ -103,11 +116,11 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.7,
-      label: `${summerSolsticeNoon.toFixed(0)}°`,
+      label: `${summerSolsticeNoon.toFixed(0)}° ${solsticeCulminations.summer.shortTag}`,
       labelColor: 'fill-amber-400/90',
       labelX,
       labelY: labelY + 2.5,
-      title: `Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}°`
+      title: `Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}° ${solsticeCulminations.summer.shortTag}`
     });
   }
 
@@ -168,11 +181,11 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.7,
-      label: `${winterSolsticeNoon.toFixed(0)}°`,
+      label: `${winterSolsticeNoon.toFixed(0)}° ${solsticeCulminations.winter.shortTag}`,
       labelColor: 'fill-amber-600/90',
       labelX,
       labelY: labelY + 2.5,
-      title: `Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}°`
+      title: `Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}° ${solsticeCulminations.winter.shortTag}`
     });
   }
 
@@ -185,6 +198,10 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       iconColorClass="text-amber-400"
       peakLabel="Noon Peak"
       peakElevation={noonElevation as number}
+      peakDirectionSuffix={culmination.shortTag}
+      meridianDirection={culmination.meridianLabel}
+      culminationDirection={culmination.direction}
+      sightingBanner={culmination.sightingSummary}
       currentElevation={currentSunElevation}
       elevationColorClass={twilightStatus.badgeClass}
       elevationStatusSubtitle={twilightStatus.label}
@@ -285,13 +302,13 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
           <span className="text-slate-400">Summer Sol:</span>
-          <strong className="text-amber-300 font-semibold">{summerSolsticeNoon.toFixed(1)}°</strong>
+          <strong className="text-amber-300 font-semibold">{summerSolsticeNoon.toFixed(1)}° {solsticeCulminations.summer.shortTag}</strong>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
           <span className="text-slate-400">Winter Sol:</span>
           <strong className="text-amber-500 font-semibold">
-            {winterSolsticeNoon > 0 ? `${winterSolsticeNoon.toFixed(1)}°` : 'Below 0°'}
+            {winterSolsticeNoon > 0 ? `${winterSolsticeNoon.toFixed(1)}° ${solsticeCulminations.winter.shortTag}` : 'Below 0°'}
           </strong>
         </div>
         <div className="flex items-center gap-1.5">
@@ -305,11 +322,19 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
 
       {/* Mirrored Footer Summary Badges: Sunrise / Sunset, Solar Noon Snap Button, Declination, Mode Toggle */}
       <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+        <div 
+          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
+          title={riseSetAz.riseFormatted !== '--' ? `Sunrise: ${riseSetAz.riseFormatted} · Sunset: ${riseSetAz.setFormatted}` : undefined}
+        >
           <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Sunrise / Set</span>
           <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
             {formatTime(sunrise).substring(0, 5)} / {formatTime(sunset).substring(0, 5)}
           </span>
+          {riseSetAz.riseOctant !== '--' && (
+            <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+              {riseSetAz.riseOctant} · {riseSetAz.setOctant}
+            </span>
+          )}
         </div>
         <div 
           onClick={() => solarNoon && onSetTime && onSetTime(solarNoon)}

@@ -12,7 +12,10 @@ import {
   generateDiurnalPath,
   calculateMonthlyLunarDeclinationBounds,
   calculateSkyDomeLunarNodes,
-  getLunarElevationStatus
+  getLunarElevationStatus,
+  calculateCulminationBearing,
+  calculateRiseSetAzimuth,
+  calculateLunarExtremaCulminations
 } from '../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
 import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
@@ -76,10 +79,25 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
 
   const transitPeakElevation = projectSkyDomePoint(0, Number(moonDeclination), latitude).elevation;
 
+  // --- Culmination & Sighting Bearing Math ---
+  const culmination = useMemo(
+    () => calculateCulminationBearing(latitude, Number(moonDeclination)),
+    [latitude, moonDeclination]
+  );
+  const riseSetAz = useMemo(
+    () => calculateRiseSetAzimuth(latitude, Number(moonDeclination)),
+    [latitude, moonDeclination]
+  );
+
   // Monthly Declination Bounds over a rolling 30-day window (±15 days)
   const monthlyBounds = useMemo(
     () => calculateMonthlyLunarDeclinationBounds(currentDate),
     [currentDate]
+  );
+
+  const extremaCulminations = useMemo(
+    () => calculateLunarExtremaCulminations(latitude, monthlyBounds.maxDec, monthlyBounds.minDec),
+    [latitude, monthlyBounds.maxDec, monthlyBounds.minDec]
   );
 
   // --- Lunar Altitude Bounds & Zenith Cap Math ---
@@ -87,6 +105,15 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   const LUNAR_MAX_DEC = 28.584;
   const absLat = Math.abs(latitude);
   const isLunarTropical = absLat <= LUNAR_MAX_DEC;
+
+  const standstillMaxCulmination = useMemo(
+    () => calculateCulminationBearing(latitude, LUNAR_MAX_DEC),
+    [latitude]
+  );
+  const standstillMinCulmination = useMemo(
+    () => calculateCulminationBearing(latitude, -LUNAR_MAX_DEC),
+    [latitude]
+  );
 
   // Maximum possible lunar transit elevation across all 18.6-year nodal cycles
   const maxAnnualMoonNoon = isLunarTropical ? 90 : (90 - absLat + LUNAR_MAX_DEC);
@@ -151,7 +178,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
 
   // 1. Monthly Max Lunar Transit Arc (Soft silver dashed hairline) - Shown in standard mode
   if (!isNodalMode && maxPathResult.pathD && maxPathResult.peakAlt > 0) {
-    const maxPeak = maxPathResult.peakAlt;
+    const maxPeak = extremaCulminations.maxBound.altitude;
     const labelY = EL_CY - EL_R * Math.sin(toRadians(maxPeak));
     const labelX = EL_CX + EL_R * Math.cos(toRadians(maxPeak)) + 3;
     diurnalPaths.push({
@@ -161,11 +188,11 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.7,
-      label: `${maxPeak.toFixed(0)}°`,
+      label: `${maxPeak.toFixed(0)}° ${extremaCulminations.maxBound.shortTag}`,
       labelColor: 'fill-slate-400',
       labelX,
       labelY: labelY + 2.5,
-      title: `Max Possible Lunar Altitude (Monthly ±15d Peak: ${monthlyBounds.maxDec.toFixed(1)}° Dec): ${maxPeak.toFixed(1)}°`
+      title: `Max Possible Lunar Altitude (Monthly ±15d Peak: ${monthlyBounds.maxDec.toFixed(1)}° Dec): ${maxPeak.toFixed(1)}° ${extremaCulminations.maxBound.shortTag}`
     });
   }
 
@@ -212,7 +239,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
 
   // 3. Monthly Min Lunar Transit Arc (Muted slate dashed hairline) - Shown in standard mode
   if (!isNodalMode && minPathResult.pathD && minPathResult.peakAlt > 0) {
-    const minPeak = minPathResult.peakAlt;
+    const minPeak = extremaCulminations.minBound.altitude;
     const labelY = EL_CY - EL_R * Math.sin(toRadians(minPeak));
     const labelX = EL_CX + EL_R * Math.cos(toRadians(minPeak)) + 3;
     diurnalPaths.push({
@@ -222,11 +249,11 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       strokeWidth: 0.75,
       strokeDasharray: '3 2',
       strokeOpacity: 0.6,
-      label: `${minPeak.toFixed(0)}°`,
+      label: `${minPeak.toFixed(0)}° ${extremaCulminations.minBound.shortTag}`,
       labelColor: 'fill-slate-500',
       labelX,
       labelY: labelY + 2.5,
-      title: `Min Possible Lunar Altitude (Monthly ±15d Trough: ${monthlyBounds.minDec.toFixed(1)}° Dec): ${minPeak.toFixed(1)}°`
+      title: `Min Possible Lunar Altitude (Monthly ±15d Trough: ${monthlyBounds.minDec.toFixed(1)}° Dec): ${minPeak.toFixed(1)}° ${extremaCulminations.minBound.shortTag}`
     });
   }
 
@@ -239,6 +266,10 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       iconColorClass="text-slate-300"
       peakLabel="Transit Peak"
       peakElevation={transitPeakElevation}
+      peakDirectionSuffix={culmination.shortTag}
+      meridianDirection={culmination.meridianLabel}
+      culminationDirection={culmination.direction}
+      sightingBanner={culmination.sightingSummary}
       currentElevation={currentMoonElevation}
       elevationColorClass={lunarStatus.badgeClass}
       elevationStatusSubtitle={lunarStatus.label}
@@ -396,13 +427,13 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
             <span className="text-slate-400">Max Standstill:</span>
-            <strong className="text-slate-200 font-semibold">{maxAnnualMoonNoon.toFixed(1)}°</strong>
+            <strong className="text-slate-200 font-semibold">{maxAnnualMoonNoon.toFixed(1)}° {standstillMaxCulmination.shortTag}</strong>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
             <span className="text-slate-400">Min Standstill:</span>
             <strong className="text-slate-400 font-semibold">
-              {minAnnualMoonNoon > 0 ? `${minAnnualMoonNoon.toFixed(1)}°` : 'Below 0°'}
+              {minAnnualMoonNoon > 0 ? `${minAnnualMoonNoon.toFixed(1)}° ${standstillMinCulmination.shortTag}` : 'Below 0°'}
             </strong>
           </div>
           <div className="flex items-center gap-1.5">
@@ -547,11 +578,19 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
 
       {/* Mirrored Footer Summary Badges: Moonrise / Moonset, Lunar Transit Snap Button, Declination, Mode Toggle */}
       <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-        <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
+        <div 
+          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
+          title={riseSetAz.riseFormatted !== '--' ? `Moonrise: ${riseSetAz.riseFormatted} · Moonset: ${riseSetAz.setFormatted}` : undefined}
+        >
           <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Moonrise / Set</span>
           <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
             {moonrise !== null && moonrise !== undefined ? formatTime(moonrise).substring(0, 5) : '--:--'} / {moonset !== null && moonset !== undefined ? formatTime(moonset).substring(0, 5) : '--:--'}
           </span>
+          {riseSetAz.riseOctant !== '--' && (
+            <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
+              {riseSetAz.riseOctant} · {riseSetAz.setOctant}
+            </span>
+          )}
         </div>
         <div
           onClick={() => transit && onSetTime && onSetTime(transit)}

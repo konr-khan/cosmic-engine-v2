@@ -13,6 +13,11 @@ import {
   calculateSkyDomeLunarNodes,
   getSolarTwilightStatus,
   getLunarElevationStatus,
+  calculateCulminationBearing,
+  calculateRiseSetAzimuth,
+  calculateSolsticeCulminations,
+  calculateLunarExtremaCulminations,
+  azimuthToCompassOctant,
   EL_R, 
   EL_CX, 
   EL_CY 
@@ -316,5 +321,149 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
     expect(nodes24Past.prevNodeType).toBe('ascending');
     expect(nodes24Past.daysSincePrevNode).toBeLessThanOrEqual(0.1);
     expect(nodes24Past.isMoonAscending).toBe(true);
+  });
+});
+
+describe('Dynamic Culmination Bearing & Observer Perspective (calculateCulminationBearing)', () => {
+  it('identifies South culmination for Northern temperate observers (London 51.5°N, dec = 23.44°)', () => {
+    const bearing = calculateCulminationBearing(51.5, 23.439);
+    expect(bearing.direction).toBe('South');
+    expect(bearing.meridianLabel).toBe('S');
+    expect(bearing.altitude).toBeCloseTo(90 - (51.5 - 23.439), 2);
+    expect(bearing.shortTag).toBe('S');
+    expect(bearing.sightingSummary).toContain('Looking South');
+  });
+
+  it('identifies North culmination for Southern temperate observers (Sydney -33.86°S, dec = -23.44°)', () => {
+    // In Sydney (-33.86°), winter sun at dec +23.44° or summer sun at dec -23.44°
+    // For dec = -23.44°, delta = -23.44 - (-33.86) = +10.42° > 0 => North!
+    const bearing = calculateCulminationBearing(-33.86, -23.439);
+    expect(bearing.direction).toBe('North');
+    expect(bearing.meridianLabel).toBe('N');
+    expect(bearing.altitude).toBeCloseTo(90 - 10.42, 1);
+    expect(bearing.shortTag).toBe('N');
+    expect(bearing.sightingSummary).toContain('Looking North');
+  });
+
+  it('correctly flips between North and South in the Tropics (Honolulu 21.3°N)', () => {
+    // June Solstice (dec = +23.44° > 21.3° => North culmination!)
+    const june = calculateCulminationBearing(21.3, 23.439);
+    expect(june.direction).toBe('North');
+    expect(june.meridianLabel).toBe('N');
+    expect(june.altitude).toBeCloseTo(87.86, 1);
+    expect(june.shortTag).toBe('N');
+    expect(june.sightingSummary).toContain('Looking North');
+
+    // December Solstice (dec = -23.44° < 21.3° => South culmination!)
+    const dec = calculateCulminationBearing(21.3, -23.439);
+    expect(dec.direction).toBe('South');
+    expect(dec.meridianLabel).toBe('S');
+    expect(dec.altitude).toBeCloseTo(90 - (21.3 - (-23.439)), 1); // 45.26°
+    expect(dec.shortTag).toBe('S');
+    expect(dec.sightingSummary).toContain('Looking South');
+  });
+
+  it('identifies Zenith transit (Lahaina Noon) when body declination matches latitude within 0.25°', () => {
+    const zenith = calculateCulminationBearing(21.3, 21.35);
+    expect(zenith.direction).toBe('Zenith');
+    expect(zenith.meridianLabel).toBe('Z');
+    expect(zenith.altitude).toBe(90.0);
+    expect(zenith.shortTag).toBe('ZENITH');
+    expect(zenith.sightingSummary).toContain('Overhead Zenith');
+  });
+
+  it('captures lunar super-tropical declination flips for sub-tropical observers (Miami 25.8°N)', () => {
+    // Major standstill northern lunar limit: dec = +28.58° > 25.8° => North culmination!
+    const moonNorth = calculateCulminationBearing(25.8, 28.58);
+    expect(moonNorth.direction).toBe('North');
+    expect(moonNorth.meridianLabel).toBe('N');
+    expect(moonNorth.altitude).toBeCloseTo(87.22, 1);
+
+    // Major standstill southern lunar limit: dec = -28.58° < 25.8° => South culmination!
+    const moonSouth = calculateCulminationBearing(25.8, -28.58);
+    expect(moonSouth.direction).toBe('South');
+    expect(moonSouth.meridianLabel).toBe('S');
+    expect(moonSouth.altitude).toBeCloseTo(90 - (25.8 + 28.58), 1); // 35.62°
+  });
+});
+
+describe('Rise and Set Horizon Azimuths (calculateRiseSetAzimuth)', () => {
+  it('computes exact Due East (090°) rise and Due West (270°) set at Equinox (dec = 0°)', () => {
+    const res = calculateRiseSetAzimuth(45, 0);
+    expect(res.isCircumpolar).toBe(false);
+    expect(res.isPolarNight).toBe(false);
+    expect(res.riseAzimuth).toBe(90.0);
+    expect(res.setAzimuth).toBe(270.0);
+    expect(res.riseOctant).toBe('E');
+    expect(res.setOctant).toBe('W');
+    expect(res.riseFormatted).toBe('090° E');
+    expect(res.setFormatted).toBe('270° W');
+  });
+
+  it('computes Northeast rise (Az < 90°) and Northwest set (Az > 270°) during Northern Summer', () => {
+    const res = calculateRiseSetAzimuth(51.5, 23.439);
+    expect(res.riseAzimuth).toBeLessThan(90);
+    expect(res.setAzimuth).toBeGreaterThan(270);
+    expect(res.riseOctant).toMatch(/NE|ENE/);
+    expect(res.setOctant).toMatch(/NW|WNW/);
+  });
+
+  it('computes Southeast rise (Az > 90°) and Southwest set (Az < 270°) during Northern Winter', () => {
+    const res = calculateRiseSetAzimuth(51.5, -23.439);
+    expect(res.riseAzimuth).toBeGreaterThan(90);
+    expect(res.setAzimuth).toBeLessThan(270);
+    expect(res.riseOctant).toMatch(/SE|ESE/);
+    expect(res.setOctant).toMatch(/SW|WSW/);
+  });
+
+  it('guards against polar night and midnight sun conditions', () => {
+    // Polar night: latitude 75°N, dec = -23.44°
+    const polarNight = calculateRiseSetAzimuth(75, -23.439);
+    expect(polarNight.isPolarNight).toBe(true);
+    expect(polarNight.riseAzimuth).toBeNull();
+    expect(polarNight.riseFormatted).toBe('--');
+
+    // Midnight sun: latitude 75°N, dec = +23.44°
+    const midnightSun = calculateRiseSetAzimuth(75, 23.439);
+    expect(midnightSun.isCircumpolar).toBe(true);
+    expect(midnightSun.riseAzimuth).toBeNull();
+    expect(midnightSun.riseFormatted).toBe('--');
+  });
+});
+
+describe('Solstice and Lunar Extrema Culminations', () => {
+  it('computes Solstice culminations with physical sky directions in the tropics', () => {
+    // Honolulu (21.3°N)
+    const solstices = calculateSolsticeCulminations(21.3);
+    // Summer (June) is in the North!
+    expect(solstices.summer.direction).toBe('North');
+    expect(solstices.summer.meridianLabel).toBe('N');
+    expect(solstices.summer.altitude).toBeCloseTo(87.86, 1);
+    // Winter (December) is in the South!
+    expect(solstices.winter.direction).toBe('South');
+    expect(solstices.winter.meridianLabel).toBe('S');
+    expect(solstices.winter.altitude).toBeCloseTo(45.26, 1);
+  });
+
+  it('computes Lunar extrema culminations spanning across zenith', () => {
+    // Taipei (25.0°N) during standstill
+    const extrema = calculateLunarExtremaCulminations(25.0, 28.5, -28.5);
+    expect(extrema.maxBound.direction).toBe('North');
+    expect(extrema.maxBound.meridianLabel).toBe('N');
+    expect(extrema.minBound.direction).toBe('South');
+    expect(extrema.minBound.meridianLabel).toBe('S');
+  });
+
+  it('converts decimal azimuth to 16-point compass octant correctly', () => {
+    expect(azimuthToCompassOctant(0)).toBe('N');
+    expect(azimuthToCompassOctant(45)).toBe('NE');
+    expect(azimuthToCompassOctant(90)).toBe('E');
+    expect(azimuthToCompassOctant(135)).toBe('SE');
+    expect(azimuthToCompassOctant(180)).toBe('S');
+    expect(azimuthToCompassOctant(225)).toBe('SW');
+    expect(azimuthToCompassOctant(270)).toBe('W');
+    expect(azimuthToCompassOctant(315)).toBe('NW');
+    expect(azimuthToCompassOctant(67.5)).toBe('ENE');
+    expect(azimuthToCompassOctant(292.5)).toBe('WNW');
   });
 });

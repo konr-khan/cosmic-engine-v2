@@ -29,7 +29,7 @@ Key capabilities include:
   - **Interactive Alidade Sighting Arm & Snap-to-Star**: Authentic dual pinnule sighting vanes, laser sightline, and **Click-to-Snap Target Locking** on stars (*Sirius*, *Vega*, *Arcturus*, *Rigel*), Sun, and Moon with live Alt/Az and RA/Dec sighting telemetry HUD.
   - **Historical Horology**: 12 classical navigational astrolabe stars, Roman/Medieval 12 Unequal Planetary Hours with Chaldean planetary rulers, and Greenwich/Local Sidereal Time.
 - **Solar Almanac & Twilight Bands**: Solstice/equinox pathing, civil/nautical/astronomical twilight durations, equation of time (analemma correction), and daylight length calculations with polar bounds handling, integrated side-by-side with the 24-hour circular Polar Sector Dial featuring **Solar Noon vs. UTC Mode** segmented controls.
-- **Today's Sky Horizon Dome**: Reusable shared `<SkyDomeBase />` primitive consolidating symmetrical 260x138 SVG elevation arc geometry (`EL_R = 92`, `EL_CX = 130`, `EL_CY = 104`), symmetrical dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, dynamic hemisphere culmination meridian indicator (**S** for $\phi \ge 0^\circ$ vs. **N** for $\phi < 0^\circ$), interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics with bottom 4-column summary metric panel (`grid-cols-4`) housing inline `[Std | Twilights]` and `[Std | ☊ Nodes]` mode toggles, harmonized atmospheric twilight strata colors (`#f59e0b`, `#64748b`, `#334155`), serene lunar silver (`#e2e8f0`) in Std mode, 4-quadrant Eclipse-convention nodal color/stroke encoding in Nodal mode, non-dashed subdued nocturnal trajectories (`strokeOpacity: 0.20`), strict 24-hour crossing gate (`nearestNodeDistDays <= 1.0`) targeting the nearest node event, and a centered $\pm 15$-day lookback/lookahead Draconic Progress Micro-Rail anchored at Today ($T=0, X=120$).
+- **Today's Sky Horizon Dome**: Reusable shared `<SkyDomeBase />` primitive consolidating symmetrical 260x138 SVG elevation arc geometry (`EL_R = 92`, `EL_CX = 130`, `EL_CY = 104`), symmetrical dual $+90^\circ$ Sun & Moon Elevation Arc domes with live zenith angles, dynamic celestial culmination meridian bearing (**S** for $\delta < \phi$, **N** for $\delta > \phi$, **Z** for $|\delta - \phi| < 0.25^\circ$ Zenith overhead transit) resolving tropical culmination inversions and lunar super-tropical declination swings ($\pm 28.58^\circ$), explicit observer sighting perspective cues (`Looking South · S-Sky Arc` vs `Looking North · N-Sky Arc` vs `Overhead Zenith Transit`), signed peak altitude readouts (e.g. `87.9° N` vs `45.3° S`), physical hemisphere tags on Solstice and Lunar Standstill curves, 16-point compass octants on Sunrise/Sunset and Moonrise/Moonset badges (`068° ENE` / `292° WNW`), interactive **Solar Noon Click-to-Snap** action, solar noon / lunar transit peak tracking, borderless $1.5\times$ Moon Phase disc with rich glassmorphic hover popovers, mirrored daily sunrise/sunset, moonrise/moonset, and declination metrics with bottom 4-column summary metric panel (`grid-cols-4`) housing inline `[Std | Twilights]` and `[Std | ☊ Nodes]` mode toggles, harmonized atmospheric twilight strata colors (`#f59e0b`, `#64748b`, `#334155`), serene lunar silver (`#e2e8f0`) in Std mode, 4-quadrant Eclipse-convention nodal color/stroke encoding in Nodal mode, non-dashed subdued nocturnal trajectories (`strokeOpacity: 0.20`), strict 24-hour crossing gate (`nearestNodeDistDays <= 1.0`) targeting the nearest node event, and a centered $\pm 15$-day lookback/lookahead Draconic Progress Micro-Rail anchored at Today ($T=0, X=120$).
 - **Widget Code-Splitting & Modular Lazy Loading**: Dynamic code-splitting of all 8 primary observatory widgets via `React.lazy()` and `<Suspense>` inside `DashboardWindow`, reducing the initial client bundle by **50.4%** (from 526.91 kB to 261.29 kB) with dark glassmorphic skeleton fallbacks and domain test suite decomposition.
 - **Lunar Almanac & Tidal Vectors**: 365-day 24-hour moonrise and moonset braided ribbon chart with Zulu time ticks (0000Z to 2400Z vs Local Mean Time), real-time hairline time guide scanning, Meeus Ch. 48 true geocentric phase angle ($i$) and disc illumination ($k$), 2-step iterative high-latitude rise/set solver, perigee/apogee distance metrics in km and $R_E$, astronomical parallactic angles, and streamlined summary ephemeris.
 - **Gravitational Tidal Force Micro-View**: 2D Earth gravitational tidal force micro-view with unified 9-layer `<MiniGlobe />` featuring rotating 3D vector continents and day/night terminator, prograde counter-clockwise orbital coordination ($\theta_{\text{svg}} = -\theta_{\text{math}}$) aligning lunar revolution with Earth's rotation, segmented `[Standard | ☊ Nodal Loop]` toggle control decomposing the lunar orbit into 4 color/stroke-coded quadrants partitioned dynamically at true crossing longitudes (`trueAscNodeLon`, `trueDescNodeLon`), dynamic Ascending (☊) and Descending (☋) node pins locked to true crossing longitudes from `calculateTrueLunarNodeEvents`, Moon body halo stroke color governed by true ecliptic latitude ($\beta \ge 0^\circ$ for Sky Blue `#38bdf8` vs $\beta < 0^\circ$ for Rose Red `#f43f5e`), and a dynamic ocean tidal wave oscillator reporting live Tidal Deformation Ratios from quadrature neap to syzygy spring tides.
@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 38 modules, 480 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 38 modules, 496 tests)
 
 ### Essential Commands
 
@@ -136,7 +136,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
 │   │   │   ├── todaySky.ts      # Topocentric sky dome projection, diurnal paths & draconic nodal kinematics
-│   │   │   ├── todaySky.test.ts # Unit tests for sky dome projections & draconic kinematics (16 tests)
+│   │   │   ├── todaySky.test.ts # Unit tests for sky dome projections & draconic kinematics (28 tests)
 │   │   │   ├── globe.ts         # Pure continent spherical projection & analytical limb clipping
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   │   │   ├── geoData.ts       # World landmass continent outline polygons
@@ -242,11 +242,11 @@ Cosmic Engine V2.0/
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── today/           # Decomposed today's horizon subsystem modules
 │       │   │   ├── SkyDomeBase.tsx         # Reusable 260x120 SVG elevation arc primitive & cardinal cues
-│       │   │   ├── SkyDomeBase.test.tsx    # Vitest unit tests for SkyDomeBase (12 tests)
+│       │   │   ├── SkyDomeBase.test.tsx    # Vitest unit tests for SkyDomeBase (14 tests)
 │       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & solar orbit bar
 │       │   │   ├── MoonElevationDome.tsx   # Symmetrical +90° Moon elevation arc & moon phase disc
 │       │   │   ├── TodayHorizonView.tsx    # Subsystem coordinator container
-│       │   │   ├── TodayWidget.test.tsx    # Vitest unit tests for today's horizon widget (8 tests)
+│       │   │   ├── TodayWidget.test.tsx    # Vitest unit tests for today's horizon widget (10 tests)
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── lunar/           # Decomposed lunar almanac subsystem modules
 │       │   │   ├── LunarRibbonChart.tsx    # 365-day 24h braided ribbon SVG chart
