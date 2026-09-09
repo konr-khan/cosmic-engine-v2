@@ -57,8 +57,8 @@ Key capabilities include:
 ## 2. Tech Stack & Essential Commands
 
 - **Framework**: React 19 (`react`, `react-dom`)
-- **Language**: TypeScript 5.8+ (Strict Mode with Symbol-branded units: `Degrees`, `Radians`, `JulianDate`, `JulianCenturies`)
-- **Bundler & Dev Server**: Vite 6+ (`vite`)
+- **Language**: TypeScript 7.0+ (Strict Mode with Symbol-branded units: `Degrees`, `Radians`, `JulianDate`, `JulianCenturies`)
+- **Bundler & Dev Server**: Vite 8+ (`vite`)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
@@ -70,10 +70,12 @@ Key capabilities include:
 | :--- | :--- |
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite (pure math, hooks, layout state, state store, error boundaries, widgets, worker fallbacks) |
-| `npm test -- --run` | Runs full Vitest suite in single-run CI mode |
+| `npm test` | Runs Vitest unit test suite in native single-run mode (`vitest run`) |
+| `npm test -- --run` | Runs full Vitest suite in single-run CI mode (equivalent/redundant with `npm test`) |
 | `npm run test:coverage` | Runs Vitest with v8 code coverage reporting |
-| `npm run build` | Builds production distribution to `dist/` |
+| `npm run lint:units` | Runs Babel AST branded unit-safety linter across all UI components |
+| `npm run sync:docs` | Runs automated Vitest test metric synchronizer & compiles master documentation dossier |
+| `npm run build` | Builds production distribution to `dist/` (`tsc --noEmit && vite build`) |
 | `npm run preview` | Previews built production bundle locally |
 
 ---
@@ -88,6 +90,7 @@ Cosmic Engine V2.0/
 ├── tsconfig.node.json           # TypeScript build tooling configuration
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
+├── PROJECT.md                   # Unified 3D scene graph milestones & feature matrix
 ├── README.md                    # Repository documentation & getting started
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
 ├── DEAD_ENDS.md                 # Critical log of failed historical approaches & solutions
@@ -136,9 +139,13 @@ Cosmic Engine V2.0/
 │   │   │   ├── astroConstants.ts # Centralized IAU/WGS-84/Meeus physical constants & J2000 epoch
 │   │   │   ├── constants.ts     # Orbital radii, twilight thresholds & theme tokens
 │   │   │   ├── core.ts          # Julian dates, hour formatting & trig helpers
+│   │   │   ├── core.test.ts     # Vitest unit tests for Julian calendar & core astronomy (39 tests)
 │   │   │   ├── solar.ts         # Solar declination, EoT, twilight algorithms & annual solar matrix
+│   │   │   ├── solar.test.ts    # Vitest unit tests for solar ephemeris & twilight bands (16 tests)
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
+│   │   │   ├── lunar.test.ts    # Vitest unit tests for lunar ephemeris & illumination (16 tests)
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
+│   │   │   ├── eclipse.test.ts  # Vitest unit tests for syzygy shadow geometry & presets (22 tests)
 │   │   │   ├── today/           # Decomposed Topocentric Sky Dome & Meridian Submodules
 │   │   │   │   ├── elevation.ts     # Prime vertical dome projection, diurnal paths & rise/set azimuths
 │   │   │   │   ├── meridian.ts      # S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
@@ -148,6 +155,7 @@ Cosmic Engine V2.0/
 │   │   │   ├── globe.ts         # Pure continent spherical projection & analytical limb clipping
 │   │   │   ├── globe.test.ts    # Unit tests for continent projections & analytical limb clipping (14 tests)
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
+│   │   │   ├── projection.test.ts # Vitest unit tests for 3D obliquity & Earth projections (11 tests)
 │   │   │   ├── geoData.ts       # World landmass continent outline polygons
 │   │   │   ├── milestones.ts    # Canonical Earth orbital milestones (single source of truth)
 │   │   │   ├── frame.ts         # Centralized EphemerisFrame snapshot generator
@@ -173,10 +181,10 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── generatorGeometry.ts # Decomposed continuum geometry, rings & plate curves
 │   │   │   │   ├── generatorBeads.ts    # Decomposed beads, Sun clamping, milestones & lunar nodes
 │   │   │   │   ├── generator.ts      # generateArmillaryModel pipeline orchestrator
+│   │   │   │   ├── armillary.test.ts # Vitest unit tests for armillary continuum & projections (34 tests)
 │   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (7 tests)
-│   │   ├── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (10 tests)
-│   │   └── cosmicMath.test.ts   # Vitest unit tests for math engine (134 tests)
+│   │   │   └── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (10 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   ├── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -296,7 +304,8 @@ Cosmic Engine V2.0/
 │       │       ├── AstrolabeDial.tsx           # 4-concentric interactive SVG astrolabe dial
 │       │       ├── ChronometerReadoutCards.tsx # Direct input cards & parseTimeString validator
 │       │       ├── SolsticeJumpControls.tsx    # Twilight phase pill & solstice fast jumps
-│       │       └── ChronometerModalPopovers.tsx # Accessible modal wrappers for Lat/Lon sliders
+│       │       ├── ChronometerModalPopovers.tsx # Accessible modal wrappers for Lat/Lon sliders
+│       │       └── index.ts                    # Barrel export
 │       └── common/              # Shared visual components
 │           ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
 │           ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (6 tests)
@@ -402,7 +411,7 @@ Standard coordinate conventions used throughout the engine:
 
 ### E. Cross-Widget Hover-Sync State & Anti-Feedback Loop Invariant
 - `App.tsx` orchestrates shared `hoverTime` and `hoverDate` state.
-- Hovering over timestamps or day-of-year points in `SunClock` or `SolarAlmanac` propagates synchronized coordinates across `TerminatorMap`, `MacroOrbitView`, and `LunarAlmanacCard`.
+- Hovering over timestamps or day-of-year points in `PolarSunlightDial` or `SolarAlmanacCard` propagates synchronized coordinates across `TerminatorMap`, `MacroOrbitView`, and `LunarAlmanacCard`.
 - **Anti-Feedback Loop Invariant**: Widgets must **only emit hover events in response to direct user pointer interactions** (`onPointerMove`, `onMouseMove`), never within `useEffect` or render lifecycle methods, preventing infinite ping-pong re-render loops among sibling cards.
 
 ### F. Fault-Tolerant Window Architecture & Error Boundaries (`src/components/layout/DashboardWindow.tsx`)
@@ -427,7 +436,7 @@ The Eclipse demonstrator renders synchronized dual perspectives in `activeTab ==
 3. **Exact UTC Preset Snapping**:
    - `EclipsePresetItem` requires explicit `timeOfDay: number` (fractional UTC hour) to guarantee that clicking presets snaps directly to peak totality (e.g., $06:58\text{ UTC}$ for Mar 14, 2025 Blood Moon).
 
-### H. Orbital Milestones & Persistent Translucent Halo Nodes (`MacroOrbitView.tsx`, `HeliocentricOrbitView.tsx`)
+### H. Orbital Milestones & Persistent Translucent Halo Nodes (`MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`)
 - Milestone orbital nodes (Perihelion, Aphelion, Jun/Dec Solstices, Mar/Sep Equinoxes) feature persistent translucent glowing halo rings (`fill={color}`, `opacity="0.20"`, `r="11px"`) that expand responsively on hover (`opacity="0.45"`, `r="18px"`).
 - Heliocentric 3D views feature matching glowing halo nodes along the 1 AU Earth orbit ring.
 

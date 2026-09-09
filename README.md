@@ -70,12 +70,12 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 ## 🛠️ Tech Stack
 
 - **Framework**: React 19 (`react`, `react-dom`)
-- **Language**: TypeScript 5.8+ (Strict Mode with Symbol-branded units: `Degrees`, `Radians`, `JulianDate`, `JulianCenturies`)
-- **Bundler & Dev Server**: Vite 6+ (`vite`)
+- **Language**: TypeScript 7.0+ (Strict Mode with Symbol-branded units: `Degrees`, `Radians`, `JulianDate`, `JulianCenturies`)
+- **Bundler & Dev Server**: Vite 8+ (`vite`)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer
-- **Testing**: `vitest` (Comprehensive automated unit test suite covering pure math, hooks, layout state, state store, error boundaries, observatory widgets, and worker fallback)
+- **Testing**: `vitest` (Comprehensive automated unit test suite covering pure math, hooks, layout state, state store, error boundaries, observatory widgets, and worker fallback across 40 suites, 559 tests)
 
 ---
 
@@ -91,11 +91,20 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
-# Run Vitest test suite
+# Run Vitest test suite in native single-run mode
 npm test
 
-# Run full test suite in single-run CI mode
-npm test -- --run
+# Run Babel AST branded unit-safety linter across all UI components
+npm run lint:units
+
+# Run automated documentation metric synchronizer & compile dossier
+npm run sync:docs
+
+# Build production bundle
+npm run build
+
+# Preview production build locally
+npm run preview
 ```
 
 ---
@@ -108,13 +117,14 @@ Cosmic Engine V2.0/
 ├── package.json                 # Project dependencies & Vite scripts
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── vite.config.ts               # Vite configuration & plugin setup
-├── tailwind.config.js           # Tailwind CSS configuration
+├── postcss.config.js            # PostCSS configuration
+├── PROJECT.md                   # Unified 3D scene graph milestones & feature matrix
 ├── README.md                    # Repository documentation & quick start
 ├── AGENTS.md                    # Agent protocols & full granular file navigation map
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001-0014)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001-0018)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
