@@ -24,6 +24,9 @@ This document serves as the ground-truth mathematical reference for **Cosmic Eng
   \]
   where $n = \text{JD} - 2451545.0$ is the ephemeris day offset from epoch J2000.0.
 
+> [!NOTE]
+> **Obliquity Precision Standard**: The exact IAU J2000.0 obliquity constant is $\varepsilon_0 = 23.439281^\circ$ (codified as `EARTH_AXIAL_OBLIQUITY_J2000_DEG` in [`astroConstants.ts`](../src/utils/cosmicMath/astroConstants.ts)). In SVG diagrams, telemetry readouts, and documentation prose, $23.439^\circ$ and $23.44^\circ$ are used as standard rounded display shorthands.
+
 ---
 
 ## 2. Temporal Epochs & Julian Date Computations
@@ -144,6 +147,53 @@ Given observer latitude $\phi$, solar declination $\delta$, and altitude thresho
    \[
    \omega = \arccos(\operatorname{clamp}(\cos \omega, -1, 1)), \quad \text{Duration} = \frac{2\omega^\circ}{15^\circ/\text{h}}
    \]
+
+### C. Discrete Polar State Classification (`calculatePolarState`)
+The global solar illumination regime is mapped to a discrete enum `PolarState` based on daily durations evaluated at the Official Daylight threshold ($h_{\text{official}} = -0.833^\circ$) and Astronomical Twilight floor ($h_{\text{astro}} = -18.0^\circ$):
+\[
+D_{\text{day}} = \text{calculateDaylightDurationPrecise}(\phi, \delta, h_{\text{official}}), \quad D_{\text{astro}} = \text{calculateDaylightDurationPrecise}(\phi, \delta, h_{\text{astro}})
+\]
+The analytical state boundaries in [`src/utils/cosmicMath/solar.ts`](../src/utils/cosmicMath/solar.ts) are strictly partitioned:
+1. **Perpetual Day (`PERPETUAL_DAY`)**:
+   \[
+   D_{\text{day}} \ge 24.0\text{h}
+   \]
+   The upper solar limb remains continuously above the visible horizon ($h \ge -0.833^\circ$) throughout all 24 hours (Midnight Sun).
+2. **Perpetual Night (`PERPETUAL_NIGHT`)**:
+   \[
+   D_{\text{astro}} \le 0.0\text{h}
+   \]
+   The Sun never rises above $-18.0^\circ$ throughout the 24-hour cycle, resulting in unyielding astronomical darkness (Polar Night).
+3. **Perpetual Twilight (`PERPETUAL_TWILIGHT`)**:
+   Evaluated under two physical scenarios:
+   - *Polar Noon Twilight*: $D_{\text{day}} \le 0.0\text{h} \land D_{\text{astro}} > 0.0\text{h}$. The Sun remains sub-horizon all day, but peaks above $-18.0^\circ$ around solar noon to produce temporary civil, nautical, or astronomical twilight without true daylight.
+   - *White Nights / Circumpolar Twilight*: $D_{\text{day}} > 0.0\text{h} \land D_{\text{day}} < 24.0\text{h} \land D_{\text{astro}} \ge 24.0\text{h}$. The Sun sets below the horizon at night, but never descends below $-18.0^\circ$, so true astronomical darkness is never reached.
+4. **Normal Diurnal Cycle (`NORMAL`)**:
+   Standard mid-latitude diurnal cycle with distinct sunrise, daylight, twilight transitions, and true astronomical night.
+
+### D. Daylight Terminator Shadow Polygon Paths (`getTerminatorShadowPaths`)
+For equirectangular 2D world projection maps ($X \in [0, 360]$ corresponding to observer-centered geographic longitudes $\lambda_{\text{geo}} \in [\lambda_{\text{center}} - 180^\circ, \lambda_{\text{center}} + 180^\circ]$), the shadow boundary where solar altitude matches threshold $h_0$ (default $-0.833^\circ$) is solved analytically without numerical iteration:
+\[
+\sin h_0 = \sin\delta \sin\phi + \cos\delta \cos\phi \cos H
+\]
+where $H = \lambda_{\text{geo}} - \lambda_\odot$ is the local solar hour angle, and $(\lambda_\odot, \delta)$ is the subsolar coordinates.
+Rewriting via the harmonic trigonometric identity:
+\[
+A \sin\phi + B \cos\phi = \sin h_0
+\]
+where $A = \sin\delta$ and $B = \cos\delta \cos H$. Defining amplitude $R = \sqrt{A^2 + B^2}$ and phase angle $\gamma = \operatorname{atan2}(A, B)$:
+\[
+R \sin(\phi + \gamma) = \sin h_0 \implies \phi + \gamma = \pm \alpha_0, \quad \alpha_0 = \arccos\left(\operatorname{clamp}\left(\frac{\sin h_0}{R}, -1, 1\right)\right)
+\]
+yielding southern and northern boundary latitudes:
+\[
+\phi_{\text{south}} = \operatorname{clamp}(\gamma - \alpha_0, -90^\circ, 90^\circ), \quad \phi_{\text{north}} = \operatorname{clamp}(\gamma + \alpha_0, -90^\circ, 90^\circ)
+\]
+* **Singularity & Horizon Bounds**:
+  - If $R < 10^{-7}$: if $\sin h_0 > 0 \implies (\phi_{\text{south}}, \phi_{\text{north}}) = (90^\circ, -90^\circ)$; else $(-90^\circ, 90^\circ)$.
+  - If $\sin h_0 / R > 1$: entire column is in darkness $\implies (\phi_{\text{south}}, \phi_{\text{north}}) = (90^\circ, -90^\circ)$.
+  - If $\sin h_0 / R < -1$: entire column is in daylight $\implies (\phi_{\text{south}}, \phi_{\text{north}}) = (-90^\circ, 90^\circ)$.
+Screen SVG coordinates $y = 90 - \phi$ are chained into closed polygon path strings (`southPath`, `northPath`, `combinedPath`) that render the dynamic nightside overlays in `TerminatorMap.tsx` and `MiniGlobeSphere.tsx`.
 
 ---
 
@@ -411,12 +461,21 @@ Rotated by Rete offset $\Delta\theta_{\text{rete}}$ around the $Y$-axis:
    * *September Equinox* ($\lambda = 180^\circ$, $1.004\text{ AU}$, $29.72\text{ km/s}$)
    * *December Solstice* ($\lambda = 270^\circ$, $0.984\text{ AU}$, $30.28\text{ km/s}$)
 
-### D. 3D Celestial Coordinate Space
-Standardized coordinate frame where the $+X$ axis points to the Vernal Equinox ($\Upsilon$, $\alpha = 0^\circ, \lambda = 0^\circ$), $+Y$ points to the North Celestial Pole ($\delta = +90^\circ$), and $+Z$ completes the right-handed basis ($\alpha = 90^\circ$ at $\delta = 0^\circ$).
+### D. Armillary 3D Celestial Graphics Frame ($\mathcal{F}_{\text{arm}}$, Y-up)
+The Gyro-Morph Armillary and Astrolabe subsystem ([`src/utils/cosmicMath/armillary/coordinates.ts`](../src/utils/cosmicMath/armillary/coordinates.ts)) adopts a specialized **Y-up spherical graphics coordinate frame** ($\mathcal{F}_{\text{arm}}$). In this convention, the North Celestial Pole aligns with $+Y$, enabling intuitive top-down stereographic and orthographic projections directly onto the $XZ$ screen plane (with the Center of Projection beacon at the South Celestial Pole $(0, -R_0, 0)$):
+* $+X$: Points toward the March Equinox ($\Upsilon$, $\alpha = 0^\circ, \delta = 0^\circ$).
+* $+Y$: Points toward the North Celestial Pole ($\delta = +90^\circ$).
+* $+Z$: Completes the right-handed basis ($\alpha = 90^\circ, \delta = 0^\circ$).
 
-Given radius $R_0 = 100\text{ px}$, equatorial Right Ascension $\alpha \in [0^\circ, 360^\circ)$ and Declination $\delta \in [-90^\circ, +90^\circ]$:
+Given radius $R_0 = 100\text{px}$, equatorial Right Ascension $\alpha \in [0^\circ, 360^\circ)$ and Declination $\delta \in [-90^\circ, +90^\circ]$:
 \[
-x = R_0 \cos\delta \cos\alpha, \quad y = R_0 \sin\delta, \quad z = R_0 \cos\delta \sin\alpha
+x_{\text{arm}} = R_0 \cos\delta \cos\alpha, \quad y_{\text{arm}} = R_0 \sin\delta, \quad z_{\text{arm}} = R_0 \cos\delta \sin\alpha
+\]
+
+#### Basis Transformation to Scene Graph Inertial Frame ($\mathcal{F}_{\text{eq}}$):
+While $\mathcal{F}_{\text{arm}}$ utilizes $+Y$ for the polar axis for SVG projection convenience, the Unified 3D Astronomical Scene Graph (Section 10.A) follows standard astronomical convention where the North Celestial Pole is $+Z$ (Z-up). The exact bijective coordinate permutation between the two frames is:
+\[
+\begin{pmatrix} x_{\text{arm}} \\ y_{\text{arm}} \\ z_{\text{arm}} \end{pmatrix} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & 1 & 0 \end{pmatrix} \begin{pmatrix} x_{\text{scene}} \\ y_{\text{scene}} \\ z_{\text{scene}} \end{pmatrix}, \quad \mathbf{x}_{\text{arm}} = \mathbf{x}_{\text{scene}}, \ \mathbf{y}_{\text{arm}} = \mathbf{z}_{\text{scene}}, \ \mathbf{z}_{\text{arm}} = \mathbf{y}_{\text{scene}}
 \]
 
 ### E. 2D Astrolabe Historical Projections
@@ -681,6 +740,9 @@ Section 10 codifies the ground-truth mathematical models, matrix transformations
    * $+X$-axis: Points toward the March Equinox ($\alpha = 0^\circ, \delta = 0^\circ$).
    * $+Y$-axis: Points in equatorial plane toward $\alpha = 90^\circ, \delta = 0^\circ$.
    * $+Z$-axis: Points toward the North Celestial Pole ($\delta = +90^\circ$).
+
+> [!NOTE]
+> **Subsystem Frame Conventions**: The 3D Scene Graph operates in canonical astronomical Z-up space ($\mathcal{F}_{\text{ecl}}$ and $\mathcal{F}_{\text{eq}}$, where $+Z$ is the orbital/equatorial pole). For 2D/3D astrolabe planispheric flattening in the Gyro-Morph Armillary ([`src/utils/cosmicMath/armillary/`](../src/utils/cosmicMath/armillary/)), coordinates map to the Y-up Armillary Graphics Frame $\mathcal{F}_{\text{arm}}$ via the basis permutation codified in Section 7.D.
 
 3. **Frame Transformation Matrices**:
    Given mean Earth obliquity $\varepsilon = 23.439281^\circ$:
