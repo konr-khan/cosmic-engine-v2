@@ -1,4 +1,4 @@
-export { TodayHorizonView, SunElevationDome, MoonElevationDome, type TodayHorizonViewProps } from './today';
+export { TodayHorizonView, SunElevationDome, MoonElevationDome, SunMeridianDome, MoonMeridianDome, type TodayHorizonViewProps, type SunMeridianDomeProps, type MoonMeridianDomeProps } from './today';
 export { SolarAlmanac, SolarShortcutsRail, PolarSunlightDial, SolarRibbonChart, type SolarAlmanacProps } from './solar';
 export { LunarAlmanacCard, LunarRibbonChart, TidalWaveOscillator, LunarShortcutsRail, type LunarAlmanacCardProps } from './lunar';
 export { 
