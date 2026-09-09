@@ -323,4 +323,58 @@ describe('SkyDomeBase Primitive Component Test Suite', () => {
     expect(html).toContain('Culmination meridian bearing: Zenith (Overhead)');
     expect(html).toContain('Overhead Zenith Transit');
   });
+
+  it('renders custom meridian horizon labels (S, Z, N) when supplied', () => {
+    const html = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Meridian Profile"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={65.4}
+        currentElevation={65.4}
+        leftHorizonLabel="S"
+        centerHorizonLabel="Z"
+        rightHorizonLabel="N"
+      />
+    );
+
+    expect(html).toContain('>S</text>');
+    expect(html).toContain('>Z</text>');
+    expect(html).toContain('>N</text>');
+    expect(html).toContain('Meridian reference: Zenith (+90° Apex)');
+    // Ensures default 'E' and 'W' are replaced
+    expect(html).not.toContain('>E</text>');
+    expect(html).not.toContain('>W</text>');
+  });
+
+  it('renders vertical dashed Zenith axis line when showZenithAxis is true', () => {
+    const withAxisHtml = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Meridian Profile"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={65.4}
+        currentElevation={65.4}
+        showZenithAxis={true}
+      />
+    );
+
+    // Vertical line from (EL_CX=130, EL_CY=104) to (EL_CX=130, EL_CY-EL_R=12)
+    expect(withAxisHtml).toContain('x1="130" y1="104" x2="130" y2="12"');
+    expect(withAxisHtml).toContain('stroke-dasharray="2 2"');
+
+    const withoutAxisHtml = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Elevation Arc"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={65.4}
+        currentElevation={65.4}
+        showZenithAxis={false}
+      />
+    );
+
+    expect(withoutAxisHtml).not.toContain('x1="130" y1="104" x2="130" y2="12"');
+  });
 });
+

@@ -54,6 +54,10 @@ export interface SkyDomeBaseProps {
   extraSvgContent?: ReactNode;
   popover?: ReactNode;
   children?: ReactNode;
+  leftHorizonLabel?: string;
+  centerHorizonLabel?: string;
+  rightHorizonLabel?: string;
+  showZenithAxis?: boolean;
 }
 
 export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
@@ -80,7 +84,11 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   renderBodyGraphic,
   extraSvgContent,
   popover,
-  children
+  children,
+  leftHorizonLabel,
+  centerHorizonLabel,
+  rightHorizonLabel,
+  showZenithAxis = false,
 }) => {
   const isAboveHorizon = currentElevation > 0;
   const isVisible = currentElevation > -18;
@@ -88,6 +96,12 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   const meridianLabel = meridianDirection !== undefined 
     ? meridianDirection 
     : (latitude !== undefined && latitude < 0 ? 'N' : 'S');
+  const leftLabel = leftHorizonLabel ?? 'E';
+  const rightLabel = rightHorizonLabel ?? 'W';
+  const centerLabel = centerHorizonLabel ?? meridianLabel;
+  const centerTitle = centerHorizonLabel !== undefined
+    ? `Meridian reference: ${centerHorizonLabel === 'Z' ? 'Zenith (+90° Apex)' : centerHorizonLabel}`
+    : `Culmination meridian bearing: ${meridianLabel === 'Z' ? 'Zenith (Overhead)' : meridianLabel === 'N' ? 'North' : 'South'}`;
 
   return (
     <div className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative">
@@ -139,15 +153,19 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
           <text x="16" y="101" textAnchor="end" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
           <text x="244" y="101" textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
 
-          {/* Cardinal Compass Indicators (E, S/N/Z, W) */}
-          <text x="36" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">E</text>
+          {/* Cardinal Compass / Meridian Indicators (Left, Center, Right) */}
+          <text x="36" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">
+            {leftLabel}
+          </text>
           <g>
-            <title>{`Culmination meridian bearing: ${meridianLabel === 'Z' ? 'Zenith (Overhead)' : meridianLabel === 'N' ? 'North' : 'South'}`}</title>
+            <title>{centerTitle}</title>
             <text x={EL_CX} y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">
-              {meridianLabel}
+              {centerLabel}
             </text>
           </g>
-          <text x="224" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">W</text>
+          <text x="224" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">
+            {rightLabel}
+          </text>
 
           {/* Semicircular Elevation Arc Dome */}
           <path
@@ -232,6 +250,20 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
               )}
             </g>
           ))}
+
+          {/* Vertical Zenith Axis (Meridian Profile) */}
+          {showZenithAxis && (
+            <line
+              x1={EL_CX}
+              y1={EL_CY}
+              x2={EL_CX}
+              y2={EL_CY - EL_R}
+              stroke="#475569"
+              strokeWidth="0.75"
+              strokeDasharray="2 2"
+              strokeOpacity="0.7"
+            />
+          )}
 
           {/* Zenith Marker (90°) */}
           <line x1={EL_CX} y1={EL_CY - EL_R - 3} x2={EL_CX} y2={EL_CY - EL_R + 3} stroke="#475569" strokeWidth="0.75" />
