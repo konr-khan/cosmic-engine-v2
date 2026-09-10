@@ -260,7 +260,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             </g>
             
             {/* Hover Subsolar Ray Guide when hover sync active */}
-            {hoverTime !== null && hoverTime !== undefined && (
+            {effectiveHoverTime !== null && effectiveHoverTime !== undefined && (
               <line x1={relSunX} y1="0" x2={relSunX} y2="180" stroke="#fbbf24" strokeWidth="1" strokeDasharray="3 2" opacity="0.85" />
             )}
 

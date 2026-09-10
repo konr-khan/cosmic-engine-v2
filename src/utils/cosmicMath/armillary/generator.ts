@@ -28,7 +28,7 @@ import {
   rotateEuler3D,
   createEulerCameraRotator 
 } from './coordinates';
-import { computeContinuousProjection2D, createContinuousProjectionResolver } from './projections';
+import { createContinuousProjectionResolver } from './projections';
 import { 
   generateContinuousAlmucantars,
   calculatePlanetaryHour, 
@@ -88,7 +88,6 @@ function generateArmillaryRings(params: {
   const aOrb = r0 * 1.1;
   const eOrb = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
   const bOrb = aOrb * Math.sqrt(Math.max(0, 1 - eOrb * eOrb));
-  const cOrb = aOrb * eOrb;
   const tiltRad = toRadians((1 - isHelioT) * obliquity);
 
   rings.push(

@@ -1,12 +1,10 @@
 import { 
   Degrees, 
-  Radians, 
   JulianDate, 
   HoursDecimal, 
   DayOfYear,
   Longitude,
   asDegrees, 
-  asRadians, 
   asJulianDate,
   toRadians,
   toDegrees

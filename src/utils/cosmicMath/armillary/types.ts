@@ -1,4 +1,4 @@
-import { Degrees, Latitude, Longitude, HoursDecimal, JulianDate } from '../../../types/units';
+import { Degrees } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
 
 export type { Vector2D, Vector3D };

@@ -12,13 +12,11 @@ import { useChronometerStore } from '../store/cosmicStore';
 import { CosmicStoreState } from '../types/store';
 import { 
   Degrees, 
-  Radians, 
   JulianDate, 
   Latitude, 
   Longitude, 
   HoursDecimal, 
   asDegrees, 
-  asJulianDate,
   toDegrees,
   toRadians 
 } from '../types/units';
@@ -40,9 +38,7 @@ import {
   ScaleMode,
   ProjectedScene2D,
   MilestoneNode3D,
-  LunarOrbitSegment2D,
-  ProjectedShadowCones2D,
-  GenerateCosmicSceneParams
+  LunarOrbitSegment2D
 } from '../utils/cosmicMath/scene';
 
 /** Selector for store synchronization with shallow equality protection */

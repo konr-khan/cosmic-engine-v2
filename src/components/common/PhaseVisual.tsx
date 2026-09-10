@@ -1,5 +1,5 @@
 import React from 'react';
-import { CONFIG } from '../../utils/cosmicMath';
+
 
 export interface PhaseVisualProps {
   phase: number;

@@ -29,9 +29,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const beta = eclipse.beta; // Ecliptic latitude: -5.14° to +5.14°
   const distKm = eclipse.distanceKm || 384400;
   const offsetKm = Math.round(distKm * Math.sin(toRadians(beta)));
-  const penumbraRadKm = eclipse.penumbraRadiusKm || 9500;
   const umbraRadKm = eclipse.umbraRadiusKm || 4600;
-  const isInsideCorridor = Math.abs(offsetKm) <= penumbraRadKm;
   const isInsideUmbra = Math.abs(offsetKm) <= umbraRadKm;
 
   // --- Dynamic Distance & Apparent Angular Size Scaling ---

@@ -3,9 +3,7 @@ import { Moon, Compass } from 'lucide-react';
 import { PhaseVisual } from '../../common/PhaseVisual';
 import { 
   toRadians, 
-  toDegrees, 
   formatTime, 
-  clamp, 
   getJulianDate,
   calculateLunarIllumination,
   projectSkyDomePoint,

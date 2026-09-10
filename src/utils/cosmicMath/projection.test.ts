@@ -14,7 +14,7 @@ import {
   equatorialToCartesian3D,
   generateParametricRing3D
 } from './index';
-import { Vector3D, Latitude, Longitude } from '../../types';
+import { Vector3D } from '../../types';
 
 describe('Cosmic Math: 3D Projection & Obliquity Geometry', () => {
   describe('3D Projection & Obliquity Geometry Engine', () => {

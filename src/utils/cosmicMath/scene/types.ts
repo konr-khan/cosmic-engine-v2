@@ -7,7 +7,7 @@
  */
 
 import { Degrees, Radians, JulianDate, Latitude, Longitude, HoursDecimal } from '../../../types/units';
-import { Vector2D, Vector3D, AltAzimuthCoordinates, EquatorialCoordinates, EclipticCoordinates } from '../../../types/coordinates';
+import { Vector3D } from '../../../types/coordinates';
 import { LunarPhaseName, EclipseType } from '../../../types/astronomy';
 import { OrbitalSegments } from '../projection';
 

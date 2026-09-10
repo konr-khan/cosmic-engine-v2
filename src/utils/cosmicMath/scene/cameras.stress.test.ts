@@ -14,12 +14,9 @@ import {
   projectGeocentricTransverse,
   projectGeocentricAxial,
   projectEulerCamera,
-  CosmicScene3D,
-  rotatePointEuler3D,
-  vectorMagnitude,
-  subtractVectors3D
+  rotatePointEuler3D
 } from './index';
-import { asDegrees, asJulianDate, toRadians, toDegrees } from '../../../types/units';
+import { asDegrees, asJulianDate } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 
 describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
@@ -488,7 +485,7 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
   describe('Cross-Rig Synchronization & Consistency Matrix', () => {
 
     it('C5.1: Verifies all 4 camera rigs produce synchronized coordinates without drift across 10 astronomical epochs', () => {
-      for (const [epochName, jd] of Object.entries(EPOCHS)) {
+      for (const [_epochName, jd] of Object.entries(EPOCHS)) {
         const scene = generateCosmicScene({ julianDate: jd, scaleMode: 'exaggerated' });
 
         const topdown = projectHeliocentricTopDown(scene);

@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Moon } from 'lucide-react';
 import {
-  formatTime,
   getJulianDate,
   projectSkyDomePoint,
   calculateCulminationBearing,
@@ -96,8 +95,6 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
 
   // Major lunar standstill: 23.439° + 5.145° = 28.584°
   const LUNAR_MAX_DEC = 28.584;
-  const absLat = Math.abs(latitude);
-  const isLunarTropical = absLat <= LUNAR_MAX_DEC;
 
   const standstillMax = useMemo(
     () => calculateCulminationBearing(latitude, LUNAR_MAX_DEC),

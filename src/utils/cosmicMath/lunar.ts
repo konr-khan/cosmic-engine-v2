@@ -15,8 +15,6 @@ import { calculateSolarPosition } from './solar';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees, asJulianDate, HoursDecimal, julianDateToCenturies } from '../../types/units';
 import { 
   LunarPhaseName, 
-  LunarPosition, 
-  LunarEvents, 
   LunarPositionFull, 
   LunarEventMetrics, 
   AnnualLunarMatrixItem 

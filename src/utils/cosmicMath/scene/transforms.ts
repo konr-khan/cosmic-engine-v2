@@ -5,7 +5,7 @@
  */
 
 import { Degrees, Radians, Latitude, Longitude, asDegrees, asRadians, toRadians, toDegrees } from '../../../types/units';
-import { Vector2D, Vector3D, AltAzimuthCoordinates, EquatorialCoordinates, EclipticCoordinates } from '../../../types/coordinates';
+import { Vector3D, AltAzimuthCoordinates } from '../../../types/coordinates';
 import { Matrix3x3, ShadowCones3D } from './types';
 import { clamp } from '../core';
 

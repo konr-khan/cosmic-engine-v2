@@ -4,11 +4,7 @@ import {
   getJulianDate, 
   calculateEphemerisFrame
 } from '../../../utils/cosmicMath';
-import { 
-  GyroArmillaryViewProps, 
-  ArmillaryProjectionMode, 
-  ArmillaryCameraState 
-} from './types';
+import { GyroArmillaryViewProps } from './types';
 import { ArmillaryHeaderControls } from './ArmillaryHeaderControls';
 import { ArmillarySvgCanvas } from './ArmillarySvgCanvas';
 import { ArmillaryTelemetryHud } from './ArmillaryTelemetryHud';
@@ -38,9 +34,6 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     morphLambda,
     setCamera,
     setProjectionMode,
-    setFromProjectionMode,
-    setProjectionTransitionT,
-    setMorphLambda,
     handleCameraChange,
     handleMorphChange,
     handleSnapToPreset,

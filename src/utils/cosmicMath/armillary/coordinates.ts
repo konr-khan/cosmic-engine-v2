@@ -1,4 +1,4 @@
-import { Degrees, Latitude, Longitude, JulianDate, asDegrees } from '../../../types/units';
+import { Degrees, Latitude, asDegrees } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 import { toRadians, toDegrees, clamp, calculateGMST, calculateLST } from '../core';
 

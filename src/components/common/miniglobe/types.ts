@@ -3,7 +3,6 @@
  * Internal type definitions and geometry structures for the decomposed MiniGlobe subsystem.
  */
 
-import { Vector2D } from '../../../types/coordinates';
 import { MiniGlobeViewMode, MiniGlobeCamera } from '../../../utils/cosmicMath/globe';
 
 export interface TopdownGlobeGeometry {

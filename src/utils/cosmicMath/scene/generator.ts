@@ -32,7 +32,6 @@ import {
   MilestoneNode3D, 
   ShadowCones3D, 
   LunarOrbit3D, 
-  ScaleMode,
   SeasonalMilestoneId
 } from './types';
 import { normalizeVector3D } from './transforms';
@@ -48,8 +47,6 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
     julianDate: jdInput,
     scaleMode = 'true',
     r0 = 200,
-    latitude = 47.06,
-    longitude = -122.81,
     timeOfDay = 12.0
   } = params;
 

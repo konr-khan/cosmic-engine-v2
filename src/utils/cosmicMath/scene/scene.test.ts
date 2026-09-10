@@ -21,42 +21,19 @@ import {
   projectGeocentricTransverse,
   projectGeocentricAxial,
   projectEulerCamera,
-  ScaleMode,
-  CosmicScene3D,
-  ProjectedScene2D,
   identityMatrix3x3,
   multiplyMatrix3x3,
   transformVector3D,
   transposeMatrix3x3,
   rotationMatrixX,
-  rotationMatrixY,
-  rotationMatrixZ,
   vectorMagnitude,
-  normalizeVector3D,
-  dotProduct3D,
-  crossProduct3D,
-  addVectors3D,
-  subtractVectors3D,
-  scaleVector3D,
-  heliocentricToGeocentricEcliptic,
-  geocentricToHeliocentricEcliptic,
-  getEclipticToEquatorialMatrix,
-  getEquatorialToEclipticMatrix,
   eclipticToEquatorial3D,
   equatorialToEcliptic3D,
-  calculateEarthAxialTiltVector,
-  calculateSubsolarVectorEcliptic,
-  calculateSubsolarVectorBody,
-  getEquatorialToHorizontalMatrix,
   equatorialToTopocentric3D,
   topocentric3DToAltAz,
-  createEulerRotationMatrix,
-  rotatePointEuler3D,
-  calculateShadowCones3D,
-  OBLIQUITY_J2000_DEG,
   OBLIQUITY_J2000_RAD
 } from './index';
-import { asDegrees, asJulianDate, toRadians } from '../../../types/units';
+import { toRadians } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 
 describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () => {

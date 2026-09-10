@@ -20,11 +20,9 @@ import {
   calculateGMST,
   calculateLST,
   equatorialToHorizontal,
-  LUNAR_PERIGEE_THRESHOLD_KM,
-  LUNAR_APOGEE_THRESHOLD_KM,
-  MOON_DIAMETER_KM
+  LUNAR_PERIGEE_THRESHOLD_KM
 } from './index';
-import { Degrees, Latitude, Longitude, HoursDecimal } from '../../types';
+import { HoursDecimal } from '../../types';
 
 describe('Cosmic Math: Lunar Ephemeris & Illumination', () => {
   describe('Lunar Ephemeris & Phase Solver', () => {

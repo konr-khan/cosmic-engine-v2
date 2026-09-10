@@ -1,4 +1,4 @@
-import { Degrees, asDegrees } from '../../../types/units';
+import { asDegrees } from '../../../types/units';
 import { ArmillaryStarData, ZodiacSignSegment } from './types';
 
 /**

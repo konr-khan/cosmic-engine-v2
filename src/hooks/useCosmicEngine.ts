@@ -10,7 +10,7 @@ import {
 import { useChronometerStore } from '../store/cosmicStore';
 import { useEphemerisWorker } from './useEphemerisWorker';
 import { ActiveWidgetsFilter, CosmicEngineData, SolarAlmanacData, OrbitalData, TideType } from '../types/astronomy';
-import { Latitude, Longitude, HoursDecimal, JulianDate } from '../types/units';
+import { Latitude, Longitude, HoursDecimal } from '../types/units';
 
 const selectStoreState = (state: { date: Date; timeOfDay: number; latitude: number; longitude: number; useAnalemma: boolean }) => ({
   date: state.date,
@@ -75,7 +75,7 @@ export const useCosmicEngine = (
     const JD = julianDate;
     const frame = calculateEphemerisFrame(JD, latitude, longitude, useAnalemma);
     const { solarPos } = frame;
-    const { declination, equationOfTime, n, lambda: solarLambda } = solarPos;
+    const { declination, n, lambda: solarLambda } = solarPos;
     const { CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
     
     const solarData: SolarAlmanacData = {

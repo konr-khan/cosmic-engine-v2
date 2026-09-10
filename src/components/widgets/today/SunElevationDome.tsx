@@ -2,9 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Sun, Compass } from 'lucide-react';
 import { 
   toRadians, 
-  toDegrees, 
   formatTime, 
-  clamp, 
   calculateEarthOrbitalPhysics, 
   getJulianDate,
   projectSkyDomePoint,

@@ -6,7 +6,7 @@ import {
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
 import { ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
-import { EphemerisCalculationParams, EphemerisWorkerPayload } from '../types/worker';
+import { EphemerisWorkerPayload } from '../types/worker';
 import { LunarEvents, EclipseData, AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude, JulianDate, HoursDecimal } from '../types/units';
 

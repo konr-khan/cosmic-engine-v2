@@ -1,18 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { CONFIG, toRadians, toDegrees } from '../../utils/cosmicMath';
+import { toRadians, toDegrees } from '../../utils/cosmicMath';
 
 export interface PolarLongitudeSelectorProps {
   longitude: number;
   onChange: (lon: number) => void;
   isDarkMode?: boolean;
 }
-
-const PRIMARY_MERIDIANS = [
-  { lon: 0, label: "Prime Meridian (0° Greenwich)", short: "Prime (0°)" },
-  { lon: 180, label: "Intl Date Line (180°)", short: "IDL (180°)" },
-  { lon: 90, label: "90° East (Asia)", short: "90° E" },
-  { lon: -90, label: "90° West (Americas)", short: "90° W" }
-];
 
 const CITY_MERIDIANS = [
   { lon: -74.0, label: "New York (74.0° W)", short: "New York" },

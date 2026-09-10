@@ -14,13 +14,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateCosmicScene,
-  projectHeliocentricTopDown,
   projectGeocentricTransverse,
   projectGeocentricAxial,
   projectEulerCamera,
   CosmicScene3D,
-  ScaleMode,
-  identityMatrix3x3,
   multiplyMatrix3x3,
   transformVector3D,
   transposeMatrix3x3,
@@ -28,29 +25,16 @@ import {
   rotationMatrixY,
   rotationMatrixZ,
   vectorMagnitude,
-  normalizeVector3D,
   dotProduct3D,
   crossProduct3D,
-  addVectors3D,
   subtractVectors3D,
-  scaleVector3D,
-  heliocentricToGeocentricEcliptic,
-  geocentricToHeliocentricEcliptic,
-  getEclipticToEquatorialMatrix,
-  getEquatorialToEclipticMatrix,
   eclipticToEquatorial3D,
   equatorialToEcliptic3D,
   calculateEarthAxialTiltVector,
-  calculateSubsolarVectorEcliptic,
-  calculateSubsolarVectorBody,
   getEquatorialToHorizontalMatrix,
   equatorialToTopocentric3D,
-  topocentric3DToAltAz,
   createEulerRotationMatrix,
-  createZXZRotationMatrix,
-  rotatePointEuler3D,
   calculateShadowCones3D,
-  OBLIQUITY_J2000_DEG,
   OBLIQUITY_J2000_RAD
 } from './index';
 import { 
@@ -59,7 +43,7 @@ import {
   EARTH_RADIUS_WGS84_KM, 
   MOON_RADIUS_MEAN_KM 
 } from '../astroConstants';
-import { toRadians, toDegrees, asDegrees, asRadians } from '../../../types/units';
+import { toRadians, toDegrees, asDegrees } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
 
 describe('Milestone 1 Adversarial Mathematical Challenges (Challenger M1_1)', () => {

@@ -5,10 +5,6 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  toRadians,
-  toDegrees,
-  clamp,
-  formatTime,
   getJulianDate,
   calculateSolarPosition,
   calculateEarthOrbitalPhysics,
@@ -18,10 +14,8 @@ import {
   getTerminatorShadowPaths,
   POLAR_STATES,
   CONFIG,
-  calculateAnnualSolarMatrix,
-  ASTRONOMICAL_UNIT_KM
+  calculateAnnualSolarMatrix
 } from './index';
-import { Degrees, Latitude, Longitude } from '../../types';
 
 describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
   describe('Solar Ephemeris & Earth Orbital Dynamics Solver', () => {

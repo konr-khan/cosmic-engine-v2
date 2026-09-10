@@ -556,7 +556,7 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       // The arc must sweep counter-clockwise through the apex
       const matches = pathD.match(/M ([\d.]+) ([\d.]+) A 92 92 0 0 0 ([\d.]+) ([\d.]+)/);
       expect(matches).not.toBeNull();
-      const [, x1, y1, x2, y2] = matches!;
+      const [, x1, _y1, x2, _y2] = matches!;
       // x1 at radMin (87.9° - North of apex, slightly right)
       expect(parseFloat(x1)).toBeGreaterThan(130);
       // x2 at radMax (134.7° - South of apex, left)
