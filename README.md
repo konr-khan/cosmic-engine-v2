@@ -164,7 +164,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 40 specialized domain suites (**559 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 40 specialized domain suites (**561 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -188,7 +188,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (20 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (8 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **MiniGlobe SVG Component** | `src/components/common/MiniGlobe.test.tsx` (11 tests) | 9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping |
-| **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (6 tests) | Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience |
+| **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (8 tests) | Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience |
 | **Interactive Controls** | `src/components/controls/controls.test.tsx` (19 tests) | Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags |
 | **Dashboard Window Layout** | `src/components/layout/DashboardWindow.test.tsx` (17 tests) | Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts |
 | **Layout & Chronometer Dock** | `src/components/layout/layout.test.tsx` (8 tests) | Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing |

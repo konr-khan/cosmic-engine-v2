@@ -1,6 +1,8 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { WindowErrorBoundary } from './WindowErrorBoundary';
+import { WidgetSkeleton } from './WidgetSkeleton';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 describe('WindowErrorBoundary Component Suite', () => {
   it('initializes with hasError: false', () => {
@@ -81,5 +83,24 @@ describe('WindowErrorBoundary Component Suite', () => {
     expect(rendered).not.toBeNull();
     expect(rendered.type).toBe('div');
     expect(rendered.props.className).toContain('bg-slate-950/90');
+  });
+
+  describe('WidgetSkeleton Suspense Fallback Primitive', () => {
+    it('renders glassmorphic pulsing skeleton with default testid and animation', () => {
+      const html = renderToStaticMarkup(<WidgetSkeleton id="armillary" />);
+      expect(html).toContain('data-testid="window-skeleton-armillary"');
+      expect(html).toContain('animate-pulse');
+      expect(html).toContain('animate-spin');
+      expect(html).toContain('min-height:240px');
+    });
+
+    it('supports custom className and minHeight overrides', () => {
+      const html = renderToStaticMarkup(
+        <WidgetSkeleton className="custom-test-class" minHeight={320} />
+      );
+      expect(html).toContain('data-testid="window-skeleton"');
+      expect(html).toContain('custom-test-class');
+      expect(html).toContain('min-height:320px');
+    });
   });
 });
