@@ -235,29 +235,44 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
       expect(rec1.getTime()).toBe(d1.getTime());
     });
 
-    it('identifies leap years correctly', () => {
+    it('identifies leap years correctly across centuries and standard leap cycles', () => {
       expect(isLeapYear(2024)).toBe(true);
       expect(isLeapYear(2025)).toBe(false);
-      expect(isLeapYear(2000)).toBe(true);
-      expect(isLeapYear(1900)).toBe(false);
+      expect(isLeapYear(2000)).toBe(true); // 400-year century leap
+      expect(isLeapYear(1900)).toBe(false); // 100-year non-leap century
+      expect(isLeapYear(2100)).toBe(false); // 100-year non-leap century
+      expect(isLeapYear(2400)).toBe(true); // 400-year century leap
       expect(isLeapYear(2028)).toBe(true);
     });
 
-    it('returns 366 days for leap years and 365 for non-leap years', () => {
+    it('returns 366 days for leap years and 365 for non-leap years across centuries', () => {
       expect(getDaysInYear(2024)).toBe(366);
       expect(getDaysInYear(2025)).toBe(365);
       expect(getDaysInYear(2028)).toBe(366);
+      expect(getDaysInYear(2100)).toBe(365);
+      expect(getDaysInYear(2400)).toBe(366);
     });
 
-    it('calculates deterministic UTC-based day of year with getDayOfYear', () => {
+    it('calculates deterministic UTC-based day of year with getDayOfYear including sub-second rollover', () => {
       expect(getDayOfYear(createUTCDate(2025, 1, 1))).toBe(1); // Jan 1 = 1
       expect(getDayOfYear(createUTCDate(2025, 12, 31))).toBe(365); // Dec 31 standard = 365
       expect(getDayOfYear(createUTCDate(2024, 12, 31))).toBe(366); // Dec 31 leap = 366
       expect(getDayOfYear(createUTCDate(2024, 2, 29))).toBe(60); // Feb 29 leap = 60
+      expect(getDayOfYear(createUTCDate(2024, 3, 1))).toBe(61); // Mar 1 leap = 61
       expect(getDayOfYear(createUTCDate(2025, 2, 28))).toBe(59); // Feb 28 standard = 59
+      expect(getDayOfYear(createUTCDate(2025, 3, 1))).toBe(60); // Mar 1 standard = 60
       expect(getDayOfYear(null)).toBe(1);
       expect(getDayOfYear(undefined)).toBe(1);
       expect(getDayOfYear(new Date('invalid'))).toBe(1);
+
+      // Sub-millisecond year-end rollover: Dec 31 23:59:59.999Z -> Jan 1 00:00:00.000Z
+      const leapEnd = new Date(Date.UTC(2024, 11, 31, 23, 59, 59, 999));
+      const nextYearStart = new Date(Date.UTC(2025, 0, 1, 0, 0, 0, 0));
+      expect(getDayOfYear(leapEnd)).toBe(366);
+      expect(getDayOfYear(nextYearStart)).toBe(1);
+
+      const stdEnd = new Date(Date.UTC(2025, 11, 31, 23, 59, 59, 999));
+      expect(getDayOfYear(stdEnd)).toBe(365);
     });
 
     it('ensures getJulianDate and getDayOfYear are invariant to machine timezone', () => {

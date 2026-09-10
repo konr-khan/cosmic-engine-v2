@@ -112,6 +112,18 @@ describe('useRibbonScrubber Hook', () => {
       // Clamps to [15, 45]
       expect(hook.xToDay(10)).toBe(15);
       expect(hook.xToDay(900)).toBe(45);
+
+      // Extreme out-of-bounds pointer scrubbing
+      expect(hook.xToDay(-5000)).toBe(15);
+      expect(hook.xToDay(5000)).toBe(45);
+    });
+
+    it('clamps full annual scale across extreme negative and positive coordinates', () => {
+      const annualHook = useRibbonScrubber(defaultOptions);
+      // Default options has startDay=1, totalDays=365
+      expect(annualHook.xToDay(-9999)).toBe(1);
+      expect(annualHook.xToDay(0)).toBe(1);
+      expect(annualHook.xToDay(10000)).toBe(365);
     });
   });
 
