@@ -1,6 +1,6 @@
 /**
  * @file domainInvariants.test.ts
- * Rigorous Domain Invariant & Physics Conservation Law Verification Suite (Wave 5).
+ * Rigorous Domain Invariant & Physics Conservation Law Verification Suite (Waves 5 & 19).
  * 
  * Verifies fundamental physical conservation laws and mathematical invariants:
  * 1. Vis-Viva Specific Orbital Energy Conservation (\mathcal{E} = v^2/2 - \mu/r = -\mu/2a within < 0.1%)
@@ -9,6 +9,11 @@
  * 4. Modulo Negative Invariance ([-720°, +720°] yielding strict [0°, 360°) ranges)
  * 5. Collinear Antipodal Vector Invariant (r_earth . s_sun = -1.0 across all 6 milestone nodes)
  * 6. Degenerate Input Fuzzing & Singular Boundary Resilience
+ * 7. Orbital Segments Near/Far Depth Partition Invariant
+ * 8. Polar Latitude Singularity & Meridian Colure Chord Invariants (phi = +-90°)
+ * 9. Physical Syzygy Apparent Ratio Crossings & Grazing Shadow Cones (k >= 1.0)
+ * 10. Equatorial Colure Verticality & Tropical Culmination Gate Invariants (phi = 0°, |phi| <= 28.58°)
+ * 11. Temporal Rollover & Gregorian Century Leap-Year Invariants
  */
 
 import { describe, it, expect } from 'vitest';
@@ -28,6 +33,15 @@ import {
   generateAnalyticalLimbPath,
   generateCosmicScene,
   calculateShadowCones3D,
+  calculateMeridianDiurnalChord,
+  calculateRiseSetAzimuth,
+  calculateCulminationBearing,
+  isLeapYear,
+  getDaysInYear,
+  getDayOfYear,
+  EL_R,
+  EL_CX,
+  EL_CY,
   EARTH_ORBITAL_SPEED_MEAN_KMS,
   ASTRONOMICAL_UNIT_KM,
   J2000_JD,
@@ -39,7 +53,7 @@ import {
 } from './index';
 import { asJulianDate } from '../../types/units';
 
-describe('Domain Invariants & Physics Conservation Suite (Wave 5)', () => {
+describe('Domain Invariants & Physics Conservation Suite (Wave 5 & 19)', () => {
 
   describe('1. Vis-Viva Specific Orbital Energy Conservation', () => {
     it('conserves specific orbital energy E = v^2/2 - mu/r within < 0.1% across all 365 days of the year', () => {
@@ -286,6 +300,158 @@ describe('Domain Invariants & Physics Conservation Suite (Wave 5)', () => {
           expect(segs.farWanAsc.length + segs.farWanDesc.length).toBeGreaterThan(0);
         }
       }
+    });
+  });
+
+  describe('8. Polar Latitude Singularity & Meridian Colure Chord Invariants', () => {
+    it('guarantees strictly horizontal diurnal colure chords (Delta Y == 0) at North and South Poles', () => {
+      // North Pole (+90°) during Summer Solstice (+23.44°)
+      const npSummer = calculateMeridianDiurnalChord(90, 23.44, -18);
+      expect(npSummer.isCircumpolar).toBe(true);
+      expect(npSummer.horizonPoint).toBeNull();
+      expect(npSummer.daylightD).not.toContain('NaN');
+      // Strictly horizontal: peak Y == anchor Y
+      expect(npSummer.peakPoint.y).toBeCloseTo(npSummer.anchorPoint.y, 1);
+      const expectedNpY = EL_CY - EL_R * Math.sin(23.44 * Math.PI / 180);
+      expect(npSummer.peakPoint.y).toBeCloseTo(expectedNpY, 1);
+      // Symmetrical chord width across central meridian cx = 130
+      const dx1 = Math.abs(npSummer.peakPoint.x - EL_CX);
+      const dx2 = Math.abs(npSummer.anchorPoint.x - EL_CX);
+      expect(dx1).toBeCloseTo(dx2, 1);
+
+      // South Pole (-90°) during Southern Summer (-23.44°)
+      const spSummer = calculateMeridianDiurnalChord(-90, -23.44, -18);
+      expect(spSummer.isCircumpolar).toBe(true);
+      expect(spSummer.horizonPoint).toBeNull();
+      expect(spSummer.peakPoint.y).toBeCloseTo(spSummer.anchorPoint.y, 1);
+    });
+
+    it('suppresses degenerate rise/set azimuths and identifies continuous polar night at exact poles', () => {
+      const npWinterAz = calculateRiseSetAzimuth(90, -23.44);
+      expect(npWinterAz.isPolarNight).toBe(true);
+      expect(npWinterAz.riseAzimuth).toBeNull();
+      expect(npWinterAz.setAzimuth).toBeNull();
+      expect(npWinterAz.riseOctant).toBe('--');
+      expect(npWinterAz.setOctant).toBe('--');
+
+      const npWinterChord = calculateMeridianDiurnalChord(90, -23.44, -18);
+      expect(npWinterChord.isNeverVisible).toBe(true);
+      expect(npWinterChord.isCircumpolar).toBe(false);
+      expect(npWinterChord.daylightD).toBe('');
+    });
+  });
+
+  describe('9. Physical Syzygy Apparent Ratio Crossings & Grazing Shadow Cones', () => {
+    it('governs Total vs Annular solar eclipses strictly via physical apparent radius ratio k = sMoon / sSun', () => {
+      // Historical Total Eclipse (April 8, 2024: Moon closer, k >= 1.0)
+      const jdTotal = getJulianDate(new Date('2024-04-08T00:00:00Z'), 18.29);
+      const eclipseTotal = calculateEclipseData(jdTotal);
+      expect(eclipseTotal.category).toBe('SOLAR');
+      expect(eclipseTotal.apparentRadiusRatio).toBeDefined();
+      expect(eclipseTotal.apparentRadiusRatio!).toBeGreaterThanOrEqual(1.0);
+      expect(eclipseTotal.type).toBe('TOTAL_SOLAR');
+
+      // Historical Annular Eclipse (October 2, 2024: Moon further, k < 1.0)
+      const jdAnnular = getJulianDate(new Date('2024-10-02T00:00:00Z'), 18.75);
+      const eclipseAnnular = calculateEclipseData(jdAnnular);
+      expect(eclipseAnnular.category).toBe('SOLAR');
+      expect(eclipseAnnular.apparentRadiusRatio).toBeDefined();
+      expect(eclipseAnnular.apparentRadiusRatio!).toBeLessThan(1.0);
+      expect(eclipseAnnular.type).toBe('ANNULAR_SOLAR');
+    });
+
+    it('safely computes 3D shadow cones under grazing and tangent occlusions without NaN', () => {
+      // Tangent/grazing sun-occluder distance
+      const cones = calculateShadowCones3D(
+        { x: 0, y: 0, z: 0 },
+        696340,
+        { x: 149600000, y: 0, z: 0 },
+        1737.4,
+        { x: 149984400, y: 0, z: 0 }
+      );
+      expect(Number.isFinite(cones.umbraLengthKm)).toBe(true);
+      expect(Number.isFinite(cones.penumbraLengthKm)).toBe(true);
+      expect(cones.umbraLengthKm).toBeGreaterThan(0);
+      expect(cones.penumbraLengthKm).toBeGreaterThan(0);
+      expect(Number(cones.umbraAngle)).toBeGreaterThan(0);
+      expect(Number(cones.penumbraAngle)).toBeGreaterThan(0);
+    });
+  });
+
+  describe('10. Equatorial Colure Verticality & Tropical Culmination Gate Invariants', () => {
+    it('guarantees strictly vertical diurnal colure paths (Delta X == 0) across all declinations at the Equator', () => {
+      const declinations = [0, 15, -15, 23.439, -23.439, 28.58, -28.58];
+
+      for (const dec of declinations) {
+        const chord = calculateMeridianDiurnalChord(0, dec, -18);
+        expect(chord.horizonPoint).not.toBeNull();
+        expect(chord.horizonPoint!.y).toBe(EL_CY);
+
+        // At phi = 0°, X = cx + r*sin(delta) is invariant across diurnal cycle
+        const expectedX = EL_CX + EL_R * Math.sin(dec * Math.PI / 180);
+        expect(chord.peakPoint.x).toBeCloseTo(expectedX, 1);
+        expect(chord.horizonPoint!.x).toBeCloseTo(expectedX, 1);
+
+        // Delta X between peak and horizon is 0
+        const deltaX = Math.abs(chord.peakPoint.x - chord.horizonPoint!.x);
+        expect(deltaX).toBeLessThan(0.05);
+
+        // Twilight extension is also strictly vertical downwards without lateral drift
+        const deltaXTwilight = Math.abs(chord.anchorPoint.x - chord.horizonPoint!.x);
+        expect(deltaXTwilight).toBeLessThan(0.05);
+      }
+    });
+
+    it('enforces exact Zenith transit gate (|delta - phi| < 0.25°) across continuous tropical sweeps', () => {
+      for (let lat = -28.58; lat <= 28.58; lat += 2) {
+        // Test exactly at observer zenith (delta == lat)
+        const zenith = calculateCulminationBearing(lat, lat);
+        expect(zenith.direction).toBe('Zenith');
+        expect(zenith.meridianLabel).toBe('Z');
+        expect(zenith.altitude).toBe(90.0);
+
+        // Test northern offset (+5°)
+        const north = calculateCulminationBearing(lat, Math.min(85, lat + 5));
+        expect(north.direction).toBe('North');
+        expect(north.meridianLabel).toBe('N');
+
+        // Test southern offset (-5°)
+        const south = calculateCulminationBearing(lat, Math.max(-85, lat - 5));
+        expect(south.direction).toBe('South');
+        expect(south.meridianLabel).toBe('S');
+      }
+    });
+  });
+
+  describe('11. Temporal Rollover & Gregorian Century Leap-Year Invariants', () => {
+    it('strictly preserves the Gregorian 400-year century leap rule across centuries', () => {
+      // 100-year non-leap centuries
+      expect(isLeapYear(1700)).toBe(false);
+      expect(isLeapYear(1800)).toBe(false);
+      expect(isLeapYear(1900)).toBe(false);
+      expect(isLeapYear(2100)).toBe(false);
+      expect(isLeapYear(2200)).toBe(false);
+      expect(isLeapYear(2300)).toBe(false);
+      expect(getDaysInYear(2100)).toBe(365);
+
+      // 400-year leap centuries
+      expect(isLeapYear(1600)).toBe(true);
+      expect(isLeapYear(2000)).toBe(true);
+      expect(isLeapYear(2400)).toBe(true);
+      expect(getDaysInYear(2000)).toBe(366);
+      expect(getDaysInYear(2400)).toBe(366);
+    });
+
+    it('guarantees monotonic day-of-year mapping across sub-millisecond calendar year transitions', () => {
+      // Leap year boundary: 2024-12-31T23:59:59.999Z -> 2025-01-01T00:00:00.000Z
+      const leapEnd = new Date(Date.UTC(2024, 11, 31, 23, 59, 59, 999));
+      const newYear = new Date(Date.UTC(2025, 0, 1, 0, 0, 0, 0));
+      expect(getDayOfYear(leapEnd)).toBe(366);
+      expect(getDayOfYear(newYear)).toBe(1);
+
+      // Common year boundary: 2025-12-31T23:59:59.999Z
+      const commonEnd = new Date(Date.UTC(2025, 11, 31, 23, 59, 59, 999));
+      expect(getDayOfYear(commonEnd)).toBe(365);
     });
   });
 

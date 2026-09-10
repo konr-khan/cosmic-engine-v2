@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 561 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 580 tests)
 
 ### Essential Commands
 
@@ -118,7 +118,8 @@ Cosmic Engine V2.0/
 │       ├── 0015-true-ecliptic-lunar-node-crossing-kinematics.md
 │       ├── 0016-dynamic-sighting-aware-horizon-dome-and-tropical-culmination.md
 │       ├── 0017-quad-view-celestial-meridian-profiles.md
-│       └── 0018-performance-optimization-modular-ephemeris-decoupling-and-build-hardening.md
+│       ├── 0018-performance-optimization-modular-ephemeris-decoupling-and-build-hardening.md
+│       └── 0019-polar-singularity-rectification-and-syzygy-apparent-ratio.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
@@ -145,13 +146,13 @@ Cosmic Engine V2.0/
 │   │   │   ├── lunar.ts         # Lunar ephemeris solver, disc illumination, nodal precession, parallactic angle & annual lunar matrix
 │   │   │   ├── lunar.test.ts    # Vitest unit tests for lunar ephemeris & illumination (16 tests)
 │   │   │   ├── eclipse.ts       # Syzygy shadow geometry & eclipse scanner
-│   │   │   ├── eclipse.test.ts  # Vitest unit tests for syzygy shadow geometry & presets (22 tests)
+│   │   │   ├── eclipse.test.ts  # Vitest unit tests for syzygy shadow geometry & presets (23 tests)
 │   │   │   ├── today/           # Decomposed Topocentric Sky Dome & Meridian Submodules
 │   │   │   │   ├── elevation.ts     # Prime vertical dome projection, diurnal paths & rise/set azimuths
 │   │   │   │   ├── meridian.ts      # S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
 │   │   │   │   └── draconic.ts      # True lunar node crossings, 18.6y standstills & micro-rail
 │   │   │   ├── todaySky.ts      # Facade re-exporting elevation, meridian & draconic submodules
-│   │   │   ├── todaySky.test.ts # Unit tests for sky dome projections & draconic kinematics (53 tests)
+│   │   │   ├── todaySky.test.ts # Unit tests for sky dome projections & draconic kinematics (62 tests)
 │   │   │   ├── globe.ts         # Pure continent spherical projection & analytical limb clipping
 │   │   │   ├── globe.test.ts    # Unit tests for continent projections & analytical limb clipping (14 tests)
 │   │   │   ├── projection.ts    # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
@@ -184,7 +185,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── armillary.test.ts # Vitest unit tests for armillary continuum & projections (34 tests)
 │   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (7 tests)
-│   │   │   └── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (10 tests)
+│   │   │   └── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (18 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   ├── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -207,7 +208,7 @@ Cosmic Engine V2.0/
 │       │   ├── depthUnificationStress.test.ts # Vitest tests for continuous stroke unification (11 tests)
 │       │   ├── common/          # Shared widget hooks & utilities
 │       │   │   ├── useRibbonScrubber.ts      # Shared bidirectional 2D timeline coordinate & dragging hook
-│       │   │   └── useRibbonScrubber.test.ts # Vitest unit tests for ribbon scrubber (9 tests)
+│       │   │   └── useRibbonScrubber.test.ts # Vitest unit tests for ribbon scrubber (10 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
 │       │   │   ├── ArmillaryWidget.test.tsx  # Vitest unit tests for Armillary visualizer (17 tests)
 │       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook

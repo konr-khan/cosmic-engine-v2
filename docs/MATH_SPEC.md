@@ -306,7 +306,48 @@ To enforce 100% mathematical consistency across all observatory telemetry, visua
   \gamma_{\text{solar}} = \sqrt{(\Delta\lambda_{\text{conj}} \cos \beta)^2 + \beta^2}
   \]
 
-### D. Axial Sightline Down-the-Barrel Kinematics & Prograde Projections
+### D. Apparent Angular Radius Ratio ($k$) & Solar Eclipse Totality Criterion
+
+The classification of central solar eclipses into **Total** vs. **Annular** regimes is governed dynamically by the ratio of the Moon's apparent angular semi-diameter to the Sun's apparent angular semi-diameter:
+\[
+k = \frac{s_{\text{moon}}}{s_\odot} = \frac{\arcsin(R_{\text{moon}} / \Delta_{\text{moon}})}{\arcsin(R_\odot / \Delta_\odot)}
+\]
+where $\Delta_{\text{moon}}$ is the instantaneous geocentric lunar distance ($356,400\text{ km} \dots 406,700\text{ km}$) and $\Delta_\odot$ is the instantaneous Earth-Sun orbital distance ($0.983\text{ AU} \dots 1.017\text{ AU}$):
+
+1. **Total Solar Eclipse ($k \ge 1.0$)**:
+   When the Moon's apparent disc is equal to or larger than the solar photosphere ($s_{\text{moon}} \ge s_\odot$), the lunar umbral shadow cone reaches Earth's surface. If the syzygy separation satisfies $\gamma_{\text{solar}} < 1.0^\circ$:
+   - **Type**: `TOTAL_SOLAR`
+   - **Obscuration**: Scaled quadratically from $100\%$ at the central shadow axis ($\gamma_{\text{solar}} = 0$) to $95\%$ at the umbral boundary:
+     \[
+     \text{Obscuration} = \max(95, \min(100, \operatorname{round}(100 - 5 \gamma_{\text{solar}}^2)))
+     \]
+
+2. **Annular Solar Eclipse ($k < 1.0$)**:
+   When the Moon's apparent disc is smaller than the solar photosphere ($s_{\text{moon}} < s_\odot$), the lunar umbral cone terminates in space before reaching Earth, and the antumbra sweeps across the surface. An unbroken ring of brilliant photosphere (annulus) remains visible:
+   - **Type**: `ANNULAR_SOLAR`
+   - **Obscuration**: Bounded by the fractional area ratio $k^2$ with quadratic falloff:
+     \[
+     \text{MaxAnnular} = \min(98, \operatorname{round}(k^2 \times 100) \lor 94)
+     \]
+     \[
+     \text{Obscuration} = \max(90, \min(\text{MaxAnnular}, \operatorname{round}(\text{MaxAnnular} - 4 \gamma_{\text{solar}}^2)))
+     \]
+
+3. **Partial Solar Eclipse ($\gamma_{\text{solar}} \ge 1.0^\circ$)**:
+   When the Moon's penumbra touches Earth but the central umbra/antumbra misses the observer ($1.0^\circ \le \gamma_{\text{solar}} < \pi_{\text{moon}} + s_\odot + s_{\text{moon}}$):
+   - **Type**: `PARTIAL_SOLAR`
+   - **Obscuration**: Continuous power-law decay ($p = 1.15$) from the central boundary baseline ($\text{baseEdge} = 95\%$ for totality-capable geometries, $90\%$ for annular) down to $1\%$ at the outer penumbral contact limit $\gamma_{\max} = \pi_{\text{moon}} + s_\odot + s_{\text{moon}} \approx 1.55^\circ$:
+     \[
+     f = \frac{\gamma_{\max} - \gamma_{\text{solar}}}{\gamma_{\max} - 1.0^\circ}
+     \]
+     \[
+     \text{Obscuration} = \max(1, \min(\text{baseEdge}, \operatorname{round}(\text{baseEdge} \cdot f^{1.15})))
+     \]
+
+> [!NOTE]
+> By computing $k$ from exact instantaneous celestial positions rather than an empirical static distance threshold (e.g. $378,000\text{ km}$), the engine accurately accounts for Earth's orbital eccentricity ($e = 0.01671$), where the Sun's apparent angular diameter varies annually by $\pm 1.7\%$ between perihelion ($s_\odot = 0.272^\circ$) and aphelion ($s_\odot = 0.263^\circ$).
+
+### E. Axial Sightline Down-the-Barrel Kinematics & Prograde Projections
 
 The **Axial Sightline** demonstrator (`NodalPlaneVisualizer.tsx` and `projectGeocentricAxial`) positions the observer along the Sun-Earth axis on Earth's night side ($+X$ in geocentric ecliptic coordinates), looking directly through Earth toward the Sun in the background along $-\mathbf{e}_X$.
 
@@ -377,7 +418,7 @@ The **Axial Sightline** demonstrator (`NodalPlaneVisualizer.tsx` and `projectGeo
      \]
      When $\text{isBehindEarth}$ is true, the node renders with ghosted X-ray styling (`opacity = 0.35`, dark translucent fill `#0f172a`, dashed ring `strokeDasharray = "2 1.5"`, muted text `/60 font-medium`); otherwise it retains 100% full vibrancy.
 
-### E. Sky View Simulator Prograde Invariants & Perspectival Kinematics
+### F. Sky View Simulator Prograde Invariants & Perspectival Kinematics
 
 The **Sky View Simulator** (`SkyViewSimulator.tsx` and `LunarSurfacePovView.tsx`) visualizes syzygy alignment from two complementary vantage points:
 
@@ -1289,7 +1330,7 @@ d(0) = R = 92\text{px}
 \]
 **Theorem**: At the culmination moment (Solar Noon or Lunar Transit), the body's diurnal chord touches the circular meridian dome perimeter $R = 92$ with exact tangential contact.
 
-#### 4. Analytical Horizon Contact & Twilight Gate Coordinates (`calculateMeridianDiurnalChord`)
+#### 4. Analytical Horizon Contact, Twilight Gate Coordinates & Latitude Boundary Singularities (`calculateMeridianDiurnalChord`)
 
 1. **Horizon Contact ($h = 0^\circ \iff z_{\text{zenith}} = 0$)**:
    \[
@@ -1307,6 +1348,34 @@ d(0) = R = 92\text{px}
    \cos H_{18} = \frac{\sin(-18^\circ) - \sin\phi \sin\delta}{\cos\phi \cos\delta}
    \]
    Yielding twilight gate coordinates $(X_{\text{gate}}, Y_{\text{gate}})$ when $\cos H_{18} \in [-1, 1]$.
+
+3. **Latitude Boundary Limits & Non-Singular Elevation Bounds**:
+   Instead of testing $\cos\phi$ or computing $\tan\phi$, the diurnal altitude bounds for any observer latitude $\phi$ are evaluated non-singularly via direction cosines:
+   \[
+   \sin(h_{\min}) = \sin\phi \sin\delta - \cos\phi \cos\delta = -\cos(\phi + \delta)
+   \]
+   \[
+   \sin(h_{\max}) = \sin\phi \sin\delta + \cos\phi \cos\delta = \cos(\phi - \delta)
+   \]
+   - **Circumpolar Perpetual Sky**: When $\sin(h_{\min}) \ge \sin(h_{\text{gate}})$, the body remains above the observation gate all day ($\cos H_{\text{gate}} \le -1.0$).
+   - **Perpetual Sub-Gate Darkness (Polar Night)**: When $\sin(h_{\max}) \le \sin(h_{\text{gate}})$, the body never reaches the observation gate ($\cos H_{\text{gate}} \ge 1.0$).
+   
+   - **Polar Latitudes ($\phi \to \pm 90^\circ, \cos\phi \to 0$)**:
+     At the exact geographic North or South pole, diurnal elevation is invariant with hour angle: $\sin h = \sin\phi \sin\delta = \pm \sin\delta$. The diurnal chord collapses onto a perfectly horizontal line parallel to the horizon baseline:
+     \[
+     Y_{\text{chord}} = CY \mp R \sin\delta, \quad \text{Slope} = \cot(\pm 90^\circ) = 0
+     \]
+     For circumpolar bodies, the chord spans across the full dome width $X \in [CX - R, CX + R]$ ($X \in [38, 222]$), eliminating division-by-zero traps and tangent singularities.
+   
+   - **Equatorial Latitude ($\phi \to 0^\circ, \sin\phi = 0, \cos\phi = 1$)**:
+     At the terrestrial equator, $\cot(0^\circ) \to \infty$. The diurnal chord is strictly vertical ($\Delta X = 0$):
+     \[
+     X_{\text{chord}} = CX + R \sin\delta = 130 + 92 \sin\delta
+     \]
+     \[
+     Y(H) = CY - R \cos\delta \cos H = 104 - 92 \cos\delta \cos H
+     \]
+     The chord touches the circular meridian arc tangentially at peak culmination ($H = 0$, $Y = 104 - 92\cos\delta$) and descends perpendicularly into the horizon at $(130 + 92\sin\delta, 104)$ at $H = \pm 90^\circ$.
 
 #### 5. Projection Degeneracy & Approach C Parked Ghost Anchors
 
