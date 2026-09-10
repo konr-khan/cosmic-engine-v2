@@ -732,5 +732,92 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       expect(polarChord.daylightD).toContain('M ');
       expect(polarChord.twilightD).toBe('');
     });
+
+    it('renders exact horizontal chord at North Pole (+90°) during Summer Solstice (+23.44°)', () => {
+      const northPoleSummer = calculateMeridianDiurnalChord(90, 23.44, -18);
+      expect(northPoleSummer.isCircumpolar).toBe(true);
+      expect(northPoleSummer.isNeverVisible).toBe(false);
+      expect(northPoleSummer.horizonPoint).toBeNull();
+      expect(northPoleSummer.daylightD).not.toBe('');
+      expect(northPoleSummer.daylightD).not.toContain('NaN');
+
+      // At North Pole, diurnal path is strictly horizontal (constant elevation delta)
+      expect(northPoleSummer.peakPoint.y).toBeCloseTo(northPoleSummer.anchorPoint.y, 1);
+      const expectedY = EL_CY - EL_R * Math.sin(23.44 * Math.PI / 180);
+      expect(northPoleSummer.peakPoint.y).toBeCloseTo(expectedY, 1);
+
+      // Symmetrical horizontal extent around cx = 130
+      const dx1 = Math.abs(northPoleSummer.peakPoint.x - EL_CX);
+      const dx2 = Math.abs(northPoleSummer.anchorPoint.x - EL_CX);
+      expect(dx1).toBeCloseTo(dx2, 1);
+    });
+
+    it('correctly identifies Polar Night at North Pole (+90°) during Winter Solstice (-23.44°)', () => {
+      const northPoleWinter = calculateMeridianDiurnalChord(90, -23.44, -18);
+      expect(northPoleWinter.isNeverVisible).toBe(true);
+      expect(northPoleWinter.isCircumpolar).toBe(false);
+      expect(northPoleWinter.horizonPoint).toBeNull();
+      expect(northPoleWinter.daylightD).toBe('');
+      expect(northPoleWinter.anchorPoint.y).not.toBeNaN();
+    });
+
+    it('renders exact horizontal chord at South Pole (-90°) during Southern Summer (-23.44°)', () => {
+      const southPoleSummer = calculateMeridianDiurnalChord(-90, -23.44, -18);
+      expect(southPoleSummer.isCircumpolar).toBe(true);
+      expect(southPoleSummer.isNeverVisible).toBe(false);
+      expect(southPoleSummer.horizonPoint).toBeNull();
+      expect(southPoleSummer.peakPoint.y).toBeCloseTo(southPoleSummer.anchorPoint.y, 1);
+    });
+
+    it('correctly identifies Polar Night at South Pole (-90°) during Southern Winter (+23.44°)', () => {
+      const southPoleWinter = calculateMeridianDiurnalChord(-90, 23.44, -18);
+      expect(southPoleWinter.isNeverVisible).toBe(true);
+      expect(southPoleWinter.isCircumpolar).toBe(false);
+      expect(southPoleWinter.daylightD).toBe('');
+    });
+  });
+
+  describe('Polar Latitude & Horizon Singularity Invariants (calculateRiseSetAzimuth & generateDiurnalPath)', () => {
+    it('suppresses degenerate rise/set azimuths at exact poles (|lat| = 90°)', () => {
+      const northSummer = calculateRiseSetAzimuth(90, 23.44);
+      expect(northSummer.isCircumpolar).toBe(true);
+      expect(northSummer.riseAzimuth).toBeNull();
+      expect(northSummer.setAzimuth).toBeNull();
+      expect(northSummer.riseOctant).toBe('--');
+      expect(northSummer.setOctant).toBe('--');
+
+      const northWinter = calculateRiseSetAzimuth(90, -23.44);
+      expect(northWinter.isPolarNight).toBe(true);
+      expect(northWinter.riseAzimuth).toBeNull();
+      expect(northWinter.setAzimuth).toBeNull();
+      expect(northWinter.riseOctant).toBe('--');
+
+      const southSummer = calculateRiseSetAzimuth(-90, -23.44);
+      expect(southSummer.isCircumpolar).toBe(true);
+      expect(southSummer.riseAzimuth).toBeNull();
+
+      const southWinter = calculateRiseSetAzimuth(-90, 23.44);
+      expect(southWinter.isPolarNight).toBe(true);
+      expect(southWinter.riseAzimuth).toBeNull();
+    });
+
+    it('handles polar extremes in generateDiurnalPath without NaN or coordinate collapse', () => {
+      const northSummerPath = generateDiurnalPath(90, 23.44);
+      expect(northSummerPath.isCircumpolar).toBe(true);
+      expect(northSummerPath.isPolarNight).toBe(false);
+      expect(northSummerPath.pathD).toContain('M ');
+      expect(northSummerPath.pathD).not.toContain('NaN');
+
+      const northWinterPath = generateDiurnalPath(90, -23.44);
+      expect(northWinterPath.isPolarNight).toBe(true);
+      expect(northWinterPath.isCircumpolar).toBe(false);
+      expect(northWinterPath.pathD).toBe('');
+
+      const southSummerPath = generateDiurnalPath(-90, -23.44);
+      expect(southSummerPath.isCircumpolar).toBe(true);
+      expect(southSummerPath.isPolarNight).toBe(false);
+      expect(southSummerPath.pathD).toContain('M ');
+      expect(southSummerPath.pathD).not.toContain('NaN');
+    });
   });
 });

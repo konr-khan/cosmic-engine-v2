@@ -137,11 +137,16 @@ export const generateDiurnalPath = (
     y: cy - r * Math.sin(toRadians(peakAlt))
   };
 
-  // Check polar conditions: cos(H0) = -tan(phi)*tan(delta)
-  const tanProduct = Math.tan(phiRad) * Math.tan(decRad);
+  // Extreme vertical elevation sines across 24h diurnal cycle:
+  // sin(h_max) = sin(phi)*sin(delta) + cos(phi)*cos(delta)
+  // sin(h_min) = sin(phi)*sin(delta) - cos(phi)*cos(delta)
+  const sinLatSinDec = Math.sin(phiRad) * Math.sin(decRad);
+  const cosLatCosDec = Math.cos(phiRad) * Math.cos(decRad);
+  const sinHMin = sinLatSinDec - cosLatCosDec;
+  const sinHMax = sinLatSinDec + cosLatCosDec;
 
   // Polar Night: body never rises above horizon
-  if (tanProduct <= -1) {
+  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
     return {
       pathD: '',
       peakAlt,
@@ -155,7 +160,7 @@ export const generateDiurnalPath = (
   }
 
   // Midnight Sun / Circumpolar: body never sets below horizon
-  if (tanProduct >= 1) {
+  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg >= 0 : declinationDeg <= 0))) {
     const points: string[] = [];
     // Span across the visible 180° dome (H from -90° to +90°)
     for (let i = 0; i <= numSteps; i++) {
@@ -177,7 +182,7 @@ export const generateDiurnalPath = (
   }
 
   // Normal Rise / Set: H0 = acos(-tan(phi)*tan(delta))
-  const cosH0 = -tanProduct;
+  const cosH0 = -sinLatSinDec / cosLatCosDec;
   const h0Deg = toDegrees(Math.acos(clamp(cosH0, -1, 1)));
 
   const points: string[] = [];
@@ -408,10 +413,13 @@ export const calculateRiseSetAzimuth = (
   const phiRad = toRadians(latitudeDeg);
   const decRad = toRadians(declinationDeg);
 
-  const tanProduct = Math.tan(phiRad) * Math.tan(decRad);
+  const sinLatSinDec = Math.sin(phiRad) * Math.sin(decRad);
+  const cosLatCosDec = Math.cos(phiRad) * Math.cos(decRad);
+  const sinHMin = sinLatSinDec - cosLatCosDec;
+  const sinHMax = sinLatSinDec + cosLatCosDec;
 
   // Polar Night: body never rises above horizon
-  if (tanProduct <= -1) {
+  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
     return {
       riseAzimuth: null,
       setAzimuth: null,
@@ -425,7 +433,21 @@ export const calculateRiseSetAzimuth = (
   }
 
   // Midnight Sun / Circumpolar: body never sets below horizon
-  if (tanProduct >= 1) {
+  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg > 0 : declinationDeg < 0))) {
+    return {
+      riseAzimuth: null,
+      setAzimuth: null,
+      riseOctant: '--',
+      setOctant: '--',
+      riseFormatted: '--',
+      setFormatted: '--',
+      isCircumpolar: true,
+      isPolarNight: false
+    };
+  }
+
+  // Exact polar singularity check (|latitude| >= 89.99): horizontal azimuths degenerate at poles
+  if (Math.abs(latitudeDeg) >= 89.99) {
     return {
       riseAzimuth: null,
       setAzimuth: null,

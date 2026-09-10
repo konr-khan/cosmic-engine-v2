@@ -219,10 +219,20 @@ export const calculateMeridianDiurnalChord = (
   const peakX = parseFloat((cx + r * yNorthPeak).toFixed(2));
   const peakY = parseFloat((cy - r * zZenithPeak).toFixed(2));
 
-  // Check horizon crossing: cos(H_0) = -tan(phi)*tan(delta)
-  const tanPhi = Math.abs(cosPhi) > 1e-6 ? sinPhi / cosPhi : 0;
-  const tanDelta = Math.abs(cosDelta) > 1e-6 ? sinDelta / cosDelta : 0;
-  const cosH0 = -tanPhi * tanDelta;
+  // Minimum Lower Culmination Point (H = 180°)
+  // Touches the R circle at angle (phi + delta)
+  const yNorthMin = Math.sin(phi + delta);
+  const zZenithMin = -Math.cos(phi + delta);
+  const minX = parseFloat((cx + r * yNorthMin).toFixed(2));
+  const minY = parseFloat((cy - r * zZenithMin).toFixed(2));
+
+  // Extreme vertical elevation sines across 24h diurnal cycle:
+  // sin(h_max) = sin(phi)*sin(delta) + cos(phi)*cos(delta)
+  // sin(h_min) = sin(phi)*sin(delta) - cos(phi)*cos(delta)
+  const sinLatSinDec = sinPhi * sinDelta;
+  const cosLatCosDec = cosPhi * cosDelta;
+  const sinHMax = sinLatSinDec + cosLatCosDec;
+  const sinHMin = sinLatSinDec - cosLatCosDec;
 
   let horizonPoint: { x: number; y: number } | null = null;
   let daylightD = '';
@@ -230,14 +240,10 @@ export const calculateMeridianDiurnalChord = (
   let isCircumpolar = false;
   let isNeverVisible = false;
 
-  if (cosH0 < -1) {
+  // Polar / Circumpolar checks (singularity-free across all latitudes including exact poles)
+  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg > 0 : declinationDeg < 0))) {
     // Circumpolar (Midnight Sun) - Entire 24h diurnal path is above horizon
     isCircumpolar = true;
-    // Lower culmination (H = 180°)
-    const yNorthMin = Math.sin(phi + delta);
-    const zZenithMin = -Math.cos(phi + delta);
-    const minX = parseFloat((cx + r * yNorthMin).toFixed(2));
-    const minY = parseFloat((cy - r * zZenithMin).toFixed(2));
     daylightD = `M ${minX} ${minY} L ${peakX} ${peakY}`;
     return {
       peakPoint: { x: peakX, y: peakY },
@@ -250,12 +256,13 @@ export const calculateMeridianDiurnalChord = (
     };
   }
 
-  if (cosH0 > 1) {
+  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
     // Polar Night - Never rises above horizon
     isNeverVisible = true;
     daylightD = '';
   } else {
     // Crosses horizon at y_north = sin(delta) / cos(phi)
+    // When sinHMin < 0 and sinHMax > 0, |cosPhi| is guaranteed strictly non-zero
     const yNorthHorizon = Math.abs(cosPhi) > 1e-6 ? sinDelta / cosPhi : 0;
     const horizonX = parseFloat((cx + r * yNorthHorizon).toFixed(2));
     const horizonY = cy; // exactly baseline 104
@@ -265,9 +272,10 @@ export const calculateMeridianDiurnalChord = (
 
   // Anchor Point at thresholdElevationDeg (e.g. -18° for Sun, 0° for Moon)
   if (thresholdElevationDeg >= 0) {
-    // For Moon (threshold = 0°): Anchor is exactly the horizon crossing!
-    const anchorX = horizonPoint ? horizonPoint.x : cx;
-    const anchorY = cy;
+    // For Moon (threshold = 0°): Anchor is exactly the horizon crossing if visible,
+    // or peak point if completely below horizon
+    const anchorX = horizonPoint ? horizonPoint.x : peakX;
+    const anchorY = horizonPoint ? horizonPoint.y : peakY;
     return {
       peakPoint: { x: peakX, y: peakY },
       horizonPoint,
@@ -281,14 +289,23 @@ export const calculateMeridianDiurnalChord = (
 
   // Sub-horizon / Twilight extension down to thresholdElevationDeg (e.g. -18°)
   const zThresh = Math.sin(toRadians(thresholdElevationDeg));
-  const zZenithMin = -Math.cos(phi + delta);
-  const effectiveZ = Math.max(zZenithMin, zThresh);
+  const effectiveZ = Math.max(sinHMin, zThresh);
   const anchorY = parseFloat((cy - r * effectiveZ).toFixed(2));
-  const horizonX = horizonPoint ? horizonPoint.x : (cx + r * (Math.abs(cosPhi) > 1e-6 ? sinDelta / cosPhi : 0));
-  const anchorX = parseFloat((horizonX + (anchorY - cy) * tanPhi).toFixed(2));
+
+  // Determine anchorX along the colure chord: cos(phi)*(X - cx) + sin(phi)*(cy - Y) = r*sin(delta)
+  let anchorX = cx;
+  if (Math.abs(cosPhi) > 1e-6) {
+    anchorX = parseFloat((cx + r * ((sinDelta - sinPhi * effectiveZ) / cosPhi)).toFixed(2));
+  } else {
+    // Polar observer (|phi| ~ 90°): diurnal path is horizontal line Y = cy - r*sin(delta)
+    anchorX = peakX;
+  }
 
   if (horizonPoint) {
     twilightD = `M ${anchorX} ${anchorY} L ${horizonPoint.x} ${horizonPoint.y}`;
+  } else if (isNeverVisible && sinHMax > zThresh) {
+    // In polar night, but midday peaks above twilight threshold (e.g. astronomical twilight at noon)
+    twilightD = `M ${anchorX} ${anchorY} L ${peakX} ${peakY}`;
   }
 
   return {
