@@ -317,6 +317,24 @@ describe('Cosmic Math: Eclipse Presets & Syzygy Geometry', () => {
       expect(data24.beta).toBeGreaterThanOrEqual(0);
       expect(data24.isAscendingHemisphere).toBe(true);
     });
+
+    it('governs Total vs Annular solar eclipse classification via physical apparentRadiusRatio (k = sMoon / sSun)', () => {
+      // April 8, 2024 Total Solar Eclipse (Moon closer, apparent diameter larger than Sun)
+      const jdApr2024 = getJulianDate(new Date('2024-04-08T00:00:00Z'), 18.29);
+      const eclipseApr = calculateEclipseData(jdApr2024);
+      expect(eclipseApr.category).toBe('SOLAR');
+      expect(eclipseApr.apparentRadiusRatio).toBeDefined();
+      expect(eclipseApr.apparentRadiusRatio!).toBeGreaterThanOrEqual(1.0);
+      expect(eclipseApr.type).toBe('TOTAL_SOLAR');
+
+      // October 2, 2024 Annular Solar Eclipse (Moon near apogee, apparent diameter smaller than Sun)
+      const jdOct2024 = getJulianDate(new Date('2024-10-02T00:00:00Z'), 18.75);
+      const eclipseOct = calculateEclipseData(jdOct2024);
+      expect(eclipseOct.category).toBe('SOLAR');
+      expect(eclipseOct.apparentRadiusRatio).toBeDefined();
+      expect(eclipseOct.apparentRadiusRatio!).toBeLessThan(1.0);
+      expect(eclipseOct.type).toBe('ANNULAR_SOLAR');
+    });
   });
 
 });

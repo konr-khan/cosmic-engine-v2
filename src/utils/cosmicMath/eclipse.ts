@@ -28,6 +28,7 @@ export interface EclipseCalculationResult {
   raDiff: number;
   elongation: number;
   phaseValue: number;
+  apparentRadiusRatio?: number;
   nodeAngleDeg?: number;
   argumentOfLatitude?: number;
   isAscendingHemisphere?: boolean;
@@ -94,7 +95,8 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
 
   if (isNearNewMoon && gammaSolar < solarMaxLimit) {
     category = "SOLAR";
-    const isTotalityCapable = distanceKm < 378000;
+    const apparentRadiusRatio = sSun > 0 ? parseFloat((sMoon / sSun).toFixed(4)) : 1.0;
+    const isTotalityCapable = apparentRadiusRatio >= 1.0;
     if (gammaSolar < 1.0) {
       if (isTotalityCapable) {
         type = "TOTAL_SOLAR";
@@ -104,7 +106,7 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
       } else {
         type = "ANNULAR_SOLAR";
         label = "Annular Solar Eclipse";
-        const maxAnnular = Math.min(98, Math.round(Math.pow(sMoon / sSun, 2) * 100) || 94);
+        const maxAnnular = Math.min(98, Math.round(Math.pow(apparentRadiusRatio, 2) * 100) || 94);
         obscuration = Math.max(90, Math.min(maxAnnular, Math.round(maxAnnular - (gammaSolar * gammaSolar * 4))));
       }
     } else {
@@ -169,6 +171,7 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
     raDiff: parseFloat(raDiff.toFixed(2)),
     elongation: parseFloat(elongation.toFixed(2)),
     phaseValue: parseFloat(phaseValue.toFixed(3)),
+    apparentRadiusRatio: sSun > 0 ? parseFloat((sMoon / sSun).toFixed(4)) : undefined,
     nodeAngleDeg: parseFloat((((sunLambda - (lunarPos.nodeLongitude ?? 0)) % 360 + 360) % 360).toFixed(2)),
     argumentOfLatitude,
     isAscendingHemisphere,
