@@ -390,6 +390,52 @@ describe('Dynamic Culmination Bearing & Observer Perspective (calculateCulminati
     expect(moonSouth.meridianLabel).toBe('S');
     expect(moonSouth.altitude).toBeCloseTo(90 - (25.8 + 28.58), 1); // 35.62°
   });
+
+  it('verifies exact equatorial culmination bearings (phi = 0°) for equinox and solstices', () => {
+    // Equinox (dec = 0°) at Equator (phi = 0°) -> Exact Zenith transit
+    const equinox = calculateCulminationBearing(0, 0);
+    expect(equinox.direction).toBe('Zenith');
+    expect(equinox.meridianLabel).toBe('Z');
+    expect(equinox.altitude).toBe(90.0);
+
+    // Summer Solstice (dec = +23.44°) at Equator -> North culmination
+    const summer = calculateCulminationBearing(0, 23.439);
+    expect(summer.direction).toBe('North');
+    expect(summer.meridianLabel).toBe('N');
+    expect(summer.altitude).toBeCloseTo(90 - 23.439, 2);
+
+    // Winter Solstice (dec = -23.44°) at Equator -> South culmination
+    const winter = calculateCulminationBearing(0, -23.439);
+    expect(winter.direction).toBe('South');
+    expect(winter.meridianLabel).toBe('S');
+    expect(winter.altitude).toBeCloseTo(90 - 23.439, 2);
+  });
+
+  it('performs continuous sweep across all tropical latitudes and major declination limits without hysteresis or NaN', () => {
+    const declinationLimits = [0, 23.439, -23.439, 28.58, -28.58];
+
+    for (const dec of declinationLimits) {
+      for (let lat = -28.58; lat <= 28.58; lat += 0.5) {
+        const info = calculateCulminationBearing(lat, dec);
+        expect(info.altitude).toBeGreaterThanOrEqual(0);
+        expect(info.altitude).toBeLessThanOrEqual(90);
+        expect(Number.isNaN(info.altitude)).toBe(false);
+
+        const delta = dec - lat;
+        if (Math.abs(delta) < 0.25) {
+          expect(info.direction).toBe('Zenith');
+          expect(info.meridianLabel).toBe('Z');
+          expect(info.altitude).toBe(90.0);
+        } else if (delta < 0) {
+          expect(info.direction).toBe('South');
+          expect(info.meridianLabel).toBe('S');
+        } else {
+          expect(info.direction).toBe('North');
+          expect(info.meridianLabel).toBe('N');
+        }
+      }
+    }
+  });
 });
 
 describe('Rise and Set Horizon Azimuths (calculateRiseSetAzimuth)', () => {
@@ -722,6 +768,37 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       // Anchor point is coincident with horizon point
       expect(moonChord.anchorPoint.y).toBe(EL_CY);
       expect(moonChord.anchorPoint.x).toBeCloseTo(moonChord.horizonPoint!.x, 2);
+    });
+
+    it('guarantees strictly vertical diurnal chords (colure slope cot(phi) -> infinity) at the Equator (phi = 0°)', () => {
+      const declinations = [0, 15, -15, 23.439, -23.439];
+
+      for (const dec of declinations) {
+        const chord = calculateMeridianDiurnalChord(0, dec, -18);
+        expect(chord.horizonPoint).not.toBeNull();
+        expect(chord.horizonPoint!.y).toBe(EL_CY);
+
+        // At the Equator, colure projection of constant declination is strictly vertical:
+        // X = cx + r * sin(delta) is invariant to hour angle H
+        const expectedX = EL_CX + EL_R * Math.sin(dec * Math.PI / 180);
+        expect(chord.peakPoint.x).toBeCloseTo(expectedX, 1);
+        expect(chord.horizonPoint!.x).toBeCloseTo(expectedX, 1);
+
+        // Strict vertical collinearity: Delta X between peak and horizon is identically 0
+        const deltaXDay = Math.abs(chord.peakPoint.x - chord.horizonPoint!.x);
+        expect(deltaXDay).toBeLessThan(0.05);
+
+        // Twilight extension is also strictly vertical downwards without lateral drift
+        const deltaXTwilight = Math.abs(chord.anchorPoint.x - chord.horizonPoint!.x);
+        expect(deltaXTwilight).toBeLessThan(0.05);
+
+        // Twilight anchor extends to threshold elevation (-18°)
+        const expectedAnchorY = EL_CY - EL_R * Math.sin(-18 * Math.PI / 180);
+        expect(chord.anchorPoint.y).toBeCloseTo(expectedAnchorY, 1);
+
+        expect(chord.daylightD).not.toContain('NaN');
+        expect(chord.twilightD).not.toContain('NaN');
+      }
     });
 
     it('handles circumpolar midnight sun without horizon crossing', () => {
