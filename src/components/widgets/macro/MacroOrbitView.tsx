@@ -8,6 +8,12 @@ import { MacroOrbitViewProps, MacroOrbitHoverData } from './types';
 import { useHeliocentricScene } from '../../../hooks/useCosmicScene';
 import { useChronometerStore } from '../../../store/cosmicStore';
 
+const selectMacroObserverParams = (s: { latitude: number; longitude: number; timeOfDay: number }) => ({
+  latitude: s.latitude,
+  longitude: s.longitude,
+  timeOfDay: s.timeOfDay
+});
+
 export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({ 
   eclipse, 
   currentDate = new Date() 
@@ -16,11 +22,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Synchronize observer geographic coordinates and time from store
-  const storeState = useChronometerStore(s => ({
-    latitude: s.latitude,
-    longitude: s.longitude,
-    timeOfDay: s.timeOfDay
-  }));
+  const storeState = useChronometerStore(selectMacroObserverParams);
 
   // Consume unified 3D heliocentric scene graph
   const helioScene = useHeliocentricScene(
