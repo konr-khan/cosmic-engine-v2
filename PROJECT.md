@@ -243,31 +243,195 @@ export function useEclipseScene(options?: UseEclipseOptions): EclipseSceneData;
 export function useArmillaryScene(options?: UseArmillaryOptions): ArmillarySceneData;
 ```
 
+### `hoverStore` Atomic Micro-Store (`src/store/hoverStore.ts`)
+```typescript
+export interface HoverStoreState {
+  hoveredDate: Date | null;
+  hoveredTime: number | null; // Fractional hour (0.0 to 24.0)
+  hoverPosition: number | null; // Normalized progress (0.0 to 1.0)
+}
+
+export function useHoverStore<T>(selector: (state: HoverStoreState) => T): T;
+export const setHoverState: (updates: Partial<HoverStoreState>) => void;
+export const clearHoverState: () => void;
+```
+
+### `<SkyDomeBase />` Props Contract (`src/components/widgets/today/SkyDomeBase.tsx`)
+```typescript
+export interface SkyDomeBaseProps {
+  title: string;
+  viewBox?: string; // Canonical default: '0 0 260 138'
+  currentAlt?: Degrees;
+  peakAlt?: Degrees;
+  peakDirectionSuffix?: string; // e.g. 'S', 'N', 'ZENITH'
+  meridianLabel?: string; // Dynamic baseline tick label ('S', 'N', 'Z')
+  meridianDirection?: 'South' | 'North' | 'Zenith';
+  sightingPerspective?: string; // e.g. 'Looking South · S-Sky Arc'
+  showZenithAxis?: boolean; // Vertical dashed axis (+90° Zenith apex)
+  leftHorizonLabel?: string; // 'E' (Diurnal) or 'S' (Meridian)
+  centerHorizonLabel?: string; // 'S'/'N' (Diurnal) or 'Z' (Meridian)
+  rightHorizonLabel?: string; // 'W' (Diurnal) or 'N' (Meridian)
+  children?: React.ReactNode;
+}
+```
+
+### `<MeridianDomeBase />` Props Contract (`src/components/widgets/today/MeridianDomeBase.tsx`)
+```typescript
+export interface MeridianDomeBaseProps {
+  title: string;
+  peakAltitude: Degrees;
+  peakDirectionSuffix?: string;
+  meridianLabel?: string;
+  meridianDirection?: 'South' | 'North' | 'Zenith';
+  sightingPerspective?: string;
+  swaths?: MeridianSwath[];
+  radialTicks?: MeridianRadialTick[];
+  diurnalChord?: MeridianDiurnalChord;
+  parkedGateAnchor?: MeridianGateAnchor;
+  activeBody?: {
+    x: number;
+    y: number;
+    radius: number;
+    fill: string;
+    stroke: string;
+    opacity?: number;
+    haloRadius?: number;
+    haloColor?: string;
+  };
+  children?: React.ReactNode;
+}
+```
+
+### Topocentric Horizon & Celestial Meridian Math Contracts (`src/utils/cosmicMath/today/`)
+```typescript
+// elevation.ts — Culmination bearing & 16-point compass rise/set octants
+export interface CulminationBearing {
+  direction: 'South' | 'North' | 'Zenith';
+  meridianLabel: string;
+  altitude: Degrees;
+  sightingSummary: string;
+  lookingDirection: string;
+}
+
+export interface RiseSetAzimuth {
+  riseAzimuth: Degrees;
+  setAzimuth: Degrees;
+  riseOctant: string;
+  setOctant: string;
+}
+
+// meridian.ts — S-Z-N meridian profiles & 3D colure diurnal chords
+export interface MeridianPoint {
+  x: number;
+  y: number;
+  r: number;
+  thetaDeg: number;
+}
+
+export interface MeridianDiurnalChord {
+  rise: { x: number; y: number };
+  culmination: { x: number; y: number };
+  set: { x: number; y: number };
+  pathD: string;
+}
+
+// draconic.ts — True node crossing events & micro-rail timeline
+export interface TrueLunarNodeEvent {
+  type: 'ascending' | 'descending';
+  julianDate: JulianDate;
+  crossingDate: Date;
+  daysFromTarget: number;
+}
+
+export interface TrueLunarNodeTimeline {
+  nearestNodeType: 'ascending' | 'descending';
+  nearestNodeDistDays: number;
+  nearestNodeDate: Date;
+  isApproaching: boolean;
+  daysToNextNode: number;
+  daysSincePrevNode: number;
+  timelineNodes: TrueLunarNodeEvent[];
+  timelineSegments: Array<{
+    startNormalized: number;
+    endNormalized: number;
+    isAscendingHemisphere: boolean;
+  }>;
+}
+```
+
+### Ephemeris Web Worker RPC & Monotonic Sequence Stamping (`src/types/worker.ts`)
+```typescript
+export interface WorkerEphemerisRequest {
+  type: 'CALCULATE_EPHEMERIS';
+  payload: {
+    julianDate: JulianDate;
+    latitude: Degrees;
+    longitude: Degrees;
+    options?: EphemerisCalculationOptions;
+  };
+  requestId?: number; // Monotonic integer sequence stamp
+}
+
+export interface WorkerEphemerisResponse {
+  type: 'EPHEMERIS_SUCCESS';
+  payload: EphemerisFrame;
+  responseId?: number; // Echoed sequence stamp for out-of-order discard
+}
+```
+
 ## Code Layout
-- `src/utils/cosmicMath/scene/`
-  - `types.ts` — 3D scene interfaces, coordinate frames, camera parameters
-  - `transforms.ts` — Pure matrix & Euler rotation transformations
-  - `cameras.ts` — Canonical camera projection pipelines (TopDown, Transverse, Axial, Euler)
-  - `generator.ts` — `generateCosmicScene(params)` implementation
-  - `index.ts` — Barrel export for scene module
-  - `scene.test.ts` — Unit tests for scene generation & camera projections
-- `src/components/common/`
-  - `MiniGlobe.tsx` — Reusable SVG Earth mini-globe component
-  - `MiniGlobe.test.tsx` — Unit tests for MiniGlobe
-- `src/hooks/`
-  - `useCosmicScene.ts` — Reactive scene hook & specialized sub-hooks
-  - `useCosmicScene.test.ts` — Unit tests for reactive scene hook
-- `src/components/widgets/macro/`
-  - `MacroOrbitView.tsx` — Heliocentric Macro Orbit container
-  - `OrbitSvgCanvas.tsx` — SVG heliocentric viewport consuming `useHeliocentricScene`
-- `src/components/widgets/eclipse/`
-  - `EclipseDemonstrator.tsx` — Eclipse Demonstrator container
-  - `LiveSyzygyView.tsx` — Side-by-side syzygy visualizer consuming `useEclipseScene`
-  - `NodalPlaneVisualizer.tsx` — 5.14° nodal plane visualizer
-- `src/components/widgets/armillary/`
-  - `canvas/ArmillaryBeadsLayer.tsx` — Armillary beads layer rendering `<MiniGlobe />`
+- `src/`
+  - `main.tsx` — React root renderer
+  - `App.tsx` — Master Observatory dashboard container
+  - `App.test.tsx` — Root dashboard mounting, layout grid & dock integration tests
+  - `types/` — Foundational branded units, coordinates, astronomy, worker RPC & store contracts
+  - `utils/cosmicMath/`
+    - `astroConstants.ts` — Centralized IAU/WGS-84/Meeus physical constants & J2000 epoch
+    - `constants.ts` — Orbital radii, twilight thresholds & theme tokens
+    - `core.ts` — Julian dates, UTC invariance, spherical linear interpolation (`slerp3D`), GMST & LST
+    - `solar.ts` — Solar declination, EoT, twilight algorithms & annual solar matrix
+    - `lunar.ts` — Lunar ephemeris, phase angle, disc illumination, Newton-Raphson crossing solver
+    - `eclipse.ts` — Syzygy shadow geometry & eclipse recurrence scanner
+    - `today/` — Decomposed Topocentric Horizon & Meridian submodules
+      - `elevation.ts` — Prime vertical dome projection, diurnal paths & rise/set azimuth octants
+      - `meridian.ts` — S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
+      - `draconic.ts` — True lunar node crossings, 18.6y standstills & micro-rail
+    - `todaySky.ts` — Backward-compatible facade re-exporting elevation, meridian & draconic submodules
+    - `globe.ts` — Spherical continent projection & analytical limb horizon clipping
+    - `projection.ts` — Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
+    - `geoData.ts` — World landmass continent outline polygons
+    - `milestones.ts` — Canonical Earth orbital milestones (single source of truth)
+    - `frame.ts` — Centralized EphemerisFrame snapshot generator
+    - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
+    - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade)
+    - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
+  - `store/`
+    - `cosmicStore.ts` — External state store & animation frame ticker
+    - `hoverStore.ts` — Atomic external store for 60 FPS ribbon scrubber isolation
+  - `workers/`
+    - `ephemerisWorker.ts` — Dedicated worker thread for Meeus ephemeris & 365-day matrices
+    - `ephemerisWorkerManager.ts` — Application singleton worker manager, deduplication & matrix cache
+  - `hooks/`
+    - `useCosmicEngine.ts` — Selective domain engine hook
+    - `useCosmicScene.ts` — Reactive 3D scene hook & specialized projection selectors
+    - `useEphemerisWorker.ts` — Worker dispatch hook with 100ms throttling & sequence stamping
+    - `useDashboardLayout.ts` — Window layout state, drag-and-drop, resize, locking, presets & storage
+  - `components/`
+    - `widgets/` — Lazy-loaded observatory visualizers (`React.lazy()`)
+      - `common/useRibbonScrubber.ts` — Bidirectional timeline coordinate & pointer dragging hook
+      - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`)
+      - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, modular canvas layers)
+      - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`)
+      - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`)
+      - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`)
+      - `terminator/` — Daylight Terminator Map (`TerminatorMap`)
+      - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView`, `OrbitSvgCanvas`)
+      - `tides/` — Earth Gravitational Tidal Force (`MicroTideView`)
+    - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
+    - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/`)
+    - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `WindowErrorBoundary`, `PhaseVisual`)
 - `docs/`
-  - `adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md` — ADR for scene graph architecture
-  - `MATH_SPEC.md` — Section 10 mathematical specification sync
-  - `DESIGN_SYSTEM.md` — MiniGlobe design tokens sync
-  - `AGENTS.md` — Agent architecture map sync
+  - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
+  - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
+  - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
+  - `adr/` — Architecture Decision Records (`0001` through `0018`)
