@@ -62,6 +62,8 @@ export class WindowErrorBoundary extends Component<WindowErrorBoundaryProps, Win
     if (this.state.hasError) {
       const { windowTitle = 'Visualizer Module', windowId } = this.props;
       const errorMessage = this.state.error?.message || 'An unexpected rendering error occurred in this module.';
+      const isDynamicImportError = errorMessage.toLowerCase().includes('dynamically imported module') ||
+        errorMessage.toLowerCase().includes('failed to fetch');
 
       return (
         <div className="flex flex-col items-center justify-center h-full min-h-[220px] w-full p-6 text-center bg-slate-950/90 rounded-xl border border-rose-900/40 text-slate-300 select-none animate-in fade-in duration-200">
@@ -73,17 +75,33 @@ export class WindowErrorBoundary extends Component<WindowErrorBoundaryProps, Win
             {windowTitle} Offline
           </h4>
           <p className="text-xs text-slate-400 max-w-sm mb-4 line-clamp-2 leading-relaxed">
-            {errorMessage}
+            {isDynamicImportError
+              ? 'Module bundle was interrupted or updated (dev server restart). Refresh the page to reload.'
+              : errorMessage}
           </p>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={this.handleReset}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-xs font-semibold text-slate-200 hover:text-white rounded-lg border border-slate-700 transition-colors shadow-sm cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset Visualizer
-            </button>
+            {isDynamicImportError ? (
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.reload();
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-xs font-semibold text-white rounded-lg border border-indigo-500 transition-colors shadow-sm cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reload Page
+              </button>
+            ) : (
+              <button
+                onClick={this.handleReset}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-xs font-semibold text-slate-200 hover:text-white rounded-lg border border-slate-700 transition-colors shadow-sm cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Visualizer
+              </button>
+            )}
           </div>
 
           {windowId && (

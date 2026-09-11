@@ -85,6 +85,24 @@ describe('WindowErrorBoundary Component Suite', () => {
     expect(rendered.props.className).toContain('bg-slate-950/90');
   });
 
+  it('renders Reload Page button and dev server restart message on dynamic import errors', () => {
+    const boundary = new WindowErrorBoundary({ 
+      windowTitle: 'Eclipse Mechanics', 
+      windowId: 'eclipse' 
+    });
+
+    boundary.state = {
+      hasError: true,
+      error: new Error('Failed to fetch dynamically imported module: http://localhost:5173/src/components/widgets/eclipse/EclipseDemonstrator.tsx'),
+      errorInfo: null
+    };
+
+    const html = renderToStaticMarkup(boundary.render() as React.ReactElement);
+    expect(html).toContain('Reload Page');
+    expect(html).toContain('Module bundle was interrupted or updated (dev server restart)');
+    expect(html).toContain('Module ID: eclipse');
+  });
+
   describe('WidgetSkeleton Suspense Fallback Primitive', () => {
     it('renders glassmorphic pulsing skeleton with default testid and animation', () => {
       const html = renderToStaticMarkup(<WidgetSkeleton id="armillary" />);
