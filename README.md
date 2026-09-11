@@ -164,7 +164,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 40 specialized domain suites (**580 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 40 specialized domain suites (**583 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -177,7 +177,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Armillary Continuum & Projections** | `src/utils/cosmicMath/armillary/armillary.test.ts` (34 tests) | Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0secepsilon$) |
 | **Armillary Benchmark** | `src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts` (5 tests) | 1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation |
 | **Armillary Adversarial** | `src/utils/cosmicMath/armillary/m3_adversarial.test.ts` (7 tests) | Analytical closed-form Stereographic Ecliptic invariant ($R_0secepsilon$), Sun bead clamping residuals ($< 1.42 	imes 10^{-13}	ext{ px}$), and 10,000-sample randomized Monte Carlo transitions |
-| **Domain Invariants & Physics Conservation** | `src/utils/cosmicMath/domainInvariants.test.ts` (18 tests) | Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 dot{	heta} = 	ext{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance |
+| **Domain Invariants & Physics Conservation** | `src/utils/cosmicMath/domainInvariants.test.ts` (19 tests) | Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 dot{	heta} = 	ext{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance |
 | **3D Scene Graph Math** | `src/utils/cosmicMath/scene/scene.test.ts` (33 tests) | 3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^circ$ inclined lunar orbit with continuous nodal precession $Omega(t)$, and 3D syzygy shadow cones |
 | **Scene Cameras Stress** | `src/utils/cosmicMath/scene/cameras.stress.test.ts` (23 tests) | Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts |
 | **Scene Coordinate Adversarial** | `src/utils/cosmicMath/scene/m1_adversarial.test.ts` (18 tests) | Coordinate frame invariants, axial tilt matrix preservation ($23.439^circ$) in inertial space, and singular polar viewing angles |
@@ -185,7 +185,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` (7 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (20 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^circ	ext{N}, -90^circ	ext{S}$) |
 | **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (9 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`), and `shallowEqual` protection |
-| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (20 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
+| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (22 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (8 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **MiniGlobe SVG Component** | `src/components/common/MiniGlobe.test.tsx` (11 tests) | 9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (8 tests) | Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience |

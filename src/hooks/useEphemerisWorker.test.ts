@@ -814,4 +814,39 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     vi.useRealTimers();
   });
+
+  describe("Annual Matrix LRU Cache Policy", () => {
+    it("evicts the oldest entry when cache size exceeds MAX_ANNUAL_CACHE_SIZE (16)", () => {
+      const manager = new EphemerisWorkerManager();
+      manager._isAvailable = false;
+
+      for (let i = 0; i < 17; i++) {
+        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as any }, () => {});
+      }
+
+      expect(manager.annualSolarCache.size).toBe(16);
+      expect(manager.annualSolarCache.has("SOLAR_2026_10")).toBe(false);
+      expect(manager.annualSolarCache.has("SOLAR_2026_26")).toBe(true);
+    });
+
+    it("promotes accessed cache entry to most recently used on cache hit", () => {
+      const manager = new EphemerisWorkerManager();
+      manager._isAvailable = false;
+
+      for (let i = 0; i < 16; i++) {
+        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as any }, () => {});
+      }
+
+      // Access key 10 to refresh recency
+      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 10 as any }, () => {});
+
+      // Add a 17th entry (lat 26)
+      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 26 as any }, () => {});
+
+      // Key 10 should still be retained
+      expect(manager.annualSolarCache.has("SOLAR_2026_10")).toBe(true);
+      // Key 11 was the oldest non-refreshed entry, so it was evicted
+      expect(manager.annualSolarCache.has("SOLAR_2026_11")).toBe(false);
+    });
+  });
 });

@@ -339,6 +339,30 @@ describe('Domain Invariants & Physics Conservation Suite (Wave 5 & 19)', () => {
       expect(npWinterChord.isCircumpolar).toBe(false);
       expect(npWinterChord.daylightD).toBe('');
     });
+
+    it('guarantees visual continuity and horizontal polar chord convergence across fractional sub-degree sweeps phi in [89.90°, 90.00°]', () => {
+      const fractionalLatitudes = [89.90, 89.92, 89.95, 89.98, 89.99, 90.00];
+
+      for (const lat of fractionalLatitudes) {
+        // Summer Solstice (+23.44°): Midnight Sun
+        const chordSummer = calculateMeridianDiurnalChord(lat, 23.44, -18);
+        expect(chordSummer.isCircumpolar).toBe(true);
+        expect(chordSummer.horizonPoint).toBeNull();
+        expect(chordSummer.daylightD).not.toContain('NaN');
+        expect(Math.abs(chordSummer.peakPoint.y - chordSummer.anchorPoint.y)).toBeLessThan(0.35);
+
+        // Winter Solstice (-23.44°): Polar Night
+        const chordWinter = calculateMeridianDiurnalChord(lat, -23.44, -18);
+        expect(chordWinter.isNeverVisible).toBe(true);
+        expect(chordWinter.daylightD).toBe('');
+
+        // Azimuth suppression within 11 km of pole
+        const az = calculateRiseSetAzimuth(lat, 23.44);
+        expect(az.riseAzimuth).toBeNull();
+        expect(az.setAzimuth).toBeNull();
+        expect(az.riseOctant).toBe('--');
+      }
+    });
   });
 
   describe('9. Physical Syzygy Apparent Ratio Crossings & Grazing Shadow Cones', () => {

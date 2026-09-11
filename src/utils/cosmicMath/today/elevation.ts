@@ -146,7 +146,7 @@ export const generateDiurnalPath = (
   const sinHMax = sinLatSinDec + cosLatCosDec;
 
   // Polar Night: body never rises above horizon
-  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
+  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.90 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
     return {
       pathD: '',
       peakAlt,
@@ -160,7 +160,7 @@ export const generateDiurnalPath = (
   }
 
   // Midnight Sun / Circumpolar: body never sets below horizon
-  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg >= 0 : declinationDeg <= 0))) {
+  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.90 && (latitudeDeg >= 0 ? declinationDeg >= 0 : declinationDeg <= 0))) {
     const points: string[] = [];
     // Span across the visible 180° dome (H from -90° to +90°)
     for (let i = 0; i <= numSteps; i++) {
@@ -419,7 +419,7 @@ export const calculateRiseSetAzimuth = (
   const sinHMax = sinLatSinDec + cosLatCosDec;
 
   // Polar Night: body never rises above horizon
-  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
+  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.90 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
     return {
       riseAzimuth: null,
       setAzimuth: null,
@@ -433,7 +433,7 @@ export const calculateRiseSetAzimuth = (
   }
 
   // Midnight Sun / Circumpolar: body never sets below horizon
-  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg > 0 : declinationDeg < 0))) {
+  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.90 && (latitudeDeg >= 0 ? declinationDeg > 0 : declinationDeg < 0))) {
     return {
       riseAzimuth: null,
       setAzimuth: null,
@@ -446,8 +446,8 @@ export const calculateRiseSetAzimuth = (
     };
   }
 
-  // Exact polar singularity check (|latitude| >= 89.99): horizontal azimuths degenerate at poles
-  if (Math.abs(latitudeDeg) >= 89.99) {
+  // Exact polar singularity check (|latitude| >= 89.90): horizontal azimuths degenerate at poles
+  if (Math.abs(latitudeDeg) >= 89.90) {
     return {
       riseAzimuth: null,
       setAzimuth: null,

@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 580 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 583 tests)
 
 ### Essential Commands
 
@@ -185,7 +185,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── armillary.test.ts # Vitest unit tests for armillary continuum & projections (34 tests)
 │   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (7 tests)
-│   │   │   └── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (18 tests)
+│   │   │   └── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (19 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   ├── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
@@ -200,7 +200,7 @@ Cosmic Engine V2.0/
 │   │   ├── useCosmicScene.ts    # Reactive 3D scene hook & specialized projection selectors
 │   │   ├── useCosmicScene.test.ts # Vitest hook tests for scene selectors (9 tests)
 │   │   ├── useEphemerisWorker.ts # Custom hooks (instantaneous & annual solar/lunar matrix workers)
-│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (20 tests: worker integration, coalescing, matrix caching & fallback)
+│   │   ├── useEphemerisWorker.test.ts # Vitest hook tests (22 tests: worker integration, coalescing, matrix caching & fallback)
 │   │   ├── useDashboardLayout.ts # Window layout state, drag-and-drop, resize, locking, presets & storage
 │   │   └── useDashboardLayout.test.ts # Vitest hook tests for layout manager (8 tests)
 │   └── components/              # Grouped component architecture

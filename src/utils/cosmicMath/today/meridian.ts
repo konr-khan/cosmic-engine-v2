@@ -241,7 +241,7 @@ export const calculateMeridianDiurnalChord = (
   let isNeverVisible = false;
 
   // Polar / Circumpolar checks (singularity-free across all latitudes including exact poles)
-  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg > 0 : declinationDeg < 0))) {
+  if (sinHMin >= 0 || (Math.abs(latitudeDeg) >= 89.90 && (latitudeDeg >= 0 ? declinationDeg > 0 : declinationDeg < 0))) {
     // Circumpolar (Midnight Sun) - Entire 24h diurnal path is above horizon
     isCircumpolar = true;
     daylightD = `M ${minX} ${minY} L ${peakX} ${peakY}`;
@@ -256,7 +256,7 @@ export const calculateMeridianDiurnalChord = (
     };
   }
 
-  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.99 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
+  if (sinHMax <= 0 || (Math.abs(latitudeDeg) >= 89.90 && (latitudeDeg >= 0 ? declinationDeg < 0 : declinationDeg > 0))) {
     // Polar Night - Never rises above horizon
     isNeverVisible = true;
     daylightD = '';
