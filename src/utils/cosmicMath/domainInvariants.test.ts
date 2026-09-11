@@ -14,6 +14,7 @@
  * 9. Physical Syzygy Apparent Ratio Crossings & Grazing Shadow Cones (k >= 1.0)
  * 10. Equatorial Colure Verticality & Tropical Culmination Gate Invariants (phi = 0°, |phi| <= 28.58°)
  * 11. Temporal Rollover & Gregorian Century Leap-Year Invariants
+ * 12. Lunar Nodal Precession & Retrograde Regression Rate Invariants (dOmega/dt ~ -0.05295°/day)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -476,6 +477,41 @@ describe('Domain Invariants & Physics Conservation Suite (Wave 5 & 19)', () => {
       // Common year boundary: 2025-12-31T23:59:59.999Z
       const commonEnd = new Date(Date.UTC(2025, 11, 31, 23, 59, 59, 999));
       expect(getDayOfYear(commonEnd)).toBe(365);
+    });
+  });
+
+  describe('12. Lunar Nodal Precession & Retrograde Regression Rate Invariants', () => {
+    it('strictly conserves the 18.61-year retrograde regression rate of the ascending node dOmega/dt ~ -0.05295°/day', () => {
+      const jdStart = 2451545.0; // J2000.0
+      const pos0 = calculateLunarPosition(jdStart);
+
+      // Verify daily rate over incremental time steps (1 day, 10 days, 100 days, 365.25 days)
+      const timeStepsDays = [1, 10, 100, 365.25];
+      const EXPECTED_RATE_DEG_PER_DAY = -1934.136261 / 36525; // ~ -0.05295376 deg/day
+
+      for (const dt of timeStepsDays) {
+        const posT = calculateLunarPosition(jdStart + dt);
+
+        // Unwrapped angular delta for retrograde motion
+        let deltaOmega = posT.nodeLongitude - pos0.nodeLongitude;
+        while (deltaOmega > 180) deltaOmega -= 360;
+        while (deltaOmega < -180) deltaOmega += 360;
+
+        const measuredRate = deltaOmega / dt;
+        expect(measuredRate).toBeCloseTo(EXPECTED_RATE_DEG_PER_DAY, 3);
+        const relativeError = Math.abs((measuredRate - EXPECTED_RATE_DEG_PER_DAY) / EXPECTED_RATE_DEG_PER_DAY);
+        expect(relativeError).toBeLessThan(0.015);
+      }
+
+      // Verify 18.61295-year complete 360° regression cycle
+      const fullCycleDays = 18.61295 * 365.25;
+      const posFullCycle = calculateLunarPosition(jdStart + fullCycleDays);
+      const diff = Math.abs(posFullCycle.nodeLongitude - pos0.nodeLongitude);
+      expect(diff < 0.1 || Math.abs(diff - 360) < 0.1).toBe(true);
+
+      // Descending node maintains exact 180° antipodal phase across the regression
+      expect((pos0.nodeLongitude + 180) % 360).toBeCloseTo(pos0.descendingNodeLongitude, 4);
+      expect((posFullCycle.nodeLongitude + 180) % 360).toBeCloseTo(posFullCycle.descendingNodeLongitude, 4);
     });
   });
 

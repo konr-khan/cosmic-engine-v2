@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 583 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 584 tests)
 
 ### Essential Commands
 
@@ -185,7 +185,7 @@ Cosmic Engine V2.0/
 │   │   │   │   ├── armillary.test.ts # Vitest unit tests for armillary continuum & projections (34 tests)
 │   │   │   │   ├── armillaryBenchmark.test.ts # Performance latency budget (< 0.8ms) & invariant tests (5 tests)
 │   │   │   │   └── m3_adversarial.test.ts    # Vitest tests for closed-form invariants (7 tests)
-│   │   │   └── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (19 tests)
+│   │   │   └── domainInvariants.test.ts # Empirical domain invariants & physics conservation laws (20 tests)
 │   ├── store/                   # External state store & chronometer controls
 │   │   ├── cosmicStore.ts       # External state store & animation frame ticker
 │   │   ├── cosmicStore.test.ts  # Vitest unit tests for state store & selector equality (7 tests)
