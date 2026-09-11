@@ -1390,3 +1390,65 @@ To prevent deep-night reverse sliding while preserving physical continuity:
 - **Solar Twilight Gate**: For the Sun, observation terminates at astronomical twilight ($h = -18^\circ$). When $z_{\text{zenith}} \le \sin(-18^\circ)$ (or $|H| \ge H_{18}$), the active Sun bead is parked at the static twilight gate anchor $(X_{\text{gate}}, Y_{\text{gate}})$, rendered with ghosted styling (`#1e293b` fill, dashed stroke, $0.35$ opacity).
 - **Lunar Horizon Gate**: Because atmospheric twilight is exclusively a solar phenomenon, the Moon's observational threshold is the physical horizon ($h = 0^\circ$). When $z_{\text{zenith}} \le 0$ (or $|H| \ge H_0$), the active Moon bead is parked at the static horizon gate anchor $(X_{\text{horizon}}, 104)$.
 - **Wakeup Continuity**: As the body approaches morning twilight/rise ($-H_{18}$ or $-H_0$), the bead smoothly un-parks and ascends the diurnal chord toward Solar Noon / Lunar Transit.
+
+---
+
+## 12. Great Meridian Ring & Heliocentric Camera-Space Illumination Geometry
+
+### A. Great Meridian Ring 3D Parametric Formulation (`MiniGlobe.tsx`)
+
+In the terrestrial body frame, the Prime Meridian ($0^\circ$) and Antimeridian ($180^\circ$) define the canonical longitudinal reference circle lying in the $Y-Z$ plane.
+
+Given UTC decimal time of day $t \in [0, 24)$, the Greenwich hour angle relative to the solar midnight meridian is:
+\[
+H_0 = (t - 12.0) \times 15.0^\circ
+\]
+
+1. **$0^\circ$ Prime Meridian (Greenwich Semicircle)**:
+   Sampled continuously across latitude $\phi \in [-90^\circ, +90^\circ]$ from South Pole to North Pole:
+   \[
+   \vec{P}_{\text{eq}, 0}(\phi) = \begin{pmatrix} x_{\text{eq}} \\ y_{\text{eq}} \\ z_{\text{eq}} \end{pmatrix} = \begin{pmatrix} \cos\phi \sin H_0 \\ \sin\phi \\ \cos\phi \cos H_0 \end{pmatrix}
+   \]
+
+2. **$180^\circ$ Antimeridian (International Date Line Semicircle)**:
+   Sampled continuously across latitude $\phi \in [+90^\circ, -90^\circ]$ from North Pole to South Pole ($H_{180} = H_0 + 180^\circ$):
+   \[
+   \vec{P}_{\text{eq}, 180}(\phi) = \begin{pmatrix} x_{\text{eq}} \\ y_{\text{eq}} \\ z_{\text{eq}} \end{pmatrix} = \begin{pmatrix} -\cos\phi \sin H_0 \\ \sin\phi \\ -\cos\phi \cos H_0 \end{pmatrix}
+   \]
+
+3. **Camera-Space Projection & Through-Marble Visibility**:
+   Transforming via 3D Euler camera rotation matrix $\mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll})$:
+   \[
+   \vec{P}_{\text{cam}}(\phi) = \mathbf{R}_{\text{cam}} \vec{P}_{\text{eq}}(\phi)
+   \]
+   Projected to 2D SVG canvas user space with radius $R_{\text{globe}}$:
+   \[
+   X = R_{\text{globe}} \cdot P_{\text{cam}, x}, \quad Y = -R_{\text{globe}} \cdot P_{\text{cam}, y}
+   \]
+   **Theorem**: Because $\|\vec{P}_{\text{eq}}(\phi)\| = 1$ and $\mathbf{R}_{\text{cam}} \in SO(3)$ is an isometry, $\|\vec{P}_{\text{cam}}(\phi)\| = 1$, which implies:
+   \[
+   X^2 + Y^2 = R_{\text{globe}}^2 \left( P_{\text{cam}, x}^2 + P_{\text{cam}, y}^2 \right) = R_{\text{globe}}^2 \left( 1 - P_{\text{cam}, z}^2 \right) \le R_{\text{globe}}^2
+   \]
+   Every point along both semicircles projects strictly inside the planetary disc radius. Omitting horizon-crossing depth clipping ($z_{\text{cam}} \ge 0$) allows both front and back segments to render continuously through the translucent marble sphere, maintaining exact visual parity with the Equator parallel ellipse.
+
+### B. Heliocentric Camera-Space Sunward Unit Vector (`ArmillaryBeadsLayer.tsx`)
+
+In heliocentric Keplerian orbit mode, the Sun is centered at inertial origin $(0, 0, 0)$ and Earth moves along its elliptical track $\vec{P}_{\text{earth}}(t)$. Under camera transformation, their camera-space positions are $\vec{P}_{\text{sun, cam}}$ and $\vec{P}_{\text{earth, cam}}$.
+
+The physically exact subsolar unit vector in camera coordinates pointing from Earth toward the Sun is:
+\[
+\vec{S}_{\text{cam}} = \frac{\vec{P}_{\text{sun, cam}} - \vec{P}_{\text{earth, cam}}}{\|\vec{P}_{\text{sun, cam}} - \vec{P}_{\text{earth, cam}}\|}
+\]
+Passing $\vec{S}_{\text{cam}}$ directly into the 3D MiniGlobe shader (`subsolarCameraVector`) eliminates coordinate-system mismatch and ensures the day/night terminator hemisphere continuously faces the central Sun at all camera pitch and yaw orientations without angle-flipping.
+
+### C. Dynamic ViewBox Scaling for Multi-Scale Orbit Zoom
+
+For canonical canvas dimensions $W_0, H_0$ and zoom factor $z \in [z_{\min}, z_{\max}]$:
+\[
+W(z) = \frac{W_0}{z}, \quad H(z) = \frac{H_0}{z}
+\]
+\[
+\text{viewBox} = \left[ -\frac{W(z)}{2}, -\frac{H(z)}{2}, W(z), H(z) \right]
+\]
+This preserves the origin $(0, 0)$ at the canvas center while providing continuous zooming across 3D heliocentric orbits without altering SVG vertex coordinates or hit-target geometries.
+

@@ -90,7 +90,7 @@ Cosmic Engine V2.0/
 ├── tsconfig.node.json           # TypeScript build tooling configuration
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Master feature inventory (F1-F42) & milestone matrix (M1-M19)
+├── PROJECT.md                   # Master feature inventory (F1-F45) & milestone matrix (M1-M20)
 ├── README.md                    # Repository documentation & getting started
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
 ├── DEAD_ENDS.md                 # Critical log of failed historical approaches & solutions
@@ -119,7 +119,8 @@ Cosmic Engine V2.0/
 │       ├── 0016-dynamic-sighting-aware-horizon-dome-and-tropical-culmination.md
 │       ├── 0017-quad-view-celestial-meridian-profiles.md
 │       ├── 0018-performance-optimization-modular-ephemeris-decoupling-and-build-hardening.md
-│       └── 0019-polar-singularity-rectification-and-syzygy-apparent-ratio.md
+│       ├── 0019-polar-singularity-rectification-and-syzygy-apparent-ratio.md
+│       └── 0020-living-marble-meridian-ring-dynamic-orbit-bead-and-zoom.md
 ├── src/
 │   ├── main.tsx                 # React root renderer
 │   ├── App.tsx                  # Master Observatory dashboard container
