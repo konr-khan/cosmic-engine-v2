@@ -568,12 +568,21 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       expect(pt.y).toBeCloseTo(104 - 92 * Math.sin((45 * Math.PI) / 180), 2);
     });
 
-    it('clamps negative (sub-horizon) altitudes to 0° baseline', () => {
+    it('clamps negative (sub-horizon) altitudes to 0° baseline by default', () => {
       const pt = calculateMeridianPoint(-15, 'South');
       expect(pt.altitudeDeg).toBe(0);
       expect(pt.thetaDeg).toBe(180);
       expect(pt.x).toBeCloseTo(38, 2);
       expect(pt.y).toBeCloseTo(104, 2);
+    });
+
+    it('allows sub-horizon angles down to minAltitudeDeg when specified (e.g. twilight mode)', () => {
+      const pt = calculateMeridianPoint(-6, 'South', EL_CX, EL_CY, EL_R, -18);
+      expect(pt.altitudeDeg).toBe(-6);
+      expect(pt.thetaDeg).toBe(186); // 180 - (-6) = 186
+      // Y should be below horizon baseline (104 + 92 * sin(6°) ≈ 113.62)
+      expect(pt.y).toBeCloseTo(113.62, 1);
+      expect(pt.x).toBeCloseTo(130 - 92 * Math.cos((6 * Math.PI) / 180), 1);
     });
 
     it('clamps excess altitudes > 90° to 90° zenith', () => {

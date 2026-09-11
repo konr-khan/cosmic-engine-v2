@@ -11,7 +11,7 @@ import {
   calculateMeridianDiurnalChord,
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
-import { MeridianDomeBase } from './MeridianDomeBase';
+import { MeridianDomeBase, EL_CX, EL_CY, EL_R } from './MeridianDomeBase';
 
 export interface SunMeridianDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -111,25 +111,33 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   const summerNoon = summerSolstice.altitude;
   const winterNoon = winterSolstice.altitude;
 
+  const getTwilightTier = (alt: number): string => {
+    if (alt >= 0) return 'Daylight';
+    if (alt >= -6) return 'Civil Twilight';
+    if (alt >= -12) return 'Nautical Twilight';
+    if (alt >= -18) return 'Astro Twilight';
+    return 'Polar Night';
+  };
+
   // --- Meridian Coordinate Points on Dome Arc (R=92) ---
   const todayPeakPoint = useMemo(
-    () => calculateMeridianPoint(peakAlt, todayCulmination.direction),
-    [peakAlt, todayCulmination]
+    () => calculateMeridianPoint(peakAlt, todayCulmination.direction, EL_CX, EL_CY, EL_R, thresholdElevation),
+    [peakAlt, todayCulmination, thresholdElevation]
   );
 
   const junePoint = useMemo(
-    () => calculateMeridianPoint(juneSolstice.altitude, juneSolstice.direction),
-    [juneSolstice]
+    () => calculateMeridianPoint(juneNoon, juneSolstice.direction, EL_CX, EL_CY, EL_R, thresholdElevation),
+    [juneNoon, juneSolstice, thresholdElevation]
   );
 
   const decemberPoint = useMemo(
-    () => calculateMeridianPoint(decemberSolstice.altitude, decemberSolstice.direction),
-    [decemberSolstice]
+    () => calculateMeridianPoint(decemberNoon, decemberSolstice.direction, EL_CX, EL_CY, EL_R, thresholdElevation),
+    [decemberNoon, decemberSolstice, thresholdElevation]
   );
 
   const equinoxPoint = useMemo(
-    () => calculateMeridianPoint(equinoxCulmination.altitude, equinoxCulmination.direction),
-    [equinoxCulmination]
+    () => calculateMeridianPoint(equinoxCulmination.altitude, equinoxCulmination.direction, EL_CX, EL_CY, EL_R, thresholdElevation),
+    [equinoxCulmination, thresholdElevation]
   );
 
   // --- Split Solstice Milestone Swaths (along R=92 dome) ---
@@ -157,6 +165,29 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     const dayOfYear = Math.floor((_currentDate.getTime() - startOfYear.getTime()) / 86400000);
     return dayOfYear < 172 || dayOfYear >= 355;
   }, [sunLambda, _currentDate]);
+
+  // Solstice tick pin visibility logic:
+  // - If altitude >= 0°: visible in all modes
+  // - If 0° > altitude >= -18°: visible ONLY when isTwilightModeActive is true
+  // - If altitude < -18°: disappears completely (below Astronomical Twilight floor)
+  const showJuneTick = juneNoon >= 0 || (isTwilightModeActive && juneNoon >= -18);
+  const showDecemberTick = decemberNoon >= 0 || (isTwilightModeActive && decemberNoon >= -18);
+
+  const juneTickTitle = juneNoon >= 0
+    ? `June Solstice Noon Peak (+23.4°): ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}`
+    : `June Solstice Noon Peak (+23.4°): ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag} (${getTwilightTier(juneNoon)})`;
+
+  const decemberTickTitle = decemberNoon >= 0
+    ? `December Solstice Noon Peak (−23.4°): ${decemberNoon.toFixed(1)}° ${decemberSolstice.shortTag}`
+    : `December Solstice Noon Peak (−23.4°): ${decemberNoon.toFixed(1)}° ${decemberSolstice.shortTag} (${getTwilightTier(decemberNoon)})`;
+
+  const juneSwathTitle = juneNoon >= -18
+    ? `June Solstice Arc (+23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}${juneNoon < 0 ? ` (${getTwilightTier(juneNoon)})` : ''}${isApproachingJune ? ' (Approaching Milestone)' : ''}`
+    : `June Solstice Arc (+23.4°): Plunges below −18° Astro Twilight (Polar Night)${isApproachingJune ? ' (Approaching Milestone)' : ''}`;
+
+  const decemberSwathTitle = decemberNoon >= -18
+    ? `December Solstice Arc (−23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${decemberNoon.toFixed(1)}° ${decemberSolstice.shortTag}${decemberNoon < 0 ? ` (${getTwilightTier(decemberNoon)})` : ''}${!isApproachingJune ? ' (Approaching Milestone)' : ''}`
+    : `December Solstice Arc (−23.4°): Plunges below −18° Astro Twilight (Polar Night)${!isApproachingJune ? ' (Approaching Milestone)' : ''}`;
 
   // --- Perpendicular Radial Tick Pins ---
   const juneTick = useMemo(
@@ -253,7 +284,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
                 glow: true,
                 glowWidth: 4,
                 glowOpacity: isApproachingJune ? 0.25 : 0.10,
-                title: `June Solstice Arc (+23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}${isApproachingJune ? ' (Approaching Milestone)' : ''}`,
+                title: juneSwathTitle,
               },
             ]
           : []),
@@ -269,26 +300,34 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
                 glow: true,
                 glowWidth: 4,
                 glowOpacity: !isApproachingJune ? 0.25 : 0.10,
-                title: `December Solstice Arc (−23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${decemberNoon > 0 ? decemberNoon.toFixed(1) + '° ' + decemberSolstice.shortTag : 'Below 0°'}${!isApproachingJune ? ' (Approaching Milestone)' : ''}`,
+                title: decemberSwathTitle,
               },
             ]
           : []),
       ]}
       radialTicks={[
-        {
-          id: 'summer-solstice-tick',
-          tick: juneTick,
-          stroke: '#fbbf24',
-          strokeWidth: 1.4,
-          title: `June Solstice Noon Peak (+23.4°): ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}`,
-        },
-        {
-          id: 'winter-solstice-tick',
-          tick: decemberTick,
-          stroke: '#d97706',
-          strokeWidth: 1.4,
-          title: `December Solstice Noon Peak (−23.4°): ${decemberNoon > 0 ? decemberNoon.toFixed(1) + '° ' + decemberSolstice.shortTag : 'Below 0° (Polar Night)'}`,
-        },
+        ...(showJuneTick
+          ? [
+              {
+                id: 'summer-solstice-tick',
+                tick: juneTick,
+                stroke: '#fbbf24',
+                strokeWidth: 1.4,
+                title: juneTickTitle,
+              },
+            ]
+          : []),
+        ...(showDecemberTick
+          ? [
+              {
+                id: 'winter-solstice-tick',
+                tick: decemberTick,
+                stroke: '#d97706',
+                strokeWidth: 1.4,
+                title: decemberTickTitle,
+              },
+            ]
+          : []),
         {
           id: 'equinox-tick',
           tick: equinoxTick,

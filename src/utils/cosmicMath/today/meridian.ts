@@ -109,9 +109,10 @@ export const calculateMeridianPoint = (
   bearing: CulminationDirection,
   cx: number = EL_CX,
   cy: number = EL_CY,
-  r: number = EL_R
+  r: number = EL_R,
+  minAltitudeDeg: number = 0
 ): MeridianPoint => {
-  const clAlti = Math.max(0, Math.min(90, altitudeDeg));
+  const clAlti = Math.max(minAltitudeDeg, Math.min(90, altitudeDeg));
   let thetaDeg: number;
   if (bearing === 'South') {
     thetaDeg = 180 - clAlti;

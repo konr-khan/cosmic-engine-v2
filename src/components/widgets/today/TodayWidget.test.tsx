@@ -815,5 +815,47 @@ describe('Today Horizon Subsystem', () => {
     expect(moonDownHtml).toContain('id="active-lunar-transit-bead"');
     expect(moonDownHtml).toContain('Parked at Horizon Gate');
   });
+
+  it('renders winter solstice tick and arc inside twilight strata for sub-polar latitude (Tromsø 69.65°N) in Twilight mode', () => {
+    // Tromsø (69.65°N): Winter solstice noon culmination is 90 - 69.65 - 23.44 = -3.09° (Civil Twilight)
+    const twilightHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 69.65,
+        initialTwilightMode: true,
+      })
+    );
+
+    // In Twilight mode, winter solstice tick renders with negative altitude and twilight tier
+    expect(twilightHtml).toContain('id="winter-solstice-tick"');
+    expect(twilightHtml).toContain('-3.1°');
+    expect(twilightHtml).toContain('Civil Twilight');
+
+    // In Std mode, winter solstice tick is suppressed and does not clutter the horizon
+    const stdHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 69.65,
+        initialTwilightMode: false,
+      })
+    );
+    expect(stdHtml).not.toContain('id="winter-solstice-tick"');
+  });
+
+  it('suppresses winter solstice tick when culmination is below -18° Astro Twilight floor (North Pole 90°N)', () => {
+    // North Pole (90°N): Winter solstice noon culmination is 90 - 90 - 23.44 = -23.44° (< -18°)
+    const northPoleHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 90.0,
+        initialTwilightMode: true,
+      })
+    );
+
+    // Tick disappears completely
+    expect(northPoleHtml).not.toContain('id="winter-solstice-tick"');
+    // Solstice swath title notes that it plunges below Astronomical Twilight
+    expect(northPoleHtml).toContain('Plunges below −18° Astro Twilight');
+  });
 });
 
