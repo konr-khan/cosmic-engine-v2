@@ -58,6 +58,7 @@ export interface SkyDomeBaseProps {
   centerHorizonLabel?: string;
   rightHorizonLabel?: string;
   showZenithAxis?: boolean;
+  hideElevationBanner?: boolean;
 }
 
 export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
@@ -89,6 +90,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   centerHorizonLabel,
   rightHorizonLabel,
   showZenithAxis = false,
+  hideElevationBanner = false,
 }) => {
   const isAboveHorizon = currentElevation > 0;
   const isVisible = showZenithAxis ? true : currentElevation > -18;
@@ -295,24 +297,26 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
       </div>
 
       {/* Live Elevation Readout Badge & Sighting Orientation */}
-      <div className={`my-1 bg-slate-950/80 px-3 py-1 rounded-lg border border-slate-800/60 shadow-sm flex items-center ${sightingBanner ? 'justify-between' : 'justify-center'}`}>
-        <div className={`text-sm font-mono font-semibold ${elevationColorClass || defaultElevationColor}`}>
-          {currentElevation >= 0 ? `+${currentElevation.toFixed(1)}°` : `${currentElevation.toFixed(1)}°`}
-          <span className="text-[10px] text-slate-400 uppercase font-sans ml-1.5 font-normal">
-            {isAboveHorizon ? '(Above Horizon)' : '(Below Horizon)'}
-            {elevationStatusSubtitle ? ` · ${elevationStatusSubtitle}` : ''}
-          </span>
-        </div>
-        {sightingBanner && (
-          <div 
-            className="text-[9px] font-mono text-slate-400 bg-slate-900/90 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1 select-none shrink-0"
-            title={`Observer line-of-sight: ${sightingBanner}`}
-          >
-            <span className="text-slate-500 text-[10px]">👁️</span>
-            <span className="truncate max-w-[130px] sm:max-w-none">{sightingBanner}</span>
+      {!hideElevationBanner && (
+        <div className={`my-1 bg-slate-950/80 px-3 py-1 rounded-lg border border-slate-800/60 shadow-sm flex items-center ${sightingBanner ? 'justify-between' : 'justify-center'}`}>
+          <div className={`text-sm font-mono font-semibold ${elevationColorClass || defaultElevationColor}`}>
+            {currentElevation >= 0 ? `+${currentElevation.toFixed(1)}°` : `${currentElevation.toFixed(1)}°`}
+            <span className="text-[10px] text-slate-400 uppercase font-sans ml-1.5 font-normal">
+              {isAboveHorizon ? '(Above Horizon)' : '(Below Horizon)'}
+              {elevationStatusSubtitle ? ` · ${elevationStatusSubtitle}` : ''}
+            </span>
           </div>
-        )}
-      </div>
+          {sightingBanner && (
+            <div 
+              className="text-[9px] font-mono text-slate-400 bg-slate-900/90 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1 select-none shrink-0"
+              title={`Observer line-of-sight: ${sightingBanner}`}
+            >
+              <span className="text-slate-500 text-[10px]">👁️</span>
+              <span className="truncate max-w-[130px] sm:max-w-none">{sightingBanner}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Hover Popover */}
       {popover}

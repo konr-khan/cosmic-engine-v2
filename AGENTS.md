@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 588 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 589 tests)
 
 ### Essential Commands
 
@@ -261,7 +261,7 @@ Cosmic Engine V2.0/
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── today/           # Decomposed today's horizon subsystem modules
 │       │   │   ├── SkyDomeBase.tsx         # Reusable 260x138 SVG elevation arc primitive, vertical zenith axis & cardinal cues
-│       │   │   ├── SkyDomeBase.test.tsx    # Vitest unit tests for SkyDomeBase (16 tests)
+│       │   │   ├── SkyDomeBase.test.tsx    # Vitest unit tests for SkyDomeBase (17 tests)
 │       │   │   ├── MeridianDomeBase.tsx    # Reusable 260x138 SVG celestial colure primitive, S-Z-N baseline, swaths & chords
 │       │   │   ├── SunElevationDome.tsx    # Symmetrical +90° Sun elevation arc & diurnal path
 │       │   │   ├── SunMeridianDome.tsx      # Symmetrical +90° Sun meridian profile, Solstice swath & twilight mode

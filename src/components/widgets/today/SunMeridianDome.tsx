@@ -59,16 +59,19 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   const currentSunPos = projectSkyDomePoint(sunHourAngle, Number(sunDeclination), latitude);
   const currentSunElevation = currentSunPos.elevation;
 
+  // Sub-horizon threshold: -18° when Twilight mode active, 0° (horizon baseline) in Std mode
+  const thresholdElevation = isTwilightModeActive ? -18 : 0;
+
   // Real-time instantaneous Sun position along continuous 3D diurnal path
   const activeSunPoint = useMemo(
-    () => calculateMeridianDiurnalPoint(latitude, Number(sunDeclination), sunHourAngle, -18),
-    [latitude, sunDeclination, sunHourAngle]
+    () => calculateMeridianDiurnalPoint(latitude, Number(sunDeclination), sunHourAngle, thresholdElevation),
+    [latitude, sunDeclination, sunHourAngle, thresholdElevation]
   );
 
   // Today's Diurnal Chord in the Meridian projection (touching Meridian Arc at Solar Noon)
   const todayChord = useMemo(
-    () => calculateMeridianDiurnalChord(latitude, Number(sunDeclination), -18),
-    [latitude, sunDeclination]
+    () => calculateMeridianDiurnalChord(latitude, Number(sunDeclination), thresholdElevation),
+    [latitude, sunDeclination, thresholdElevation]
   );
 
   // --- Culminations & Bearings ---
@@ -92,6 +95,17 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   const absLat = Math.abs(latitude);
   const isTropical = absLat <= OBLIQUITY;
 
+  const juneSolstice = useMemo(
+    () => calculateCulminationBearing(latitude, OBLIQUITY),
+    [latitude]
+  );
+  const decemberSolstice = useMemo(
+    () => calculateCulminationBearing(latitude, -OBLIQUITY),
+    [latitude]
+  );
+  const juneNoon = juneSolstice.altitude;
+  const decemberNoon = decemberSolstice.altitude;
+
   const summerSolstice = solsticeCulminations.summer;
   const winterSolstice = solsticeCulminations.winter;
   const summerNoon = summerSolstice.altitude;
@@ -103,14 +117,14 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     [peakAlt, todayCulmination]
   );
 
-  const summerPoint = useMemo(
-    () => calculateMeridianPoint(summerSolstice.altitude, summerSolstice.direction),
-    [summerSolstice]
+  const junePoint = useMemo(
+    () => calculateMeridianPoint(juneSolstice.altitude, juneSolstice.direction),
+    [juneSolstice]
   );
 
-  const winterPoint = useMemo(
-    () => calculateMeridianPoint(winterSolstice.altitude, winterSolstice.direction),
-    [winterSolstice]
+  const decemberPoint = useMemo(
+    () => calculateMeridianPoint(decemberSolstice.altitude, decemberSolstice.direction),
+    [decemberSolstice]
   );
 
   const equinoxPoint = useMemo(
@@ -118,21 +132,41 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     [equinoxCulmination]
   );
 
-  // --- Solstice Swath Arc (along R=92 dome) ---
-  const solsticeSwathD = useMemo(
-    () => generateMeridianSwathD(winterPoint.thetaDeg, summerPoint.thetaDeg),
-    [winterPoint.thetaDeg, summerPoint.thetaDeg]
+  // --- Split Solstice Milestone Swaths (along R=92 dome) ---
+  // Bifurcated at Today's Noon Peak into June (Gold) and December (Bronze) milestone arcs
+  const juneSwathD = useMemo(
+    () => generateMeridianSwathD(todayPeakPoint.thetaDeg, junePoint.thetaDeg),
+    [todayPeakPoint.thetaDeg, junePoint.thetaDeg]
   );
+
+  const decemberSwathD = useMemo(
+    () => generateMeridianSwathD(todayPeakPoint.thetaDeg, decemberPoint.thetaDeg),
+    [todayPeakPoint.thetaDeg, decemberPoint.thetaDeg]
+  );
+
+  // Annual seasonal migration direction:
+  // Dec 21 -> Jun 21: Sun moves North towards June Solstice (lambda in [270°, 360°) or [0°, 90°))
+  // Jun 21 -> Dec 21: Sun moves South towards December Solstice (lambda in [90°, 270°))
+  const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
+  const isApproachingJune = useMemo(() => {
+    if (sunLambda !== undefined) {
+      const normLambda = ((sunLambda % 360) + 360) % 360;
+      return normLambda >= 270 || normLambda < 90;
+    }
+    const startOfYear = new Date(_currentDate.getFullYear(), 0, 1);
+    const dayOfYear = Math.floor((_currentDate.getTime() - startOfYear.getTime()) / 86400000);
+    return dayOfYear < 172 || dayOfYear >= 355;
+  }, [sunLambda, _currentDate]);
 
   // --- Perpendicular Radial Tick Pins ---
-  const summerTick = useMemo(
-    () => calculateMeridianRadialTick(summerPoint.thetaDeg, 86, 98),
-    [summerPoint.thetaDeg]
+  const juneTick = useMemo(
+    () => calculateMeridianRadialTick(junePoint.thetaDeg, 86, 98),
+    [junePoint.thetaDeg]
   );
 
-  const winterTick = useMemo(
-    () => calculateMeridianRadialTick(winterPoint.thetaDeg, 86, 98),
-    [winterPoint.thetaDeg]
+  const decemberTick = useMemo(
+    () => calculateMeridianRadialTick(decemberPoint.thetaDeg, 86, 98),
+    [decemberPoint.thetaDeg]
   );
 
   const equinoxTick = useMemo(
@@ -198,43 +232,62 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
           >
             <title>
               {activeSunPoint.isParked
-                ? `Sun below −18° (${elevationSubtitle}) · Parked at Twilight Gate`
+                ? (isTwilightModeActive
+                    ? `Sun below −18° (${elevationSubtitle}) · Parked at Twilight Gate`
+                    : `Sun below Horizon (${elevationSubtitle}) · Parked at Horizon Gate`)
                 : `Current Solar Altitude: ${currentSunElevation >= 0 ? '+' : ''}${currentSunElevation.toFixed(1)}° (${elevationSubtitle})`}
             </title>
           </circle>
         </g>
       )}
-      swaths={
-        solsticeSwathD
+      swaths={[
+        ...(juneSwathD
           ? [
               {
-                id: 'solstice-swath-core',
-                d: solsticeSwathD,
-                stroke: '#f59e0b',
-                strokeWidth: 2.5,
-                strokeOpacity: 0.4,
+                id: 'solstice-swath-june',
+                d: juneSwathD,
+                stroke: '#fbbf24',
+                strokeWidth: 2.0,
+                strokeDasharray: '3 2',
+                strokeOpacity: isApproachingJune ? 0.85 : 0.40,
                 glow: true,
-                glowWidth: 5,
-                glowOpacity: 0.15,
-                title: `Annual Solar Solstice Range: ${winterNoon > 0 ? winterNoon.toFixed(1) + '° ' + winterSolstice.shortTag : 'Below 0°'} to ${summerNoon.toFixed(1)}° ${summerSolstice.shortTag}`,
+                glowWidth: 4,
+                glowOpacity: isApproachingJune ? 0.25 : 0.10,
+                title: `June Solstice Arc (+23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}${isApproachingJune ? ' (Approaching Milestone)' : ''}`,
               },
             ]
-          : []
-      }
+          : []),
+        ...(decemberSwathD
+          ? [
+              {
+                id: 'solstice-swath-december',
+                d: decemberSwathD,
+                stroke: '#d97706',
+                strokeWidth: 2.0,
+                strokeDasharray: '3 2',
+                strokeOpacity: !isApproachingJune ? 0.85 : 0.40,
+                glow: true,
+                glowWidth: 4,
+                glowOpacity: !isApproachingJune ? 0.25 : 0.10,
+                title: `December Solstice Arc (−23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${decemberNoon > 0 ? decemberNoon.toFixed(1) + '° ' + decemberSolstice.shortTag : 'Below 0°'}${!isApproachingJune ? ' (Approaching Milestone)' : ''}`,
+              },
+            ]
+          : []),
+      ]}
       radialTicks={[
         {
           id: 'summer-solstice-tick',
-          tick: summerTick,
-          stroke: '#f59e0b',
+          tick: juneTick,
+          stroke: '#fbbf24',
           strokeWidth: 1.4,
-          title: `Summer Solstice Noon Peak: ${summerNoon.toFixed(1)}° ${summerSolstice.shortTag}`,
+          title: `June Solstice Noon Peak (+23.4°): ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}`,
         },
         {
           id: 'winter-solstice-tick',
-          tick: winterTick,
+          tick: decemberTick,
           stroke: '#d97706',
           strokeWidth: 1.4,
-          title: `Winter Solstice Noon Peak: ${winterNoon > 0 ? winterNoon.toFixed(1) + '° ' + winterSolstice.shortTag : 'Below 0° (Polar Night)'}`,
+          title: `December Solstice Noon Peak (−23.4°): ${decemberNoon > 0 ? decemberNoon.toFixed(1) + '° ' + decemberSolstice.shortTag : 'Below 0° (Polar Night)'}`,
         },
         {
           id: 'equinox-tick',
@@ -248,7 +301,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       geometryGroupClassName="meridian-solstice-geometry"
       todayChordConfig={{
         daylightId: 'sun-today-diurnal-chord',
-        twilightId: 'sun-today-twilight-chord',
+        twilightId: isTwilightModeActive ? 'sun-today-twilight-chord' : undefined,
         chord: todayChord,
         stroke: '#fbbf24',
         strokeWidth: 1.5,
@@ -260,14 +313,18 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
         daylightTitle: `Today's Solar Diurnal Path (Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`,
         twilightTitle: "Today's Sub-Horizon Twilight Extension down to −18°",
       }}
-      gateAnchor={{
-        id: 'sun-twilight-gate-anchor',
-        x: todayChord.anchorPoint.x,
-        y: todayChord.anchorPoint.y,
-        r: 3.5,
-        stroke: '#64748b',
-        title: 'Astronomical Twilight Gate (−18°): Deep Night Station',
-      }}
+      gateAnchor={
+        isTwilightModeActive
+          ? {
+              id: 'sun-twilight-gate-anchor',
+              x: todayChord.anchorPoint.x,
+              y: todayChord.anchorPoint.y,
+              r: 3.5,
+              stroke: '#64748b',
+              title: 'Astronomical Twilight Gate (−18°): Deep Night Station',
+            }
+          : undefined
+      }
       peakTarget={{
         id: 'meridian-noon-peak-target',
         peakPoint: todayPeakPoint,

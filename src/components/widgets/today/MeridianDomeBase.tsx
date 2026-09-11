@@ -87,6 +87,7 @@ export interface MeridianDomeBaseProps {
   extraMeridianSvg?: ReactNode;
   popover?: ReactNode;
   children?: ReactNode;
+  hideElevationBanner?: boolean;
 }
 
 /** Reusable SVG sub-component for meridian swath arcs */
@@ -303,6 +304,7 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
   extraMeridianSvg,
   popover,
   children,
+  hideElevationBanner = true,
 }) => {
   return (
     <SkyDomeBase
@@ -319,6 +321,7 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
       elevationColorClass={elevationColorClass}
       elevationStatusSubtitle={elevationStatusSubtitle}
       showTwilightBands={showTwilightBands}
+      hideElevationBanner={hideElevationBanner}
       leftHorizonLabel="S"
       centerHorizonLabel="Z"
       rightHorizonLabel="N"

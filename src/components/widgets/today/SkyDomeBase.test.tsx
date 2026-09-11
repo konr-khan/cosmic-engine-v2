@@ -376,5 +376,24 @@ describe('SkyDomeBase Primitive Component Test Suite', () => {
 
     expect(withoutAxisHtml).not.toContain('x1="130" y1="104" x2="130" y2="12"');
   });
+
+  it('suppresses live elevation and sighting banner when hideElevationBanner is true', () => {
+    const html = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Meridian Profile"
+        icon={Sun}
+        peakLabel="Noon Peak"
+        peakElevation={65.4}
+        currentElevation={40.0}
+        sightingBanner="Looking South · S-Sky Arc"
+        hideElevationBanner={true}
+      />
+    );
+
+    expect(html).toContain('Sun Meridian Profile');
+    expect(html).toContain('65.4°');
+    expect(html).not.toContain('(Above Horizon)');
+    expect(html).not.toContain('Looking South · S-Sky Arc');
+  });
 });
 

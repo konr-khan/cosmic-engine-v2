@@ -572,16 +572,21 @@ describe('Today Horizon Subsystem', () => {
     // Vertical dashed Zenith axis
     expect(sunMeridianHtml).toContain('x1="130" y1="104" x2="130" y2="12"');
 
-    // Solstice swath and tick pins
-    expect(sunMeridianHtml).toContain('id="solstice-swath-core"');
+    // Split Solstice swaths (June gold, December bronze) and tick pins
+    expect(sunMeridianHtml).toContain('id="solstice-swath-june"');
+    expect(sunMeridianHtml).toContain('id="solstice-swath-december"');
     expect(sunMeridianHtml).toContain('id="summer-solstice-tick"');
     expect(sunMeridianHtml).toContain('id="winter-solstice-tick"');
     expect(sunMeridianHtml).toContain('id="equinox-tick"');
 
-    // Today Sun Diurnal Chord and Twilight Gate Anchor
+    // Today Sun Diurnal Chord (twilight extension omitted in Std mode)
     expect(sunMeridianHtml).toContain('id="sun-today-diurnal-chord"');
-    expect(sunMeridianHtml).toContain('id="sun-today-twilight-chord"');
-    expect(sunMeridianHtml).toContain('id="sun-twilight-gate-anchor"');
+    expect(sunMeridianHtml).not.toContain('id="sun-today-twilight-chord"');
+    expect(sunMeridianHtml).not.toContain('id="sun-twilight-gate-anchor"');
+
+    // Redundant live elevation and sighting banner is cleanly omitted in Meridian Profile
+    expect(sunMeridianHtml).not.toContain('Looking South · S-Sky Arc');
+    expect(sunMeridianHtml).not.toContain('(Above Horizon)');
 
     // Active solar noon bead
     expect(sunMeridianHtml).toContain('id="active-solar-noon-bead"');
@@ -601,7 +606,7 @@ describe('Today Horizon Subsystem', () => {
     expect(sunMeridianHtml).toContain('Twilight');
   });
 
-  it('renders SunMeridianDome with twilight strata when twilight mode active', () => {
+  it('renders SunMeridianDome with twilight strata, sub-horizon chord, and gate anchor when twilight mode active', () => {
     const twilightHtml = renderToStaticMarkup(
       React.createElement(SunMeridianDome, {
         displayTime: 12,
@@ -611,6 +616,8 @@ describe('Today Horizon Subsystem', () => {
     );
     expect(twilightHtml).toContain('twilight-strata');
     expect(twilightHtml).toContain('CIVIL');
+    expect(twilightHtml).toContain('id="sun-today-twilight-chord"');
+    expect(twilightHtml).toContain('id="sun-twilight-gate-anchor"');
   });
 
   it('renders MoonMeridianDome standalone with monthly swath, standstill bounds, and active bead', () => {
@@ -691,7 +698,7 @@ describe('Today Horizon Subsystem', () => {
     expect(nodalHtml).toContain('id="meridian-ecliptic-node-marker"');
   });
 
-  it('hides footer in SunMeridianDome and MoonMeridianDome when hideFooter is true', () => {
+  it('hides footer and redundant elevation banner in SunMeridianDome and MoonMeridianDome', () => {
     const sunHiddenHtml = renderToStaticMarkup(
       React.createElement(SunMeridianDome, {
         displayTime: 12,
@@ -701,7 +708,10 @@ describe('Today Horizon Subsystem', () => {
     );
     // Canvas and headers are preserved
     expect(sunHiddenHtml).toContain('Sun Meridian Profile');
-    expect(sunHiddenHtml).toContain('Looking South · S-Sky Arc');
+    expect(sunHiddenHtml).toContain('Noon Peak');
+    // Redundant middle elevation and sighting banner are cleanly omitted
+    expect(sunHiddenHtml).not.toContain('Looking South · S-Sky Arc');
+    expect(sunHiddenHtml).not.toContain('(Above Horizon)');
     // Footer & stats strip are omitted
     expect(sunHiddenHtml).not.toContain('Summer Peak');
     expect(sunHiddenHtml).not.toContain('Winter Peak');
@@ -714,14 +724,17 @@ describe('Today Horizon Subsystem', () => {
       })
     );
     expect(moonHiddenHtml).toContain('Moon Meridian Profile');
-    expect(moonHiddenHtml).toContain('Looking South · S-Sky Arc');
+    expect(moonHiddenHtml).toContain('Transit Peak');
+    // Redundant middle elevation and sighting banner are cleanly omitted
+    expect(moonHiddenHtml).not.toContain('Looking South · S-Sky Arc');
+    expect(moonHiddenHtml).not.toContain('(Above Horizon)');
     // Standstill limits and 4-badge footer omitted
     expect(moonHiddenHtml).not.toContain('Standstill Span');
     expect(moonHiddenHtml).not.toContain('Monthly Range');
   });
 
   it('renders sub-horizon active bead on physical diurnal trajectory without vertical line to center', () => {
-    // Sun at midnight (displayTime: 0, solarNoon: 12) -> deep below horizon
+    // Sun at midnight (displayTime: 0, solarNoon: 12) -> in Std mode, parks at Horizon Gate (0°)
     const midnightSunHtml = renderToStaticMarkup(
       React.createElement(SunMeridianDome, {
         displayTime: 0,
@@ -748,10 +761,39 @@ describe('Today Horizon Subsystem', () => {
       })
     );
     expect(midnightSunHtml).toContain('id="active-solar-noon-bead"');
-    // Active bead has sub-horizon styling and parks at twilight gate
-    expect(midnightSunHtml).toContain('Parked at Twilight Gate');
+    // Active bead has sub-horizon styling and parks at horizon gate in Std mode
+    expect(midnightSunHtml).toContain('Parked at Horizon Gate');
     // Sub-horizon vertical line to center is eliminated
     expect(midnightSunHtml).not.toContain('stroke-opacity="0.6" stroke-width="0.75"');
+
+    // In Twilight mode (initialTwilightMode: true), parks at Twilight Gate (-18°)
+    const midnightTwilightHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 0,
+        latitude: 47.06,
+        initialTwilightMode: true,
+        solarData: {
+          solarNoon: 12,
+          declination: -10,
+          noonElevation: 32.9,
+          equationOfTime: 0,
+          sunrise: 7.5,
+          sunset: 16.5,
+          distanceAU: 1,
+          distanceKm: 149597870,
+          dayLength: 9,
+          civil: 0.5,
+          nautical: 1,
+          astronomical: 1.5,
+          daysSinceEpoch: 100,
+          lambda: 0,
+          eclipticLongitude: 0,
+          isMidnightSun: false,
+          isPolarNight: false,
+        },
+      })
+    );
+    expect(midnightTwilightHtml).toContain('Parked at Twilight Gate');
   });
 
   it('parks sub-horizon Moon bead at horizon gate without floor sliding', () => {
