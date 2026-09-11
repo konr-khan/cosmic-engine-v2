@@ -90,7 +90,7 @@ Cosmic Engine V2.0/
 ├── tsconfig.node.json           # TypeScript build tooling configuration
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Unified 3D scene graph milestones & feature matrix
+├── PROJECT.md                   # Master feature inventory (F1-F42) & milestone matrix (M1-M19)
 ├── README.md                    # Repository documentation & getting started
 ├── AGENTS.md                    # Agent guidelines, operating protocols & architecture map
 ├── DEAD_ENDS.md                 # Critical log of failed historical approaches & solutions

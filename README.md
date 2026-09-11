@@ -118,13 +118,13 @@ Cosmic Engine V2.0/
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Unified 3D scene graph milestones & feature matrix
+├── PROJECT.md                   # Master feature inventory (F1-F42) & milestone matrix (M1-M19)
 ├── README.md                    # Repository documentation & quick start
 ├── AGENTS.md                    # Agent protocols & full granular file navigation map
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001-0018)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001-0019)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
