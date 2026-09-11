@@ -97,6 +97,8 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F43 | Living Marble Great Meridian Ring & Bifurcation Removal | Authentic diurnally rotating $0^\circ$ Prime Meridian (Greenwich) and $180^\circ$ Antimeridian curves in `MiniGlobe.tsx`, visible through the marble at all times matching the equator convention, and suppression of static polar axis in `euler3d` mode | M20 | ADR-0020 |
 | F44 | Dynamic 3D Orbiting Earth Bead & Telephoto Inset Camera Alignment | Replaced flat 2D sticker in Gyro-Morph Orbit view with dynamic 3D Euler rendering (`euler3d`) and physical Sun-to-Earth camera-vector terminator shading, aligning Terra Living Marble PIP inset lighting with main viewport | M20 | ADR-0020 |
 | F45 | Heliocentric Multi-Scale Orbit Zoom Controls | Interactive wheel zoom and floating controls ($0.75\times$ to $3.5\times$) in Gyro-Morph Orbit view with automatic 2D plate reset, dynamic `viewBox` scaling ($0.5\times$ to $3.5\times$) and continent rendering in Solar System Macro Orbit | M20 | ADR-0020 |
+| F46 | Solstice Arc Bifurcation & Milestone Directional Migration Vector | Bifurcated solid solstice corridor into dual dashed milestone arcs (`#fbbf24` June Solstice vs `#d97706` December Solstice), anchored to Today's Noon Culmination Peak ($R=92$); dynamic $d\delta/dt \propto \cos\lambda_\odot$ solar migration vector weights approaching milestone at full vibrancy (`0.85`) and receding at subdued tone (`0.40`) | M21 | ADR-0021 |
+| F47 | Sub-Horizon Solstice Depiction & Compact Meridian Telemetry | In Twilight Mode, solstice arcs and culmination ticks extend below horizon ($0^\circ > h \ge -18^\circ$) into Civil, Nautical, or Astronomical twilight strata with signed altitude and tier badges; below $-18^\circ$, ticks disappear completely and arcs terminate cleanly; `hideElevationBanner` suppresses duplicate middle banners on lower profile cards | M21 | ADR-0021 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
@@ -121,6 +123,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M18 | Performance Optimization, Modular Ephemeris Decoupling & Build Hardening | `src/store/hoverStore.ts`, `useEphemerisWorker.ts` (throttling & monotonic stamping), `core.ts` (GMST/LST hoisting), `astroConstants.ts`, `src/utils/cosmicMath/today/` (`elevation.ts`, `meridian.ts`, `draconic.ts`), `MeridianDomeBase.tsx`, widget barrel deletion, build pipeline hardening (`tsc --noEmit && vite build`), `globe.test.ts`, `App.test.tsx`, ADR-0018, 559 tests across 40 suites | M1-M17 | DONE |
 | M19 | Domain Invariant Hardening, Polar Singularity Rectification & Syzygy Apparent Ratio | `meridian.ts` (horizontal polar chords), `elevation.ts` (polar azimuth suppression), `eclipse.ts` (apparent radius ratio $k \ge 1.0$), `domainInvariants.test.ts` (Suites 8-11), `useRibbonScrubber.ts` (bounds clamping), `core.ts` (century leap rules), ADR-0019, 580 tests across 40 suites | M1-M18 | DONE |
 | M20 | Living Marble Meridian Ring, Dynamic 3D Orbit Bead & Multi-Scale Orbit Zoom Controls | `MiniGlobe.tsx` ($0^\circ / 180^\circ$ Great Meridian Ring), `MiniGlobeSphere.tsx` (polar axis gating in `euler3d`), `ArmillaryBeadsLayer.tsx` (dynamic 3D Earth bead & subsolar camera vector), `ArmillaryEarthPip.tsx` (telephoto subsolar alignment), `ArmillarySvgCanvas.tsx` & `MacroOrbitView.tsx` (wheel zoom & floating controls), 588 tests across 40 suites | M1-M19 | DONE |
+| M21 | Meridian Profile Solstice Bifurcation, Sub-Horizon Twilight Kinematics & Compact Telemetry | `SunMeridianDome.tsx` (split swaths, direction vector, sub-horizon twilight), `MeridianDomeBase.tsx` (`hideElevationBanner`), `SkyDomeBase.tsx`, `src/utils/cosmicMath/today/meridian.ts` (`minAltitudeDeg = -18`), ADR-0021, 592 tests across 40 suites | M1-M20 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -191,4 +194,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
   - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
-  - `adr/` — Architecture Decision Records (`0001` through `0019`)
+  - `adr/` — Architecture Decision Records (`0001` through `0021`)

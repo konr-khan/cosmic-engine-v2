@@ -171,6 +171,29 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
     - *Moon Dome*: `[Moonrise/Moonset | Lunar Transit | Declination | [Std | ☊ Nodes]]`
   - Preserves clean card headers, uniform card heights, and horizontal alignment across the dashboard grid.
 
+### G. Celestial Meridian Colure Profiles, Solstice Bifurcation & Sub-Horizon Twilight Kinematics
+* **Dual Dashed Solstice Milestone Arcs (`SunMeridianDome.tsx`)**:
+  - **June Solstice Arc (`solstice-swath-june`)**: Warm Gold (`stroke="#fbbf24"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the June Solstice Peak (`junePeakPoint.thetaDeg`).
+  - **December Solstice Arc (`solstice-swath-december`)**: Rich Bronze (`stroke="#d97706"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the December Solstice Peak (`decPeakPoint.thetaDeg`).
+  - **Milestone Anchoring Principle**: Both arcs anchor strictly to Today's Noon Culmination Peak on the outer circular meridian rim ($R = 92, CX = 130, CY = 104$). This preserves a static, calibrated seasonal scale and eliminates jitter from the moving diurnal Sun bead.
+* **Directional Migration Vibrancy ($d\delta/dt$)**:
+  - **Approaching Milestone Arc** ($\cos\lambda_\odot > 0$ for June, $\cos\lambda_\odot < 0$ for December): Rendered at full vibrancy (`strokeOpacity="0.85"`, `strokeWidth="1.25"`).
+  - **Receding Milestone Arc** (receding from solstice): Rendered in subdued tone (`strokeOpacity="0.40"`, `strokeWidth="0.9"`).
+* **Sub-Horizon Solstice Depiction & 3-Tier Kinematics in Twilight Mode**:
+  - **Twilight Noon Culmination ($0^\circ > h \ge -18^\circ$)**: When the winter solstice culmination falls below the horizon in polar latitudes, the solstice arc smoothly extends along the circular perimeter into the twilight strata ($Y \in [104, 132.43]$):
+    - *Civil Twilight* ($-0.833^\circ \ge h \ge -6.0^\circ$): Warm Golden Amber (`#f59e0b`).
+    - *Nautical Twilight* ($-6.0^\circ > h \ge -12.0^\circ$): Slate Navy (`#64748b`).
+    - *Astronomical Twilight* ($-12.0^\circ > h \ge -18.0^\circ$): Deep Indigo Slate (`#334155`).
+    - Rendered with an authentic radial tick pin and signed altitude label with twilight tier (e.g. `-3.1° S (Civil)`).
+  - **Astronomical Night Floor ($h < -18^\circ$)**: When noon culmination drops below the $-18^\circ$ floor (deep polar astronomical night), the solstice tick pin is completely suppressed (disappears), and the arc terminates cleanly at the $-18^\circ$ floor, preventing off-canvas orphan artifacts.
+  - **Standard (`Std`) Mode**: Sub-horizon solstice ticks are suppressed to keep the daytime horizon pristine.
+* **Mode-Coupled Diurnal Chord & Gate Anchor**:
+  - **Standard (`Std`) Mode**: `todayChord` and `gateAnchor` stop cleanly at the horizon ($h = 0^\circ, Y = 104$).
+  - **Twilight Mode**: `todayChord` and `gateAnchor` extend down to the $-18^\circ$ Astronomical Twilight floor ($Y = 132.43\text{px}$).
+* **Compact Meridian Telemetry & Duplicate Banner Suppression**:
+  - `hideElevationBanner?: boolean` prop on `<SkyDomeBase />`, defaulted to `true` on `<MeridianDomeBase />`.
+  - Suppresses duplicate middle elevation badges and sighting perspective banners on lower meridian profile cards while leaving upper diurnal elevation domes intact.
+
 ---
 
 ## 3. Glassmorphic Popover & HUD Hierarchy

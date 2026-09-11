@@ -1391,6 +1391,75 @@ To prevent deep-night reverse sliding while preserving physical continuity:
 - **Lunar Horizon Gate**: Because atmospheric twilight is exclusively a solar phenomenon, the Moon's observational threshold is the physical horizon ($h = 0^\circ$). When $z_{\text{zenith}} \le 0$ (or $|H| \ge H_0$), the active Moon bead is parked at the static horizon gate anchor $(X_{\text{horizon}}, 104)$.
 - **Wakeup Continuity**: As the body approaches morning twilight/rise ($-H_{18}$ or $-H_0$), the bead smoothly un-parks and ascends the diurnal chord toward Solar Noon / Lunar Transit.
 
+#### 6. Meridian Arc Angular Parameterization & Sub-Horizon Twilight Extension (`calculateMeridianPoint`)
+
+For any celestial culmination with peak altitude $h \in [-90^\circ, +90^\circ]$ and culmination bearing $B \in \{\text{'S'}, \text{'N'}, \text{'Z'}\}$:
+1. **Clamping to Configurable Altitude Floor $h_{\min}$**:
+   \[
+   h_{\text{clamped}} = \max(h_{\min}, \min(90^\circ, h))
+   \]
+   where $h_{\min} = 0^\circ$ in Standard mode and $h_{\min} = -18^\circ$ in Twilight mode.
+
+2. **Meridian Circle Angular Parameterization**:
+   \[
+   \theta_{\text{deg}} = \begin{cases}
+   180^\circ - h_{\text{clamped}} & \text{if } B = \text{'S'} \\
+   h_{\text{clamped}} & \text{if } B = \text{'N'} \\
+   90^\circ & \text{if } B = \text{'Z'}
+   \end{cases}
+   \]
+
+3. **2D Canvas Coordinates ($CX = 130, CY = 104, R = 92$)**:
+   \[
+   X = CX + R \cos\theta_{\text{rad}}, \quad Y = CY - R \sin\theta_{\text{rad}}
+   \]
+
+4. **Sub-Horizon Twilight Depths ($h < 0^\circ$)**:
+   For a Southern sky culmination at negative altitude $h = -|h|$ down to $-18^\circ$:
+   \[
+   \theta_{\text{deg}} = 180^\circ - (-|h|) = 180^\circ + |h|
+   \]
+   \[
+   X = CX + R \cos(180^\circ + |h|) = CX - R \cos|h|
+   \]
+   \[
+   Y = CY - R \sin(180^\circ + |h|) = CY + R \sin|h|
+   \]
+   Evaluating $Y(|h|)$ across astronomical twilight boundaries:
+   - Horizon ($h = 0^\circ$): $Y = 104.00\text{px}$
+   - Civil Twilight boundary ($h = -6.0^\circ$): $Y = 104 + 92 \sin(6^\circ) \approx 113.62\text{px}$
+   - Nautical Twilight boundary ($h = -12.0^\circ$): $Y = 104 + 92 \sin(12^\circ) \approx 123.11\text{px}$
+   - Astronomical Twilight floor ($h = -18.0^\circ$): $Y = 104 + 92 \sin(18^\circ) \approx 132.43\text{px}$
+
+   Every sub-horizon point maps cleanly within the $Y \le 138\text{px}$ canvas boundary. When $h < -18^\circ$ (deep polar astronomical night), the solstice tick pin is suppressed completely (disappears), and the arc terminates at the $-18^\circ$ floor, preventing off-canvas orphan elements.
+
+#### 7. Annual Solstice Milestone Bifurcation & Directional Solar Migration Vector
+
+Solar declination $\delta$ is governed by axial obliquity $\varepsilon$ and ecliptic longitude $\lambda_\odot$:
+\[
+\sin\delta = \sin\varepsilon \sin\lambda_\odot
+\]
+Differentiating with respect to $\lambda_\odot$:
+\[
+\cos\delta \frac{d\delta}{d\lambda_\odot} = \sin\varepsilon \cos\lambda_\odot \implies \frac{d\delta}{d\lambda_\odot} = \frac{\sin\varepsilon \cos\lambda_\odot}{\cos\delta}
+\]
+Because $\varepsilon \approx 23.44^\circ > 0$ and $|\delta| \le \varepsilon < 90^\circ$, both $\sin\varepsilon > 0$ and $\cos\delta > 0$. The sign of the solar migration rate is governed solely by the cosine of ecliptic longitude:
+\[
+\operatorname{sgn}\left(\frac{d\delta}{dt}\right) = \operatorname{sgn}(\cos\lambda_\odot)
+\]
+1. **Northward Solar Migration ($\cos\lambda_\odot > 0$)**:
+   When $\lambda_\odot \in [0^\circ, 90^\circ) \cup (270^\circ, 360^\circ)$, $\frac{d\delta}{dt} > 0$: the Sun is migrating toward the June Solstice ($\delta = +\varepsilon, \lambda_\odot = 90^\circ$).
+   - `isApproachingJune = true`
+   - June Solstice Arc (`solstice-swath-june`, `#fbbf24`): Full vibrancy (`opacity = 0.85`, `strokeWidth = 1.25px`).
+   - December Solstice Arc (`solstice-swath-december`, `#d97706`): Subdued tone (`opacity = 0.40`, `strokeWidth = 0.9px`).
+2. **Southward Solar Migration ($\cos\lambda_\odot < 0$)**:
+   When $\lambda_\odot \in (90^\circ, 270^\circ)$, $\frac{d\delta}{dt} < 0$: the Sun is migrating toward the December Solstice ($\delta = -\varepsilon, \lambda_\odot = 270^\circ$).
+   - `isApproachingJune = false`
+   - December Solstice Arc (`solstice-swath-december`, `#d97706`): Full vibrancy (`opacity = 0.85`, `strokeWidth = 1.25px`).
+   - June Solstice Arc (`solstice-swath-june`, `#fbbf24`): Subdued tone (`opacity = 0.40`, `strokeWidth = 0.9px`).
+3. **Milestone Anchoring**:
+   Both arcs are anchored to **Today's Noon Culmination Peak** on the outer circular meridian perimeter ($R = 92$), ensuring a calibrated and static seasonal scale that does not distort with diurnal Sun bead transit.
+
 ---
 
 ## 12. Great Meridian Ring & Heliocentric Camera-Space Illumination Geometry
