@@ -7,6 +7,7 @@ import {
   ArmillaryCameraState
 } from '../types';
 import { MiniGlobe } from '../../../common/MiniGlobe';
+import { Vector3D } from '../../../../types/coordinates';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -74,13 +75,10 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const isHeliocentric = rawMode === 'heliocentric' || rawMode === 'orbit' || !!isOrbital;
   const isGeocentric = rawMode === 'geocentric' || rawMode === 'apparent';
 
-  // In 3D Apparent mode (modelType === 'apparent' / geocentric and lambda === 0), pass viewMode="euler3d"
+  // In 3D Apparent mode & 3D Heliocentric Orbit mode (when lambda === 0), pass viewMode="euler3d"
   // In 2D astrolabe plate modes ('rete', 'rojas', 'horizon', 'stereographic') or when morphing (lambda > 0), lock MiniGlobe viewMode="flat"
-  // In Heliocentric orbit mode, pass viewMode="topdown"
   let miniGlobeViewMode: 'topdown' | 'euler3d' | 'flat';
-  if (isHeliocentric && effectiveLambda === 0) {
-    miniGlobeViewMode = 'topdown';
-  } else if (isGeocentric && effectiveLambda === 0) {
+  if ((isHeliocentric || isGeocentric) && effectiveLambda === 0) {
     miniGlobeViewMode = 'euler3d';
   } else {
     miniGlobeViewMode = 'flat';
@@ -93,6 +91,20 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const lat = observerLat ?? latitude ?? 47.06;
   const lon = observerLon ?? longitude ?? -122.81;
   const sunLambda = sunLambdaDeg ?? (sun ? Number(sun.lambdaDeg ?? sun.raDeg ?? 0) : 0);
+
+  // 3D Subsolar unit illumination vector in camera coordinates pointing from Earth toward Sun
+  const subsolarCamVec = React.useMemo<Vector3D | undefined>(() => {
+    if (!isHeliocentric || !sun?.pCam || !earth?.pCam) return undefined;
+    const dx = sun.pCam.x - earth.pCam.x;
+    const dy = sun.pCam.y - earth.pCam.y;
+    const dz = sun.pCam.z - earth.pCam.z;
+    const len = Math.hypot(dx, dy, dz) || 1;
+    return {
+      x: dx / len,
+      y: dy / len,
+      z: dz / len
+    };
+  }, [isHeliocentric, sun?.pCam, earth?.pCam]);
 
   // Determine globe position and radius
   // In plate modes or center geocentric mode, Earth is centered at (0, 0)
@@ -198,6 +210,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           }}
           sunAngleDeg={sunAngleDeg}
           sunLambdaDeg={sunLambda}
+          subsolarCameraVector={subsolarCamVec}
           declination={sun?.decDeg}
           rightAscension={sun?.raDeg}
           latitude={lat}

@@ -51,6 +51,8 @@ export interface EulerGlobeGeometry {
   obsPy: number;
   isObsDay: boolean;
   isObsVisible: boolean;
+  primeMeridianPath?: string;
+  antimeridianPath?: string;
 }
 
 export interface MiniGlobeSphereProps {

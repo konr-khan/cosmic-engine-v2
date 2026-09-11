@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { MILESTONES } from './milestones';
 import { OrbitHeaderControls } from './OrbitHeaderControls';
 import { OrbitHoverHud } from './OrbitHoverHud';
@@ -20,6 +21,13 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
 }) => {
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState<number>(1.0);
+
+  const handleWheelZoom = (e: React.WheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    setZoom((z) => Math.min(3.5, Math.max(0.5, parseFloat((z * factor).toFixed(2)))));
+  };
 
   // Synchronize observer geographic coordinates and time from store
   const storeState = useChronometerStore(selectMacroObserverParams);
@@ -115,7 +123,54 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           longitude={storeState.longitude}
           timeOfDay={storeState.timeOfDay}
           lunarOrbitPath={helioScene.lunarOrbitPath}
+          zoom={zoom}
+          onWheelZoom={handleWheelZoom}
         />
+
+        {/* Orbit View Zoom Controls */}
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md border border-slate-800/90 rounded-lg p-1 shadow-xl font-mono text-[10px] select-none pointer-events-auto transition-opacity duration-200">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setZoom((z) => Math.max(0.5, parseFloat((z - 0.25).toFixed(2))));
+            }}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            title="Zoom Out (Orbit View)"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <span className="px-1.5 text-sky-400 font-semibold min-w-[34px] text-center">
+            {zoom.toFixed(1)}×
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setZoom((z) => Math.min(3.5, parseFloat((z + 0.25).toFixed(2))));
+            }}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            title="Zoom In (Orbit View)"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+          {zoom !== 1.0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setZoom(1.0);
+              }}
+              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer ml-0.5 border-l border-slate-800/80 pl-1.5"
+              title="Reset Zoom (1.0×)"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
 
       <OrbitPhysicsHud

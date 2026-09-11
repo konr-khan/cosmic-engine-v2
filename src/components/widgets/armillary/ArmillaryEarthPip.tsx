@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { ArmillaryProjectionMode, ArmillaryCameraState } from './types';
 import { MiniGlobe } from '../../common/MiniGlobe';
+import { Vector3D } from '../../../types/coordinates';
 
 export interface ArmillaryEarthPipProps {
   camera: ArmillaryCameraState;
@@ -10,6 +11,7 @@ export interface ArmillaryEarthPipProps {
   sunLambdaDeg?: number;
   declination?: number;
   rightAscension?: number;
+  subsolarCameraVector?: Vector3D;
   projectionMode: ArmillaryProjectionMode;
   morphLambda: number;
   onCameraChange?: (cam: ArmillaryCameraState) => void;
@@ -25,6 +27,7 @@ export const ArmillaryEarthPip: React.FC<ArmillaryEarthPipProps> = ({
   sunLambdaDeg = 0,
   declination,
   rightAscension,
+  subsolarCameraVector,
   projectionMode,
   morphLambda,
   onCameraChange
@@ -186,6 +189,7 @@ export const ArmillaryEarthPip: React.FC<ArmillaryEarthPipProps> = ({
                 roll: 0
               }}
               sunLambdaDeg={sunLambdaDeg}
+              subsolarCameraVector={subsolarCameraVector}
               declination={declination}
               rightAscension={rightAscension}
               latitude={latitude}

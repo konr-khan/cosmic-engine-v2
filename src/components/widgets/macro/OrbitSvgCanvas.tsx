@@ -11,6 +11,8 @@ export interface ExtendedOrbitSvgCanvasProps extends OrbitSvgCanvasProps {
   timeOfDay?: number;
   lunarOrbitRadius?: number;
   lunarOrbitPath?: string;
+  zoom?: number;
+  onWheelZoom?: (e: React.WheelEvent<SVGSVGElement>) => void;
 }
 
 export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
@@ -33,15 +35,26 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   longitude = -122.81,
   timeOfDay = 12.0,
   lunarOrbitRadius,
-  lunarOrbitPath
+  lunarOrbitPath,
+  zoom = 1.0,
+  onWheelZoom
 }) => {
   // In-plane solar illumination angle pointing from Earth toward Sun
   const sunAngleDeg = Math.atan2(renderSunY - renderEarthY, renderSunX - renderEarthX) * (180 / Math.PI);
 
+  // Dynamic zoom viewBox
+  const viewBoxStr = React.useMemo(() => {
+    if (zoom === 1.0) return "-290 -280 580 560";
+    const w = parseFloat((580 / zoom).toFixed(2));
+    const h = parseFloat((560 / zoom).toFixed(2));
+    return `${-w / 2} ${-h / 2} ${w} ${h}`;
+  }, [zoom]);
+
   return (
     <svg 
-      viewBox="-290 -280 580 560" 
+      viewBox={viewBoxStr} 
       style={{ touchAction: 'none' }}
+      onWheel={onWheelZoom}
       className="w-full h-full max-h-[380px] overflow-visible"
       preserveAspectRatio="xMidYMid meet"
     >
@@ -196,6 +209,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
         latitude={latitude}
         longitude={longitude}
         timeOfDay={timeOfDay}
+        showContinents={true}
         showTerminator={true}
         showParallels={true}
         showPolarAxis={true}

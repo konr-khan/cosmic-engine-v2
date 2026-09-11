@@ -335,7 +335,7 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
     expect(html).toContain('miniglobe-root');
     expect(html).toContain('miniglobe-parallels');
-    expect(html).toContain('miniglobe-polar-axis');
+    expect(html).toContain('0° Prime Meridian (Greenwich)');
     expect(html).toContain('miniglobe-observer-pin');
     expect(html).toContain('⊕ EARTH (Center)');
     expect(html).toContain('☉ SUN');
@@ -619,5 +619,54 @@ describe('Gyro-Morph Armillary Subsystem', () => {
     expect(descHtml).toContain('SOUTHBOUND');
     expect(descHtml).toContain('305.40°');
     expect(descHtml).toContain('North → South of Ecliptic');
+  });
+
+  it('renders Orbit zoom controls and passes subsolarCameraVector to ArmillaryEarthPip in heliocentric mode', () => {
+    const jd = getJulianDate(new Date(2026, 0, 3), 12);
+    const helioModel = generateArmillaryModel({
+      julianDate: jd,
+      latitude: 47.06,
+      longitude: -122.81,
+      timeOfDay: 12,
+      sunRaDeg: 280,
+      sunDecDeg: -23,
+      sunLambdaDeg: 280,
+      moonRaDeg: 120,
+      moonDecDeg: 15,
+      moonLambdaDeg: 120,
+      moonPhase: 0.5,
+      morphLambda: 0.0,
+      projectionMode: 'heliocentric',
+      cameraPitch: 20,
+      cameraYaw: 45,
+      r0: 100
+    });
+
+    const html = renderToStaticMarkup(
+      React.createElement(ArmillarySvgCanvas, {
+        model: helioModel,
+        projectionMode: 'heliocentric',
+        morphLambda: 0.0,
+        showRays: false,
+        showStars: false,
+        showTympan: false,
+        showRule: false,
+        camera: { pitch: 20, yaw: 45, roll: 0 },
+        onCameraChange: () => {},
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12.0
+      })
+    );
+
+    // Verify zoom controls rendered
+    expect(html).toContain('Zoom Out (Orbit View)');
+    expect(html).toContain('Zoom In (Orbit View)');
+    expect(html).toContain('1.0×');
+
+    // Verify Terra Living Marble Inset rendered with 0° Greenwich Prime Meridian and 180° Antimeridian
+    expect(html).toContain('TERRA · LIVING MARBLE');
+    expect(html).toContain('0° Prime Meridian (Greenwich)');
+    expect(html).toContain('180° Antimeridian');
   });
 });

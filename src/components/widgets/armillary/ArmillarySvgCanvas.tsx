@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { 
   ArmillaryModelOutput, 
   ArmillaryProjectionMode, 
@@ -8,6 +9,7 @@ import {
   ArmillaryMilestoneNode
 } from './types';
 import { calculateAlidadeSighting } from '../../../utils/cosmicMath';
+import { Vector3D } from '../../../types/coordinates';
 import { ArmillaryHoverHud } from './ArmillaryHoverHud';
 import {
   ArmillaryDefs,
@@ -73,6 +75,14 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   const [isDraggingRule, setIsDraggingRule] = useState<boolean>(false);
   const [isDraggingCamera, setIsDraggingCamera] = useState<boolean>(false);
   const [isDraggingRete, setIsDraggingRete] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(1.0);
+
+  // Reset zoom when leaving 3D Orbit view or morphing to 2D plates
+  useEffect(() => {
+    if (projectionMode !== 'heliocentric' || morphLambda > 0.05) {
+      setZoom(1.0);
+    }
+  }, [projectionMode, morphLambda]);
 
   const ruleAngleDeg = controlledRuleAngle !== undefined ? controlledRuleAngle : localRuleAngle;
   const updateRuleAngle = (angle: number) => {
@@ -119,6 +129,31 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   const sightingInfo: AlidadeSightingInfo | null = showRule
     ? calculateAlidadeSighting(ruleAngleDeg, latitude, localSiderealTimeDeg, stars, sun, moon)
     : null;
+
+  // Normalized Sun-to-Earth camera-space vector for physical 3D terminator shading
+  const subsolarCameraVector = useMemo<Vector3D | undefined>(() => {
+    if (projectionMode !== 'heliocentric' || !sun?.pCam || !earth?.pCam) return undefined;
+    const dx = sun.pCam.x - earth.pCam.x;
+    const dy = sun.pCam.y - earth.pCam.y;
+    const dz = sun.pCam.z - earth.pCam.z;
+    const len = Math.hypot(dx, dy, dz) || 1;
+    return { x: dx / len, y: dy / len, z: dz / len };
+  }, [projectionMode, sun?.pCam, earth?.pCam]);
+
+  // Dynamic zoom viewBox for 3D Heliocentric Orbit view
+  const viewBoxStr = useMemo(() => {
+    if (zoom === 1.0) return "-150 -150 300 300";
+    const half = parseFloat((150 / zoom).toFixed(2));
+    return `${-half} ${-half} ${2 * half} ${2 * half}`;
+  }, [zoom]);
+
+  // Wheel zoom handler isolated to 3D Orbit view
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    if (!isOrbital || morphLambda > 0.05) return;
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    setZoom((prev) => Math.min(3.5, Math.max(0.75, parseFloat((prev * zoomFactor).toFixed(2)))));
+  };
 
   // --- Mouse / Pointer Drag for 3D Camera, Free Rete, and Alidade ---
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -249,8 +284,9 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
       {/* SVG Canvas Container */}
       <svg
         ref={svgRef}
-        viewBox="-150 -150 300 300"
+        viewBox={viewBoxStr}
         style={{ touchAction: 'none' }}
+        onWheel={handleWheel}
         onDragStart={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -388,10 +424,58 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         sunLambdaDeg={sun?.lambdaDeg ?? sun?.raDeg ?? 0}
         declination={sun?.decDeg}
         rightAscension={sun?.raDeg}
+        subsolarCameraVector={subsolarCameraVector}
         projectionMode={projectionMode}
         morphLambda={morphLambda}
         onCameraChange={onCameraChange}
       />
+
+      {/* Heliocentric Orbit View Zoom Controls */}
+      {isOrbital && morphLambda <= 0.05 && (
+        <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md border border-slate-800/90 rounded-lg p-1 shadow-xl font-mono text-[10px] select-none pointer-events-auto transition-opacity duration-200">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setZoom((z) => Math.max(0.75, parseFloat((z - 0.25).toFixed(2))));
+            }}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            title="Zoom Out (Orbit View)"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <span className="px-1.5 text-sky-400 font-semibold min-w-[34px] text-center">
+            {zoom.toFixed(1)}×
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setZoom((z) => Math.min(3.5, parseFloat((z + 0.25).toFixed(2))));
+            }}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            title="Zoom In (Orbit View)"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+          {zoom !== 1.0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setZoom(1.0);
+              }}
+              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer ml-0.5 border-l border-slate-800/80 pl-1.5"
+              title="Reset Zoom (1.0×)"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -62,7 +62,7 @@ Key capabilities include:
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 585 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 40 modules, 588 tests)
 
 ### Essential Commands
 
@@ -210,7 +210,7 @@ Cosmic Engine V2.0/
 │       │   │   ├── useRibbonScrubber.ts      # Shared bidirectional 2D timeline coordinate & dragging hook
 │       │   │   └── useRibbonScrubber.test.ts # Vitest unit tests for ribbon scrubber (10 tests)
 │       │   ├── armillary/       # Decomposed Gyro-Morph Armillary & Astrolabe subsystem
-│       │   │   ├── ArmillaryWidget.test.tsx  # Vitest unit tests for Armillary visualizer (17 tests)
+│       │   │   ├── ArmillaryWidget.test.tsx  # Vitest unit tests for Armillary visualizer (18 tests)
 │       │   │   ├── useStagedCamera.ts        # Decoupled 2-phase camera staging & memory hook
 │       │   │   ├── useStagedCamera.test.ts   # Vitest tests for camera staging & memory (9 tests)
 │       │   │   ├── m2_adversarial.test.ts    # Vitest tests for 2-phase camera staging & memory (9 tests)
@@ -249,7 +249,7 @@ Cosmic Engine V2.0/
 │       │   │   ├── milestones.ts           # Extracted seasonal orbital milestones
 │       │   │   ├── types.ts                # Macro-orbit domain interfaces & props
 │       │   │   ├── MacroOrbitView.tsx      # Subsystem coordinator container
-│       │   │   ├── MacroOrbitWidget.test.tsx # Vitest unit tests for macro orbit widget (3 tests)
+│       │   │   ├── MacroOrbitWidget.test.tsx # Vitest unit tests for macro orbit widget (4 tests)
 │       │   │   └── index.ts                # Barrel export
 │       │   ├── solar/           # Decomposed solar almanac subsystem modules
 │       │   │   ├── SolarRibbonChart.tsx    # 365-day 24h daylight & twilight ribbons SVG chart
@@ -311,7 +311,7 @@ Cosmic Engine V2.0/
 │           ├── WindowErrorBoundary.tsx         # Fault-tolerant module error boundary
 │           ├── WindowErrorBoundary.test.tsx    # Unit tests for error boundary (9 tests)
 │           ├── MiniGlobe.tsx                   # High-precision multi-mode SVG Earth globe facade
-│           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (11 tests)
+│           ├── MiniGlobe.test.tsx              # Comprehensive unit tests for MiniGlobe (12 tests)
 │           ├── miniglobe/                      # Decomposed MiniGlobe sub-renderers
 │           │   ├── MiniGlobeFlat.tsx           # 2D flattened astrolabe plate pin
 │           │   ├── MiniGlobeSphere.tsx         # 9-layer 3D sphere with analytical limb clipping

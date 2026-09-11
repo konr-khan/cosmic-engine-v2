@@ -1,4 +1,6 @@
+import React from 'react';
 import { describe, it, expect } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   MacroOrbitView, 
   OrbitHeaderControls, 
@@ -38,5 +40,29 @@ describe('Macro Orbit Subsystem', () => {
     expect(physics.distanceAU).toBeLessThan(1.0);
     expect(physics.solarIrradiancePercent).toBeGreaterThan(100.0);
     expect(physics.orbitalSpeedKms).toBeGreaterThan(29.78);
+  });
+
+  it('renders zoom controls and scales SVG viewBox with zoom factor', () => {
+    const htmlCanvas = renderToStaticMarkup(
+      React.createElement(OrbitSvgCanvas, {
+        renderSunX: 0,
+        renderSunY: 0,
+        renderEarthX: 200,
+        renderEarthY: 0,
+        renderMoonX: 228,
+        renderMoonY: 0,
+        orbitalRadius: 200,
+        bRatio: 1,
+        focus2X: 0,
+        focus2Y: 0,
+        exaggerateEccentricity: false,
+        hoveredId: null,
+        onHover: () => {},
+        zoom: 2.0
+      })
+    );
+
+    // When zoom is 2.0, 580/2 = 290, 560/2 = 280, viewBox="-145 -140 290 280"
+    expect(htmlCanvas).toContain('viewBox="-145 -140 290 280"');
   });
 });

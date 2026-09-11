@@ -169,4 +169,47 @@ describe('<MiniGlobe /> Component', () => {
     expect(htmlAxialNoon).toContain('fill="#38bdf8"');
     expect(htmlAxialNoon).toContain('class="animate-pulse"');
   });
+
+  it('renders 0° Greenwich Prime Meridian and 180° Antimeridian matching equator style and omits static polar axis in euler3d mode', () => {
+    const htmlNoon = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe
+          cx={0}
+          cy={0}
+          radius={50}
+          viewMode="euler3d"
+          camera={{ pitch: 20, yaw: 30, roll: 0 }}
+          timeOfDay={12}
+          showParallels={true}
+          showPolarAxis={true}
+        />
+      </svg>
+    );
+
+    // Assert 0° Prime Meridian and 180° Antimeridian are rendered in Sky Blue matching Equator parallel
+    expect(htmlNoon).toContain('0° Prime Meridian (Greenwich)');
+    expect(htmlNoon).toContain('180° Antimeridian');
+    expect(htmlNoon).toContain('stroke="#38bdf8"');
+
+    // Assert static bifurcating polar axis line is omitted in euler3d mode
+    expect(htmlNoon).not.toContain('miniglobe-polar-axis');
+
+    // Diurnal rotation test: at 12:00 vs 00:00 UTC, the meridian paths update
+    const htmlMidnight = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe
+          cx={0}
+          cy={0}
+          radius={50}
+          viewMode="euler3d"
+          camera={{ pitch: 20, yaw: 30, roll: 0 }}
+          timeOfDay={0}
+          showParallels={true}
+        />
+      </svg>
+    );
+    expect(htmlMidnight).not.toEqual(htmlNoon);
+    expect(htmlMidnight).toContain('0° Prime Meridian (Greenwich)');
+    expect(htmlMidnight).toContain('180° Antimeridian');
+  });
 });

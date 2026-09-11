@@ -152,25 +152,51 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
             />
           )}
 
-          {/* EULER3D Mode Equator Parallel */}
+          {/* EULER3D Mode Equator Parallel & Great Meridian Ring (0° Greenwich & 180° Antimeridian) */}
           {viewMode === 'euler3d' && (
-            <ellipse 
-              cx="0" 
-              cy="0" 
-              rx={safeRadius} 
-              ry={Math.max(0.5, safeRadius * Math.sin(toRadians(Math.abs(Number(camera?.pitch) || 0))))} 
-              fill="none" 
-              stroke="#38bdf8" 
-              strokeWidth="0.65" 
-              strokeDasharray="2 1.5" 
-              opacity="0.75" 
-            />
+            <>
+              <ellipse 
+                cx="0" 
+                cy="0" 
+                rx={safeRadius} 
+                ry={Math.max(0.5, safeRadius * Math.sin(toRadians(Math.abs(Number(camera?.pitch) || 0))))} 
+                fill="none" 
+                stroke="#38bdf8" 
+                strokeWidth="0.65" 
+                strokeDasharray="2 1.5" 
+                opacity="0.75" 
+              />
+              {eulerGeometry?.primeMeridianPath && (
+                <path 
+                  d={eulerGeometry.primeMeridianPath} 
+                  fill="none" 
+                  stroke="#38bdf8" 
+                  strokeWidth="0.65" 
+                  strokeDasharray="2 1.5" 
+                  opacity="0.75" 
+                >
+                  <title>0° Prime Meridian (Greenwich)</title>
+                </path>
+              )}
+              {eulerGeometry?.antimeridianPath && (
+                <path 
+                  d={eulerGeometry.antimeridianPath} 
+                  fill="none" 
+                  stroke="#38bdf8" 
+                  strokeWidth="0.65" 
+                  strokeDasharray="2 1.5" 
+                  opacity="0.75" 
+                >
+                  <title>180° Antimeridian</title>
+                </path>
+              )}
+            </>
           )}
         </g>
       )}
 
-      {/* Layer 5: Polar Axis Line (23.44° Rotational Axis) */}
-      {showPolarAxis && safeRadius > 0 && (
+      {/* Layer 5: Polar Axis Line (23.44° Rotational Axis for Topdown/Transverse/Axial) */}
+      {showPolarAxis && safeRadius > 0 && viewMode !== 'euler3d' && (
         <g className="miniglobe-polar-axis pointer-events-none" clipPath={`url(#${clipPathId})`}>
           {viewMode === 'topdown' && (
             <line 
@@ -202,18 +228,6 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
               y1={axialGeometry.poleLineY} 
               x2={axialGeometry.poleLineX} 
               y2={-axialGeometry.poleLineY} 
-              stroke="#93c5fd" 
-              strokeWidth="0.85" 
-              strokeDasharray="2.5 1.5" 
-              opacity="0.75" 
-            />
-          )}
-          {viewMode === 'euler3d' && eulerGeometry && (
-            <line 
-              x1={-eulerGeometry.polePx} 
-              y1={-eulerGeometry.polePy} 
-              x2={eulerGeometry.polePx} 
-              y2={eulerGeometry.polePy} 
               stroke="#93c5fd" 
               strokeWidth="0.85" 
               strokeDasharray="2.5 1.5" 
