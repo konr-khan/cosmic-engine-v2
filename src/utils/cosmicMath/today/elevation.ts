@@ -380,6 +380,23 @@ export const calculateCulminationBearing = (
     };
   }
 
+  // Polar Directional Singularity (|phi| >= 89.9°):
+  // At North Pole, all horizons point South. At South Pole, all horizons point North.
+  if (Math.abs(latitudeDeg) >= 89.9) {
+    const isNorthPole = latitudeDeg >= 0;
+    const direction = isNorthPole ? 'South' : 'North';
+    const meridianLabel = isNorthPole ? 'S' : 'N';
+    return {
+      direction,
+      meridianLabel,
+      altitude,
+      shortTag: meridianLabel,
+      sightingSummary: isNorthPole
+        ? 'North Pole Singularity · All Horizons South'
+        : 'South Pole Singularity · All Horizons North'
+    };
+  }
+
   if (delta < 0) {
     return {
       direction: 'South',

@@ -193,6 +193,17 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 * **Compact Meridian Telemetry & Duplicate Banner Suppression**:
   - `hideElevationBanner?: boolean` prop on `<SkyDomeBase />`, defaulted to `true` on `<MeridianDomeBase />`.
   - Suppresses duplicate middle elevation badges and sighting perspective banners on lower meridian profile cards while leaving upper diurnal elevation domes intact.
+* **Polar Directional Singularity Baseline Tokens ($|\phi| \ge 89.9^\circ$)**:
+  - **Meridian Profile Baseline (`MeridianDomeBase`)**:
+    - *North Pole ($\phi \ge +89.9^\circ$)*: `S (0°)` (Greenwich meridian, $X=38$) $\longleftrightarrow$ `Z (+90°)` (North Celestial Pole, $X=130$) $\longleftrightarrow$ `S (180°)` (Antimeridian, $X=222$).
+    - *South Pole ($\phi \le -89.9^\circ$)*: `N (0°)` ($X=38$) $\longleftrightarrow$ `Z (-90°)` ($X=130$) $\longleftrightarrow$ `N (180°)` ($X=222$).
+    - Replaces the misleading `"N"` label at the North Pole with explicit longitudinal horizon references, proving both horizons point South.
+  - **Upper Diurnal Elevation Dome Baseline (`SkyDomeBase`)**:
+    - *At Poles ($|\phi| \ge 89.9^\circ$)*: `90°E` $\longleftrightarrow$ `0° (Grw)` $\longleftrightarrow$ `90°W`.
+  - **Sighting Perspective Telemetry**:
+    - Displays `"North Pole Singularity · All Horizons South"` (or `"South Pole Singularity · All Horizons North"`).
+  - **Invariant Diurnal Metric Token**:
+    - Switches `"Noon Peak"` / `"Transit Peak"` badge to `"Constant Altitude"` reflecting the 24-hour horizontal circular path.
 
 ---
 

@@ -94,6 +94,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   const OBLIQUITY = 23.439281;
   const absLat = Math.abs(latitude);
   const isTropical = absLat <= OBLIQUITY;
+  const isPolar = absLat >= 89.9;
 
   // Maximum annual noon elevation ceiling (Zenith Cap boundary)
   const maxAnnualNoon = isTropical ? 90 : (90 - absLat + OBLIQUITY);
@@ -193,7 +194,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       title="Sun Elevation Arc"
       icon={Sun}
       iconColorClass="text-amber-400"
-      peakLabel="Noon Peak"
+      peakLabel={isPolar ? 'Constant Altitude' : 'Noon Peak'}
       peakElevation={noonElevation as number}
       peakDirectionSuffix={culmination.shortTag}
       meridianDirection={culmination.meridianLabel}

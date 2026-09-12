@@ -94,6 +94,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   const OBLIQUITY = 23.439281;
   const absLat = Math.abs(latitude);
   const isTropical = absLat <= OBLIQUITY;
+  const isPolar = absLat >= 89.9;
 
   const juneSolstice = useMemo(
     () => calculateCulminationBearing(latitude, OBLIQUITY),
@@ -223,7 +224,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       title="Sun Meridian Profile"
       icon={Sun}
       iconColorClass="text-amber-400"
-      peakLabel="Noon Peak"
+      peakLabel={isPolar ? 'Constant Altitude' : 'Noon Peak'}
       peakElevation={peakAlt}
       peakDirectionSuffix={todayCulmination.shortTag}
       meridianDirection={todayCulmination.meridianLabel}

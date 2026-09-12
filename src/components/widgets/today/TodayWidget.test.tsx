@@ -857,5 +857,58 @@ describe('Today Horizon Subsystem', () => {
     // Solstice swath title notes that it plunges below Astronomical Twilight
     expect(northPoleHtml).toContain('Plunges below −18° Astro Twilight');
   });
+
+  it('correctly handles the Polar Singularity in SunMeridianDome and SunElevationDome at North and South poles', () => {
+    // North Pole (90°N): Meridian dome baseline has both horizons South: S (0°), Z (+90°), S (180°)
+    const npMeridianHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 90.0,
+      })
+    );
+
+    expect(npMeridianHtml).toContain('>S (0°)</text>');
+    expect(npMeridianHtml).toContain('>Z (+90°)</text>');
+    expect(npMeridianHtml).toContain('>S (180°)</text>');
+    expect(npMeridianHtml).not.toContain('>N</text>');
+    expect(npMeridianHtml).toContain('Constant Altitude:');
+
+    // North Pole (90°N) on SunElevationDome: Sighting banner announces polar singularity and longitudinal baseline
+    const npElevationHtml = renderToStaticMarkup(
+      React.createElement(SunElevationDome, {
+        displayTime: 12,
+        latitude: 90.0,
+      })
+    );
+
+    expect(npElevationHtml).toContain('Constant Altitude:');
+    expect(npElevationHtml).toContain('North Pole Singularity · All Horizons South');
+    expect(npElevationHtml).toContain('>90°E</text>');
+    expect(npElevationHtml).toContain('>0° (Grw)</text>');
+    expect(npElevationHtml).toContain('>90°W</text>');
+
+    // South Pole (-90°S): Meridian dome baseline has both horizons North: N (0°), Z (-90°), N (180°)
+    const spMeridianHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: -90.0,
+      })
+    );
+
+    expect(spMeridianHtml).toContain('>N (0°)</text>');
+    expect(spMeridianHtml).toContain('>Z (-90°)</text>');
+    expect(spMeridianHtml).toContain('>N (180°)</text>');
+    expect(spMeridianHtml).toContain('Constant Altitude:');
+
+    const spElevationHtml = renderToStaticMarkup(
+      React.createElement(SunElevationDome, {
+        displayTime: 12,
+        latitude: -90.0,
+      })
+    );
+
+    expect(spElevationHtml).toContain('Constant Altitude:');
+    expect(spElevationHtml).toContain('South Pole Singularity · All Horizons North');
+  });
 });
 

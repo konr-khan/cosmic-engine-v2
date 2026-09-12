@@ -87,6 +87,9 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
   );
 
   // --- Culminations & Bearings ---
+  const absLat = Math.abs(latitude);
+  const isPolar = absLat >= 89.9;
+
   const todayCulmination = useMemo(
     () => calculateCulminationBearing(latitude, Number(moonDeclination)),
     [latitude, moonDeclination]
@@ -226,7 +229,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
       title="Moon Meridian Profile"
       icon={Moon}
       iconColorClass={isNodalModeActive ? (isAscendingBranch ? 'text-sky-400' : 'text-rose-400') : 'text-slate-300'}
-      peakLabel="Transit Peak"
+      peakLabel={isPolar ? 'Constant Altitude' : 'Transit Peak'}
       peakElevation={peakAlt}
       peakDirectionSuffix={todayCulmination.shortTag}
       meridianDirection={todayCulmination.meridianLabel}

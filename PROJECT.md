@@ -99,6 +99,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F45 | Heliocentric Multi-Scale Orbit Zoom Controls | Interactive wheel zoom and floating controls ($0.75\times$ to $3.5\times$) in Gyro-Morph Orbit view with automatic 2D plate reset, dynamic `viewBox` scaling ($0.5\times$ to $3.5\times$) and continent rendering in Solar System Macro Orbit | M20 | ADR-0020 |
 | F46 | Solstice Arc Bifurcation & Milestone Directional Migration Vector | Bifurcated solid solstice corridor into dual dashed milestone arcs (`#fbbf24` June Solstice vs `#d97706` December Solstice), anchored to Today's Noon Culmination Peak ($R=92$); dynamic $d\delta/dt \propto \cos\lambda_\odot$ solar migration vector weights approaching milestone at full vibrancy (`0.85`) and receding at subdued tone (`0.40`) | M21 | ADR-0021 |
 | F47 | Sub-Horizon Solstice Depiction & Compact Meridian Telemetry | In Twilight Mode, solstice arcs and culmination ticks extend below horizon ($0^\circ > h \ge -18^\circ$) into Civil, Nautical, or Astronomical twilight strata with signed altitude and tier badges; below $-18^\circ$, ticks disappear completely and arcs terminate cleanly; `hideElevationBanner` suppresses duplicate middle banners on lower profile cards | M21 | ADR-0021 |
+| F48 | Polar Directional Singularity Rectification & Longitudinal Horizon Reference Geometry | At polar latitudes ($|\phi| \ge 89.9^\circ$), replaces misleading mid-latitude labels (`N`, `E`, `W`, `Noon Peak`) with astronomically authentic longitudinal colures (`S (0°) — Z (+90°) — S (180°)` at North Pole, `N (0°) — Z (-90°) — N (180°)` at South Pole; `90°E — 0° (Grw) — 90°W` on elevation domes), constant altitude peak telemetry, and polar sighting banners | M22 | ADR-0022 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
@@ -124,6 +125,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M19 | Domain Invariant Hardening, Polar Singularity Rectification & Syzygy Apparent Ratio | `meridian.ts` (horizontal polar chords), `elevation.ts` (polar azimuth suppression), `eclipse.ts` (apparent radius ratio $k \ge 1.0$), `domainInvariants.test.ts` (Suites 8-11), `useRibbonScrubber.ts` (bounds clamping), `core.ts` (century leap rules), ADR-0019, 580 tests across 40 suites | M1-M18 | DONE |
 | M20 | Living Marble Meridian Ring, Dynamic 3D Orbit Bead & Multi-Scale Orbit Zoom Controls | `MiniGlobe.tsx` ($0^\circ / 180^\circ$ Great Meridian Ring), `MiniGlobeSphere.tsx` (polar axis gating in `euler3d`), `ArmillaryBeadsLayer.tsx` (dynamic 3D Earth bead & subsolar camera vector), `ArmillaryEarthPip.tsx` (telephoto subsolar alignment), `ArmillarySvgCanvas.tsx` & `MacroOrbitView.tsx` (wheel zoom & floating controls), 588 tests across 40 suites | M1-M19 | DONE |
 | M21 | Meridian Profile Solstice Bifurcation, Sub-Horizon Twilight Kinematics & Compact Telemetry | `SunMeridianDome.tsx` (split swaths, direction vector, sub-horizon twilight), `MeridianDomeBase.tsx` (`hideElevationBanner`), `SkyDomeBase.tsx`, `src/utils/cosmicMath/today/meridian.ts` (`minAltitudeDeg = -18`), ADR-0021, 592 tests across 40 suites | M1-M20 | DONE |
+| M22 | Polar Directional Singularity Rectification & Longitudinal Horizon Reference Geometry | `src/utils/cosmicMath/today/elevation.ts` (`calculateCulminationBearing` polar singularity branch), `SkyDomeBase.tsx` (`90°E — 0° (Grw) — 90°W`), `MeridianDomeBase.tsx` (`S (0°) — Z (+90°) — S (180°)`, `N (0°) — Z (-90°) — N (180°)`), `SunElevationDome.tsx`, `SunMeridianDome.tsx`, `MoonElevationDome.tsx`, `MoonMeridianDome.tsx` (`Constant Altitude` peak label), ADR-0022, 595 tests across 40 suites | M1-M21 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -194,4 +196,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
   - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
-  - `adr/` — Architecture Decision Records (`0001` through `0021`)
+  - `adr/` — Architecture Decision Records (`0001` through `0022`)

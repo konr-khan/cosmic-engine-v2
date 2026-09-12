@@ -120,6 +120,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   const LUNAR_MAX_DEC = 28.584;
   const absLat = Math.abs(latitude);
   const isLunarTropical = absLat <= LUNAR_MAX_DEC;
+  const isPolar = absLat >= 89.9;
 
   const standstillMaxCulmination = useMemo(
     () => calculateCulminationBearing(latitude, LUNAR_MAX_DEC),
@@ -267,7 +268,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       title="Moon Elevation Arc"
       icon={Moon}
       iconColorClass="text-slate-300"
-      peakLabel="Transit Peak"
+      peakLabel={isPolar ? 'Constant Altitude' : 'Transit Peak'}
       peakElevation={transitPeakElevation}
       peakDirectionSuffix={culmination.shortTag}
       meridianDirection={culmination.meridianLabel}

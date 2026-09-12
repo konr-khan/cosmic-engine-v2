@@ -1460,6 +1460,47 @@ Because $\varepsilon \approx 23.44^\circ > 0$ and $|\delta| \le \varepsilon < 90
 3. **Milestone Anchoring**:
    Both arcs are anchored to **Today's Noon Culmination Peak** on the outer circular meridian perimeter ($R = 92$), ensuring a calibrated and static seasonal scale that does not distort with diurnal Sun bead transit.
 
+#### 8. Polar Directional Singularity & Longitudinal Colure Decoupling
+
+At the geographic poles ($|\phi| \to 90^\circ$), the topocentric horizontal frame $(\mathbf{e}_{\text{East}}, \mathbf{e}_{\text{North}}, \mathbf{e}_{\text{Zenith}})$ experiences an azimuthal coordinate singularity (gimbal lock):
+\[
+\vec{u}_{\text{topo}}(H) = \begin{pmatrix} x_{\text{east}} \\ y_{\text{north}} \\ z_{\text{zenith}} \end{pmatrix} = \begin{pmatrix} \cos\delta \sin H \\ \cos\phi \sin\delta - \sin\phi \cos\delta \cos H \\ \sin\phi \sin\delta + \cos\phi \cos\delta \cos H \end{pmatrix}
+\]
+
+1. **Exact Polar Invariance of Diurnal Elevation**:
+   Evaluating at the geographic North Pole ($\phi = +90^\circ, \cos\phi = 0, \sin\phi = 1$):
+   \[
+   x_{\text{east}} = \cos\delta \sin H, \quad y_{\text{north}} = -\cos\delta \cos H, \quad z_{\text{zenith}} = \sin\delta
+   \]
+   Because $z_{\text{zenith}} = \sin\delta$ is strictly independent of local hour angle $H$, topocentric elevation is constant across the entire 24-hour diurnal cycle:
+   \[
+   h(H) = \arcsin(z_{\text{zenith}}) = \delta \quad (\forall H \in [0^\circ, 360^\circ))
+   \]
+   The body neither rises nor falls; its diurnal chord is a perfectly horizontal line at $Y = CY - R\sin\delta$.
+
+2. **Resolution of the Horizontal Directional Singularity**:
+   Because lines of terrestrial longitude converge at the pole, every horizontal direction along the surface points toward the Equator:
+   - At the **North Pole**, all $360^\circ$ of the horizon is **South**.
+   - At the **South Pole**, all $360^\circ$ of the horizon is **North**.
+   
+   The horizontal coordinate $y_{\text{north}} = -\cos\delta \cos H$ does not represent a Northern sky excursion:
+   - At Solar Noon ($H = 0$), $y_{\text{north}} = -\cos\delta < 0$: the body lies along the local noon meridian, facing **South along Longitude $0^\circ$ (Greenwich)**.
+   - At Midnight ($H = 180^\circ$), $y_{\text{north}} = +\cos\delta > 0$: the body lies along the antimeridian, facing **South along Longitude $180^\circ$ (International Date Line)**.
+
+   Labeling the right side of the canvas as `"N"` is a Cartesian sign convention artifact. To maintain astronomical ground truth, the polar baseline dynamically reconfigures to explicit longitudinal horizon references:
+   - **North Pole ($\phi \ge +89.9^\circ$)**:
+     \[
+     \mathbf{S \ (0^\circ)} \longleftrightarrow \mathbf{Z \ (+90^\circ)} \longleftrightarrow \mathbf{S \ (180^\circ)}
+     \]
+   - **South Pole ($\phi \le -89.9^\circ$)**:
+     \[
+     \mathbf{N \ (0^\circ)} \longleftrightarrow \mathbf{Z \ (-90^\circ)} \longleftrightarrow \mathbf{N \ (180^\circ)}
+     \]
+   - **Upper Elevation Dome (`SkyDomeBase`)**:
+     \[
+     \mathbf{90^\circ\text{E}} \longleftrightarrow \mathbf{0^\circ\text{ (Grw)}} \longleftrightarrow \mathbf{90^\circ\text{W}}
+     \]
+
 ---
 
 ## 12. Great Meridian Ring & Heliocentric Camera-Space Illumination Geometry

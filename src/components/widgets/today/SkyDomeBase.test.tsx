@@ -395,5 +395,26 @@ describe('SkyDomeBase Primitive Component Test Suite', () => {
     expect(html).not.toContain('(Above Horizon)');
     expect(html).not.toContain('Looking South · S-Sky Arc');
   });
+
+  it('renders polar longitudinal reference baseline markers (90°E, 0° (Grw), 90°W) when observer is at the poles (|latitude| >= 89.9°)', () => {
+    const northPoleHtml = renderToStaticMarkup(
+      <SkyDomeBase
+        title="Sun Elevation Arc"
+        icon={Sun}
+        peakLabel="Constant Altitude"
+        peakElevation={23.4}
+        currentElevation={23.4}
+        latitude={90.0}
+        showZenithAxis={false}
+      />
+    );
+
+    expect(northPoleHtml).toContain('>90°E</text>');
+    expect(northPoleHtml).toContain('>0° (Grw)</text>');
+    expect(northPoleHtml).toContain('>90°W</text>');
+    expect(northPoleHtml).not.toContain('>E</text>');
+    expect(northPoleHtml).not.toContain('>W</text>');
+    expect(northPoleHtml).toContain('Polar longitude: 0° (Greenwich Meridian)');
+  });
 });
 

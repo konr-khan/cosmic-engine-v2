@@ -436,6 +436,36 @@ describe('Dynamic Culmination Bearing & Observer Perspective (calculateCulminati
       }
     }
   });
+
+  it('correctly handles the Polar Directional Singularity at North and South poles (|phi| >= 89.9°)', () => {
+    // North Pole (phi = +90°): All horizontal directions are South
+    const npSummer = calculateCulminationBearing(90, 23.439);
+    expect(npSummer.direction).toBe('South');
+    expect(npSummer.meridianLabel).toBe('S');
+    expect(npSummer.shortTag).toBe('S');
+    expect(npSummer.sightingSummary).toBe('North Pole Singularity · All Horizons South');
+    expect(npSummer.altitude).toBeCloseTo(23.439, 2);
+
+    const npWinter = calculateCulminationBearing(90, -23.439);
+    expect(npWinter.direction).toBe('South');
+    expect(npWinter.meridianLabel).toBe('S');
+    expect(npWinter.sightingSummary).toBe('North Pole Singularity · All Horizons South');
+    expect(npWinter.altitude).toBeCloseTo(-23.439, 2);
+
+    // South Pole (phi = -90°): All horizontal directions are North
+    const spSummer = calculateCulminationBearing(-90, -23.439);
+    expect(spSummer.direction).toBe('North');
+    expect(spSummer.meridianLabel).toBe('N');
+    expect(spSummer.shortTag).toBe('N');
+    expect(spSummer.sightingSummary).toBe('South Pole Singularity · All Horizons North');
+    expect(spSummer.altitude).toBeCloseTo(23.439, 2);
+
+    const spWinter = calculateCulminationBearing(-90, 23.439);
+    expect(spWinter.direction).toBe('North');
+    expect(spWinter.meridianLabel).toBe('N');
+    expect(spWinter.sightingSummary).toBe('South Pole Singularity · All Horizons North');
+    expect(spWinter.altitude).toBeCloseTo(-23.439, 2);
+  });
 });
 
 describe('Rise and Set Horizon Azimuths (calculateRiseSetAzimuth)', () => {

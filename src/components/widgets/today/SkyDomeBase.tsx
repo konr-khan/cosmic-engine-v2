@@ -95,15 +95,25 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   const isAboveHorizon = currentElevation > 0;
   const isVisible = showZenithAxis ? true : currentElevation > -18;
   const defaultElevationColor = currentElevation >= 0 ? 'text-amber-400' : 'text-slate-400';
+  const isPolar = latitude !== undefined && Math.abs(latitude) >= 89.9;
+  const isNorthPole = isPolar && latitude >= 0;
+
   const meridianLabel = meridianDirection !== undefined 
     ? meridianDirection 
     : (latitude !== undefined && latitude < 0 ? 'N' : 'S');
-  const leftLabel = leftHorizonLabel ?? 'E';
-  const rightLabel = rightHorizonLabel ?? 'W';
-  const centerLabel = centerHorizonLabel ?? meridianLabel;
+
+  const defaultLeftLabel = !showZenithAxis && isPolar ? '90°E' : 'E';
+  const defaultRightLabel = !showZenithAxis && isPolar ? '90°W' : 'W';
+  const defaultCenterLabel = !showZenithAxis && isPolar ? '0° (Grw)' : meridianLabel;
+
+  const leftLabel = leftHorizonLabel ?? defaultLeftLabel;
+  const rightLabel = rightHorizonLabel ?? defaultRightLabel;
+  const centerLabel = centerHorizonLabel ?? defaultCenterLabel;
   const centerTitle = centerHorizonLabel !== undefined
     ? `Meridian reference: ${centerHorizonLabel === 'Z' ? 'Zenith (+90° Apex)' : centerHorizonLabel}`
-    : `Culmination meridian bearing: ${meridianLabel === 'Z' ? 'Zenith (Overhead)' : meridianLabel === 'N' ? 'North' : 'South'}`;
+    : (!showZenithAxis && isPolar
+      ? `Polar longitude: 0° (Greenwich Meridian) · All horizons ${isNorthPole ? 'South' : 'North'}`
+      : `Culmination meridian bearing: ${meridianLabel === 'Z' ? 'Zenith (Overhead)' : meridianLabel === 'N' ? 'North' : 'South'}`);
 
   return (
     <div className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative">

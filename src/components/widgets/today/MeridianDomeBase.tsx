@@ -88,6 +88,9 @@ export interface MeridianDomeBaseProps {
   popover?: ReactNode;
   children?: ReactNode;
   hideElevationBanner?: boolean;
+  leftHorizonLabel?: string;
+  centerHorizonLabel?: string;
+  rightHorizonLabel?: string;
 }
 
 /** Reusable SVG sub-component for meridian swath arcs */
@@ -305,7 +308,17 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
   popover,
   children,
   hideElevationBanner = true,
+  leftHorizonLabel,
+  centerHorizonLabel,
+  rightHorizonLabel,
 }) => {
+  const isPolar = latitude !== undefined && Math.abs(latitude) >= 89.9;
+  const isNorthPole = isPolar && latitude >= 0;
+
+  const defaultLeftLabel = isPolar ? (isNorthPole ? 'S (0°)' : 'N (0°)') : 'S';
+  const defaultCenterLabel = isPolar ? (isNorthPole ? 'Z (+90°)' : 'Z (-90°)') : 'Z';
+  const defaultRightLabel = isPolar ? (isNorthPole ? 'S (180°)' : 'N (180°)') : 'N';
+
   return (
     <SkyDomeBase
       title={title}
@@ -322,9 +335,9 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
       elevationStatusSubtitle={elevationStatusSubtitle}
       showTwilightBands={showTwilightBands}
       hideElevationBanner={hideElevationBanner}
-      leftHorizonLabel="S"
-      centerHorizonLabel="Z"
-      rightHorizonLabel="N"
+      leftHorizonLabel={leftHorizonLabel ?? defaultLeftLabel}
+      centerHorizonLabel={centerHorizonLabel ?? defaultCenterLabel}
+      rightHorizonLabel={rightHorizonLabel ?? defaultRightLabel}
       showZenithAxis={true}
       latitude={latitude}
       bodyX={bodyX}
