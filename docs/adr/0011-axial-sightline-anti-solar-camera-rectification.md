@@ -1,7 +1,11 @@
 # ADR 0011: Axial Sightline Anti-Solar Camera Rectification & Armillary Subsystem Hardening
 
 ## Status
-Accepted
+Accepted (Amended by ADR 0012)
+
+> [!NOTE]
+> **Evolutionary Scope**: The anti-solar camera orientation ($z_{\text{body}} = -\cos\phi\cos H$) and un-mirrored prograde rotation ($x_{\text{body}} = -\cos\phi\sin H$) established here remain authoritative.
+> Note that the dual-zone masking strategy in Section 1 was subsequently refined in [ADR 0012](0012-lunar-orbit-dual-depth-sorting-and-node-muting.md) to decompose 3D line-of-sight depth ($Z > 0$), unmasking near-side foreground orbital segments in front of Earth.
 
 ## Context
 Following the stabilization of prograde celestial kinematics and 3D scene camera rigs (ADR-0007, ADR-0008, ADR-0009), testing identified four architectural and geometric discrepancies across the Eclipse Demonstrator and Gyro-Morph Armillary subsystems:

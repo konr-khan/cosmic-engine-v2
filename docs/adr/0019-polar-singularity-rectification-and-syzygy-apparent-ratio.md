@@ -1,7 +1,11 @@
 # ADR 0019: Polar Latitude Singularity Rectification, Syzygy Apparent Ratio Crossings & Domain Invariant Hardening
 
 ## Status
-Accepted
+Accepted (Refined by ADR 0022)
+
+> [!NOTE]
+> **Evolutionary Scope**: The horizontal polar diurnal colure chords ($Y = cy \mp r\sin\delta$), apparent radius ratio totality criterion ($k \ge 1.0$), and timeline bounds clamping remain authoritative.
+> Note that polar directional labeling and horizon baselines were subsequently refined from mid-latitude approximations to explicit longitudinal colures in [ADR 0022](0022-polar-directional-singularity-rectification.md).
 
 ## Context
 Following the stabilization of the Quad-View Celestial Meridian Matrix (ADR-0017) and performance optimization / ephemeris worker decoupling (ADR-0018), an architectural pass on **Dimension 3: Domain Invariant & Edge-Case Boundary Hardening** uncovered three subtle numerical singularities and physical discrepancies in astronomical calculation solvers:

@@ -333,9 +333,10 @@ if (fs.existsSync(readmePath)) {
 }
 
 // ==========================================
-// 3. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md
+// 3. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md (Opt-in via --dossier)
 // ==========================================
-if (fs.existsSync(dossierPath)) {
+const shouldCompileDossier = process.argv.includes('--dossier');
+if (shouldCompileDossier) {
   const adrDir = path.join(rootDir, 'docs', 'adr');
   const adrFiles = fs.existsSync(adrDir) ? fs.readdirSync(adrDir).filter(f => f.endsWith('.md')).sort() : [];
 

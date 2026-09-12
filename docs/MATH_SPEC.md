@@ -1503,7 +1503,7 @@ At the geographic poles ($|\phi| \to 90^\circ$), the topocentric horizontal fram
 
 ---
 
-## 12. Great Meridian Ring & Heliocentric Camera-Space Illumination Geometry
+## 13. Great Meridian Ring & Heliocentric Camera-Space Illumination Geometry
 
 ### A. Great Meridian Ring 3D Parametric Formulation (`MiniGlobe.tsx`)
 

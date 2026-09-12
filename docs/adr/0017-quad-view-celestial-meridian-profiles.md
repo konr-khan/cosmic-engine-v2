@@ -1,7 +1,11 @@
 # ADR 0017: Quad-View Celestial Meridian Profiles & Multi-Perspective Horizon Observatory
 
 ## Status
-Accepted
+Accepted (Extended by ADR 0021 and ADR 0022)
+
+> [!NOTE]
+> **Evolutionary Scope**: The Quad-View $2 \times 2$ observatory matrix, 3D direction cosine diurnal projections, Approach C parked ghost anchors, and central ribbon architecture remain authoritative.
+> Note that solstice arcs were bifurcated into distinct milestone arcs and extended below the horizon into twilight ($h \ge -18^\circ$) in [ADR 0021](0021-meridian-profile-solstice-bifurcation-and-subhorizon-twilight-kinematics.md), and polar horizon baselines were rectified to longitudinal colures in [ADR 0022](0022-polar-directional-singularity-rectification.md).
 
 ## Context
 

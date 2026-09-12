@@ -1,7 +1,11 @@
 # ADR 0016: Dynamic Sighting-Aware Horizon Dome, Tropical Culmination Inversions & Canvas Uncluttering
 
 ## Status
-Accepted
+Accepted (Refined by ADR 0022)
+
+> [!NOTE]
+> **Evolutionary Scope**: The analytical culmination bearing solver (`calculateCulminationBearing`), tri-state meridian indicator (`S`, `N`, `Z`), and signed altitude readouts remain authoritative across mid-latitude regimes.
+> Note that at geographic polar latitudes ($|\phi| \ge 89.9^\circ$), the horizon baseline and culmination telemetry were subsequently rectified to longitudinal colures in [ADR 0022](0022-polar-directional-singularity-rectification.md).
 
 ## Context
 

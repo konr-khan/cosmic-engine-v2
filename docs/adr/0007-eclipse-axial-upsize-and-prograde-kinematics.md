@@ -1,7 +1,15 @@
 # ADR 0007: Eclipse Demonstrator Axial Viewport Upsizing & Prograde Astronomical Kinematics
 
 ## Status
-Accepted
+Accepted (Amended by ADR 0008, ADR 0011, and ADR 0012)
+
+> [!NOTE]
+> **Evolutionary Scope**: The viewport upsizing and $520 \times 220$ layout parity established here remain authoritative. However:
+> 1. The underlying mathematical projection layer (`cameras.ts`) was synchronized to $520 \times 220$ in [ADR 0008](0008-canonical-camera-alignment-and-sky-view-prograde-kinematics.md).
+> 2. The axial camera orientation in Section 3 was rectified from the subsolar (daylight) perspective to the anti-solar perpetual night perspective ($z_{\text{body}} = -\cos\phi\cos H$) in [ADR 0011](0011-axial-sightline-anti-solar-camera-rectification.md).
+> 3. Dual-zone line-of-sight depth sorting ($Z > 0$ foreground unmasking) was introduced in [ADR 0012](0012-lunar-orbit-dual-depth-sorting-and-node-muting.md).
+>
+> Refer to [`docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry`](../MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry) and [`docs/DESIGN_SYSTEM.md#7-dual-perspective-eclipse-demonstrator-sizing--layout-parity`](../DESIGN_SYSTEM.md#7-dual-perspective-eclipse-demonstrator-sizing--layout-parity) for canonical specifications.
 
 ## Context
 The **Side-by-Side Dual-Perspective Eclipse Demonstrator** (`activeTab === 'geometry'`) renders two simultaneous perspectives of syzygy eclipse mechanics:

@@ -1,7 +1,11 @@
 # ADR 0014: Sky Dome Symmetrical ViewBox, Atmospheric Twilight Strata, Bottom Footer Toggle Relocation & Draconic Nodal Kinematics
 
 ## Status
-Accepted
+Accepted (Extended by ADR 0016, ADR 0017, and ADR 0022)
+
+> [!NOTE]
+> **Evolutionary Scope**: Symmetrical `viewBox="0 0 260 138"` parity, shared `<SkyDomeBase />` geometry, atmospheric twilight strata colors, and the centered $\pm 15$-day Draconic progress micro-rail remain foundational.
+> Note that culmination bearings were enhanced in [ADR 0016](0016-dynamic-sighting-aware-horizon-dome-and-tropical-culmination.md), the system expanded into a 4-Dome Quad view in [ADR 0017](0017-quad-view-celestial-meridian-profiles.md), and polar horizon baselines were rectified to longitudinal colures in [ADR 0022](0022-polar-directional-singularity-rectification.md).
 
 ## Context
 During user experience and visual inspection of the **Today's Sky Horizon Dome** widget ([`TodayWidget.tsx`](../../src/components/widgets/today/TodayWidget.tsx)), seven geometric, ergonomic, and physical discrepancies were identified between the Sun dome ([`SunElevationDome.tsx`](../../src/components/widgets/today/SunElevationDome.tsx)) and Moon dome ([`MoonElevationDome.tsx`](../../src/components/widgets/today/MoonElevationDome.tsx)):
