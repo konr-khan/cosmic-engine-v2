@@ -16,6 +16,7 @@ import {
 } from '../types/worker';
 import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude } from '../types/units';
+import { LruCache } from '../utils/lruCache';
 
 export interface PendingThrottledEphemerisEntry {
   signature: string;
@@ -47,22 +48,29 @@ export class EphemerisWorkerManager {
   /**
    * Sets an entry into an annual matrix cache using an LRU eviction policy capped at MAX_ANNUAL_CACHE_SIZE.
    */
-  public _setInAnnualCache<T>(cache: Map<string, T>, key: string, value: T): void {
-    if (cache.has(key)) {
-      cache.delete(key);
-    } else if (cache.size >= EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE) {
-      const oldestKey = cache.keys().next().value;
-      if (oldestKey !== undefined) {
-        cache.delete(oldestKey);
+  public _setInAnnualCache<T>(cache: Map<string, T> | LruCache<string, T>, key: string, value: T): void {
+    if (cache instanceof LruCache) {
+      cache.set(key, value);
+    } else {
+      if (cache.has(key)) {
+        cache.delete(key);
+      } else if (cache.size >= EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE) {
+        const oldestKey = cache.keys().next().value;
+        if (oldestKey !== undefined) {
+          cache.delete(oldestKey);
+        }
       }
+      cache.set(key, value);
     }
-    cache.set(key, value);
   }
 
   /**
    * Retrieves an entry from an annual matrix cache and promotes it to most recently used.
    */
-  public _getFromAnnualCache<T>(cache: Map<string, T>, key: string): T | undefined {
+  public _getFromAnnualCache<T>(cache: Map<string, T> | LruCache<string, T>, key: string): T | undefined {
+    if (cache instanceof LruCache) {
+      return cache.get(key);
+    }
     const value = cache.get(key);
     if (value !== undefined) {
       cache.delete(key);
