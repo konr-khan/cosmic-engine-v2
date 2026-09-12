@@ -39,7 +39,7 @@ export const ShadowRayHoverHud: React.FC<ShadowRayHoverHudProps> = ({
 
       {hoveredEntity === 'earth' && (
         <>
-          <div className="text-xs font-bold text-blue-400">Earth (Geocentric Reference Origin)</div>
+          <div className="text-xs font-bold text-sky-400">Earth (Geocentric Reference Origin)</div>
           <div className="text-slate-300">Radius: <strong className="text-white">6,378 km (1.00 R_E)</strong></div>
           <div className="text-slate-300">Umbra Radius at Moon: <strong className="text-rose-300">{Math.round(eclipse.umbraRadiusKm).toLocaleString()} km</strong></div>
           <div className="text-slate-300">Penumbra Radius at Moon: <strong className="text-slate-300">{Math.round(eclipse.penumbraRadiusKm).toLocaleString()} km</strong></div>

@@ -93,7 +93,7 @@ export const PolarLongitudeSelector: React.FC<PolarLongitudeSelectorProps> = ({
           })}
 
           {/* Meridian Quadrant Labels */}
-          <text x={center} y={center - radius - 8} textAnchor="middle" className="text-[9px] font-mono fill-indigo-400 font-bold">0° (Prime)</text>
+          <text x={center} y={center - radius - 8} textAnchor="middle" className="text-[9px] font-mono fill-amber-400 font-bold">0° (Prime)</text>
           <text x={center} y={center + radius + 14} textAnchor="middle" className="text-[9px] font-mono fill-slate-400">180° (IDL)</text>
           <text x={center + radius + 8} y={center + 3} textAnchor="start" className="text-[9px] font-mono fill-slate-400">90°E</text>
           <text x={center - radius - 8} y={center + 3} textAnchor="end" className="text-[9px] font-mono fill-slate-400">90°W</text>
@@ -102,16 +102,16 @@ export const PolarLongitudeSelector: React.FC<PolarLongitudeSelectorProps> = ({
           <line 
             x1={center} y1={center} 
             x2={handleX} y2={handleY} 
-            stroke="#6366f1" 
+            stroke="#f59e0b" 
             strokeWidth="2" 
           />
 
           {/* Draggable Handle Indicator at Edge */}
-          <circle cx={handleX} cy={handleY} r="7" fill="#0f172a" stroke="#6366f1" strokeWidth="2.5" className="drop-shadow-lg" />
-          <circle cx={handleX} cy={handleY} r="2.5" fill="#6366f1" />
+          <circle cx={handleX} cy={handleY} r="7" fill="#0f172a" stroke="#f59e0b" strokeWidth="2.5" className="drop-shadow-lg" />
+          <circle cx={handleX} cy={handleY} r="2.5" fill="#f59e0b" />
 
           {/* North Pole Center Hub */}
-          <circle cx={center} cy={center} r="3" fill="#6366f1" />
+          <circle cx={center} cy={center} r="3" fill="#f59e0b" />
         </svg>
       </div>
 
@@ -129,7 +129,7 @@ export const PolarLongitudeSelector: React.FC<PolarLongitudeSelectorProps> = ({
                 onClick={() => onChange(item.lon)}
                 className={`px-2 py-1 rounded text-[11px] font-mono font-medium transition-colors cursor-pointer text-center ${
                   isSelected 
-                    ? 'bg-indigo-600 text-white font-bold shadow-sm' 
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm' 
                     : 'bg-slate-800/70 hover:bg-slate-700/80 text-slate-300'
                 }`}
               >

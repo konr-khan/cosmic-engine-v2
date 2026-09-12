@@ -368,7 +368,10 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
         stroke: nodalThemeColor,
         strokeWidth: 1.5,
         strokeDasharray: moonTrackDash,
-        strokeOpacity: 0.85,
+        strokeOpacity: 0.95,
+        glow: true,
+        glowWidth: 3.5,
+        glowOpacity: 0.25,
         daylightTitle: `Today's Lunar Diurnal Path (Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`,
       }}
       gateAnchor={{

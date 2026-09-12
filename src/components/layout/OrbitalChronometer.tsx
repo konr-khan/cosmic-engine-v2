@@ -25,7 +25,7 @@ export interface OrbitalChronometerProps {
 
 const THEME = {
   date: "#10b981",
-  time: "#3b82f6",
+  time: "#38bdf8",
   lon: "#f59e0b",
   lat: "#f43f5e"
 };

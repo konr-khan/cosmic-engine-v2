@@ -166,16 +166,16 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
           <text x="244" y="101" textAnchor="start" className="text-[8px] font-mono fill-slate-500 font-medium">0°</text>
 
           {/* Cardinal Compass / Meridian Indicators (Left, Center, Right) */}
-          <text x="36" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">
+          <text x="36" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">
             {leftLabel}
           </text>
           <g>
             <title>{centerTitle}</title>
-            <text x={EL_CX} y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">
+            <text x={EL_CX} y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">
               {centerLabel}
             </text>
           </g>
-          <text x="224" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none">
+          <text x="224" y="101" textAnchor="middle" className="text-[7.5px] font-mono fill-slate-500 font-medium select-none pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">
             {rightLabel}
           </text>
 
@@ -279,7 +279,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
 
           {/* Zenith Marker (90°) */}
           <line x1={EL_CX} y1={EL_CY - EL_R - 3} x2={EL_CX} y2={EL_CY - EL_R + 3} stroke="#475569" strokeWidth="0.75" />
-          <text x={EL_CX} y={EL_CY - EL_R - 5} textAnchor="middle" className="text-[8px] font-mono fill-slate-500 font-medium">+90°</text>
+          <text x={EL_CX} y={EL_CY - EL_R - 5} textAnchor="middle" className="text-[8px] font-mono fill-slate-500 font-medium drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">+90°</text>
 
           {/* Observer Horizon Center Origin */}
           <circle cx={EL_CX} cy={EL_CY} r="2" fill="#475569" />

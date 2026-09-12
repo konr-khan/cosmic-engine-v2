@@ -262,7 +262,7 @@ describe('Observatory Interactive Controls Test Suite', () => {
       expect(html).toContain('Greenwich');
 
       // Olympia is selected at -122.8
-      expect(html).toContain('bg-indigo-600 text-white font-bold');
+      expect(html).toContain('bg-amber-500 text-slate-950 font-bold');
     });
 
     it('invokes onChange with correct coordinate when jumping to a city', () => {

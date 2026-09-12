@@ -423,7 +423,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
                   data-testid="synodic-day-tick"
                   x1={x} y1={padTop}
                   x2={x} y2={padTop + chartH}
-                  stroke={isCur ? '#ef4444' : (isSunday ? '#475569' : '#334155')}
+                  stroke={isCur ? '#f43f5e' : (isSunday ? '#475569' : '#334155')}
                   strokeWidth={isCur ? 1 : 0.5}
                   strokeDasharray={isCur ? 'none' : '2 2'}
                   strokeOpacity={isCur ? 0.6 : (isSunday ? 0.35 : 0.15)}
@@ -483,7 +483,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
                 r={isSelected || isHovered ? 5.5 : 4}
                 fill={isNew ? '#0f172a' : (isFull ? '#ffffff' : '#38bdf8')}
                 fillOpacity={isNew ? 0.6 : (isFull ? 1.0 : 0.8)}
-                stroke={isSelected ? '#ef4444' : (isHovered ? '#38bdf8' : '#475569')}
+                stroke={isSelected ? '#f43f5e' : (isHovered ? '#38bdf8' : '#475569')}
                 strokeWidth={isSelected || isHovered ? 1.5 : 0.75}
               />
             </g>
@@ -537,7 +537,7 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
         <line
           x1={dayToX(activeDay)} y1={padTop}
           x2={dayToX(activeDay)} y2={padTop + chartH}
-          stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 3"
+          stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3"
         />
 
         {/* Synced Hover Time Horizontal Guideline (only in 365-Day Annual Mode) */}

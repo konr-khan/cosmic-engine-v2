@@ -72,14 +72,14 @@ export const LunarSurfacePovView: React.FC<LunarSurfacePovViewProps> = ({ eclips
           )}
 
           {/* Earth Body (Dark nightside with blue limb or bright day crescent) */}
-          <circle cx="0" cy="0" r="44" fill={isTerrestrialLunarEclipse ? '#020617' : '#1e3a8a'} stroke={isTerrestrialLunarEclipse ? '#ef4444' : '#60a5fa'} strokeWidth="2" />
+          <circle cx="0" cy="0" r="44" fill={isTerrestrialLunarEclipse ? '#020617' : '#1e3a8a'} stroke={isTerrestrialLunarEclipse ? '#f43f5e' : '#38bdf8'} strokeWidth="2" />
           
           {/* Earth Surface Continent Texture Accent */}
           {!isTerrestrialLunarEclipse && (
-            <circle cx="0" cy="0" r="44" fill="#3b82f6" fillOpacity="0.3" />
+            <circle cx="0" cy="0" r="44" fill="#38bdf8" fillOpacity="0.3" />
           )}
 
-          <text x="0" y="4" textAnchor="middle" className={`text-[10px] font-mono font-extrabold select-none pointer-events-none ${isTerrestrialLunarEclipse ? 'fill-rose-300' : 'fill-blue-200'}`}>
+          <text x="0" y="4" textAnchor="middle" className={`text-[10px] font-mono font-extrabold select-none pointer-events-none ${isTerrestrialLunarEclipse ? 'fill-rose-300' : 'fill-sky-200'}`}>
             EARTH (1.9°)
           </text>
         </g>

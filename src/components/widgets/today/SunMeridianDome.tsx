@@ -343,13 +343,15 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
         daylightId: 'sun-today-diurnal-chord',
         twilightId: isTwilightModeActive ? 'sun-today-twilight-chord' : undefined,
         chord: todayChord,
-        stroke: '#fbbf24',
+        stroke: '#f59e0b',
         strokeWidth: 1.5,
-        strokeOpacity: 0.85,
-        twilightStroke: '#d97706',
+        strokeOpacity: 0.95,
+        glow: true,
+        glowWidth: 3.5,
+        glowOpacity: 0.25,
+        twilightStroke: '#f59e0b',
         twilightWidth: 1.0,
         twilightOpacity: 0.40,
-        twilightDasharray: '2 2',
         daylightTitle: `Today's Solar Diurnal Path (Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`,
         twilightTitle: "Today's Sub-Horizon Twilight Extension down to −18°",
       }}
@@ -368,7 +370,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       peakTarget={{
         id: 'meridian-noon-peak-target',
         peakPoint: todayPeakPoint,
-        stroke: '#fbbf24',
+        stroke: '#f59e0b',
         title: `Today's Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`,
       }}
     >

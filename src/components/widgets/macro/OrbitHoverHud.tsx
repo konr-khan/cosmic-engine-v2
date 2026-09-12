@@ -5,7 +5,7 @@ export const OrbitHoverHud: React.FC<OrbitHoverHudProps> = ({ hoverData }) => {
   if (!hoverData) return null;
 
   return (
-    <div className="absolute top-3 left-3 z-20 bg-slate-900/95 backdrop-blur border border-slate-700 p-3 rounded-xl max-w-xs shadow-xl font-mono space-y-1 pointer-events-none transition-opacity duration-150">
+    <div className="absolute top-3 left-3 z-20 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
       <div className="text-xs font-bold text-amber-400 flex items-center justify-between">
         <span>{hoverData.label}</span>
         <span className="text-slate-400 text-[10px]">{hoverData.date}</span>

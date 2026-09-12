@@ -55,7 +55,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   const tideTextColor =
     (safeTides.alignment || 0) > 0 ? "text-indigo-400" : "text-amber-400";
   const localTideColor =
-    safeLocalTideStatus === "High Tide" ? "text-cyan-400" : "text-slate-400";
+    safeLocalTideStatus === "High Tide" ? "text-sky-400" : "text-slate-400";
 
   // Refined "TO SUN" Rotation Logic (Prograde counter-clockwise in SVG where +Y is down)
   const rawSunAngle = Number(safeAngles.sunDegrees) || 0;
@@ -214,7 +214,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
         {/* Left Side: 2D Tidal Bulge & Orbit SVG Viewport (lg:col-span-7) */}
         <div className="lg:col-span-7 relative w-full min-h-[220px] flex items-center justify-center bg-slate-950 rounded-xl border border-slate-800/80 p-3 overflow-hidden">
           {/* Global Potential & Local Water Overlay Badge */}
-          <div className="absolute top-2.5 right-2.5 text-right z-10 bg-slate-900/90 backdrop-blur px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono space-y-0.5 pointer-events-none">
+          <div className="absolute top-2.5 right-2.5 text-right z-10 bg-slate-900/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-700/80 font-mono space-y-0.5 pointer-events-none shadow-2xl">
             <div>
               <div className="text-[8px] uppercase tracking-wider text-slate-400 font-bold">
                 Global Potential
@@ -235,7 +235,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
 
           {/* Nodal Legend Overlay (when Nodal Loop is active) */}
           {orbitViewMode === 'nodal' && (
-            <div className="absolute bottom-2.5 left-2.5 z-10 bg-slate-900/90 backdrop-blur px-2 py-1.5 rounded-lg border border-slate-800 font-mono text-[9px] space-y-1 pointer-events-none shadow-md">
+            <div className="absolute bottom-2.5 left-2.5 z-10 bg-slate-900/95 backdrop-blur-md px-2 py-1.5 rounded-xl border border-slate-700/80 font-mono text-[9px] space-y-1 pointer-events-none shadow-2xl">
               <div className="flex items-center gap-1.5">
                 <span className="inline-block w-2.5 h-0.5 bg-sky-400 rounded-full" />
                 <span className="text-sky-300 font-bold">☊ Ascending (+β)</span>

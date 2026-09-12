@@ -118,7 +118,7 @@ export const ChronometerReadoutCards: React.FC<ChronometerReadoutCardsProps> = (
           <span className="text-[9px] font-bold text-slate-400 tracking-wider">TIME (UTC)</span>
           <button 
             onClick={handleNowTime} 
-            className="text-cyan-400 hover:text-cyan-300 p-0.5 rounded-md hover:bg-cyan-950/40 transition-colors cursor-pointer" 
+            className="text-sky-400 hover:text-sky-300 p-0.5 rounded-md hover:bg-sky-950/40 transition-colors cursor-pointer" 
             title="Snap to Real-Time UTC Now"
           >
             <Clock className="w-3.5 h-3.5" />
@@ -128,7 +128,7 @@ export const ChronometerReadoutCards: React.FC<ChronometerReadoutCardsProps> = (
           type="text"
           value={formatTimeHHMM(timeOfDay)}
           onChange={handleDirectTime}
-          className="w-20 bg-slate-950/80 text-blue-400 font-mono font-bold text-sm text-center rounded-lg border border-slate-800 px-1 py-0.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 shadow-inner"
+          className="w-20 bg-slate-950/80 text-sky-400 font-mono font-bold text-sm text-center rounded-lg border border-slate-800 px-1 py-0.5 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/40 shadow-inner"
         />
       </div>
 

@@ -18,7 +18,7 @@ export interface AstrolabeDialProps {
 
 const THEME = {
   date: "#10b981", // Outer: Emerald (Date)
-  time: "#3b82f6", // 3rd: Blue (Time)
+  time: "#38bdf8", // 3rd: Sky Blue (Time)
   lon: "#f59e0b",  // 2nd: Amber (Longitude)
   lat: "#f43f5e"   // Innermost: Rose (Latitude Armillary Rail)
 };

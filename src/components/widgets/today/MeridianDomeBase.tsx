@@ -51,6 +51,9 @@ export interface MeridianDiurnalChordConfig {
   strokeWidth?: number;
   strokeDasharray?: string;
   strokeOpacity?: number;
+  glow?: boolean;
+  glowWidth?: number;
+  glowOpacity?: number;
   twilightStroke?: string;
   twilightWidth?: number;
   twilightOpacity?: number;
@@ -169,10 +172,13 @@ export const MeridianDiurnalChordPath: React.FC<MeridianDiurnalChordConfig> = ({
   strokeWidth = 1.5,
   strokeDasharray,
   strokeOpacity = 0.85,
+  glow = false,
+  glowWidth = 3.5,
+  glowOpacity = 0.25,
   twilightStroke = '#d97706',
   twilightWidth = 1.0,
   twilightOpacity = 0.40,
-  twilightDasharray = '2 2',
+  twilightDasharray,
   daylightTitle,
   twilightTitle,
 }) => {
@@ -180,6 +186,16 @@ export const MeridianDiurnalChordPath: React.FC<MeridianDiurnalChordConfig> = ({
   const tId = twilightId ?? (id ? `${id}-twilight` : undefined);
   return (
     <>
+      {glow && chord.daylightD && (
+        <path
+          d={chord.daylightD}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={glowWidth}
+          strokeOpacity={glowOpacity}
+          className="blur-[1px] pointer-events-none select-none"
+        />
+      )}
       {chord.daylightD && (
         <path
           id={dId}

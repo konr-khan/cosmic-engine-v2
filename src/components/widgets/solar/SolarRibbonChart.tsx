@@ -255,12 +255,12 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
         <line 
           x1={paddingLeft} y1={sunriseY} 
           x2={paddingLeft + chartW} y2={sunriseY} 
-          stroke="#eab308" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" 
+          stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" 
         />
         <line 
           x1={paddingLeft} y1={sunsetY} 
           x2={paddingLeft + chartW} y2={sunsetY} 
-          stroke="#eab308" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" 
+          stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" 
         />
 
         {/* Synced Hover Time Horizontal Guideline */}
@@ -328,12 +328,12 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
         <line 
           x1={dayToX(activeDay)} y1={paddingTop} 
           x2={dayToX(activeDay)} y2={paddingTop + chartH} 
-          stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 3" 
+          stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" 
         />
 
         {/* Active Day Markers */}
-        <circle cx={dayToX(activeDay)} cy={sunriseY} r="3.5" fill="#ef4444" stroke="white" strokeWidth="1.2" />
-        <circle cx={dayToX(activeDay)} cy={sunsetY} r="3.5" fill="#ef4444" stroke="white" strokeWidth="1.2" />
+        <circle cx={dayToX(activeDay)} cy={sunriseY} r="3.5" fill="#f43f5e" stroke="white" strokeWidth="1.2" />
+        <circle cx={dayToX(activeDay)} cy={sunsetY} r="3.5" fill="#f43f5e" stroke="white" strokeWidth="1.2" />
         <circle cx={dayToX(activeDay)} cy={timeToY(activeData.solarNoon)} r="2.5" fill="#fbbf24" stroke="black" strokeWidth="1" />
 
         {/* Interactive Hover Day Hairline, Curve Intersection Markers & Floating Tooltip */}
@@ -363,8 +363,8 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
               />
 
               {/* Curve Intersection Markers */}
-              <circle cx={hx} cy={hyRise} r="3.5" fill="#eab308" stroke="#ffffff" strokeWidth="1.5" />
-              <circle cx={hx} cy={hySet} r="3.5" fill="#f97316" stroke="#ffffff" strokeWidth="1.5" />
+              <circle cx={hx} cy={hyRise} r="3.5" fill="#fbbf24" stroke="#ffffff" strokeWidth="1.5" />
+              <circle cx={hx} cy={hySet} r="3.5" fill="#f59e0b" stroke="#ffffff" strokeWidth="1.5" />
               <circle cx={hx} cy={hyNoon} r="2.5" fill="#38bdf8" stroke="#000000" strokeWidth="1" />
 
               {/* Floating Tooltip Card */}

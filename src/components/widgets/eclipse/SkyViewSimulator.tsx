@@ -95,7 +95,7 @@ export const SkyViewSimulator: React.FC<SkyViewSimulatorProps> = ({ eclipse }) =
             {eclipse.category === 'LUNAR' && (
               <g>
                 {/* Earth Umbra Shadow Ring */}
-                <circle cx="120" cy="120" r="70" fill="#450a0a" opacity="0.4" stroke="#ef4444" strokeWidth="0.75" strokeDasharray="4 4" />
+                <circle cx="120" cy="120" r="70" fill="#450a0a" opacity="0.4" stroke="#f43f5e" strokeWidth="0.75" strokeDasharray="4 4" />
                 
                 {/* Moon Body in Umbra */}
                 {(() => {
