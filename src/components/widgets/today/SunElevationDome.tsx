@@ -14,6 +14,7 @@ import {
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
 import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
+import { SOLAR_TWILIGHT_BADGE_CLASSES } from './todayTokens';
 
 export interface SunElevationDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -200,7 +201,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       culminationDirection={culmination.direction}
       sightingBanner={culmination.sightingSummary}
       currentElevation={currentSunElevation}
-      elevationColorClass={twilightStatus.badgeClass}
+      elevationColorClass={SOLAR_TWILIGHT_BADGE_CLASSES[twilightStatus.phase]}
       elevationStatusSubtitle={twilightStatus.label}
       showTwilightBands={isTwilightModeActive}
       latitude={latitude}

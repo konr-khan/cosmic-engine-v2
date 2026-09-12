@@ -35,11 +35,21 @@ export type TwilightPhase =
   | 'astronomical_twilight' 
   | 'night';
 
+export type LunarElevationPhase = 
+  | 'above_horizon' 
+  | 'near_horizon' 
+  | 'below_horizon';
+
 export interface TwilightStatusInfo {
   phase: TwilightPhase;
   label: string;
   subtitle: string;
-  badgeClass: string;
+}
+
+export interface LunarElevationStatusInfo {
+  phase: LunarElevationPhase;
+  label: string;
+  subtitle: string;
 }
 
 export type CulminationDirection = 'South' | 'North' | 'Zenith';
@@ -273,39 +283,34 @@ export const getSolarTwilightStatus = (elevationDeg: number): TwilightStatusInfo
     return {
       phase: 'daylight',
       label: 'Daylight',
-      subtitle: 'Sun Above Horizon',
-      badgeClass: 'text-amber-400'
+      subtitle: 'Sun Above Horizon'
     };
   }
   if (elevationDeg >= -6) {
     return {
       phase: 'civil_twilight',
       label: 'Civil Twilight',
-      subtitle: 'Golden / Blue Hour',
-      badgeClass: 'text-amber-300'
+      subtitle: 'Golden / Blue Hour'
     };
   }
   if (elevationDeg >= -12) {
     return {
       phase: 'nautical_twilight',
       label: 'Nautical Twilight',
-      subtitle: 'Sea Horizon Lost',
-      badgeClass: 'text-slate-300'
+      subtitle: 'Sea Horizon Lost'
     };
   }
   if (elevationDeg >= -18) {
     return {
       phase: 'astronomical_twilight',
       label: 'Astronomical Twilight',
-      subtitle: 'Faint Stars Emerge',
-      badgeClass: 'text-slate-400'
+      subtitle: 'Faint Stars Emerge'
     };
   }
   return {
     phase: 'night',
     label: 'Astronomical Night',
-    subtitle: 'Dark Sky',
-    badgeClass: 'text-slate-500'
+    subtitle: 'Dark Sky'
   };
 };
 
@@ -314,25 +319,25 @@ export const getSolarTwilightStatus = (elevationDeg: number): TwilightStatusInfo
  */
 export const getLunarElevationStatus = (
   elevationDeg: number
-): { label: string; subtitle: string; badgeClass: string } => {
+): LunarElevationStatusInfo => {
   if (elevationDeg >= 0) {
     return {
+      phase: 'above_horizon',
       label: 'Above Horizon',
-      subtitle: 'Moonlit Sky',
-      badgeClass: 'text-slate-200'
+      subtitle: 'Moonlit Sky'
     };
   }
   if (elevationDeg >= -6) {
     return {
+      phase: 'near_horizon',
       label: 'Near Horizon',
-      subtitle: 'Sub-Horizon Transit',
-      badgeClass: 'text-slate-400'
+      subtitle: 'Sub-Horizon Transit'
     };
   }
   return {
+    phase: 'below_horizon',
     label: 'Below Horizon',
-    subtitle: 'Occluded by Earth',
-    badgeClass: 'text-slate-500'
+    subtitle: 'Occluded by Earth'
   };
 };
 

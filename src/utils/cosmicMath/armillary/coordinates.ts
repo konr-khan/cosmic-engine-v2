@@ -1,8 +1,6 @@
 import { Degrees, Latitude, asDegrees } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
-import { toRadians, toDegrees, clamp, calculateGMST, calculateLST } from '../core';
-
-export { calculateGMST, calculateLST };
+import { toRadians, toDegrees, clamp } from '../core';
 
 /**
  * Converts equatorial coordinates (RA, Dec) into 3D Cartesian coordinates on celestial sphere of radius R0.

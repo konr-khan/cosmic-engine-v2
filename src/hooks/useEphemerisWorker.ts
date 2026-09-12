@@ -41,13 +41,17 @@ export const useEphemerisWorker = ({
   isOrbitalActive = true,
   throttleMs = 100
 }: UseEphemerisWorkerParams): UseEphemerisWorkerResult => {
-  const [workerResult, setWorkerResult] = useState<EphemerisWorkerPayload | null>(null);
+  const [workerState, setWorkerState] = useState<{ payload: EphemerisWorkerPayload; jd: number } | null>(null);
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
+
+  // Detect stale epoch on discontinuous jumps (> 0.01 days ~ 14.4 mins)
+  const isWorkerEpochStale = !workerState || Math.abs(Number(julianDate) - workerState.jd) > 0.01;
+  const activePayload = isWorkerEpochStale ? null : workerState?.payload;
 
   // Post calculation request to singleton worker manager when inputs change
   useEffect(() => {
     if (!isOrbitalActive || (!isLunarActive && !isEclipseActive)) {
-      setWorkerResult(null);
+      setWorkerState(null);
       return;
     }
 
@@ -69,7 +73,7 @@ export const useEphemerisWorker = ({
         throttleMs
       },
       (payload) => {
-        setWorkerResult(payload);
+        setWorkerState({ payload, jd: Number(julianDate) });
       }
     );
 
@@ -78,12 +82,12 @@ export const useEphemerisWorker = ({
     };
   }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, throttleMs]);
 
-  // Synchronous calculation fallback (used only when worker is unavailable or pending initial result)
+  // Synchronous calculation fallback (used when worker is unavailable, pending initial result, or epoch is stale on date jumps)
   const syncResult = useMemo(() => {
     if (!isOrbitalActive) return { lunarEvents: null, eclipse: null };
-    if (isWorkerActive && workerResult !== null) return null;
+    if (isWorkerActive && !isWorkerEpochStale && activePayload !== null) return null;
 
-    const JD_midnight = julianDate - (timeOfDay / 24);
+    const JD_midnight = Number(julianDate) - (timeOfDay / 24);
     const lunarEvents = isLunarActive 
       ? calculateLunarEvents(latitude, longitude, JD_midnight, timeOfDay)
       : null;
@@ -92,10 +96,10 @@ export const useEphemerisWorker = ({
       : null;
 
     return { lunarEvents, eclipse };
-  }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, isWorkerActive, workerResult !== null]);
+  }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, isWorkerActive, isWorkerEpochStale, activePayload]);
 
-  const lunarEvents = workerResult ? workerResult.lunarEvents : (syncResult ? syncResult.lunarEvents : null);
-  const eclipse = workerResult ? workerResult.eclipse : (syncResult ? syncResult.eclipse : null);
+  const lunarEvents = activePayload ? activePayload.lunarEvents : (syncResult ? syncResult.lunarEvents : null);
+  const eclipse = activePayload ? activePayload.eclipse : (syncResult ? syncResult.eclipse : null);
 
   return useMemo(() => ({
     lunarEvents,

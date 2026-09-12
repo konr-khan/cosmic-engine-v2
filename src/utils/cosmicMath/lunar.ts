@@ -271,16 +271,16 @@ export const calculateTrueLunarNodeEvents = (
  * @returns Parallactic angle in degrees
  */
 export const calculateParallacticAngle = (
-  lat: Latitude, 
-  lon: Longitude, 
+  lat: Latitude | number, 
+  lon: Longitude | number, 
   julianDate: JulianDate | number, 
   decDeg: Degrees | number, 
   raDeg: Degrees | HoursDecimal | number
 ): number => {
   const lst = calculateLST(julianDate, lon);
-  let H = (((lst - raDeg) % 360) + 360) % 360;
+  let H = (((lst - (raDeg as number)) % 360) + 360) % 360;
 
-  const latRad = toRadians(clamp(lat, -89.9, 89.9));
+  const latRad = toRadians(clamp(lat as number, -89.9, 89.9));
   const decRad = toRadians(decDeg);
   const hRad = toRadians(H);
 

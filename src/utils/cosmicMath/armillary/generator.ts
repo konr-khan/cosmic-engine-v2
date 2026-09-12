@@ -1,6 +1,6 @@
 import { Degrees, Latitude, Longitude, HoursDecimal, JulianDate, asDegrees } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
-import { toRadians, clamp, slerp3D } from '../core';
+import { toRadians, clamp, slerp3D, calculateGMST, calculateLST } from '../core';
 import { calculateEarthOrbitalPhysics } from '../solar';
 import {
   J2000_JD,
@@ -21,8 +21,6 @@ import {
   ArmillaryModelOutput
 } from './types';
 import { 
-  calculateGMST, 
-  calculateLST, 
   equatorialToCartesian3D, 
   horizontalToCartesian3D,
   rotateEuler3D,

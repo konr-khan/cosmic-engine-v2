@@ -13,16 +13,19 @@ import {
   getLunarElevationStatus,
   calculateCulminationBearing,
   calculateRiseSetAzimuth,
-  calculateLunarExtremaCulminations
+  calculateLunarExtremaCulminations,
+  calculateParallacticAngle
 } from '../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
 import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
+import { LUNAR_ELEVATION_BADGE_CLASSES } from './todayTokens';
 
 export interface MoonElevationDomeProps {
   orbitalData?: OrbitalData | null;
   solarData?: SolarAlmanacData | null;
   displayTime: number;
   latitude: number;
+  longitude?: number;
   currentDate?: Date;
   onSetTime?: (time: number) => void;
   initialNodalMode?: boolean;
@@ -36,6 +39,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   solarData,
   displayTime,
   latitude,
+  longitude,
   currentDate = new Date(),
   onSetTime,
   initialNodalMode = false,
@@ -260,6 +264,17 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     });
   }
 
+  const effectiveLon = longitude ?? -122.8;
+  const currentParallacticAngle = orbitalData?.lunarPos
+    ? calculateParallacticAngle(
+        latitude,
+        effectiveLon,
+        jd,
+        moonDeclination,
+        (orbitalData.lunarPos.rightAscension ?? 0) as number
+      )
+    : lunarEvents.parallacticAngle;
+
   const lunarStatus = getLunarElevationStatus(currentMoonElevation);
 
   return (
@@ -274,7 +289,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       culminationDirection={culmination.direction}
       sightingBanner={culmination.sightingSummary}
       currentElevation={currentMoonElevation}
-      elevationColorClass={lunarStatus.badgeClass}
+      elevationColorClass={LUNAR_ELEVATION_BADGE_CLASSES[lunarStatus.phase]}
       elevationStatusSubtitle={lunarStatus.label}
       latitude={latitude}
       capPathD={lunarCapPathD}
@@ -398,7 +413,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       >
         <div className="flex items-center gap-3">
           <div className="shrink-0 flex items-center justify-center">
-            <PhaseVisual phase={phase.value} size={52} parallacticAngle={parallacticAngle} />
+            <PhaseVisual phase={phase.value} size={52} parallacticAngle={currentParallacticAngle} />
           </div>
           <div className="font-mono text-left">
             <div className="text-xs font-semibold text-slate-200">{phase.name}</div>

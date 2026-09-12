@@ -11,6 +11,7 @@ export interface TodayHorizonViewProps {
   orbitalData?: OrbitalData | null;
   currentTime?: number;
   latitude?: number;
+  longitude?: number;
   currentDate?: Date;
   hoverTime?: number | null;
   onSetTime?: (time: number) => void;
@@ -22,6 +23,7 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
   orbitalData,
   currentTime = 12,
   latitude = 47.06,
+  longitude,
   currentDate = new Date(),
   hoverTime,
   onSetTime,
@@ -99,6 +101,7 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
             solarData={solarData}
             displayTime={displayTime}
             latitude={latitude}
+            longitude={longitude}
             currentDate={currentDate}
             onSetTime={onSetTime}
             isNodalMode={isNodalMode}
@@ -139,6 +142,7 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               solarData={solarData}
               displayTime={displayTime}
               latitude={latitude}
+              longitude={longitude}
               currentDate={currentDate}
               onSetTime={onSetTime}
               isNodalMode={isNodalMode}

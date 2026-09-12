@@ -163,36 +163,48 @@ describe('Solar & Lunar Twilight Status Helpers', () => {
     const day = getSolarTwilightStatus(25);
     expect(day.phase).toBe('daylight');
     expect(day.label).toBe('Daylight');
+    expect(day.subtitle).toBe('Sun Above Horizon');
 
     // Civil Twilight (0° to -6°)
     const civil = getSolarTwilightStatus(-3.5);
     expect(civil.phase).toBe('civil_twilight');
     expect(civil.label).toBe('Civil Twilight');
-    expect(civil.badgeClass).toBe('text-amber-300');
+    expect(civil.subtitle).toBe('Golden / Blue Hour');
 
     // Nautical Twilight (-6° to -12°)
     const naut = getSolarTwilightStatus(-8.2);
     expect(naut.phase).toBe('nautical_twilight');
     expect(naut.label).toBe('Nautical Twilight');
-    expect(naut.badgeClass).toBe('text-slate-300');
+    expect(naut.subtitle).toBe('Sea Horizon Lost');
 
     // Astronomical Twilight (-12° to -18°)
     const astro = getSolarTwilightStatus(-14.7);
     expect(astro.phase).toBe('astronomical_twilight');
     expect(astro.label).toBe('Astronomical Twilight');
-    expect(astro.badgeClass).toBe('text-slate-400');
+    expect(astro.subtitle).toBe('Faint Stars Emerge');
 
     // Astronomical Night (<-18°)
     const night = getSolarTwilightStatus(-30);
     expect(night.phase).toBe('night');
     expect(night.label).toBe('Astronomical Night');
-    expect(night.badgeClass).toBe('text-slate-500');
+    expect(night.subtitle).toBe('Dark Sky');
   });
 
   it('correctly maps lunar elevation status', () => {
-    expect(getLunarElevationStatus(15).label).toBe('Above Horizon');
-    expect(getLunarElevationStatus(-2).label).toBe('Near Horizon');
-    expect(getLunarElevationStatus(-25).label).toBe('Below Horizon');
+    const above = getLunarElevationStatus(15);
+    expect(above.phase).toBe('above_horizon');
+    expect(above.label).toBe('Above Horizon');
+    expect(above.subtitle).toBe('Moonlit Sky');
+
+    const near = getLunarElevationStatus(-2);
+    expect(near.phase).toBe('near_horizon');
+    expect(near.label).toBe('Near Horizon');
+    expect(near.subtitle).toBe('Sub-Horizon Transit');
+
+    const below = getLunarElevationStatus(-25);
+    expect(below.phase).toBe('below_horizon');
+    expect(below.label).toBe('Below Horizon');
+    expect(below.subtitle).toBe('Occluded by Earth');
   });
 
   it('generates twilight sub-horizon path segments for temperate day', () => {

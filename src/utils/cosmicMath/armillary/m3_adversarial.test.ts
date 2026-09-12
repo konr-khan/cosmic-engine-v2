@@ -8,8 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { generateArmillaryModel } from './generator';
-import { calculateLST } from './coordinates';
-import { getJulianDate } from '../core';
+import { getJulianDate, calculateLST } from '../core';
 import { ArmillaryProjectionMode } from './types';
 
 describe('Phase 2 M3 Adversarial Tests — Ring Blooming & Continuum Continuity', () => {

@@ -60,6 +60,7 @@ const StandardWidgetContent: React.FC<{ id: string }> = ({ id }) => {
           orbitalData={orbitalData}
           currentTime={timeOfDay}
           latitude={latitude}
+          longitude={longitude}
           currentDate={date}
           onSetTime={cosmicActions.setTimeOfDay}
         />

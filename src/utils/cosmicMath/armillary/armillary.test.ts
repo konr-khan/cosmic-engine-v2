@@ -5,8 +5,6 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  calculateGMST,
-  calculateLST,
   equatorialToCartesian3D,
   cartesian3DToEquatorial,
   horizontalToCartesian3D,
@@ -30,7 +28,7 @@ import {
 } from './index';
 import { ASTROLABE_STARS, ZODIAC_SIGNS } from './constants';
 import { ArmillaryProjectionMode } from './types';
-import { clamp } from '../core';
+import { clamp, calculateGMST, calculateLST } from '../core';
 import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../astroConstants';
 import { Vector2D, Vector3D, Degrees, Latitude, Longitude, HoursDecimal } from '../../../types';
 
