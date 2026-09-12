@@ -164,7 +164,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 40 specialized domain suites (**595 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 40 specialized domain suites (**599 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -177,7 +177,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Armillary Continuum & Projections** | `src/utils/cosmicMath/armillary/armillary.test.ts` (34 tests) | Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0secepsilon$) |
 | **Armillary Benchmark** | `src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts` (5 tests) | 1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation |
 | **Armillary Adversarial** | `src/utils/cosmicMath/armillary/m3_adversarial.test.ts` (7 tests) | Analytical closed-form Stereographic Ecliptic invariant ($R_0secepsilon$), Sun bead clamping residuals ($< 1.42 	imes 10^{-13}	ext{ px}$), and 10,000-sample randomized Monte Carlo transitions |
-| **Domain Invariants & Physics Conservation** | `src/utils/cosmicMath/domainInvariants.test.ts` (20 tests) | Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 dot{	heta} = 	ext{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance |
+| **Domain Invariants & Physics Conservation** | `src/utils/cosmicMath/domainInvariants.test.ts` (24 tests) | Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 dot{	heta} = 	ext{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance |
 | **3D Scene Graph Math** | `src/utils/cosmicMath/scene/scene.test.ts` (33 tests) | 3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^circ$ inclined lunar orbit with continuous nodal precession $Omega(t)$, and 3D syzygy shadow cones |
 | **Scene Cameras Stress** | `src/utils/cosmicMath/scene/cameras.stress.test.ts` (23 tests) | Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts |
 | **Scene Coordinate Adversarial** | `src/utils/cosmicMath/scene/m1_adversarial.test.ts` (18 tests) | Coordinate frame invariants, axial tilt matrix preservation ($23.439^circ$) in inertial space, and singular polar viewing angles |

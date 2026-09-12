@@ -96,11 +96,3 @@ export function useHoverDate(): Date | null {
   const getSnapshot = useCallback(() => hoverStore.getState().hoverDate, []);
   return useSyncExternalStore(hoverStore.subscribe, getSnapshot, getSnapshot);
 }
-
-/**
- * Hook to subscribe to the full hover state.
- */
-export function useHoverState(): HoverState {
-  const getSnapshot = useCallback(() => hoverStore.getState(), []);
-  return useSyncExternalStore(hoverStore.subscribe, getSnapshot, getSnapshot);
-}

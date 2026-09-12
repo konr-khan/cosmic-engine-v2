@@ -26,9 +26,9 @@ import { generateOrbitalSegments } from '../projection';
 import { EARTH_ECCENTRICITY_TRUE, EARTH_ECCENTRICITY_EXAGGERATED } from '../astroConstants';
 
 /** Canonical lunar orbit segment design tokens */
-export const LUNAR_NODE_ASC_STROKE = '#38bdf8';
-export const LUNAR_NODE_DESC_STROKE = '#f43f5e';
-export const LUNAR_NODE_WANING_DASHARRAY = '4 3';
+const LUNAR_NODE_ASC_STROKE = '#38bdf8';
+const LUNAR_NODE_DESC_STROKE = '#f43f5e';
+const LUNAR_NODE_WANING_DASHARRAY = '4 3';
 
 /** Options for standard 2D camera viewport configuration */
 export interface CameraOptions {

@@ -4,7 +4,7 @@
  * inertial axial tilt vectors, subsolar illumination vectors, and 3D shadow cones.
  */
 
-import { Degrees, Radians, Latitude, Longitude, asDegrees, asRadians, toRadians, toDegrees } from '../../../types/units';
+import { Degrees, Radians, Latitude, asDegrees, asRadians, toRadians, toDegrees } from '../../../types/units';
 import { Vector3D, AltAzimuthCoordinates } from '../../../types/coordinates';
 import { Matrix3x3, ShadowCones3D } from './types';
 import { clamp } from '../core';
@@ -180,28 +180,6 @@ export function scaleVector3D(v: Vector3D, s: number): Vector3D {
 // ==========================================
 
 /**
- * Converts Heliocentric Ecliptic J2000 coordinates to Geocentric Ecliptic coordinates.
- * r_geo = r_helio - R_earth
- */
-export function heliocentricToGeocentricEcliptic(
-  bodyHelioPos: Vector3D,
-  earthHelioPos: Vector3D
-): Vector3D {
-  return subtractVectors3D(bodyHelioPos, earthHelioPos);
-}
-
-/**
- * Converts Geocentric Ecliptic coordinates to Heliocentric Ecliptic J2000 coordinates.
- * r_helio = r_geo + R_earth
- */
-export function geocentricToHeliocentricEcliptic(
-  bodyGeoPos: Vector3D,
-  earthHelioPos: Vector3D
-): Vector3D {
-  return addVectors3D(bodyGeoPos, earthHelioPos);
-}
-
-/**
  * Matrix transforming Geocentric Ecliptic coordinates to Geocentric Equatorial coordinates.
  * M_ecl->eq = Rx(+eps)
  * 
@@ -264,47 +242,7 @@ export function calculateEarthAxialTiltVector(
 }
 
 // ==========================================
-// 4. Subsolar Illumination Vector
-// ==========================================
-
-/**
- * Computes the unit illumination vector pointing towards the Sun in Geocentric Ecliptic coordinates.
- * Given solar ecliptic longitude lambda_sun:
- * s_ecl = (cos(lambda_sun), sin(lambda_sun), 0)^T
- */
-export function calculateSubsolarVectorEcliptic(sunLambdaDeg: Degrees | number): Vector3D {
-  const rad = toRadians(sunLambdaDeg);
-  return {
-    x: Math.cos(rad),
-    y: Math.sin(rad),
-    z: 0
-  };
-}
-
-/**
- * Computes the unit illumination vector pointing towards the Sun in Earth Body-Fixed coordinates
- * (Z: Geographic North Pole, X: Prime Meridian intersection with Equator, Y: +90° East Longitude).
- * 
- * @param declinationDeg - Solar declination (-23.44° to +23.44°)
- * @param subsolarLonDeg - Geographic longitude of subsolar point (-180° to +180° or 0° to 360°)
- */
-export function calculateSubsolarVectorBody(
-  declinationDeg: Degrees | number,
-  subsolarLonDeg: Longitude | number
-): Vector3D {
-  const decRad = toRadians(declinationDeg);
-  const lonRad = toRadians(subsolarLonDeg);
-  const cosDec = Math.cos(decRad);
-
-  return {
-    x: cosDec * Math.cos(lonRad),
-    y: cosDec * Math.sin(lonRad),
-    z: Math.sin(decRad)
-  };
-}
-
-// ==========================================
-// 5. Topocentric Observer Coordinate Transforms
+// 4. Topocentric Observer Coordinate Transforms
 // ==========================================
 
 /**
@@ -371,7 +309,7 @@ export function topocentric3DToAltAz(vTopo: Vector3D): AltAzimuthCoordinates {
 }
 
 // ==========================================
-// 6. Generalized 3D Euler Camera Rotations
+// 5. Generalized 3D Euler Camera Rotations
 // ==========================================
 
 /**
@@ -442,7 +380,7 @@ export function rotatePointEuler3DCoords(
 }
 
 // ==========================================
-// 7. Analytical Syzygy Shadow Cones (3D)
+// 6. Analytical Syzygy Shadow Cones (3D)
 // ==========================================
 
 /**

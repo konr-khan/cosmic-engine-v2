@@ -15,6 +15,8 @@
  * 10. Equatorial Colure Verticality & Tropical Culmination Gate Invariants (phi = 0°, |phi| <= 28.58°)
  * 11. Temporal Rollover & Gregorian Century Leap-Year Invariants
  * 12. Lunar Nodal Precession & Retrograde Regression Rate Invariants (dOmega/dt ~ -0.05295°/day)
+ * 13. Meeus Polynomial Multi-Century Epoch Stability & Boundedness
+ * 14. Topocentric Horizon & Polar Coordinate Singularity Invariants
  */
 
 import { describe, it, expect } from 'vitest';
@@ -47,6 +49,7 @@ import {
   ASTRONOMICAL_UNIT_KM,
   J2000_JD,
   getJulianDate,
+  julianDateToDate,
   toRadians,
   toDegrees,
   EARTH_MILESTONES,
@@ -478,6 +481,50 @@ describe('Domain Invariants & Physics Conservation Suite (Wave 5 & 19)', () => {
       const commonEnd = new Date(Date.UTC(2025, 11, 31, 23, 59, 59, 999));
       expect(getDayOfYear(commonEnd)).toBe(365);
     });
+
+    it('verifies Julian Date conversions and roundtrips across century leap day boundaries (1900, 2000, 2100, 2400)', () => {
+      // 1900: Non-leap century (Feb 28 -> Mar 1)
+      const d1900_feb28 = new Date(Date.UTC(1900, 1, 28, 12, 0, 0));
+      const jd1900_feb28 = getJulianDate(d1900_feb28, 12);
+      const d1900_mar01 = new Date(Date.UTC(1900, 2, 1, 12, 0, 0));
+      const jd1900_mar01 = getJulianDate(d1900_mar01, 12);
+      expect(jd1900_mar01 - jd1900_feb28).toBeCloseTo(1.0, 6);
+      expect(julianDateToDate(jd1900_feb28).toISOString().slice(0, 10)).toBe('1900-02-28');
+      expect(julianDateToDate(jd1900_mar01).toISOString().slice(0, 10)).toBe('1900-03-01');
+
+      // 2000: 400-year leap century (Feb 28 -> Feb 29 -> Mar 1)
+      const d2000_feb28 = new Date(Date.UTC(2000, 1, 28, 12, 0, 0));
+      const jd2000_feb28 = getJulianDate(d2000_feb28, 12);
+      const d2000_feb29 = new Date(Date.UTC(2000, 1, 29, 12, 0, 0));
+      const jd2000_feb29 = getJulianDate(d2000_feb29, 12);
+      const d2000_mar01 = new Date(Date.UTC(2000, 2, 1, 12, 0, 0));
+      const jd2000_mar01 = getJulianDate(d2000_mar01, 12);
+      expect(jd2000_feb29 - jd2000_feb28).toBeCloseTo(1.0, 6);
+      expect(jd2000_mar01 - jd2000_feb29).toBeCloseTo(1.0, 6);
+      expect(julianDateToDate(jd2000_feb28).toISOString().slice(0, 10)).toBe('2000-02-28');
+      expect(julianDateToDate(jd2000_feb29).toISOString().slice(0, 10)).toBe('2000-02-29');
+      expect(julianDateToDate(jd2000_mar01).toISOString().slice(0, 10)).toBe('2000-03-01');
+
+      // 2100: Non-leap century (Feb 28 -> Mar 1)
+      const d2100_feb28 = new Date(Date.UTC(2100, 1, 28, 12, 0, 0));
+      const jd2100_feb28 = getJulianDate(d2100_feb28, 12);
+      const d2100_mar01 = new Date(Date.UTC(2100, 2, 1, 12, 0, 0));
+      const jd2100_mar01 = getJulianDate(d2100_mar01, 12);
+      expect(jd2100_mar01 - jd2100_feb28).toBeCloseTo(1.0, 6);
+      expect(julianDateToDate(jd2100_feb28).toISOString().slice(0, 10)).toBe('2100-02-28');
+      expect(julianDateToDate(jd2100_mar01).toISOString().slice(0, 10)).toBe('2100-03-01');
+
+      // 2400: 400-year leap century (Feb 28 -> Feb 29 -> Mar 1)
+      const d2400_feb28 = new Date(Date.UTC(2400, 1, 28, 12, 0, 0));
+      const jd2400_feb28 = getJulianDate(d2400_feb28, 12);
+      const d2400_feb29 = new Date(Date.UTC(2400, 1, 29, 12, 0, 0));
+      const jd2400_feb29 = getJulianDate(d2400_feb29, 12);
+      const d2400_mar01 = new Date(Date.UTC(2400, 2, 1, 12, 0, 0));
+      const jd2400_mar01 = getJulianDate(d2400_mar01, 12);
+      expect(jd2400_feb29 - jd2400_feb28).toBeCloseTo(1.0, 6);
+      expect(jd2400_mar01 - jd2400_feb29).toBeCloseTo(1.0, 6);
+      expect(julianDateToDate(jd2400_feb29).toISOString().slice(0, 10)).toBe('2400-02-29');
+    });
   });
 
   describe('12. Lunar Nodal Precession & Retrograde Regression Rate Invariants', () => {
@@ -512,6 +559,111 @@ describe('Domain Invariants & Physics Conservation Suite (Wave 5 & 19)', () => {
       // Descending node maintains exact 180° antipodal phase across the regression
       expect((pos0.nodeLongitude + 180) % 360).toBeCloseTo(pos0.descendingNodeLongitude, 4);
       expect((posFullCycle.nodeLongitude + 180) % 360).toBeCloseTo(posFullCycle.descendingNodeLongitude, 4);
+    });
+  });
+
+  describe('13. Meeus Polynomial Multi-Century Epoch Stability & Boundedness', () => {
+    it('evaluates solar and lunar ephemerides across multi-century epochs without NaN or divergence', () => {
+      const epochDates = [
+        new Date('1800-01-01T12:00:00Z'),
+        new Date('1850-06-21T12:00:00Z'),
+        new Date('1900-01-01T12:00:00Z'),
+        new Date('1950-09-22T12:00:00Z'),
+        new Date('2000-01-01T12:00:00Z'),
+        new Date('2025-06-21T12:00:00Z'),
+        new Date('2050-03-20T12:00:00Z'),
+        new Date('2100-01-01T12:00:00Z'),
+        new Date('2200-01-01T12:00:00Z'),
+        new Date('2500-01-01T12:00:00Z'),
+      ];
+
+      for (const d of epochDates) {
+        const jd = getJulianDate(d, 12);
+
+        // 1. Solar Ephemeris Invariants
+        const solar = calculateSolarPosition(jd);
+        expect(Number.isFinite(solar.declination)).toBe(true);
+        expect(Number.isFinite(solar.rightAscension)).toBe(true);
+        expect(Number.isFinite(solar.distanceAU)).toBe(true);
+        expect(Number.isFinite(solar.equationOfTime)).toBe(true);
+
+        // Physical bounds: solar distance between 0.98 AU and 1.02 AU
+        expect(solar.distanceAU).toBeGreaterThanOrEqual(0.98);
+        expect(solar.distanceAU).toBeLessThanOrEqual(1.02);
+
+        // Solar declination within Earth obliquity range [-24.0°, +24.0°]
+        expect(solar.declination).toBeGreaterThanOrEqual(-24.0);
+        expect(solar.declination).toBeLessThanOrEqual(24.0);
+
+        // Equation of time bounded within [-25 min, +25 min]
+        expect(solar.equationOfTime).toBeGreaterThanOrEqual(-25);
+        expect(solar.equationOfTime).toBeLessThanOrEqual(25);
+
+        // 2. Lunar Ephemeris Invariants
+        const lunar = calculateLunarPosition(jd);
+        expect(Number.isFinite(lunar.declination)).toBe(true);
+        expect(Number.isFinite(lunar.rightAscension)).toBe(true);
+        expect(Number.isFinite(lunar.distanceKm)).toBe(true);
+        expect(Number.isFinite(lunar.illuminationFraction)).toBe(true);
+        expect(Number.isFinite(lunar.phaseAngleDeg)).toBe(true);
+
+        // Physical bounds: Lunar perigee ~ 356,400 km, apogee ~ 406,700 km (with tolerance)
+        expect(lunar.distanceKm).toBeGreaterThanOrEqual(350000);
+        expect(lunar.distanceKm).toBeLessThanOrEqual(415000);
+
+        // Lunar illumination fraction strictly in [0.0, 1.0]
+        expect(lunar.illuminationFraction).toBeGreaterThanOrEqual(0.0);
+        expect(lunar.illuminationFraction).toBeLessThanOrEqual(1.0);
+
+        // Lunar declination bounded within [-29.5°, +29.5°] (obliquity + 5.14° lunar orbital inclination)
+        expect(lunar.declination).toBeGreaterThanOrEqual(-29.5);
+        expect(lunar.declination).toBeLessThanOrEqual(29.5);
+      }
+    });
+  });
+
+  describe('14. Topocentric Horizon & Polar Coordinate Singularity Invariants', () => {
+    it('maintains strict mathematical continuity at exact polar singularities (phi = +-90°)', () => {
+      // At North Pole (phi = +90°):
+      // For any RA and LST (i.e. any hour angle H), altitude equals declination
+      for (let dec = -23.44; dec <= 23.44; dec += 5) {
+        for (let ha = 0; ha < 360; ha += 45) {
+          const horizNP = equatorialToHorizontal(0, dec, 90, ha);
+          expect(horizNP.altDeg).toBeCloseTo(dec, 1);
+          expect(Number.isFinite(horizNP.azDeg)).toBe(true);
+          expect(horizNP.azDeg).toBeGreaterThanOrEqual(0);
+          expect(horizNP.azDeg).toBeLessThan(360);
+        }
+      }
+
+      // At South Pole (phi = -90°):
+      // For any hour angle H, altitude equals -declination
+      for (let dec = -23.44; dec <= 23.44; dec += 5) {
+        for (let ha = 0; ha < 360; ha += 45) {
+          const horizSP = equatorialToHorizontal(0, dec, -90, ha);
+          expect(horizSP.altDeg).toBeCloseTo(-dec, 1);
+          expect(Number.isFinite(horizSP.azDeg)).toBe(true);
+          expect(horizSP.azDeg).toBeGreaterThanOrEqual(0);
+          expect(horizSP.azDeg).toBeLessThan(360);
+        }
+      }
+    });
+
+    it('asserts exact zenith culmination and prime vertical symmetry at Equator (phi = 0°)', () => {
+      // Equinox at Equator (phi = 0°, dec = 0°):
+      // At meridian transit (LST = RA, H = 0°), object culminates at exact zenith (alt = 90°)
+      const transit = equatorialToHorizontal(0, 0, 0, 0);
+      expect(transit.altDeg).toBeCloseTo(90.0, 1);
+
+      // East rise (H = -90° or 270°): alt = 0°, az = 90° (East)
+      const rise = equatorialToHorizontal(0, 0, 0, 270);
+      expect(rise.altDeg).toBeCloseTo(0.0, 1);
+      expect(rise.azDeg).toBeCloseTo(90.0, 1);
+
+      // West set (H = +90°): alt = 0°, az = 270° (West)
+      const set = equatorialToHorizontal(0, 0, 0, 90);
+      expect(set.altDeg).toBeCloseTo(0.0, 1);
+      expect(set.azDeg).toBeCloseTo(270.0, 1);
     });
   });
 
