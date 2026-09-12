@@ -42,31 +42,43 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
   const windowRef = useRef<HTMLDivElement>(null);
   const canDragRef = useRef(false);
 
-  // Resize Pointer Event Handler
+  // Resize Pointer Event Handler using DOM Pointer Capture
+  const resizeRef = useRef<{ startY: number; initialHeight: number } | null>(null);
+
   const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (isLocked || !windowRef.current) return;
 
-    const startY = e.clientY;
-    const initialHeight = windowRef.current.offsetHeight;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
 
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const deltaY = moveEvent.clientY - startY;
-      const newHeight = Math.max(220, initialHeight + deltaY);
-
-      if (onResize) {
-        onResize(id, 0, newHeight);
-      }
+    resizeRef.current = {
+      startY: e.clientY,
+      initialHeight: windowRef.current.offsetHeight
     };
+  };
 
-    const handlePointerUp = () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-    };
+  const handleResizePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!resizeRef.current) return;
+    const deltaY = e.clientY - resizeRef.current.startY;
+    const newHeight = Math.max(220, resizeRef.current.initialHeight + deltaY);
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
+    if (onResize) {
+      onResize(id, 0, newHeight);
+    }
+  };
+
+  const handleResizePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (resizeRef.current) {
+      try {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+      } catch {}
+      resizeRef.current = null;
+    }
   };
 
   const containerClasses = isMaximized 
@@ -242,6 +254,9 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
       {!isLocked && !isMinimized && !isMaximized && (
         <div 
           onPointerDown={handleResizePointerDown}
+          onPointerMove={handleResizePointerMove}
+          onPointerUp={handleResizePointerUp}
+          onPointerCancel={handleResizePointerUp}
           className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-1 group touch-none z-20"
           title="Drag to resize card"
         >

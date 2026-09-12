@@ -11,9 +11,29 @@ import { calculateSolarPosition, calculateDaylightDurationPrecise } from './sola
 import { calculateLunarPosition } from './lunar';
 import { calculateGMST, calculateLST } from './core';
 
+let lastJd: JulianDate | number | null = null;
+let lastLat: Latitude | number | null = null;
+let lastLon: Longitude | number | null = null;
+let lastAnalemma: boolean | null = null;
+let cachedFrame: EphemerisFrame | null = null;
+
+/**
+ * Resets the 1-entry memoization cache for test isolation.
+ */
+export const _clearEphemerisFrameCache = (): void => {
+  lastJd = null;
+  lastLat = null;
+  lastLon = null;
+  lastAnalemma = null;
+  cachedFrame = null;
+};
+
 /**
  * Calculates a complete, immutable EphemerisFrame snapshot containing instantaneous
  * solar, lunar, and coordinate ephemeris.
+ *
+ * Employs a 1-entry reference memoization cache to eliminate redundant calculations
+ * across multiple widget subscribers during high-frequency chronometer animation ticks.
  *
  * @param julianDate - Astronomical Julian Date epoch
  * @param latitude - Observer latitude [-90..90]
@@ -28,6 +48,17 @@ export const calculateEphemerisFrame = (
   useAnalemma = true
 ): EphemerisFrame => {
   const jd = typeof julianDate === 'number' ? asJulianDate(julianDate) : julianDate;
+
+  if (
+    cachedFrame !== null &&
+    lastJd === jd &&
+    lastLat === latitude &&
+    lastLon === longitude &&
+    lastAnalemma === useAnalemma
+  ) {
+    return cachedFrame;
+  }
+
   const solarPos = calculateSolarPosition(jd);
   const lunarPos = calculateLunarPosition(jd);
 
@@ -41,7 +72,7 @@ export const calculateEphemerisFrame = (
   const subsolarLon = ((((solarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
   const sublunarLon = ((((lunarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
 
-  return {
+  const frame: EphemerisFrame = {
     julianDate: jd,
     gmst,
     lst,
@@ -59,4 +90,13 @@ export const calculateEphemerisFrame = (
     isPolarNight: dayLength <= 0,
     isMidnightSun: dayLength >= 24
   };
+
+  lastJd = jd;
+  lastLat = latitude;
+  lastLon = longitude;
+  lastAnalemma = useAnalemma;
+  cachedFrame = frame;
+
+  return frame;
 };
+

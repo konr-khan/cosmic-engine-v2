@@ -162,14 +162,18 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(windows.map(w => ({
-        id: w.id,
-        title: w.title,
-        colSpan: w.colSpan,
-        height: w.height
-      }))));
-    } catch {}
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(windows.map(w => ({
+          id: w.id,
+          title: w.title,
+          colSpan: w.colSpan,
+          height: w.height
+        }))));
+      } catch {}
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [windows]);
 
   const handleSelectPreset = useCallback((key: string) => {

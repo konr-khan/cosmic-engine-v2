@@ -848,5 +848,48 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       // Key 11 was the oldest non-refreshed entry, so it was evicted
       expect(manager.annualSolarCache.has("SOLAR_2026_11")).toBe(false);
     });
+
+    it("invokes synchronous fallback when worker request times out", () => {
+      vi.useFakeTimers();
+      try {
+        class HangingWorker {
+          postMessage: any = vi.fn();
+          terminate: any = vi.fn();
+          onmessage: any = null;
+          onerror: any = null;
+        }
+
+        globalThis.Worker = HangingWorker as any;
+        const manager = new EphemerisWorkerManager();
+
+        const cb = vi.fn();
+        manager.requestCalculation(
+          {
+            latitude: 47.06,
+            longitude: -122.81,
+            julianDate: 2451545.0,
+            timeOfDay: 12,
+            calculateLunar: true,
+            calculateEclipse: true
+          },
+          cb
+        );
+
+        expect(manager.pendingRequests.size).toBe(1);
+        expect(cb).not.toHaveBeenCalled();
+
+        // Advance timers by 5000ms to trigger timeout
+        vi.advanceTimersByTime(5000);
+
+        expect(cb).toHaveBeenCalledTimes(1);
+        const payload = cb.mock.calls[0][0];
+        expect(payload.lunarEvents).toBeDefined();
+        expect(payload.eclipse).toBeDefined();
+        expect(manager.pendingRequests.size).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 });
+

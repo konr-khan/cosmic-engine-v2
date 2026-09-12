@@ -77,6 +77,7 @@ export class EphemerisWorkerManager {
   public signatureToRequestId: Map<string, number>;
   public annualSolarCache: Map<string, AnnualSolarMatrixItem[]>;
   public annualLunarCache: Map<string, AnnualLunarMatrixItem[]>;
+  public requestTimeouts: Map<number, ReturnType<typeof setTimeout>>;
   public _isAvailable: boolean;
   public latestProcessedEphemerisId: number;
   public lastEphemerisDispatchTime: number;
@@ -90,6 +91,7 @@ export class EphemerisWorkerManager {
     this.signatureToRequestId = new Map();
     this.annualSolarCache = new Map();
     this.annualLunarCache = new Map();
+    this.requestTimeouts = new Map();
     this._isAvailable = typeof Worker !== 'undefined';
     this.latestProcessedEphemerisId = 0;
     this.lastEphemerisDispatchTime = 0;
@@ -167,6 +169,37 @@ export class EphemerisWorkerManager {
   }
 
   /**
+   * Sets a safety timeout guard for a dispatched worker request.
+   * If the worker hangs or fails to respond within ms (default 5000ms),
+   * the timeout callback invokes synchronous fallback and cleans up.
+   */
+  public _setRequestTimeout(requestId: number, entry: PendingRequestEntry, ms: number = 5000): void {
+    this._clearRequestTimeout(requestId);
+    const timer = setTimeout(() => {
+      this.requestTimeouts.delete(requestId);
+      const pending = this.pendingRequests.get(requestId);
+      if (pending) {
+        this.pendingRequests.delete(requestId);
+        this.signatureToRequestId.delete(pending.signature);
+        console.warn(`[EphemerisWorkerManager] Request ${requestId} (${pending.type}) timed out after ${ms}ms; invoking synchronous fallback.`);
+        this._executeSyncFallbackForEntry(pending);
+      }
+    }, ms);
+    this.requestTimeouts.set(requestId, timer);
+  }
+
+  /**
+   * Clears any active timeout guard for a completed or cancelled request.
+   */
+  public _clearRequestTimeout(requestId: number): void {
+    const timer = this.requestTimeouts.get(requestId);
+    if (timer) {
+      clearTimeout(timer);
+      this.requestTimeouts.delete(requestId);
+    }
+  }
+
+  /**
    * Handles unexpected worker failure (onerror / postMessage failure) by notifying pending requests
    * via synchronous fallback calculations and safely clearing the worker instance.
    */
@@ -176,6 +209,10 @@ export class EphemerisWorkerManager {
       clearTimeout(this.ephemerisThrottleTimer);
       this.ephemerisThrottleTimer = null;
     }
+    for (const timer of this.requestTimeouts.values()) {
+      clearTimeout(timer);
+    }
+    this.requestTimeouts.clear();
     const pending = Array.from(this.pendingRequests.values());
     if (this.pendingThrottledEntry && this.pendingThrottledEntry.callbacks.size > 0) {
       const throttled = this.pendingThrottledEntry;
@@ -230,6 +267,9 @@ export class EphemerisWorkerManager {
           const response = event.data;
           if (!response) return;
           const { type, id } = response;
+          if (typeof id === 'number') {
+            this._clearRequestTimeout(id);
+          }
           if (type === 'EPHEMERIS_SUCCESS') {
             const requestEntry = this.pendingRequests.get(id);
             if (requestEntry && requestEntry.type === 'EPHEMERIS') {
@@ -353,6 +393,7 @@ export class EphemerisWorkerManager {
 
     this.pendingRequests.set(requestId, requestEntry);
     this.signatureToRequestId.set(signature, requestId);
+    this._setRequestTimeout(requestId, requestEntry);
 
     try {
       const message: EphemerisWorkerRequest = {
@@ -401,6 +442,7 @@ export class EphemerisWorkerManager {
     entry.dispatchedEntry = requestEntry;
     this.pendingRequests.set(requestId, requestEntry);
     this.signatureToRequestId.set(entry.signature, requestId);
+    this._setRequestTimeout(requestId, requestEntry);
 
     try {
       const message: EphemerisWorkerRequest = {
@@ -566,6 +608,7 @@ export class EphemerisWorkerManager {
 
     this.pendingRequests.set(requestId, requestEntry);
     this.signatureToRequestId.set(signature, requestId);
+    this._setRequestTimeout(requestId, requestEntry);
 
     try {
       const message: EphemerisWorkerRequest = {
@@ -645,6 +688,7 @@ export class EphemerisWorkerManager {
 
     this.pendingRequests.set(requestId, requestEntry);
     this.signatureToRequestId.set(signature, requestId);
+    this._setRequestTimeout(requestId, requestEntry);
 
     try {
       const message: EphemerisWorkerRequest = {
@@ -670,6 +714,10 @@ export class EphemerisWorkerManager {
       clearTimeout(this.ephemerisThrottleTimer);
       this.ephemerisThrottleTimer = null;
     }
+    for (const timer of this.requestTimeouts.values()) {
+      clearTimeout(timer);
+    }
+    this.requestTimeouts.clear();
     this.pendingThrottledEntry = null;
     this.lastEphemerisDispatchTime = 0;
     this.latestProcessedEphemerisId = 0;

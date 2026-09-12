@@ -135,15 +135,11 @@ export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitud
   }, [year, latitude]);
 
   const syncSolar = useMemo(() => {
-    if (isWorkerActive) return null;
+    if (isWorkerActive && workerSolar !== null) return null;
     return calculateAnnualSolarMatrix(year, latitude);
-  }, [year, latitude, isWorkerActive]);
+  }, [year, latitude, isWorkerActive, workerSolar !== null]);
 
-  if (!isWorkerActive) {
-    return syncSolar || [];
-  }
-
-  return workerSolar || [];
+  return workerSolar || syncSolar || [];
 };
 
 /**
@@ -185,13 +181,10 @@ export const useAnnualLunarWorker = ({
   }, [year, latitude, longitude]);
 
   const syncLunar = useMemo(() => {
-    if (isWorkerActive) return null;
+    if (isWorkerActive && workerLunar !== null) return null;
     return calculateAnnualLunarMatrix(year, latitude, longitude);
-  }, [year, latitude, longitude, isWorkerActive]);
+  }, [year, latitude, longitude, isWorkerActive, workerLunar !== null]);
 
-  if (!isWorkerActive) {
-    return syncLunar || [];
-  }
-
-  return workerLunar || [];
+  return workerLunar || syncLunar || [];
 };
+

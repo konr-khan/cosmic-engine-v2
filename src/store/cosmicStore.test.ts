@@ -1,5 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cosmicStore, cosmicActions, shallowEqual } from './cosmicStore';
+import { 
+  cosmicStore, 
+  cosmicActions, 
+  shallowEqual, 
+  selectObserverLocation, 
+  selectDate, 
+  selectTimeOfDay, 
+  selectIsPlaying, 
+  selectSpeed, 
+  selectUseAnalemma 
+} from './cosmicStore';
 
 describe('Cosmic Store & State Isolation Suite', () => {
   beforeEach(() => {
@@ -118,4 +128,36 @@ describe('Cosmic Store & State Isolation Suite', () => {
     vi.unstubAllGlobals();
     nowMock.mockRestore();
   });
+
+  it('atomically updates date and timeOfDay in a single notification via setDateTime', () => {
+    const listener = vi.fn();
+    const unsubscribe = cosmicStore.subscribe(listener);
+
+    const targetDate = new Date(Date.UTC(2026, 2, 20));
+    cosmicActions.setDateTime(targetDate, 10.5);
+
+    const state = cosmicStore.getState();
+    expect(state.date.getTime()).toBe(targetDate.getTime());
+    expect(state.timeOfDay).toBe(10.5);
+    // Exactly 1 subscriber notification rather than 2 separate dispatches
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+  });
+
+  it('extracts granular slices accurately via static selectors', () => {
+    cosmicActions.setObserverLocation(51.5074, -0.1278);
+    cosmicActions.setTimeOfDay(16.75);
+    cosmicActions.setSpeed(10);
+    cosmicActions.setUseAnalemma(false);
+
+    const state = cosmicStore.getState();
+    expect(selectObserverLocation(state)).toEqual({ latitude: 51.5074, longitude: -0.1278 });
+    expect(selectDate(state)).toBe(state.date);
+    expect(selectTimeOfDay(state)).toBe(16.75);
+    expect(selectIsPlaying(state)).toBe(false);
+    expect(selectSpeed(state)).toBe(10);
+    expect(selectUseAnalemma(state)).toBe(false);
+  });
 });
+

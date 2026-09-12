@@ -22,6 +22,7 @@ import {
   parseTimeString,
   formatTimeHHMM,
   calculateEphemerisFrame,
+  _clearEphemerisFrameCache,
   generateCosmicScene,
   calculateLunarPosition,
   calculateEclipseData,
@@ -400,6 +401,29 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
           expect(frame.sublunarPoint.lat).toBeLessThanOrEqual(90);
           expect(frame.sublunarPoint.lon).toBeGreaterThanOrEqual(-180);
           expect(frame.sublunarPoint.lon).toBeLessThanOrEqual(180);
+        });
+
+        it('returns cached snapshot reference on identical inputs and updates on parameter change', () => {
+          _clearEphemerisFrameCache();
+          const jd = 2451545.0;
+          const lat: Latitude = 47.06;
+          const lon: Longitude = -122.81;
+
+          const frame1 = calculateEphemerisFrame(jd, lat, lon, true);
+          const frame2 = calculateEphemerisFrame(jd, lat, lon, true);
+
+          // Exact same reference (memoized)
+          expect(frame1).toBe(frame2);
+
+          // Parameter changed -> newly calculated frame
+          const frame3 = calculateEphemerisFrame(jd + 0.001, lat, lon, true);
+          expect(frame3).not.toBe(frame1);
+
+          // Clearing cache forces recalculation
+          _clearEphemerisFrameCache();
+          const frame4 = calculateEphemerisFrame(jd, lat, lon, true);
+          expect(frame4).not.toBe(frame1);
+          expect(frame4.julianDate).toBe(frame1.julianDate);
         });
       });
 

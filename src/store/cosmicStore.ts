@@ -93,6 +93,7 @@ export class CosmicStore {
 
   setDate = (date: Date): void => this.setState({ date });
   setTimeOfDay = (timeOfDay: number): void => this.setState({ timeOfDay });
+  setDateTime = (date: Date, timeOfDay: number): void => this.setState({ date, timeOfDay });
   setLatitude = (latitude: number): void => this.setState({ latitude });
   setLongitude = (longitude: number): void => this.setState({ longitude });
   setObserverLocation = (latitude: number, longitude: number): void => this.setState({ latitude, longitude });
@@ -202,6 +203,7 @@ export function useChronometerStore<T = CosmicStoreState>(
 export const cosmicActions = {
   setDate: (d: Date) => cosmicStore.setDate(d),
   setTimeOfDay: (t: number) => cosmicStore.setTimeOfDay(t),
+  setDateTime: (d: Date, t: number) => cosmicStore.setDateTime(d, t),
   setLatitude: (lat: number) => cosmicStore.setLatitude(lat),
   setLongitude: (lon: number) => cosmicStore.setLongitude(lon),
   setObserverLocation: (lat: number, lon: number) => cosmicStore.setObserverLocation(lat, lon),
@@ -211,3 +213,12 @@ export const cosmicActions = {
   setUseAnalemma: (u: boolean) => cosmicStore.setUseAnalemma(u),
   tickTime: (dt: number) => cosmicStore.tickTime(dt),
 };
+
+// Granular static selectors for optimized selective store subscriptions
+export const selectObserverLocation = (s: CosmicStoreState) => ({ latitude: s.latitude, longitude: s.longitude });
+export const selectDate = (s: CosmicStoreState) => s.date;
+export const selectTimeOfDay = (s: CosmicStoreState) => s.timeOfDay;
+export const selectIsPlaying = (s: CosmicStoreState) => s.isPlaying;
+export const selectSpeed = (s: CosmicStoreState) => s.speed;
+export const selectUseAnalemma = (s: CosmicStoreState) => s.useAnalemma;
+
