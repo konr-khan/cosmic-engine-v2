@@ -6,6 +6,8 @@
 
 import { toRadians, toDegrees, clamp } from '../core';
 import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../astroConstants';
+import { calculateLunarPosition } from '../lunar';
+import { JulianDate } from '../../../types/units';
 import {
   CulminationDirection,
   CulminationInfo,
@@ -388,3 +390,80 @@ export const calculateMeridianDiurnalPoint = (
     isParked: false,
   };
 };
+
+export interface PolarMeridianCounterpart {
+  oppositeTick: RadialTickLine;
+  oppositePoint: MeridianPoint;
+  chordD: string;
+}
+
+/**
+ * Calculates counterpart radial tick and horizontal diurnal chord on the opposite
+ * meridian horizon (180° antimeridian) for polar observers (|latitude| >= 89.9°).
+ *
+ * At the poles, all directions are South (North Pole) or North (South Pole).
+ * Celestial bodies in polar day/night circle the sky at constant altitude h = delta,
+ * crossing both the 0° meridian and the 180° antimeridian at the exact same elevation.
+ *
+ * @param primaryPoint - Primary meridian point on the 0° meridian
+ * @param cx - Canvas center X (default EL_CX = 130)
+ * @param cy - Canvas center Y (default EL_CY = 104)
+ * @param r - Dome radius (default EL_R = 92)
+ * @param rInner - Inner radius for radial tick (default 88)
+ * @param rOuter - Outer radius for radial tick (default 96)
+ * @returns Counterpart tick, counterpart point, and horizontal chord path string
+ */
+export const calculatePolarMeridianCounterpart = (
+  primaryPoint: MeridianPoint,
+  cx: number = EL_CX,
+  cy: number = EL_CY,
+  r: number = EL_R,
+  rInner: number = 88,
+  rOuter: number = 96
+): PolarMeridianCounterpart => {
+  const oppThetaDeg = parseFloat((180 - primaryPoint.thetaDeg).toFixed(2));
+  const oppBearing: CulminationDirection = primaryPoint.bearing === 'South' ? 'North' : 'South';
+  const oppPoint = calculateMeridianPoint(
+    primaryPoint.altitudeDeg,
+    oppBearing,
+    cx,
+    cy,
+    r,
+    -90
+  );
+  oppPoint.thetaDeg = oppThetaDeg;
+  oppPoint.y = primaryPoint.y;
+
+  const oppositeTick = calculateMeridianRadialTick(oppThetaDeg, rInner, rOuter, cx, cy);
+  const x1 = Math.min(primaryPoint.x, oppPoint.x);
+  const x2 = Math.max(primaryPoint.x, oppPoint.x);
+  const chordD = `M ${x1.toFixed(1)} ${primaryPoint.y.toFixed(1)} L ${x2.toFixed(1)} ${primaryPoint.y.toFixed(1)}`;
+
+  return {
+    oppositeTick,
+    oppositePoint: oppPoint,
+    chordD,
+  };
+};
+
+/**
+ * Calculates instantaneous lunar declination velocity (degrees per hour) and directional
+ * migration trend toward the maximum or minimum declination bound.
+ *
+ * @param jd - Evaluation epoch Julian Date
+ * @returns Velocity in degrees/hour and boolean indicating whether Moon is approaching maximum declination
+ */
+export const calculateLunarDeclinationVelocity = (
+  jd: JulianDate | number
+): { velocityDegPerHour: number; isApproachingMax: boolean } => {
+  const jdNum = Number(jd);
+  const stepDays = 0.041667; // 1 hour
+  const posNow = calculateLunarPosition(jdNum);
+  const posNext = calculateLunarPosition(jdNum + stepDays);
+  const velocityDegPerHour = (Number(posNext.declination) - Number(posNow.declination)) / 1.0;
+  return {
+    velocityDegPerHour: parseFloat(velocityDegPerHour.toFixed(4)),
+    isApproachingMax: velocityDegPerHour >= 0,
+  };
+};
+

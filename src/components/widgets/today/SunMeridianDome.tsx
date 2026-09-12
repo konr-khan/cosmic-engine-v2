@@ -9,6 +9,7 @@ import {
   calculateMeridianRadialTick,
   calculateMeridianDiurnalPoint,
   calculateMeridianDiurnalChord,
+  calculatePolarMeridianCounterpart,
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
 import { MeridianDomeBase, EL_CX, EL_CY, EL_R } from './MeridianDomeBase';
@@ -23,6 +24,7 @@ export interface SunMeridianDomeProps {
   isTwilightMode?: boolean;
   onToggleTwilight?: () => void;
   hideFooter?: boolean;
+  variant?: 'card' | 'embedded';
 }
 
 export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
@@ -35,6 +37,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   isTwilightMode,
   onToggleTwilight,
   hideFooter = false,
+  variant,
 }) => {
   const [localTwilightMode, setLocalTwilightMode] = useState(initialTwilightMode);
   const isTwilightModeActive = isTwilightMode !== undefined ? isTwilightMode : localTwilightMode;
@@ -167,6 +170,11 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     return dayOfYear < 172 || dayOfYear >= 355;
   }, [sunLambda, _currentDate]);
 
+  const isNorth = latitude >= 0;
+  const summerSolsticeColor = isNorth ? '#fbbf24' : '#d97706';
+  const winterSolsticeColor = isNorth ? '#d97706' : '#fbbf24';
+  const isApproachingSummer = isNorth ? isApproachingJune : !isApproachingJune;
+
   // Solstice tick pin visibility logic:
   // - If altitude >= 0°: visible in all modes
   // - If 0° > altitude >= -18°: visible ONLY when isTwilightModeActive is true
@@ -206,6 +214,35 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
     [equinoxPoint.thetaDeg]
   );
 
+  // Polar Latitudes: Counterpart solstice pins, chords & bilateral migration swaths across 180° antimeridian
+  const polarSummerCounterpart = useMemo(() => {
+    if (!isPolar) return null;
+    const activeSummerPoint = isNorth ? junePoint : decemberPoint;
+    return calculatePolarMeridianCounterpart(activeSummerPoint, EL_CX, EL_CY, EL_R, 86, 98);
+  }, [isPolar, isNorth, junePoint, decemberPoint]);
+
+  const polarWinterCounterpart = useMemo(() => {
+    if (!isPolar || !isTwilightModeActive) return null;
+    const activeWinterPoint = isNorth ? decemberPoint : junePoint;
+    return calculatePolarMeridianCounterpart(activeWinterPoint, EL_CX, EL_CY, EL_R, 86, 98);
+  }, [isPolar, isTwilightModeActive, isNorth, decemberPoint, junePoint]);
+
+  const polarSummerCounterpartSwathD = useMemo(() => {
+    if (!isPolar || !polarSummerCounterpart) return '';
+    return generateMeridianSwathD(
+      180 - todayPeakPoint.thetaDeg,
+      polarSummerCounterpart.oppositePoint.thetaDeg
+    );
+  }, [isPolar, polarSummerCounterpart, todayPeakPoint.thetaDeg]);
+
+  const polarWinterCounterpartSwathD = useMemo(() => {
+    if (!isPolar || !polarWinterCounterpart || !isTwilightModeActive) return '';
+    return generateMeridianSwathD(
+      180 - todayPeakPoint.thetaDeg,
+      polarWinterCounterpart.oppositePoint.thetaDeg
+    );
+  }, [isPolar, polarWinterCounterpart, isTwilightModeActive, todayPeakPoint.thetaDeg]);
+
   // Solstice Span in declination: 2 * 23.439° = 46.88°
   const solsticeSpanDeg = 2 * OBLIQUITY;
 
@@ -235,6 +272,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       elevationStatusSubtitle={elevationSubtitle}
       showTwilightBands={isTwilightModeActive}
       latitude={latitude}
+      variant={variant}
       bodyX={activeSunPoint.x}
       bodyY={activeSunPoint.y}
       bodyVectorStroke={currentSunElevation >= 0 ? '#fbbf24' : '#475569'}
@@ -305,6 +343,38 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
               },
             ]
           : []),
+        ...(isPolar && polarSummerCounterpartSwathD && (isNorth ? showJuneTick : showDecemberTick)
+          ? [
+              {
+                id: 'polar-counterpart-summer-swath',
+                d: polarSummerCounterpartSwathD,
+                stroke: summerSolsticeColor,
+                strokeWidth: isApproachingSummer ? 1.25 : 0.9,
+                strokeDasharray: '3 2',
+                strokeOpacity: isApproachingSummer ? 0.85 : 0.40,
+                glow: true,
+                glowWidth: 4,
+                glowOpacity: isApproachingSummer ? 0.25 : 0.10,
+                title: `Polar Summer Solstice Antimeridian Arc (180°): ${summerNoon.toFixed(1)}° (${isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
+              },
+            ]
+          : []),
+        ...(isPolar && polarWinterCounterpartSwathD && (isNorth ? showDecemberTick : showJuneTick)
+          ? [
+              {
+                id: 'polar-counterpart-winter-swath',
+                d: polarWinterCounterpartSwathD,
+                stroke: winterSolsticeColor,
+                strokeWidth: !isApproachingSummer ? 1.25 : 0.9,
+                strokeDasharray: '3 2',
+                strokeOpacity: !isApproachingSummer ? 0.85 : 0.40,
+                glow: true,
+                glowWidth: 4,
+                glowOpacity: !isApproachingSummer ? 0.25 : 0.10,
+                title: `Polar Winter Solstice Antimeridian Arc (180°): ${winterNoon.toFixed(1)}° (${!isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
+              },
+            ]
+          : []),
       ]}
       radialTicks={[
         ...(showJuneTick
@@ -336,9 +406,63 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
           strokeWidth: 1.0,
           title: `Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`,
         },
+        ...(isPolar && polarSummerCounterpart && (isNorth ? showJuneTick : showDecemberTick)
+          ? [
+              {
+                id: 'polar-counterpart-summer-tick',
+                tick: polarSummerCounterpart.oppositeTick,
+                stroke: summerSolsticeColor,
+                strokeWidth: 1.4,
+                title: `Summer Solstice 24h Antimeridian (180°) Culmination: ${summerNoon.toFixed(1)}° (Midnight Sun)`,
+              },
+            ]
+          : []),
+        ...(isPolar && polarWinterCounterpart && (isNorth ? showDecemberTick : showJuneTick)
+          ? [
+              {
+                id: 'polar-counterpart-winter-tick',
+                tick: polarWinterCounterpart.oppositeTick,
+                stroke: winterSolsticeColor,
+                strokeWidth: 1.4,
+                title: `Winter Solstice 24h Antimeridian (180°) Culmination: ${winterNoon.toFixed(1)}° (${getTwilightTier(winterNoon)})`,
+              },
+            ]
+          : []),
       ]}
       geometryGroupId="meridian-solstice-geometry"
       geometryGroupClassName="meridian-solstice-geometry"
+      extraMeridianSvg={
+        isPolar && (
+          <g id="polar-solstice-chords">
+            {polarSummerCounterpart && (isNorth ? showJuneTick : showDecemberTick) && (
+              <path
+                id="polar-summer-solstice-chord"
+                d={polarSummerCounterpart.chordD}
+                fill="none"
+                stroke={summerSolsticeColor}
+                strokeWidth={1.0}
+                strokeDasharray="3 2"
+                strokeOpacity={0.65}
+              >
+                <title>{`Polar Summer Solstice Diurnal Parallel (+23.4°): Constant 24h altitude across 0° and 180° meridians (Midnight Sun)`}</title>
+              </path>
+            )}
+            {polarWinterCounterpart && (isNorth ? showDecemberTick : showJuneTick) && (
+              <path
+                id="polar-winter-solstice-chord"
+                d={polarWinterCounterpart.chordD}
+                fill="none"
+                stroke={winterSolsticeColor}
+                strokeWidth={0.85}
+                strokeDasharray="2 3"
+                strokeOpacity={0.45}
+              >
+                <title>{`Polar Winter Solstice Sub-Horizon Parallel (−23.4°): Constant 24h depth across 0° and 180° meridians`}</title>
+              </path>
+            )}
+          </g>
+        )
+      }
       todayChordConfig={{
         daylightId: 'sun-today-diurnal-chord',
         twilightId: isTwilightModeActive ? 'sun-today-twilight-chord' : undefined,

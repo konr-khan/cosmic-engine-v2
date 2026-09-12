@@ -59,6 +59,7 @@ export interface SkyDomeBaseProps {
   rightHorizonLabel?: string;
   showZenithAxis?: boolean;
   hideElevationBanner?: boolean;
+  variant?: 'card' | 'embedded';
 }
 
 export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
@@ -91,6 +92,7 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   rightHorizonLabel,
   showZenithAxis = false,
   hideElevationBanner = false,
+  variant = 'card',
 }) => {
   const isAboveHorizon = currentElevation > 0;
   const isVisible = showZenithAxis ? true : currentElevation > -18;
@@ -115,8 +117,12 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
       ? `Polar longitude: 0° (Greenwich Meridian) · All horizons ${isNorthPole ? 'South' : 'North'}`
       : `Culmination meridian bearing: ${meridianLabel === 'Z' ? 'Zenith (Overhead)' : meridianLabel === 'N' ? 'North' : 'South'}`);
 
+  const containerClasses = variant === 'embedded'
+    ? 'flex flex-col justify-between relative pt-2'
+    : 'bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative';
+
   return (
-    <div className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60 flex flex-col justify-between shadow-inner backdrop-blur-sm relative">
+    <div className={containerClasses}>
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-1 px-1 font-mono">
         <div className="text-xs text-slate-300 font-semibold uppercase tracking-wider flex items-center gap-1.5 font-sans">

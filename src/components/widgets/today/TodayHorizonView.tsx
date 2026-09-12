@@ -111,8 +111,8 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 items-stretch overflow-y-auto pr-1">
-          {/* Left Column (Sun): Diurnal Elevation Arc + Meridian Profile */}
-          <div className="flex flex-col gap-4">
+          {/* Left Column (Sun): Unified Card containing Diurnal Elevation Arc + Meridian Profile */}
+          <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 shadow-inner backdrop-blur-sm flex flex-col justify-between">
             <SunElevationDome
               solarData={solarData}
               displayTime={displayTime}
@@ -122,21 +122,25 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               isTwilightMode={isTwilightMode}
               onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
               isQuadMode={true}
+              variant="embedded"
             />
-            <SunMeridianDome
-              solarData={solarData}
-              displayTime={displayTime}
-              latitude={latitude}
-              currentDate={currentDate}
-              onSetTime={onSetTime}
-              isTwilightMode={isTwilightMode}
-              onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
-              hideFooter={true}
-            />
+            <div className="border-t border-slate-800/50 mt-2 pt-1">
+              <SunMeridianDome
+                solarData={solarData}
+                displayTime={displayTime}
+                latitude={latitude}
+                currentDate={currentDate}
+                onSetTime={onSetTime}
+                isTwilightMode={isTwilightMode}
+                onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
+                hideFooter={true}
+                variant="embedded"
+              />
+            </div>
           </div>
 
-          {/* Right Column (Moon): Diurnal Elevation Arc + Meridian Profile */}
-          <div className="flex flex-col gap-4">
+          {/* Right Column (Moon): Unified Card containing Diurnal Elevation Arc + Meridian Profile */}
+          <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 shadow-inner backdrop-blur-sm flex flex-col justify-between">
             <MoonElevationDome
               orbitalData={orbitalData}
               solarData={solarData}
@@ -148,18 +152,22 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
               isNodalMode={isNodalMode}
               onToggleNodal={() => setIsNodalMode((prev) => !prev)}
               isQuadMode={true}
+              variant="embedded"
             />
-            <MoonMeridianDome
-              orbitalData={orbitalData}
-              solarData={solarData}
-              displayTime={displayTime}
-              latitude={latitude}
-              currentDate={currentDate}
-              onSetTime={onSetTime}
-              isNodalMode={isNodalMode}
-              onToggleNodal={() => setIsNodalMode((prev) => !prev)}
-              hideFooter={true}
-            />
+            <div className="border-t border-slate-800/50 mt-2 pt-1">
+              <MoonMeridianDome
+                orbitalData={orbitalData}
+                solarData={solarData}
+                displayTime={displayTime}
+                latitude={latitude}
+                currentDate={currentDate}
+                onSetTime={onSetTime}
+                isNodalMode={isNodalMode}
+                onToggleNodal={() => setIsNodalMode((prev) => !prev)}
+                hideFooter={true}
+                variant="embedded"
+              />
+            </div>
           </div>
         </div>
       )}

@@ -23,6 +23,8 @@ import {
   calculateMeridianRadialTick,
   calculateMeridianDiurnalPoint,
   calculateMeridianDiurnalChord,
+  calculatePolarMeridianCounterpart,
+  calculateLunarDeclinationVelocity,
   EL_R, 
   EL_CX, 
   EL_CY 
@@ -948,4 +950,40 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       expect(southSummerPath.pathD).not.toContain('NaN');
     });
   });
+
+  describe('Polar Solstice Counterpart Geometry (calculatePolarMeridianCounterpart)', () => {
+    it('generates mirrored counterpart tick and flat horizontal chord for polar summer culmination', () => {
+      // Primary summer solstice point at 90°N: 23.44° altitude South (theta = 180 - 23.44 = 156.56°)
+      const primary = calculateMeridianPoint(23.44, 'South');
+      expect(primary.thetaDeg).toBeCloseTo(156.56, 1);
+
+      const counterpart = calculatePolarMeridianCounterpart(primary);
+      // Opposite angle on 180° antimeridian horizon: 180 - 156.56 = 23.44°
+      expect(counterpart.oppositePoint.thetaDeg).toBeCloseTo(23.44, 1);
+      // Horizontal level parity: Y coordinates must be strictly equal
+      expect(counterpart.oppositePoint.y).toBeCloseTo(primary.y, 2);
+      // Horizontal chord path
+      expect(counterpart.chordD).toContain('M ');
+      expect(counterpart.chordD).toContain(' L ');
+      expect(counterpart.chordD).not.toContain('NaN');
+
+      // Opposite radial tick mark
+      expect(counterpart.oppositeTick.x1).toBeGreaterThan(EL_CX);
+      const tickMidY = (counterpart.oppositeTick.y1 + counterpart.oppositeTick.y2) / 2;
+      expect(tickMidY).toBeCloseTo(counterpart.oppositePoint.y, 1);
+    });
+  });
+
+  describe('Lunar Declination Velocity (calculateLunarDeclinationVelocity)', () => {
+    it('computes instantaneous velocity and identifies approaching direction correctly', () => {
+      const jd = getJulianDate(new Date('2026-03-21T12:00:00Z'));
+      const vel = calculateLunarDeclinationVelocity(jd);
+      expect(typeof vel.velocityDegPerHour).toBe('number');
+      expect(Number.isNaN(vel.velocityDegPerHour)).toBe(false);
+      expect(typeof vel.isApproachingMax).toBe('boolean');
+      // Lunar declination speed is bounded by ~0.8°/hour
+      expect(Math.abs(vel.velocityDegPerHour)).toBeLessThan(1.0);
+    });
+  });
 });
+

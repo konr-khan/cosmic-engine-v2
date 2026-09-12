@@ -32,6 +32,7 @@ export interface MoonElevationDomeProps {
   isNodalMode?: boolean;
   onToggleNodal?: () => void;
   isQuadMode?: boolean;
+  variant?: 'card' | 'embedded';
 }
 
 export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
@@ -46,6 +47,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   isNodalMode,
   onToggleNodal,
   isQuadMode = false,
+  variant,
 }) => {
   const [isHoveringMoonMetrics, setIsHoveringMoonMetrics] = useState(false);
   const [localNodalMode, setLocalNodalMode] = useState(initialNodalMode);
@@ -293,6 +295,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       elevationStatusSubtitle={lunarStatus.label}
       latitude={latitude}
       capPathD={lunarCapPathD}
+      variant={variant}
       diurnalPaths={diurnalPaths}
       bodyX={moonX}
       bodyY={moonY}

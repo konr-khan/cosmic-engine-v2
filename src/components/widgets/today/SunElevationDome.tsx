@@ -26,6 +26,7 @@ export interface SunElevationDomeProps {
   isTwilightMode?: boolean;
   onToggleTwilight?: () => void;
   isQuadMode?: boolean;
+  variant?: 'card' | 'embedded';
 }
 
 export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
@@ -38,6 +39,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   isTwilightMode,
   onToggleTwilight,
   isQuadMode = false,
+  variant,
 }) => {
   const [isHoveringSunMetrics, setIsHoveringSunMetrics] = useState(false);
   const [localTwilightMode, setLocalTwilightMode] = useState(initialTwilightMode);
@@ -206,6 +208,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       showTwilightBands={isTwilightModeActive}
       latitude={latitude}
       capPathD={capPathD}
+      variant={variant}
       diurnalPaths={diurnalPaths}
       bodyX={sunX}
       bodyY={sunY}

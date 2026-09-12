@@ -653,9 +653,10 @@ describe('Today Horizon Subsystem', () => {
     // Vertical dashed Zenith axis
     expect(moonMeridianHtml).toContain('x1="130" y1="104" x2="130" y2="12"');
 
-    // Standstill and monthly swaths
-    expect(moonMeridianHtml).toContain('id="standstill-swath-guide"');
-    expect(moonMeridianHtml).toContain('id="monthly-lunar-swath-core"');
+    // Standstill and monthly swaths (Option C glowing dashed migration swaths & monthly guide)
+    expect(moonMeridianHtml).toContain('id="monthly-lunar-swath-guide"');
+    expect(moonMeridianHtml).toContain('id="lunar-migration-swath-max"');
+    expect(moonMeridianHtml).toContain('id="lunar-migration-swath-min"');
 
     // Standstill and monthly ticks
     expect(moonMeridianHtml).toContain('id="standstill-max-tick"');
@@ -872,6 +873,11 @@ describe('Today Horizon Subsystem', () => {
     expect(npMeridianHtml).toContain('>S (180°)</text>');
     expect(npMeridianHtml).not.toContain('>N</text>');
     expect(npMeridianHtml).toContain('Constant Altitude:');
+    // Polar counterpart solstice tick on 180° antimeridian and horizontal chord
+    expect(npMeridianHtml).toContain('id="polar-counterpart-summer-tick"');
+    expect(npMeridianHtml).toContain('id="polar-summer-solstice-chord"');
+    expect(npMeridianHtml).toMatch(/id="polar-counterpart-summer-tick"[^>]*><line[^>]*stroke="#fbbf24"/);
+    expect(npMeridianHtml).toContain('id="polar-counterpart-summer-swath"');
 
     // North Pole (90°N) on SunElevationDome: Sighting banner announces polar singularity and longitudinal baseline
     const npElevationHtml = renderToStaticMarkup(
@@ -899,6 +905,11 @@ describe('Today Horizon Subsystem', () => {
     expect(spMeridianHtml).toContain('>Z (-90°)</text>');
     expect(spMeridianHtml).toContain('>N (180°)</text>');
     expect(spMeridianHtml).toContain('Constant Altitude:');
+    expect(spMeridianHtml).toContain('id="polar-counterpart-summer-tick"');
+    expect(spMeridianHtml).toContain('id="polar-summer-solstice-chord"');
+    // Verify South Pole summer solstice color is Bronze (#d97706) and NOT Gold (#fbbf24)
+    expect(spMeridianHtml).toMatch(/id="polar-counterpart-summer-tick"[^>]*><line[^>]*stroke="#d97706"/);
+    expect(spMeridianHtml).toContain('id="polar-counterpart-summer-swath"');
 
     const spElevationHtml = renderToStaticMarkup(
       React.createElement(SunElevationDome, {
@@ -909,6 +920,60 @@ describe('Today Horizon Subsystem', () => {
 
     expect(spElevationHtml).toContain('Constant Altitude:');
     expect(spElevationHtml).toContain('South Pole Singularity · All Horizons North');
+  });
+
+  it('renders SunMeridianDome and MoonMeridianDome with variant="embedded" without card wrapper borders', () => {
+    const embeddedSunHtml = renderToStaticMarkup(
+      React.createElement(SunMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        variant: 'embedded',
+        hideFooter: true,
+      })
+    );
+
+    expect(embeddedSunHtml).not.toContain('bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60');
+    expect(embeddedSunHtml).toContain('Sun Meridian Profile');
+
+    const embeddedMoonHtml = renderToStaticMarkup(
+      React.createElement(MoonMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+        variant: 'embedded',
+        hideFooter: true,
+      })
+    );
+
+    expect(embeddedMoonHtml).not.toContain('bg-slate-900/40 rounded-xl p-3.5 border border-slate-800/60');
+    expect(embeddedMoonHtml).toContain('Moon Meridian Profile');
+  });
+
+  it('renders MoonMeridianDome Option C bifurcated migration swaths and polar counterpart geometry', () => {
+    const moonHtml = renderToStaticMarkup(
+      React.createElement(MoonMeridianDome, {
+        displayTime: 12,
+        latitude: 47.06,
+      })
+    );
+
+    // Option C bifurcated migration tracks
+    expect(moonHtml).toContain('id="lunar-migration-swath-max"');
+    expect(moonHtml).toContain('id="lunar-migration-swath-min"');
+    expect(moonHtml).toContain('stroke-dasharray="3 2"');
+    // Verify solid white line is not taking precedence
+    expect(moonHtml).not.toContain('id="monthly-lunar-swath-core"');
+
+    // Polar latitude test for Moon (latitude: 90.0)
+    const polarMoonHtml = renderToStaticMarkup(
+      React.createElement(MoonMeridianDome, {
+        displayTime: 12,
+        latitude: 90.0,
+      })
+    );
+
+    expect(polarMoonHtml).toContain('id="polar-counterpart-lunar-max-tick"');
+    expect(polarMoonHtml).toContain('id="polar-lunar-max-chord"');
+    expect(polarMoonHtml).toContain('id="polar-counterpart-lunar-max-swath"');
   });
 });
 

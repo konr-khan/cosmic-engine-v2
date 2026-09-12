@@ -95,6 +95,7 @@ export interface MeridianDomeBaseProps {
   leftHorizonLabel?: string;
   centerHorizonLabel?: string;
   rightHorizonLabel?: string;
+  variant?: 'card' | 'embedded';
 }
 
 /** Reusable SVG sub-component for meridian swath arcs */
@@ -330,6 +331,7 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
   leftHorizonLabel,
   centerHorizonLabel,
   rightHorizonLabel,
+  variant,
 }) => {
   const isPolar = latitude !== undefined && Math.abs(latitude) >= 89.9;
   const isNorthPole = isPolar && latitude >= 0;
@@ -362,6 +364,7 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
       bodyX={bodyX}
       bodyY={bodyY}
       bodyVectorStroke={bodyVectorStroke}
+      variant={variant}
       renderBodyGraphic={renderBodyGraphic}
       popover={popover}
       extraSvgContent={
