@@ -66,7 +66,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F12 | Armillary MiniGlobe Integration | Replace static central Earth bead in `ArmillaryBeadsLayer.tsx` with `<MiniGlobe />` | M4 | ORIGINAL_REQUEST §R4 |
 | F13 | Architecture Decision Record ADR-0004 | Document `docs/adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md` | M4 | ORIGINAL_REQUEST §R4 |
 | F14 | Technical Documentation Sync | Update `docs/MATH_SPEC.md`, `docs/DESIGN_SYSTEM.md`, and `AGENTS.md` | M4 | ORIGINAL_REQUEST §R4 |
-| F15 | Full Test Suite & Build Verification | Full regression run (223+ existing tests + new tests), TypeScript check, and production build | Final | ORIGINAL_REQUEST §Acceptance Criteria |
+| F15 | Full Test Suite & Build Verification | Full regression run (648 tests across 43 suites), TypeScript check, and production build | Final | ORIGINAL_REQUEST §Acceptance Criteria |
 | F16 | Directional Derivative Invariants | Property-based physical $\Delta t$ derivative tests in `cameras.stress.test.ts` (Rig 6 suite) | M10 | ADR-0008 |
 | F17 | Sky View Simulator Prograde Kinematics | Signed $\Delta\lambda$ transit coordinates in `SkyViewSimulator.tsx`, eliminating bouncing moon bug | M10 | ADR-0008 |
 | F18 | Ground-Truth Prograde Kinematics | Ground-truth CCW heliocentric and geocentric orbits, 2D Kepler focus vector, single source of truth milestones | M11 | ADR-0009 |
@@ -129,6 +129,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M21 | Meridian Profile Solstice Bifurcation, Sub-Horizon Twilight Kinematics & Compact Telemetry | `SunMeridianDome.tsx` (split swaths, direction vector, sub-horizon twilight), `MeridianDomeBase.tsx` (`hideElevationBanner`), `SkyDomeBase.tsx`, `src/utils/cosmicMath/today/meridian.ts` (`minAltitudeDeg = -18`), ADR-0021, 592 tests across 40 suites | M1-M20 | DONE |
 | M22 | Polar Directional Singularity Rectification & Longitudinal Horizon Reference Geometry | `src/utils/cosmicMath/today/elevation.ts` (`calculateCulminationBearing` polar singularity branch), `SkyDomeBase.tsx` (`90°E — 0° (Grw) — 90°W`), `MeridianDomeBase.tsx` (`S (0°) — Z (+90°) — S (180°)`, `N (0°) — Z (-90°) — N (180°)`), `SunElevationDome.tsx`, `SunMeridianDome.tsx`, `MoonElevationDome.tsx`, `MoonMeridianDome.tsx` (`Constant Altitude` peak label), ADR-0022, 595 tests across 40 suites | M1-M21 | DONE |
 | M23 | Principles & Design Alignment, Invariant Hardening & Specs Reconciliation | Pure domain math & invariants (`frame.ts`, `sceneMath.ts`), vector stroke encodings (dual-pane eclipse $520\times 220$, 3-tier twilight strata, Armillary milestone halos), semantic tokens (Sky Blue time/tides, Rose Red cursors/phases, Amber longitude/sun, warm gold glowing chords), persistent specs alignment (`DESIGN_SYSTEM.md`, `MATH_SPEC.md`), ADR-0023, 600 tests across 40 suites | M1-M22 | DONE |
+| M24 | Concurrency Hardening, Domain Math Purity, Visual Polish & Component Test Expansion | Ephemeris memoization, date jump cache invalidation, todayTokens extraction, sync parallactic angle, dashboardPresets, lruCache, expanded component tests (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`, `lruCache.test.ts`), ADR-0024, 648 tests across 43 suites | M1-M23 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -149,27 +150,33 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `main.tsx` — React root renderer
   - `App.tsx` — Master Observatory dashboard container
   - `App.test.tsx` — Root dashboard mounting, layout grid & dock integration tests
+  - `constants/`
+    - `dashboardPresets.ts` — Observatory window arrangement layout presets
   - `types/` — Foundational branded units, coordinates, astronomy, worker RPC & store contracts
-  - `utils/cosmicMath/`
-    - `astroConstants.ts` — Centralized IAU/WGS-84/Meeus physical constants & J2000 epoch
-    - `constants.ts` — Orbital radii, twilight thresholds & theme tokens
-    - `core.ts` — Julian dates, UTC invariance, spherical linear interpolation (`slerp3D`), GMST & LST
-    - `solar.ts` — Solar declination, EoT, twilight algorithms & annual solar matrix
-    - `lunar.ts` — Lunar ephemeris, phase angle, disc illumination, Newton-Raphson crossing solver
-    - `eclipse.ts` — Syzygy shadow geometry & eclipse recurrence scanner
-    - `today/` — Decomposed Topocentric Horizon & Meridian submodules
-      - `elevation.ts` — Prime vertical dome projection, diurnal paths & rise/set azimuth octants
-      - `meridian.ts` — S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
-      - `draconic.ts` — True lunar node crossings, 18.6y standstills & micro-rail
-    - `todaySky.ts` — Backward-compatible facade re-exporting elevation, meridian & draconic submodules
-    - `globe.ts` — Spherical continent projection & analytical limb horizon clipping
-    - `projection.ts` — Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
-    - `geoData.ts` — World landmass continent outline polygons
-    - `milestones.ts` — Canonical Earth orbital milestones (single source of truth)
-    - `frame.ts` — Centralized EphemerisFrame snapshot generator
-    - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
-    - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade)
-    - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
+  - `utils/`
+    - `formatters.ts` — Human-readable coordinate and temporal formatting
+    - `lruCache.ts` — Generic bounded LRU cache utility
+    - `lruCache.test.ts` — LRU cache eviction order and capacity tests
+    - `cosmicMath/`
+      - `astroConstants.ts` — Centralized IAU/WGS-84/Meeus physical constants & J2000 epoch
+      - `constants.ts` — Orbital radii, twilight thresholds & theme tokens
+      - `core.ts` — Julian dates, UTC invariance, spherical linear interpolation (`slerp3D`), GMST & LST
+      - `solar.ts` — Solar declination, EoT, twilight algorithms & annual solar matrix
+      - `lunar.ts` — Lunar ephemeris, phase angle, disc illumination, Newton-Raphson crossing solver
+      - `eclipse.ts` — Syzygy shadow geometry & eclipse recurrence scanner
+      - `today/` — Decomposed Topocentric Horizon & Meridian submodules
+        - `elevation.ts` — Prime vertical dome projection, diurnal paths & rise/set azimuth octants
+        - `meridian.ts` — S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
+        - `draconic.ts` — True lunar node crossings, 18.6y standstills & micro-rail
+      - `todaySky.ts` — Backward-compatible facade re-exporting elevation, meridian & draconic submodules
+      - `globe.ts` — Spherical continent projection & analytical limb horizon clipping
+      - `projection.ts` — Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
+      - `geoData.ts` — World landmass continent outline polygons
+      - `milestones.ts` — Canonical Earth orbital milestones (single source of truth)
+      - `frame.ts` — Centralized EphemerisFrame snapshot generator
+      - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
+      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade)
+      - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
   - `store/`
     - `cosmicStore.ts` — External state store & animation frame ticker
     - `hoverStore.ts` — Atomic external store for 60 FPS ribbon scrubber isolation
@@ -184,7 +191,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `components/`
     - `widgets/` — Lazy-loaded observatory visualizers (`React.lazy()`)
       - `common/useRibbonScrubber.ts` — Bidirectional timeline coordinate & pointer dragging hook
-      - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`)
+      - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`, `todayTokens.ts`)
       - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, modular canvas layers)
       - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`)
       - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`)
@@ -193,10 +200,10 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView`, `OrbitSvgCanvas`)
       - `tides/` — Earth Gravitational Tidal Force (`MicroTideView`)
     - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
-    - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/`)
+    - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/`, `AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`)
     - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `WindowErrorBoundary`, `PhaseVisual`)
+- `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
-  - `adr/` — Architecture Decision Records (`0001` through `0022`)
+  - `adr/` — Architecture Decision Records (`0001` through `0024`)

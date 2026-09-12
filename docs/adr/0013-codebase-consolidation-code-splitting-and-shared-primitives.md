@@ -1,5 +1,9 @@
 # ADR 0013: Codebase Consolidation, Widget Code-Splitting, Shared Primitives & Test Suite Decomposition
 
+> [!NOTE]
+> **Evolutionary Amendment Banner (ADR-0018 Update)**:
+> As established in [ADR-0018](0018-performance-optimization-modular-ephemeris-decoupling-and-build-hardening.md), intermediate barrel re-exports (`src/components/widgets/index.ts`) were subsequently deprecated and deleted to eliminate bundle leakage and guarantee pure code-splitting tree-shaking boundaries. Consumers must import directly from specific subsystem modules.
+
 ## Status
 Accepted
 

@@ -97,6 +97,11 @@ Given ephemeris day offset $d = \text{JD} - 2451545.0$ from epoch J2000.0:
 \[
 \lambda_\odot = L + 1.915^\circ \sin g + 0.020^\circ \sin 2g
 \]
+* **Secular Obliquity Drift Correction ($\varepsilon(n)$)**:
+  \[
+  \varepsilon(n) = \varepsilon_0 - 0.0000004 \cdot n
+  \]
+  where $\varepsilon_0 = 23.439^\circ$ (mean obliquity at J2000.0) and $n = \text{JD} - 2451545.0$ is days elapsed from J2000.0.
 * **Solar Declination ($\delta_\odot$)**:
   \[
   \sin \delta_\odot = \sin \varepsilon \sin \lambda_\odot \implies \delta_\odot = \arcsin(\sin \varepsilon \sin \lambda_\odot)
@@ -804,7 +809,7 @@ Section 10 codifies the ground-truth mathematical models, matrix transformations
    \]
    For any 3D vector $\vec{v}_{\text{ecl}} \in \mathcal{F}_{\text{ecl}}$, its equatorial representation is $\vec{v}_{\text{eq}} = \mathbf{M}_{\text{ecl}\to\text{eq}} \vec{v}_{\text{ecl}}$.
 
-4. **Bijective Scene Graph $\longleftrightarrow$ Armillary Frame Transformations (`sceneMath.ts`)**:
+4. **Bijective Scene Graph $\longleftrightarrow$ Armillary Frame Transformations (`scene/transforms.ts`)**:
    Pure conversion utilities `transformSceneToArmillary` and `transformArmillaryToScene` implement the exact involution matrix $\mathbf{M}_{\text{scene}\leftrightarrow\text{arm}} = \mathbf{M}_{\text{scene}\leftrightarrow\text{arm}}^{-1}$:
    \[
    \mathbf{M}_{\text{scene}\to\text{arm}} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & 1 & 0 \end{pmatrix} \implies \begin{pmatrix} x_{\text{arm}} \\ y_{\text{arm}} \\ z_{\text{arm}} \end{pmatrix} = \begin{pmatrix} x_{\text{scene}} \\ z_{\text{scene}} \\ y_{\text{scene}} \end{pmatrix}
@@ -1258,6 +1263,10 @@ where $\delta$ is the celestial body's declination and $\phi$ is the topocentric
      - Meridian tag: `N`, Peak Suffix: `N`.
      - Observer perspective cue: `"Looking North · N-Sky Arc"`.
      - Vertical gnomon shadows point due South.
+   * **Polar Directional Singularity ($|\phi| \ge 89.9^\circ$)**:
+     At the terrestrial poles, standard compass bearings collapse because all meridians converge at the rotational axis:
+     - **North Pole ($\phi \ge +89.9^\circ$)**: All horizontal directions point due South. Direction: `'South'`, Meridian tag: `'S'`, Peak altitude: $h_{\text{peak}} = \delta$, Sighting summary: `'North Pole Singularity · All Horizons South'` (`'Polar Horizon · All Directions South'`).
+     - **South Pole ($\phi \le -89.9^\circ$)**: All horizontal directions point due North. Direction: `'North'`, Meridian tag: `'N'`, Peak altitude: $h_{\text{peak}} = -\delta$, Sighting summary: `'South Pole Singularity · All Horizons North'` (`'Polar Horizon · All Directions North'`).
 
 3. **Tropical & Standstill Culmination Inversion Boundaries**:
    * **Solar Tropics ($-23.44^\circ \le \phi \le +23.44^\circ$)**:

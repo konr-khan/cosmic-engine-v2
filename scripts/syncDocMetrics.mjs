@@ -265,6 +265,21 @@ const CANONICAL_SUITES = [
     domain: 'Observatory Root Dashboard',
     file: 'src/App.test.tsx',
     focus: '12-column responsive layout grid, master preset windows, ObsNavbar branding, and OrbitalChronometer dock integration'
+  },
+  {
+    domain: 'LRU Cache Utility',
+    file: 'src/utils/lruCache.test.ts',
+    focus: 'Generic LRU cache eviction order, capacity limits, promotion on get/set, and Map iterator ordering'
+  },
+  {
+    domain: 'Solstice Jump Controls',
+    file: 'src/components/layout/chronometer/SolsticeJumpControls.test.tsx',
+    focus: 'Astronomical turning point buttons (Mar/Sep Equinox, Jun/Dec Solstice), UTC date dispatch, and twilight badge styles'
+  },
+  {
+    domain: 'Astrolabe Dial Component',
+    file: 'src/components/layout/chronometer/AstrolabeDial.test.tsx',
+    focus: 'Concentric SVG control rings (Date, Time, Lon, Lat), observer-locked camera yaw calculations, latitude rail positioning, pointer event callbacks, and rollover boundaries'
   }
 ];
 
