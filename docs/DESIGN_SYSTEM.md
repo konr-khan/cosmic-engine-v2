@@ -13,7 +13,7 @@ Cosmic Engine uses a strict semantic color palette to represent physical astrono
 | **Sky Blue** | `#38bdf8` | `text-sky-400`, `fill-sky-400`, `bg-sky-400` | **Observer Location Pin ("YOU")**, **Ascending Lunar Orbital Node** ($\beta \ge 0$, North of ecliptic, $\Omega$ / $☊$), **High Tide Water Indicator** |
 | **Rose Red** | `#f43f5e` | `text-rose-500`, `fill-rose-500`, `bg-rose-500` | **Descending Lunar Orbital Node** ($\beta < 0$, South of ecliptic, $\mho$ / $☋$), **Negative (Southern) Declination** |
 | **Amber / Gold** | `#fbbf24` / `#fde047` | `text-amber-400`, `fill-amber-400`, `border-amber-400` | **Subsolar Point**, **Daylight Hemisphere** ($h \ge -0.833^\circ$), **Sun Ray Vectors**, **Daylight Terminator Rim**, **Solar Noon Action** |
-| **Civil Twilight Amber** | `#fcd34d` | `fill-amber-400/80`, `text-amber-300` | **Civil Twilight Band** ($-6.0^\circ \le h < -0.833^\circ$, horizon visible, bright stars emerge) |
+| **Civil Twilight Amber** | `#f59e0b` | `fill-amber-500/80`, `text-amber-400` | **Civil Twilight Band** ($-6.0^\circ \le h < -0.833^\circ$, horizon visible, bright stars emerge) |
 | **Nautical Twilight Slate** | `#64748b` | `fill-slate-500`, `text-slate-400` | **Nautical Twilight Band** ($-12.0^\circ \le h < -6.0^\circ$, sea horizon fades, navigation stars visible) |
 | **Astronomical Twilight Slate** | `#334155` | `fill-slate-700`, `text-slate-500` | **Astronomical Twilight Band** ($-18.0^\circ \le h < -12.0^\circ$, faint skyglow before deep night) |
 | **Deep Space Slate** | `#020617` / `#0b0f19` | `bg-slate-950`, `bg-slate-900`, `fill-slate-950` | **Deep Astronomical Night** ($h < -18.0^\circ$), **Ocean Baseline**, **Card Backgrounds** |
@@ -49,8 +49,12 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 milestone nodes featuring geodesic spherical SLERP trajectories:
   - **Milestone Color Codes**: Perihelion `#a855f7` (Purple), June Solstice `#38bdf8` (Sky Blue), December Solstice `#f43f5e` (Rose Red), March Equinox `#34d399` (Emerald), September Equinox `#fbbf24` (Amber), Aphelion `#818cf8` (Indigo).
   - **Seasonal Milestone Halo Tokens**:
-    - *Resting State*: Translucent outer halo (`fill={color}`, `opacity="0.20"`, `r="11px"`), inner core node (`r="5.5px"`, `fill={color}`, `stroke="#ffffff"`, `strokeWidth="1.5"`, `className="drop-shadow-md"`).
-    - *Hover State*: Expanded glowing halo (`opacity="0.45"`, `r="18px"`, `className="animate-pulse"`), expanded core node (`r="8px"`).
+    - *Macro Orbit View ($580\times 560$ canvas, $R_{\text{orbit}} \approx 220$)*:
+      - Resting State: Translucent outer halo (`fill={color}`, `opacity="0.20"`, `r="11px"`), inner core node (`r="5.5px"`, `fill={color}`, `stroke="#ffffff"`, `strokeWidth="1.5"`, `className="drop-shadow-md"`).
+      - Hover State: Expanded glowing halo (`opacity="0.45"`, `r="18px"`, `className="animate-pulse"`), expanded core node (`r="8px"`).
+    - *Gyro-Morph Armillary ($300\times 300$ canvas, $R_{\text{orbit}} = 110$)*:
+      - Resting State: Translucent outer halo (`opacity="0.25"`, `r="4.5px"`), inner core node (`r="2.0px"`, `strokeWidth="1.0"`).
+      - Hover State: Direct SVG circle radius expansion to halo `r="7.0px"` (`opacity="0.45"`), core node `r="2.8px"` (`strokeWidth="1.2"`), paired with the glassmorphic milestone telemetry card (`ArmillaryHoverHud`). SVG group CSS scale transforms are strictly avoided to eliminate transform-origin off-orbit jumps. Bead pointer interactions are isolated during 3D camera rotation (`isDraggingCamera`).
 * **Dynamic 3D Orbiting Earth Bead**: Rendered in full 3D Euler space (`viewMode="euler3d"`) with dynamic camera-space subsolar vector $\vec{S}_{\text{cam}} = \text{normalize}(\vec{P}_{\text{sun, cam}} - \vec{P}_{\text{earth, cam}})$ providing continuous, physically accurate day/night terminator shading facing the central Sun across all camera orientations, eliminating 2D sticker angle flipping.
 * **Heliocentric Orbit Zoom Controls**: Non-passive wheel zoom and glassmorphic floating control pill (`[-]`, `zoom×`, `[+]`, `[Reset]`) from $0.75\times$ to $3.5\times$ (default $1.0\times$). Zoom is strictly isolated to 3D Heliocentric Orbit mode (`isOrbital && morphLambda <= 0.05`) and automatically resets to $1.0\times$ upon transitioning into 2D historical plates (`🧭 Rete`, `📐 Rojas`, `🔭 Horizon`).
 * **Parametric Sun Bead**: Mathematically clamped directly to $(r_0 \cos\lambda, r_0 \sin\lambda \sin\epsilon, r_0 \sin\lambda \cos\epsilon)$ on the Ecliptic track across all 4 seasons and free Rete rotation (residual $< 1.42 \times 10^{-13}\text{ px}$).
@@ -119,7 +123,7 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 | **1. Atmosphere** | Outer Halo | `#38bdf8` (35%) $\to$ `#0284c7` (15%) $\to$ `#0369a1` (0%) | Radial glow extending to $1.35\times$ radius |
 | **2. Night Base** | Night Disc | `#020617` (Deep Space Slate) | Base sphere fill behind daylight terminator |
 | **3. Daylight** | Sunlit Semicircle / 3D Patch | `#60a5fa` $\to$ `#2563eb` $\to$ `#1d4ed8` | Ocean core radial gradient clipped to subsolar vector |
-| **3. Twilight** | Twilight Bands | Civil `#1e40af` ($-6^\circ$), Nautical `#1e293b` ($-12^\circ$) | Smooth non-tearing spherical limb arcs |
+| **3. Twilight** | Twilight Strata Bands | Civil `#1e40af` ($-6^\circ$), Nautical `#1e293b` ($-12^\circ$), Astronomical `#0f172a` ($-18^\circ$) | Complete 3-tier twilight strata with smooth non-tearing spherical limb arcs |
 | **3b. Continents** | Living Marble Landmasses | Emerald `#10b981` (35% fill, `#34d399` stroke $0.4\text{px}$) | Rotational 3D vector continents with sidereal spin and front-hemisphere clipping |
 | **4. Parallels & Meridians** | Equator / Tropics / Great Meridian Ring | Equator `#38bdf8` (`strokeWidth="0.75"`, dashed `2 1.5`); Tropics `#64748b` (`strokeWidth="0.5"`, dashed `2 1.5`); 0° Prime Meridian & 180° Antimeridian `#38bdf8` (`strokeWidth="0.65"`, dashed `2 1.5`, opacity `0.75`) | $0^\circ$ Celestial Equator, $\pm 23.44^\circ$ Solstice Tropics, and full $360^\circ$ Great Meridian Ring ($0^\circ$ Greenwich & $180^\circ$ Antimeridian) visible continuously through the marble at all times |
 | **5. Polar Axis** | 23.44° Rotational Axis | `#93c5fd` (`strokeWidth="0.85"`, dashed `2.5 1.5`, opacity `0.75`) | Rotated rotational axis passing through poles (suppressed in `euler3d` mode to eliminate artificial bifurcation lines) |
@@ -299,12 +303,20 @@ The Eclipse Demonstrator renders two synchronized, mathematically aligned perspe
   - **Identical Dimensions**: Both the Left pane (**Syzygy Profile & Shadow Rays** — `ShadowRayDiagram.tsx`) and Right pane (**Axial Sightline 5.14° Tilt** — `NodalPlaneVisualizer.tsx`) share identical SVG `viewBox="0 0 520 220"` ($26:11$ aspect ratio) and CSS class `w-full h-full block flex-1 min-h-[220px]`.
   - **Aligned Origin & Ecliptic Plane**: Both viewports align on the exact same horizontal horizon line at $y = 110$.
 * **Geometric Proportions & Scaling**:
-  - **Earth MiniGlobe**: Radius $R = 24\text{px}$ across both panes (+20% upsize).
-  - **Sun & Corona**: Sun radius $R = 46\text{px}$ with soft corona wash to $62\text{px}$.
-  - **Target Shadow Cones**: Umbra core radius $R = 18\text{px}$; Penumbra envelope radius $R = 34\text{px}$.
-  - **Lunar Orbit**: Semi-major axis $R_x = 150\text{px}$ across the $520\text{px}$ width; vertical inclination scale $10.5\text{px/deg}$ ($y \in [56, 164]$ at maximum inclination $\beta = \pm 5.14^\circ$).
-  - **Moon Bead**: Base radius $R = 10.5\text{px}$ with dynamic ephemeris angular scaling ($8.5\text{px} \dots 12.5\text{px}$).
-  - **Node Pins**: Radius $R = 4\text{px}$ with high-contrast text labels (`☊ Node` in Sky Blue, `☋ Node` in Rose Red).
+  - **Left Pane (Transverse Syzygy Profile & Shadow Rays — `ShadowRayDiagram.tsx` / `LiveSyzygyView.tsx`)**:
+    - *Sun Light Source*: Positioned at $X_\odot = 50, Y_\odot = 110$, radius $R_\odot = 28\text{px}$ with soft corona wash to $44\text{px}$.
+    - *Earth Center*: Centered at $(X_\oplus, Y_\oplus) = (310, 110)$, radius $R_\oplus = 18\text{px}$.
+    - *Shadow Cones*: Umbra core and penumbra envelope project horizontally toward the right screen boundary ($X > 310$).
+    - *Transverse Lunar Orbit*: Semi-major axis $R_x = 85\text{px}$, vertical inclination scale $8.5\text{px/deg}$. Moon bead base radius $R_{\text{moon}} = 7.5\text{px}$.
+    - *Dynamic Nodal Alignment*: Plane slope dynamically modulated by annual nodal alignment $\Delta\Omega = \lambda_\odot - \Omega_{\text{node}}$.
+  - **Right Pane (Axial Sightline Down-the-Barrel View — `NodalPlaneVisualizer.tsx`)**:
+    - *Central Alignment*: Centered at $(X_c, Y_c) = (260, 110)$ with horizontal Ecliptic Plane reference at $y = 110$.
+    - *Background Sun*: Concentric behind Earth at $(260, 110)$ with radius $R_\odot = 46\text{px}$ and soft corona wash to $62\text{px}$.
+    - *Foreground Earth MiniGlobe*: Centered at $(260, 110)$ with radius $R_\oplus = 24\text{px}$ (+20% prominent upsize).
+    - *Shadow Target Discs*: Umbra core disc radius $R = 18\text{px}$; Penumbra envelope radius $R = 34\text{px}$.
+    - *Lunar Orbit Loop*: Semi-major axis $R_x = 150\text{px}$ across the $520\text{px}$ width; vertical inclination scale $10.5\text{px/deg}$ ($y \in [56, 164]$ at maximum inclination $\beta = \pm 5.14^\circ$).
+    - *Moon Bead*: Base radius $R = 10.5\text{px}$ with dynamic ephemeris angular scaling ($8.5\text{px} \dots 12.5\text{px}$).
+    - *Node Pins*: Radius $R = 4\text{px}$ with high-contrast text labels (`☊ Node` in Sky Blue, `☋ Node` in Rose Red).
 
 ---
 
@@ -357,9 +369,9 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
    - Compact micro-subline beneath sunrise/sunset and moonrise/moonset times: `text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5`.
    - Displays 16-point compass octants (e.g. `ENE · WNW`), with exact decimal azimuths available in hover tooltips (`Sunrise: 068° ENE · Sunset: 292° WNW`).
 * **Meridian Profile Diurnal Chord Encodings**:
-  - **Solar Daytime Chord**: Solid warm amber line (`#fbbf24`, `strokeWidth="1.5"`, `opacity="0.85"`), tracing the daytime transit from rise to set and touching the meridian arc at Solar Noon.
-  - **Solar Sub-Horizon Twilight Chord**: Dashed deep amber line (`#d97706`, `strokeWidth="1.0"`, `strokeDasharray="2 2"`, `opacity="0.40"`), descending into the sub-horizon twilight strata down to $-18^\circ$.
-  - **Lunar Daytime Chord**: Solid silver line (`#e2e8f0`, `strokeWidth="1.5"`, `opacity="0.85"`) in Standard mode, or Eclipse-convention colored (`#38bdf8` / `#f43f5e`) in Nodal mode.
+  - **Solar Daytime Chord**: Solid warm gold line (`#f59e0b`, `strokeWidth="1.5"`, `opacity="0.95"`, with soft blurred glow `3.5px` at `0.25` opacity), tracing the daytime transit from rise to set and touching the meridian arc at Solar Noon with matching visual parity to `SunElevationDome`.
+  - **Solar Sub-Horizon Twilight Chord**: Solid warm gold line (`#f59e0b`, `strokeWidth="1.0"`, `opacity="0.40"`), descending into the sub-horizon twilight strata down to $-18^\circ$.
+  - **Lunar Daytime Chord**: Solid silver line (`#e2e8f0`, `strokeWidth="1.5"`, `opacity="0.95"`, with soft blurred glow) in Standard mode, or Eclipse-convention colored (`#38bdf8` / `#f43f5e`) in Nodal mode.
 * **Approach C Parked Ghost Anchor Tokens**:
   - **Twilight Gate Anchor Ring (`#sun-twilight-gate-anchor`)**: Static guide ring at $-18^\circ$ astronomical twilight threshold with radius $R=3.5\text{px}$, subtle slate stroke (`#64748b`, `strokeDasharray="1.5 1.5"`, `opacity="0.60"`).
   - **Horizon Gate Anchor Ring (`#moon-horizon-gate-anchor`)**: Static guide ring at $0^\circ$ horizon contact threshold with radius $R=3.5\text{px}$, subtle slate stroke (`#64748b`, `strokeDasharray="1.5 1.5"`, `opacity="0.60"`).

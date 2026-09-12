@@ -77,6 +77,13 @@ Given ephemeris day offset $d = \text{JD} - 2451545.0$ from epoch J2000.0:
    \text{LST} = ((\text{GMST} + \lambda_{\text{obs}}) \bmod 360^\circ + 360^\circ) \bmod 360^\circ
    \]
 
+3. **Subsolar and Sublunar Geographic Ground Track Longitude ($\lambda_{\text{geo}}$)**:
+   Given equatorial right ascension $\alpha$ of a celestial body (Sun $\alpha_\odot$ or Moon $\alpha_☾$) and Greenwich Mean Sidereal Time $\text{GMST}$:
+   \[
+   \lambda_{\text{geo}} = \operatorname{wrap180}(\alpha - \text{GMST}) = ((((\alpha - \text{GMST} + 540^\circ) \bmod 360^\circ) + 360^\circ) \bmod 360^\circ) - 180^\circ
+   \]
+   mapping directly into the standard terrestrial geographic longitude interval $[-180^\circ, +180^\circ]$ (positive East, negative West). When $\alpha = \text{GMST}$, the body culminates precisely overhead the Prime Meridian ($\lambda_{\text{geo}} = 0^\circ$).
+
 ---
 
 ## 3. Solar Ephemeris & Keplerian Orbital Dynamics
@@ -441,13 +448,15 @@ The **Sky View Simulator** (`SkyViewSimulator.tsx` and `LunarSurfacePovView.tsx`
 
 2. **Lunar Surface POV Sky View (`LunarSurfacePovView.tsx`)**:
    Simulates the vantage point of an astronaut standing on the near side of the Moon looking up at planet Earth ($R_{\text{earth}} = 44\text{px}, \approx 1.9^\circ$ angular diameter) eclipsing the background Sun ($R_{\odot} = 26\text{px}, \approx 0.53^\circ$):
-   * **Phase Displacement**:
+   * **Canvas & Center Coordinates**: On the canonical $520 \times 220$ viewport (`viewBox="0 0 520 220"`), the lunar sky center is anchored at $(X_c, Y_c) = (260, 100)$, with the background Sun positioned at origin $(0, 0)$ inside `<g transform="translate(260, 100)">`.
+   * **Phase Displacement Relative to Sky Center**:
      \[
      X_{\text{earth}} = \sin\left(\frac{(\text{phaseDeg} - 180^\circ)\pi}{180^\circ}\right) \cdot 140\text{px}
      \]
      \[
      Y_{\text{earth}} = \beta \cdot 6\text{px/deg}
      \]
+     giving absolute canvas coordinates $X_{\text{screen}} = X_c + X_{\text{earth}}$ and $Y_{\text{screen}} = Y_c + Y_{\text{earth}}$.
    * **Atmospheric Blood Ring**: During terrestrial total lunar eclipses (`category === 'LUNAR'`), Earth's atmosphere refracts sunlight, forming a glowing concentric crimson ring ($R = 46\text{px} \dots 54\text{px}$, `#f43f5e`/`#9f1239`) surrounding the dark nightside silhouette of Earth.
 
 ---
@@ -795,7 +804,17 @@ Section 10 codifies the ground-truth mathematical models, matrix transformations
    \]
    For any 3D vector $\vec{v}_{\text{ecl}} \in \mathcal{F}_{\text{ecl}}$, its equatorial representation is $\vec{v}_{\text{eq}} = \mathbf{M}_{\text{ecl}\to\text{eq}} \vec{v}_{\text{ecl}}$.
 
-4. **Generalized $SO(3)$ Euler Camera Rotation Matrix**:
+4. **Bijective Scene Graph $\longleftrightarrow$ Armillary Frame Transformations (`sceneMath.ts`)**:
+   Pure conversion utilities `transformSceneToArmillary` and `transformArmillaryToScene` implement the exact involution matrix $\mathbf{M}_{\text{scene}\leftrightarrow\text{arm}} = \mathbf{M}_{\text{scene}\leftrightarrow\text{arm}}^{-1}$:
+   \[
+   \mathbf{M}_{\text{scene}\to\text{arm}} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & 1 & 0 \end{pmatrix} \implies \begin{pmatrix} x_{\text{arm}} \\ y_{\text{arm}} \\ z_{\text{arm}} \end{pmatrix} = \begin{pmatrix} x_{\text{scene}} \\ z_{\text{scene}} \\ y_{\text{scene}} \end{pmatrix}
+   \]
+   \[
+   \mathbf{M}_{\text{arm}\to\text{scene}} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & 1 & 0 \end{pmatrix} \implies \begin{pmatrix} x_{\text{scene}} \\ y_{\text{scene}} \\ z_{\text{scene}} \end{pmatrix} = \begin{pmatrix} x_{\text{arm}} \\ z_{\text{arm}} \\ y_{\text{arm}} \end{pmatrix}
+   \]
+   satisfying $\mathbf{M}_{\text{scene}\to\text{arm}} \mathbf{M}_{\text{arm}\to\text{scene}} = \mathbf{I}_3$, guaranteeing lossless, zero-drift coordinate conversion across the 3D scene graph and armillary continuum.
+
+5. **Generalized $SO(3)$ Euler Camera Rotation Matrix**:
    Given Pitch $\psi$, Yaw $\theta$, and Roll $\phi$:
    \[
    \mathbf{R}_{\text{cam}}(\psi, \theta, \phi) = \mathbf{R}_x(\psi) \mathbf{R}_y(\theta) \mathbf{R}_z(\phi)
@@ -906,20 +925,21 @@ Each camera projection transforms 3D scene objects into 2D SVG screen coordinate
      \]
 2. **`projectGeocentricTransverse` (Eclipse Left Pane — Side Profile)**:
    * View direction: Perpendicular to Sun-Earth syzygy axis (along $-Y_{\text{syzygy}}$).
-   * Canonical Canvas & Radii: Default viewport $340 \times 220$ (`viewBox="0 0 340 220"`), center $(X_c, Y_c) = (170, 110)$, Earth radius $R_\oplus = 18\text{px}$, Moon radius $R_{\text{moon}} = 7.5\text{px}$, transverse orbital semi-major axis $R_x = 85\text{px}$, latitudinal elevation scale $\text{scale}_y = 8.5\text{px/deg}$.
+   * Canonical Canvas & Radii: Canvas viewport $520 \times 220$ (`viewBox="0 0 520 220"`), Earth center $(X_\oplus, Y_\oplus) = (310, 110)$, Earth radius $R_\oplus = 18\text{px}$, Sun light source at $(X_\odot, Y_\odot) = (50, 110)$ with radius $R_\odot = 28\text{px}$ (corona wash to $44\text{px}$), Moon radius $R_{\text{moon}} = 7.5\text{px}$, transverse orbital semi-major axis $R_x = 85\text{px}$, latitudinal elevation scale $\text{scale}_y = 8.5\text{px/deg}$.
    * Normalized Synodic Phase Cycle: Let $\text{phaseRad} = \text{phaseValue} \cdot 2\pi \in [0, 2\pi)$, where $\text{phaseValue} \in [0, 1)$ ($0 = \text{New Moon}$, $0.25 = \text{First Quarter}$, $0.5 = \text{Full Moon}$, $0.75 = \text{Third Quarter}$).
    * Projection:
      \[
-     x_s = x_{\text{center}} - \cos(\text{phaseRad}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y, \quad \text{depth} = \sin(\text{phaseRad}) \cdot R_x
+     x_s = X_\oplus - \cos(\text{phaseRad}) \cdot R_x, \quad y_s = Y_\oplus - \beta \cdot \text{scale}_y, \quad \text{depth} = \sin(\text{phaseRad}) \cdot R_x
      \]
 3. **`projectGeocentricAxial` (Eclipse Right Pane — Sightline View)**:
    * View direction: Along Sun-Earth axis through Earth (looking toward Moon along $-\mathbf{e}_X$).
-   * Canonical Canvas & Radii: Default viewport $520 \times 220$ (`viewBox="0 0 520 220"`), center $(X_c, Y_c) = (260, 110)$, background Sun radius $R_\odot = 46\text{px}$ ($\text{depth} = -1000$), foreground Earth radius $R_\oplus = 24\text{px}$ ($\text{depth} = 0$), Moon radius $R_{\text{moon}} = 10.5\text{px}$, transverse orbital semi-major axis $R_x = 150\text{px}$, latitudinal elevation scale $\text{scale}_y = 10.5\text{px/deg}$.
+   * Canonical Canvas & Radii: Default viewport $520 \times 220$ (`viewBox="0 0 520 220"`), center $(X_c, Y_c) = (260, 110)$, background Sun radius $R_\odot = 46\text{px}$ ($\text{depth} = -1000$), foreground Earth radius $R_\oplus = 24\text{px}$ ($\text{depth} = 0$), Moon radius $R_{\text{moon}} = 10.5\text{px}$ (dynamic ephemeris scaling $8.5 \dots 12.5\text{px}$), transverse orbital semi-major axis $R_x = 150\text{px}$, latitudinal elevation scale $\text{scale}_y = 10.5\text{px/deg}$.
    * Normalized Synodic Phase Cycle: Let $\text{phaseRad} = \text{phaseValue} \cdot 2\pi \in [0, 2\pi)$, where $\text{phaseValue} \in [0, 1)$ ($0 = \text{New Moon}$, $0.25 = \text{First Quarter}$, $0.5 = \text{Full Moon}$, $0.75 = \text{Third Quarter}$).
    * Projection (Prograde West-to-East screen transit):
      \[
-     x_s = x_{\text{center}} - \sin(\text{phaseRad}) \cdot R_x, \quad y_s = y_{\text{center}} - \beta \cdot \text{scale}_y, \quad \text{depth} = \cos(\text{phaseRad}) \cdot R_x
+     x_s = X_c - \sin(\text{phaseRad}) \cdot R_x, \quad y_s = Y_c - \beta \cdot \text{scale}_y, \quad \text{depth} = -\cos(\text{phaseRad}) \cdot R_x
      \]
+     where $\text{depth} > 0$ denotes viewer-side near hemisphere (Full Moon at $\text{depth} = +R_x$, in front of Earth towards camera/shadows) and $\text{depth} \le 0$ denotes far side (New Moon at $\text{depth} = -R_x$, behind Earth towards background Sun).
 4. **`projectEulerCamera` (Armillary 3D Apparent View)**:
    * View transformation: $\vec{P}_{\text{cam}} = \mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll}) \vec{P}_{3D}$.
    * Orthographic projection with SVG invert-$Y$:
