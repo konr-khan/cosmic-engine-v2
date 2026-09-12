@@ -17,6 +17,7 @@ import {
 } from '../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
 import { MeridianDomeBase, EL_CX, EL_CY, EL_R } from './MeridianDomeBase';
+import { LunarPhaseDisc } from './common/LunarPhaseDisc';
 
 export interface MoonMeridianDomeProps {
   orbitalData?: OrbitalData | null;
@@ -298,44 +299,14 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
           className="drop-shadow-md"
           opacity={activeMoonPoint.isParked ? 0.35 : (currentMoonElevation >= 0 ? 1.0 : 0.45)}
         >
-          {/* Dark Body Base Disc */}
-          <circle cx="0" cy="0" r="5.5" fill="#020617" stroke="#334155" strokeWidth="0.75" />
-
-          {/* Phase Illuminated Geometry */}
-          <g transform={`rotate(${parallacticAngle || 0})`}>
-            {(() => {
-              const pVal = phase.value ?? 0;
-              if (pVal > 0.48 && pVal < 0.52) {
-                return <circle cx="0" cy="0" r="5.5" fill="#f8fafc" />;
-              }
-              if (pVal > 0.02 && pVal < 0.98) {
-                const isWaxing = pVal < 0.5;
-                const startY = isWaxing ? -5.5 : 5.5;
-                const endY = isWaxing ? 5.5 : -5.5;
-                const rxAbs = Math.abs(5.5 * Math.cos(pVal * 2 * Math.PI));
-                let termSweep: number;
-                if (isWaxing) {
-                  termSweep = pVal < 0.25 ? 0 : 1;
-                } else {
-                  termSweep = pVal < 0.75 ? 1 : 0;
-                }
-                const d = `M 0,${startY} A 5.5,5.5 0 0,1 0,${endY} A ${rxAbs.toFixed(2)},5.5 0 0,${termSweep} 0,${startY}`;
-                return <path d={d} fill="#f8fafc" />;
-              }
-              return null;
-            })()}
-          </g>
-
-          {/* Specular Rim with Nodal Color Encoding */}
-          <circle
-            cx="0"
-            cy="0"
-            r="5.5"
-            fill="none"
-            stroke={nodalThemeColor}
-            strokeWidth="1.2"
-            strokeDasharray={activeMoonPoint.isParked ? '1.5 1.5' : undefined}
-            strokeOpacity={activeMoonPoint.isParked ? 0.5 : 0.9}
+          <LunarPhaseDisc
+            radius={5.5}
+            phaseValue={phase.value ?? 0}
+            parallacticAngle={parallacticAngle || 0}
+            rimStroke={nodalThemeColor}
+            rimStrokeWidth={1.2}
+            rimStrokeOpacity={activeMoonPoint.isParked ? 0.5 : 0.9}
+            rimStrokeDasharray={activeMoonPoint.isParked ? '1.5 1.5' : undefined}
           />
           <title>
             {activeMoonPoint.isParked

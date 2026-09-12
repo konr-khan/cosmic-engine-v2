@@ -1,24 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { Moon, Compass } from 'lucide-react';
+/**
+ * @file MoonElevationDome.tsx
+ * Topocentric Moon Diurnal Elevation Arc Visualizer.
+ * Displays real-time lunar diurnal position, transit culmination, monthly declination envelope,
+ * 18.6-year major standstill boundaries, and interactive 4-quadrant draconic nodal timeline.
+ */
+
+import React, { useState } from 'react';
+import { Moon } from 'lucide-react';
+import { formatTime } from '../../../utils/cosmicMath';
 import { PhaseVisual } from '../../common/PhaseVisual';
-import { 
-  toRadians, 
-  formatTime, 
-  getJulianDate,
-  calculateLunarIllumination,
-  projectSkyDomePoint,
-  generateDiurnalPath,
-  calculateMonthlyLunarDeclinationBounds,
-  calculateSkyDomeLunarNodes,
-  getLunarElevationStatus,
-  calculateCulminationBearing,
-  calculateRiseSetAzimuth,
-  calculateLunarExtremaCulminations,
-  calculateParallacticAngle
-} from '../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
-import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
+import { SkyDomeBase } from './SkyDomeBase';
 import { LUNAR_ELEVATION_BADGE_CLASSES } from './todayTokens';
+import { useMoonElevationMath, LUNAR_MAX_DEC } from './hooks/useMoonElevationMath';
+import { SkyDomeFooter } from './common/SkyDomeFooter';
+import { DraconicTimelineRail } from './common/DraconicTimelineRail';
+import { LunarPhaseDisc } from './common/LunarPhaseDisc';
 
 export interface MoonElevationDomeProps {
   orbitalData?: OrbitalData | null;
@@ -63,221 +60,46 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     }
   };
 
-  // --- Moon Elevation & Phase Math ---
-  const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
-  const phase = safeOrbital.phase || { value: 0, name: 'New Moon' };
-  const lunarEvents = safeOrbital.lunarEvents || {
-    moonrise: 6,
-    transit: 12,
-    moonset: 18,
-    distanceKm: 384400,
-    distanceEarthRadii: 60.3,
-    isPerigee: false,
-    isApogee: false,
-    declination: 0,
-    parallacticAngle: 0,
-  };
   const {
-    moonrise = 6,
-    transit = 12,
-    moonset = 18,
-    distanceKm = 384400,
-    distanceEarthRadii = 60.3,
-    isPerigee = false,
-    isApogee = false,
-    declination = 0,
-    parallacticAngle = 0,
-  } = lunarEvents;
-
-  const moonDeclination = (orbitalData?.lunarPos?.declination ?? declination ?? 0) as number;
-  const illPercent = calculateLunarIllumination(phase.value ?? 0);
-
-  const moonHourAngle = (displayTime - transit) * 15;
-  const moonPos = projectSkyDomePoint(moonHourAngle, Number(moonDeclination), latitude);
-  const currentMoonElevation = moonPos.elevation;
-  const moonX = moonPos.x;
-  const moonY = moonPos.y;
-
-  const transitPeakElevation = projectSkyDomePoint(0, Number(moonDeclination), latitude).elevation;
-
-  // --- Culmination & Sighting Bearing Math ---
-  const culmination = useMemo(
-    () => calculateCulminationBearing(latitude, Number(moonDeclination)),
-    [latitude, moonDeclination]
-  );
-  const riseSetAz = useMemo(
-    () => calculateRiseSetAzimuth(latitude, Number(moonDeclination)),
-    [latitude, moonDeclination]
-  );
-
-  // Monthly Declination Bounds over a rolling 30-day window (±15 days)
-  const monthlyBounds = useMemo(
-    () => calculateMonthlyLunarDeclinationBounds(currentDate),
-    [currentDate]
-  );
-
-  const extremaCulminations = useMemo(
-    () => calculateLunarExtremaCulminations(latitude, monthlyBounds.maxDec, monthlyBounds.minDec),
-    [latitude, monthlyBounds.maxDec, monthlyBounds.minDec]
-  );
-
-  // --- Lunar Altitude Bounds & Zenith Cap Math ---
-  // Major lunar standstill declination: 23.439° (obliquity) + 5.145° (lunar inclination) = 28.584°
-  const LUNAR_MAX_DEC = 28.584;
-  const absLat = Math.abs(latitude);
-  const isLunarTropical = absLat <= LUNAR_MAX_DEC;
-  const isPolar = absLat >= 89.9;
-
-  const standstillMaxCulmination = useMemo(
-    () => calculateCulminationBearing(latitude, LUNAR_MAX_DEC),
-    [latitude]
-  );
-  const standstillMinCulmination = useMemo(
-    () => calculateCulminationBearing(latitude, -LUNAR_MAX_DEC),
-    [latitude]
-  );
-
-  // Maximum possible lunar transit elevation across all 18.6-year nodal cycles
-  const maxAnnualMoonNoon = isLunarTropical ? 90 : (90 - absLat + LUNAR_MAX_DEC);
-  const minAnnualMoonNoon = 90 - absLat - LUNAR_MAX_DEC;
-
-  // Lunar Zenith Cap geometry (unreachable sector when latitude is outside lunar tropics)
-  let lunarCapPathD = '';
-  if (!isLunarTropical && maxAnnualMoonNoon < 89.5) {
-    const yCap = EL_CY - EL_R * Math.sin(toRadians(maxAnnualMoonNoon));
-    const xCapL = EL_CX - EL_R * Math.cos(toRadians(maxAnnualMoonNoon));
-    const xCapR = EL_CX + EL_R * Math.cos(toRadians(maxAnnualMoonNoon));
-    lunarCapPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${EL_R} ${EL_R} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
-  }
-
-  // --- Nodal Geometry & Sky Dome Node Pins ---
-  const jd = useMemo(() => getJulianDate(currentDate, displayTime), [currentDate, displayTime]);
-  const solarNoon = solarData?.solarNoon ?? 12;
-  const sunDeclination = (solarData?.declination ?? 0) as number;
-  const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
-
-  const nodalData = useMemo(() => {
-    return calculateSkyDomeLunarNodes(
-      latitude,
-      jd,
-      displayTime,
-      solarNoon,
-      sunLambda,
-      {
-        phaseValue: phase.value !== undefined ? Number(phase.value) : undefined
-      }
-    );
-  }, [latitude, jd, displayTime, solarNoon, sunLambda, phase.value]);
-
-  const eclipticPathResult = useMemo(
-    () => generateDiurnalPath(latitude, sunDeclination),
-    [latitude, sunDeclination]
-  );
-
-  // --- Curved Diurnal Paths ---
-  const maxPathResult = generateDiurnalPath(latitude, monthlyBounds.maxDec);
-  const todayPathResult = generateDiurnalPath(latitude, Number(moonDeclination));
-  const minPathResult = generateDiurnalPath(latitude, monthlyBounds.minDec);
-
-  const diurnalPaths: SkyDomeDiurnalPath[] = [];
-
-  // In Nodal Mode: Show Ecliptic Reference diurnal curve (Amber hairline dashed)
-  if (isNodalModeActive && eclipticPathResult.pathD) {
-    diurnalPaths.push({
-      id: 'ecliptic-reference-path',
-      d: eclipticPathResult.pathD,
-      stroke: '#f59e0b',
-      strokeWidth: 0.75,
-      strokeDasharray: '2 2',
-      strokeOpacity: 0.6,
-      label: 'Ecliptic (☉)',
-      labelColor: 'fill-amber-400/80',
-      labelX: eclipticPathResult.peakPoint.x + 8,
-      labelY: eclipticPathResult.peakPoint.y - 4,
-      title: `Ecliptic Plane Baseline (Sun Declination: ${sunDeclination.toFixed(1)}°)`
-    });
-  }
-
-  // 1. Monthly Max Lunar Transit Arc (Soft silver dashed hairline) - Shown in standard mode
-  if (!isNodalModeActive && maxPathResult.pathD && maxPathResult.peakAlt > 0) {
-    const maxPeak = extremaCulminations.maxBound.altitude;
-    diurnalPaths.push({
-      id: 'moon-monthly-max',
-      d: maxPathResult.pathD,
-      stroke: '#94a3b8',
-      strokeWidth: 0.75,
-      strokeDasharray: '3 2',
-      strokeOpacity: 0.7,
-      title: `Max Possible Lunar Altitude (Monthly ±15d Peak: ${monthlyBounds.maxDec.toFixed(1)}° Dec): ${maxPeak.toFixed(1)}° ${extremaCulminations.maxBound.shortTag}`
-    });
-  }
-
-  // Diurnal Track Styling:
-  // In Std View: Classic lunar silver (#e2e8f0), solid stroke
-  // In Nodal View: Eclipse-Convention track:
-  // Sky Blue (#38bdf8) for North/Ascending (beta >= 0) vs Rose Red (#f43f5e) for South/Descending (beta < 0)
-  // Solid stroke for Waxing vs Dashed ('4 3') for Waning
-  const moonTrackColor = isNodalModeActive
-    ? (nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e')
-    : '#e2e8f0';
-  const moonTrackDash = isNodalModeActive
-    ? (nodalData.isWaxing ? undefined : '4 3')
-    : undefined;
-
-  // 2. Active Today's Moon Path
-  if (todayPathResult.pathD) {
-    diurnalPaths.push({
-      id: 'today-moon-path',
-      d: todayPathResult.pathD,
-      stroke: moonTrackColor,
-      strokeWidth: 1.5,
-      strokeDasharray: moonTrackDash,
-      strokeOpacity: 0.95,
-      isGlowing: true,
-      title: isNodalModeActive
-        ? `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}° (${nodalData.quadrantLabel})`
-        : `Today's Lunar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}°`
-    });
-  }
-
-  // 2b. Today's Moon Sub-Horizon Continuation (Subdued opacity, no dashes to avoid conflict with waning phase)
-  if (todayPathResult.twilightD) {
-    diurnalPaths.push({
-      id: 'today-moon-twilight-path',
-      d: todayPathResult.twilightD,
-      stroke: isNodalModeActive ? moonTrackColor : '#94a3b8',
-      strokeWidth: 0.8,
-      strokeOpacity: 0.20,
-      title: "Today's Sub-Horizon Lunar Track"
-    });
-  }
-
-  // 3. Monthly Min Lunar Transit Arc (Muted slate dashed hairline) - Shown in standard mode
-  if (!isNodalModeActive && minPathResult.pathD && minPathResult.peakAlt > 0) {
-    const minPeak = extremaCulminations.minBound.altitude;
-    diurnalPaths.push({
-      id: 'moon-monthly-min',
-      d: minPathResult.pathD,
-      stroke: '#64748b',
-      strokeWidth: 0.75,
-      strokeDasharray: '3 2',
-      strokeOpacity: 0.6,
-      title: `Min Possible Lunar Altitude (Monthly ±15d Trough: ${monthlyBounds.minDec.toFixed(1)}° Dec): ${minPeak.toFixed(1)}° ${extremaCulminations.minBound.shortTag}`
-    });
-  }
-
-  const effectiveLon = longitude ?? -122.8;
-  const currentParallacticAngle = orbitalData?.lunarPos
-    ? calculateParallacticAngle(
-        latitude,
-        effectiveLon,
-        jd,
-        moonDeclination,
-        (orbitalData.lunarPos.rightAscension ?? 0) as number
-      )
-    : lunarEvents.parallacticAngle;
-
-  const lunarStatus = getLunarElevationStatus(currentMoonElevation);
+    phase,
+    illPercent,
+    moonrise,
+    transit,
+    moonset,
+    distanceKm,
+    distanceEarthRadii,
+    isPerigee,
+    isApogee,
+    moonDeclination,
+    parallacticAngle,
+    currentParallacticAngle,
+    currentMoonElevation,
+    moonX,
+    moonY,
+    transitPeakElevation,
+    culmination,
+    riseSetAz,
+    extremaCulminations,
+    standstillMaxCulmination,
+    standstillMinCulmination,
+    maxAnnualMoonNoon,
+    minAnnualMoonNoon,
+    isLunarTropical,
+    isPolar,
+    lunarCapPathD,
+    nodalData,
+    diurnalPaths,
+    moonTrackColor,
+    lunarStatus,
+  } = useMoonElevationMath({
+    orbitalData,
+    solarData,
+    displayTime,
+    latitude,
+    longitude,
+    currentDate,
+    isNodalModeActive,
+  });
 
   return (
     <SkyDomeBase
@@ -328,15 +150,11 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
                 className="drop-shadow-md cursor-default"
                 opacity={node.isAboveHorizon ? 1.0 : 0.5}
               >
-                {/* Outer glowing halo */}
                 <circle cx="0" cy="0" r="8" fill={color} fillOpacity="0.25" className="animate-pulse" />
-                {/* Core disc */}
                 <circle cx="0" cy="0" r="4.5" fill="#020617" stroke={color} strokeWidth="1.2" />
-                {/* Node symbol */}
                 <text x="0" y="2.5" textAnchor="middle" className="text-[7px] font-bold pointer-events-none select-none" fill={color}>
                   {symbol}
                 </text>
-                {/* Proximity / countdown label */}
                 <text x="0" y="-7.5" textAnchor="middle" className="text-[6.5px] font-mono font-semibold pointer-events-none select-none" fill={color}>
                   {labelText}
                 </text>
@@ -352,36 +170,14 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
           className="drop-shadow-md"
           opacity={currentMoonElevation >= 0 ? 1.0 : 0.45}
         >
-          {/* Dark Body Base Disc */}
-          <circle cx="0" cy="0" r="5.5" fill="#020617" stroke="#334155" strokeWidth="0.75" />
-
-          {/* Phase Illuminated Geometry */}
-          <g transform={`rotate(${parallacticAngle || 0})`}>
-            {(() => {
-              const pVal = phase.value ?? 0;
-              if (pVal > 0.48 && pVal < 0.52) {
-                return <circle cx="0" cy="0" r="5.5" fill="#f8fafc" />;
-              }
-              if (pVal > 0.02 && pVal < 0.98) {
-                const isWaxing = pVal < 0.5;
-                const startY = isWaxing ? -5.5 : 5.5;
-                const endY = isWaxing ? 5.5 : -5.5;
-                const rxAbs = Math.abs(5.5 * Math.cos(pVal * 2 * Math.PI));
-                let termSweep: number;
-                if (isWaxing) {
-                  termSweep = pVal < 0.25 ? 0 : 1;
-                } else {
-                  termSweep = pVal < 0.75 ? 1 : 0;
-                }
-                const d = `M 0,${startY} A 5.5,5.5 0 0,1 0,${endY} A ${rxAbs.toFixed(2)},5.5 0 0,${termSweep} 0,${startY}`;
-                return <path d={d} fill="#f8fafc" />;
-              }
-              return null;
-            })()}
-          </g>
-
-          {/* Outer Specular Rim */}
-          <circle cx="0" cy="0" r="5.5" fill="none" stroke="#64748b" strokeWidth="0.5" strokeOpacity="0.6" />
+          <LunarPhaseDisc
+            radius={5.5}
+            phaseValue={phase.value ?? 0}
+            parallacticAngle={parallacticAngle || 0}
+            rimStroke="#64748b"
+            rimStrokeWidth={0.5}
+            rimStrokeOpacity={0.6}
+          />
         </g>
       )}
       popover={isHoveringMoonMetrics ? (
@@ -517,174 +313,34 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
           </div>
 
           {/* Bottom Line: Centered +-15-Day Draconic Rail SVG */}
-          <div 
-            className="w-full relative py-0.5" 
-            title={`Monthly Draconic Window (±15 Days): Today centered, Past node: ${nodalData.prevNodeType === 'ascending' ? '☊' : '☋'} (${nodalData.daysSincePrevNode}d ago), Next node: ${nodalData.upcomingNodeType === 'ascending' ? '☊' : '☋'} (in ${nodalData.daysToNextNode}d)`}
-          >
-            <svg viewBox="0 0 240 16" className="w-full h-4 block overflow-visible">
-              {/* Subtle background rail track */}
-              <line x1="12" y1="8" x2="228" y2="8" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
-
-              {/* Day markers / ticks (-10d, -5d, +5d, +10d) */}
-              {[-10, -5, 5, 10].map((day) => {
-                const tickX = 120 + day * 7.2;
-                return (
-                  <line
-                    key={day}
-                    x1={tickX}
-                    y1="6"
-                    x2={tickX}
-                    y2="10"
-                    stroke="#334155"
-                    strokeWidth="0.75"
-                    strokeOpacity="0.6"
-                  />
-                );
-              })}
-
-              {/* Dynamic continuous timeline segments colored by ecliptic hemisphere (Sky Blue North / Rose Red South) */}
-              {nodalData.timelineSegments.map((seg, idx) => {
-                const x1 = Math.max(12, Math.min(228, 120 + seg.startDays * 7.2));
-                const x2 = Math.max(12, Math.min(228, 120 + seg.endDays * 7.2));
-                return (
-                  <line
-                    key={idx}
-                    x1={x1.toFixed(1)}
-                    y1="8"
-                    x2={x2.toFixed(1)}
-                    y2="8"
-                    stroke={seg.color}
-                    strokeWidth="2.5"
-                    strokeOpacity="0.85"
-                  />
-                );
-              })}
-
-              {/* Pinned Node Markers along the timeline */}
-              {nodalData.timelineNodes.map((node, idx) => {
-                const x = 120 + node.daysOffset * 7.2;
-                if (x < 10 || x > 230) return null;
-                return (
-                  <g key={idx} transform={`translate(${x.toFixed(1)}, 8)`}>
-                    <circle cx="0" cy="0" r="2.8" fill="#020617" stroke={node.color} strokeWidth="1.2" />
-                    <text
-                      x="0"
-                      y="-4.5"
-                      textAnchor="middle"
-                      className="text-[6.5px] font-bold select-none pointer-events-none"
-                      fill={node.color}
-                    >
-                      {node.symbol}
-                    </text>
-                    <title>{`${node.type === 'ascending' ? 'Ascending Node (☊)' : 'Descending Node (☋)'}: ${node.daysOffset >= 0 ? `in ${node.daysOffset.toFixed(1)}d` : `${Math.abs(node.daysOffset).toFixed(1)}d ago`}`}</title>
-                  </g>
-                );
-              })}
-
-              {/* Center Target: Today / Now (T = 0, X = 120) */}
-              <g transform="translate(120, 8)">
-                {/* Vertical Center Guide */}
-                <line x1="0" y1="-5" x2="0" y2="5" stroke="#64748b" strokeWidth="0.75" strokeDasharray="1 1" strokeOpacity="0.5" />
-                {/* Pulsing Active Moon Bead */}
-                <circle
-                  cx="0"
-                  cy="0"
-                  r="4.5"
-                  fill={nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e'}
-                  fillOpacity="0.35"
-                  className="animate-pulse"
-                />
-                <circle
-                  cx="0"
-                  cy="0"
-                  r="2.5"
-                  fill="#f8fafc"
-                  stroke={nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e'}
-                  strokeWidth="1.2"
-                />
-              </g>
-
-              {/* Timeline Axis Micro-Labels */}
-              <text x="14" y="15" textAnchor="start" className="text-[5.5px] font-mono fill-slate-600 select-none pointer-events-none">−15d</text>
-              <text x="120" y="15" textAnchor="middle" className="text-[5.5px] font-mono fill-slate-400 font-semibold select-none pointer-events-none">Today</text>
-              <text x="226" y="15" textAnchor="end" className="text-[5.5px] font-mono fill-slate-600 select-none pointer-events-none">+15d</text>
-            </svg>
-          </div>
+          <DraconicTimelineRail nodalData={nodalData} />
         </div>
       )}
 
       {/* Mirrored Footer Summary Badges: Moonrise / Moonset, Lunar Transit Snap Button, Declination, Mode Toggle */}
-      <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-        <div 
-          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-          title={riseSetAz.riseFormatted !== '--' ? `Moonrise: ${riseSetAz.riseFormatted} · Moonset: ${riseSetAz.setFormatted}` : undefined}
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Moonrise / Set</span>
-          <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            {moonrise !== null && moonrise !== undefined ? formatTime(moonrise).substring(0, 5) : '--:--'} / {moonset !== null && moonset !== undefined ? formatTime(moonset).substring(0, 5) : '--:--'}
-          </span>
-          {riseSetAz.riseOctant !== '--' && (
-            <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-              {riseSetAz.riseOctant} · {riseSetAz.setOctant}
-            </span>
-          )}
-        </div>
-        <div
-          onClick={() => transit && onSetTime && onSetTime(transit)}
-          className="text-center bg-indigo-950/60 hover:bg-indigo-900/80 transition-all cursor-pointer p-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 shadow-sm flex flex-col justify-center min-w-0"
-          title="Click to jump clock to Lunar Transit"
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-indigo-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap flex items-center justify-center gap-0.5 truncate">
-            <Compass className="w-2.5 h-2.5 shrink-0" /> Lunar Transit
-          </span>
-          <span className="text-indigo-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">{formatTime(transit).substring(0, 5)} <span className="text-indigo-400/80 text-[9px] font-normal font-sans">UTC</span></span>
-        </div>
-        <div 
-          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-          title={isQuadMode ? `Lunar Declination: ${moonDeclination.toFixed(1)}° · 18.6-Year Standstill Range: Δδ = ${(2 * LUNAR_MAX_DEC).toFixed(1)}°` : undefined}
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">
-            {isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}
-          </span>
-          <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${moonDeclination >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
-            {moonDeclination >= 0 ? `+${(moonDeclination as number).toFixed(1)}°` : `${(moonDeclination as number).toFixed(1)}°`}
-          </span>
-          {isQuadMode && (
-            <span className="text-[8px] text-indigo-400/80 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-              Δδ {(2 * LUNAR_MAX_DEC).toFixed(1)}° Span
-            </span>
-          )}
-        </div>
-        <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap mb-0.5">Mode View</span>
-          <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
-            <button
-              type="button"
-              onClick={() => handleToggleNodal(false)}
-              aria-label="Standard Lunar View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                !isNodalModeActive
-                  ? 'bg-slate-800 text-slate-200 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Std
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleNodal(true)}
-              aria-label="Lunar Nodes View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                isNodalModeActive
-                  ? 'bg-sky-950/80 text-sky-300 border border-sky-500/40 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              ☊ Nodes
-            </button>
-          </div>
-        </div>
-      </div>
+      <SkyDomeFooter
+        riseSetTitle="Moonrise / Set"
+        riseSetPrimaryText={`${moonrise !== null && moonrise !== undefined ? formatTime(moonrise).substring(0, 5) : '--:--'} / ${moonset !== null && moonset !== undefined ? formatTime(moonset).substring(0, 5) : '--:--'}`}
+        riseSetOctantText={riseSetAz.riseOctant !== '--' ? `${riseSetAz.riseOctant} · ${riseSetAz.setOctant}` : undefined}
+        riseSetTooltip={riseSetAz.riseFormatted !== '--' ? `Moonrise: ${riseSetAz.riseFormatted} · Moonset: ${riseSetAz.setFormatted}` : undefined}
+        transitLabel="Lunar Transit"
+        transitTimeFormatted={formatTime(transit).substring(0, 5)}
+        onSnapTransit={() => transit && onSetTime && onSetTime(transit)}
+        transitTheme="indigo"
+        transitTooltip="Click to jump clock to Lunar Transit"
+        declinationLabel={isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}
+        declinationFormatted={moonDeclination >= 0 ? `+${(moonDeclination as number).toFixed(1)}°` : `${(moonDeclination as number).toFixed(1)}°`}
+        declinationColorClass={moonDeclination >= 0 ? 'text-indigo-400' : 'text-rose-400'}
+        declinationSpanText={isQuadMode ? `Δδ ${(2 * LUNAR_MAX_DEC).toFixed(1)}° Span` : undefined}
+        declinationTooltip={isQuadMode ? `Lunar Declination: ${moonDeclination.toFixed(1)}° · 18.6-Year Standstill Range: Δδ = ${(2 * LUNAR_MAX_DEC).toFixed(1)}°` : undefined}
+        primaryModeText="Std"
+        secondaryModeText="☊ Nodes"
+        isSecondaryActive={isNodalModeActive}
+        onToggleMode={handleToggleNodal}
+        primaryAriaLabel="Standard Lunar View"
+        secondaryAriaLabel="Lunar Nodes View"
+        secondaryTheme="sky"
+      />
     </SkyDomeBase>
   );
 };

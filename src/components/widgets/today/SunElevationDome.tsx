@@ -1,20 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import { Sun, Compass } from 'lucide-react';
-import { 
-  toRadians, 
-  formatTime, 
-  calculateEarthOrbitalPhysics, 
-  getJulianDate,
-  projectSkyDomePoint,
-  generateDiurnalPath,
-  getSolarTwilightStatus,
-  calculateCulminationBearing,
-  calculateRiseSetAzimuth,
-  calculateSolsticeCulminations
-} from '../../../utils/cosmicMath';
+/**
+ * @file SunElevationDome.tsx
+ * Topocentric Sun Diurnal Elevation Arc Visualizer.
+ * Displays real-time diurnal solar position, solar noon culmination, equinox/solstice arcs,
+ * astronomical twilight strata, and seasonal solar analemma metrics.
+ */
+
+import React, { useState } from 'react';
+import { Sun } from 'lucide-react';
+import { formatTime } from '../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../types';
-import { SkyDomeBase, EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from './SkyDomeBase';
+import { SkyDomeBase } from './SkyDomeBase';
 import { SOLAR_TWILIGHT_BADGE_CLASSES } from './todayTokens';
+import { useSunElevationMath, OBLIQUITY } from './hooks/useSunElevationMath';
+import { SkyDomeFooter } from './common/SkyDomeFooter';
 
 export interface SunElevationDomeProps {
   solarData?: SolarAlmanacData | null;
@@ -55,141 +53,36 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
     }
   };
 
-  // Earth-Sun Distance & Orbital Physics from Canonical Solver
-  const fallbackPhysics = useMemo(
-    () => calculateEarthOrbitalPhysics(getJulianDate(currentDate, displayTime)),
-    [currentDate, displayTime]
-  );
-  const sunDistanceAU = solarData?.distanceAU ?? fallbackPhysics.distanceAU;
-  const sunDistanceKm = solarData?.distanceKm ?? fallbackPhysics.distanceKm;
-
-  // --- Sun Elevation Math ---
   const {
-    noonElevation = 45,
-    solarNoon = 12,
-    equationOfTime = 0,
-    sunrise = 6,
-    sunset = 18,
-    declination: sunDeclination = 0,
-  } = solarData || {};
-
-  const sunHourAngle = (displayTime - solarNoon) * 15;
-  const sunPos = projectSkyDomePoint(sunHourAngle, Number(sunDeclination), latitude);
-  const currentSunElevation = sunPos.elevation;
-  const sunX = sunPos.x;
-  const sunY = sunPos.y;
-
-  // --- Culmination & Sighting Bearing Math ---
-  const culmination = useMemo(
-    () => calculateCulminationBearing(latitude, Number(sunDeclination)),
-    [latitude, sunDeclination]
-  );
-  const riseSetAz = useMemo(
-    () => calculateRiseSetAzimuth(latitude, Number(sunDeclination)),
-    [latitude, sunDeclination]
-  );
-  const solsticeCulminations = useMemo(
-    () => calculateSolsticeCulminations(latitude),
-    [latitude]
-  );
-
-  // --- Solstice Peaks & Zenith Cap Math ---
-  const OBLIQUITY = 23.439281;
-  const absLat = Math.abs(latitude);
-  const isTropical = absLat <= OBLIQUITY;
-  const isPolar = absLat >= 89.9;
-
-  // Maximum annual noon elevation ceiling (Zenith Cap boundary)
-  const maxAnnualNoon = isTropical ? 90 : (90 - absLat + OBLIQUITY);
-  const summerSolsticeNoon = solsticeCulminations.summer.altitude;
-  const winterSolsticeNoon = solsticeCulminations.winter.altitude;
-
-  // Zenith Cap geometry (unreachable sector when latitude is outside tropics)
-  let capPathD = '';
-  if (!isTropical && maxAnnualNoon < 89.5) {
-    const yCap = EL_CY - EL_R * Math.sin(toRadians(maxAnnualNoon));
-    const xCapL = EL_CX - EL_R * Math.cos(toRadians(maxAnnualNoon));
-    const xCapR = EL_CX + EL_R * Math.cos(toRadians(maxAnnualNoon));
-    capPathD = `M ${xCapL.toFixed(1)} ${yCap.toFixed(1)} A ${EL_R} ${EL_R} 0 0 1 ${xCapR.toFixed(1)} ${yCap.toFixed(1)} Z`;
-  }
-
-  // --- Curved Diurnal Paths ---
-  const summerDec = latitude >= 0 ? OBLIQUITY : -OBLIQUITY;
-  const winterDec = latitude >= 0 ? -OBLIQUITY : OBLIQUITY;
-
-  const summerPathResult = generateDiurnalPath(latitude, summerDec);
-  const winterPathResult = generateDiurnalPath(latitude, winterDec);
-  const equinoxPathResult = generateDiurnalPath(latitude, 0);
-  const todayPathResult = generateDiurnalPath(latitude, Number(sunDeclination));
-
-  const diurnalPaths: SkyDomeDiurnalPath[] = [];
-
-  // 1. Summer Solstice Arc (Amber dashed hairline)
-  if (summerPathResult.pathD && summerSolsticeNoon > 0) {
-    diurnalPaths.push({
-      id: 'summer-solstice',
-      d: summerPathResult.pathD,
-      stroke: '#fbbf24',
-      strokeWidth: 0.75,
-      strokeDasharray: '3 2',
-      strokeOpacity: 0.7,
-      title: `Summer Solstice Noon Peak: ${summerSolsticeNoon.toFixed(1)}° ${solsticeCulminations.summer.shortTag}`
-    });
-  }
-
-  // 2. Active Today's Sun Path (Glowing Solid Gold Track)
-  if (todayPathResult.pathD) {
-    diurnalPaths.push({
-      id: 'today-sun-path',
-      d: todayPathResult.pathD,
-      stroke: '#f59e0b',
-      strokeWidth: 1.5,
-      strokeOpacity: 0.95,
-      isGlowing: true,
-      title: `Today's Solar Transit Peak: ${todayPathResult.peakAlt.toFixed(1)}°`
-    });
-  }
-
-  // 2b. Today's Twilight Sub-Horizon Continuation (0° to -18°)
-  if (isTwilightMode && todayPathResult.twilightD) {
-    diurnalPaths.push({
-      id: 'today-twilight-path',
-      d: todayPathResult.twilightD,
-      stroke: '#f59e0b',
-      strokeWidth: 1.0,
-      strokeOpacity: 0.4,
-      title: "Today's Twilight Track (0° to −18°)"
-    });
-  }
-
-  // 3. Equinox Arc (Muted slate dashed hairline)
-  if (equinoxPathResult.pathD && equinoxPathResult.peakAlt > 0) {
-    const eqPeak = equinoxPathResult.peakAlt;
-    diurnalPaths.push({
-      id: 'equinox-path',
-      d: equinoxPathResult.pathD,
-      stroke: '#64748b',
-      strokeWidth: 0.75,
-      strokeDasharray: '2 3',
-      strokeOpacity: 0.5,
-      title: `Equinox Noon Peak: ${eqPeak.toFixed(1)}°`
-    });
-  }
-
-  // 4. Winter Solstice Arc (Bronze dashed hairline)
-  if (winterPathResult.pathD && winterSolsticeNoon > 0) {
-    diurnalPaths.push({
-      id: 'winter-solstice',
-      d: winterPathResult.pathD,
-      stroke: '#d97706',
-      strokeWidth: 0.75,
-      strokeDasharray: '3 2',
-      strokeOpacity: 0.7,
-      title: `Winter Solstice Noon Peak: ${winterSolsticeNoon.toFixed(1)}° ${solsticeCulminations.winter.shortTag}`
-    });
-  }
-
-  const twilightStatus = getSolarTwilightStatus(currentSunElevation);
+    sunDistanceAU,
+    sunDistanceKm,
+    noonElevation,
+    solarNoon,
+    equationOfTime,
+    sunrise,
+    sunset,
+    sunDeclination,
+    currentSunElevation,
+    sunX,
+    sunY,
+    culmination,
+    riseSetAz,
+    solsticeCulminations,
+    isTropical,
+    isPolar,
+    maxAnnualNoon,
+    summerSolsticeNoon,
+    winterSolsticeNoon,
+    capPathD,
+    diurnalPaths,
+    twilightStatus,
+  } = useSunElevationMath({
+    solarData,
+    displayTime,
+    latitude,
+    currentDate,
+    isTwilightModeActive,
+  });
 
   return (
     <SkyDomeBase
@@ -329,77 +222,29 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       </div>
 
       {/* Mirrored Footer Summary Badges: Sunrise / Sunset, Solar Noon Snap Button, Declination, Mode Toggle */}
-      <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-        <div 
-          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-          title={riseSetAz.riseFormatted !== '--' ? `Sunrise: ${riseSetAz.riseFormatted} · Sunset: ${riseSetAz.setFormatted}` : undefined}
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Sunrise / Set</span>
-          <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-            {formatTime(sunrise).substring(0, 5)} / {formatTime(sunset).substring(0, 5)}
-          </span>
-          {riseSetAz.riseOctant !== '--' && (
-            <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-              {riseSetAz.riseOctant} · {riseSetAz.setOctant}
-            </span>
-          )}
-        </div>
-        <div 
-          onClick={() => solarNoon && onSetTime && onSetTime(solarNoon)}
-          className="text-center bg-amber-950/60 hover:bg-amber-900/80 transition-all cursor-pointer p-1.5 rounded-lg border border-amber-500/40 text-amber-300 shadow-sm flex flex-col justify-center min-w-0"
-          title="Click to jump clock to Solar Noon"
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-amber-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap flex items-center justify-center gap-0.5 truncate">
-            <Compass className="w-2.5 h-2.5 shrink-0" /> Solar Noon
-          </span>
-          <span className="text-amber-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">{formatTime(solarNoon).substring(0, 5)} <span className="text-amber-400/80 text-[9px] font-normal font-sans">UTC</span></span>
-        </div>
-        <div 
-          className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-          title={isQuadMode ? `Solar Declination: ${(sunDeclination as number).toFixed(1)}° · Annual Solstice Corridor: Δδ ${(2 * OBLIQUITY).toFixed(1)}°` : undefined}
-        >
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">
-            {isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}
-          </span>
-          <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${(sunDeclination as number) >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
-            {(sunDeclination as number) >= 0 ? `+${(sunDeclination as number).toFixed(1)}°` : `${(sunDeclination as number).toFixed(1)}°`}
-          </span>
-          {isQuadMode && (
-            <span className="text-[8px] text-amber-400/80 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-              Δδ {(2 * OBLIQUITY).toFixed(1)}° Span
-            </span>
-          )}
-        </div>
-        <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-          <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap mb-0.5">Mode View</span>
-          <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
-            <button
-              type="button"
-              onClick={() => handleToggleTwilight(false)}
-              aria-label="Standard Solar View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                !isTwilightModeActive
-                  ? 'bg-slate-800 text-amber-400 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Std
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleTwilight(true)}
-              aria-label="Twilight Strata View"
-              className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                isTwilightModeActive
-                  ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Twilight
-            </button>
-          </div>
-        </div>
-      </div>
+      <SkyDomeFooter
+        riseSetTitle="Sunrise / Set"
+        riseSetPrimaryText={`${formatTime(sunrise).substring(0, 5)} / ${formatTime(sunset).substring(0, 5)}`}
+        riseSetOctantText={riseSetAz.riseOctant !== '--' ? `${riseSetAz.riseOctant} · ${riseSetAz.setOctant}` : undefined}
+        riseSetTooltip={riseSetAz.riseFormatted !== '--' ? `Sunrise: ${riseSetAz.riseFormatted} · Sunset: ${riseSetAz.setFormatted}` : undefined}
+        transitLabel="Solar Noon"
+        transitTimeFormatted={formatTime(solarNoon).substring(0, 5)}
+        onSnapTransit={() => solarNoon && onSetTime && onSetTime(solarNoon)}
+        transitTheme="amber"
+        transitTooltip="Click to jump clock to Solar Noon"
+        declinationLabel={isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}
+        declinationFormatted={(sunDeclination as number) >= 0 ? `+${(sunDeclination as number).toFixed(1)}°` : `${(sunDeclination as number).toFixed(1)}°`}
+        declinationColorClass={(sunDeclination as number) >= 0 ? 'text-amber-400' : 'text-rose-400'}
+        declinationSpanText={isQuadMode ? `Δδ ${(2 * OBLIQUITY).toFixed(1)}° Corridor` : undefined}
+        declinationTooltip={isQuadMode ? `Solar Declination: ${(sunDeclination as number).toFixed(1)}° · Annual Solstice Corridor: Δδ ${(2 * OBLIQUITY).toFixed(1)}°` : undefined}
+        primaryModeText="Std"
+        secondaryModeText="Twilight"
+        isSecondaryActive={isTwilightModeActive}
+        onToggleMode={handleToggleTwilight}
+        primaryAriaLabel="Standard Solar View"
+        secondaryAriaLabel="Twilight Strata View"
+        secondaryTheme="amber"
+      />
     </SkyDomeBase>
   );
 };
