@@ -136,8 +136,8 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
 
   const subsolarPoint: Vector3D = {
     x: Math.cos(sunLambdaRad),
-    y: Math.sin(sunLambdaRad) * Math.sin(obliquityRad),
-    z: Math.sin(sunLambdaRad) * Math.cos(obliquityRad)
+    y: Math.sin(sunLambdaRad) * Math.cos(obliquityRad),
+    z: Math.sin(sunLambdaRad) * Math.sin(obliquityRad)
   };
 
   // 6. 3D Seasonal Milestone Nodes (Heliocentric Longitudes of Earth)

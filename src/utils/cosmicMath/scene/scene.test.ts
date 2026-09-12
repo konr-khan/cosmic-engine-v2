@@ -31,6 +31,8 @@ import {
   equatorialToEcliptic3D,
   equatorialToTopocentric3D,
   topocentric3DToAltAz,
+  transformSceneToArmillary,
+  transformArmillaryToScene,
   OBLIQUITY_J2000_RAD
 } from './index';
 import { toRadians } from '../../../types/units';
@@ -121,9 +123,10 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       const sNorm = Math.hypot(s.x, s.y, s.z);
       expect(sNorm).toBeCloseTo(1.0, 4);
 
-      // At June Solstice, subsolar point is in the Northern Hemisphere (y > 0)
-      expect(s.y).toBeGreaterThan(0);
-      expect(Math.asin(s.y) * (180 / Math.PI)).toBeCloseTo(23.44, 1);
+      // At June Solstice, subsolar point is in the Northern Hemisphere (z > 0 in F_eq)
+      expect(s.z).toBeGreaterThan(0);
+      expect(Math.asin(s.z) * (180 / Math.PI)).toBeCloseTo(23.44, 1);
+      expect(s.y).toBeCloseTo(Math.cos(toRadians(23.44)), 1);
     });
 
     it('calculates 3D Moon position, ecliptic latitude, phase angle, and quadrant correctly', () => {
@@ -557,6 +560,14 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       // At North Pole, NCP is at Zenith (altitude = 90°)
       expect(altAz.altitude).toBeCloseTo(90, 2);
       expect(altAz.zenithAngle).toBeCloseTo(0, 2);
+    });
+
+    it('verifies bijective coordinate transform between Scene Graph (Z-up) and Armillary (Y-up) frames', () => {
+      const vScene: Vector3D = { x: 1, y: 2, z: 3 };
+      const vArm = transformSceneToArmillary(vScene);
+      expect(vArm).toEqual({ x: 1, y: 3, z: 2 });
+      const vBack = transformArmillaryToScene(vArm);
+      expect(vBack).toEqual(vScene);
     });
   });
 

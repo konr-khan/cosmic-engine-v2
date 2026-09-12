@@ -4,10 +4,10 @@
  * and 30-day draconic progress tracks.
  */
 
-import { toRadians, toDegrees, clamp, getJulianDate } from '../core';
+import { toRadians, toDegrees, clamp, getJulianDate, julianDateToDate } from '../core';
 import { calculateLunarPosition, calculateTrueLunarNodeEvents } from '../lunar';
 import { calculateSolarPosition } from '../solar';
-import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../astroConstants';
+import { EARTH_AXIAL_OBLIQUITY_J2000_DEG, J2000_JD } from '../astroConstants';
 import { EL_R, EL_CX, EL_CY, projectSkyDomePoint } from './elevation';
 
 export interface MonthlyLunarBounds {
@@ -233,7 +233,7 @@ export const calculateSkyDomeLunarNodes = (
  * and trough (southernmost declination) for the current lunar cycle.
  */
 export const calculateMonthlyLunarDeclinationBounds = (
-  currentDate: Date = new Date()
+  currentDate: Date = julianDateToDate(J2000_JD)
 ): MonthlyLunarBounds => {
   const centerJD = getJulianDate(currentDate, 12);
   let minDec = 90;

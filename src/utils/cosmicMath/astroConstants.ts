@@ -114,7 +114,7 @@ export const EARTH_PERIHELION_LONGITUDE_DEG: Degrees = asDegrees(102.937);
 /**
  * Mean draconic (nodical) month period in days (period between successive ascending node crossings).
  */
-export const MOON_DRACONIC_PERIOD_DAYS = 27.21222;
+export const MOON_DRACONIC_PERIOD_DAYS = 27.212220817;
 export const DRACONIC_PERIOD_DAYS = MOON_DRACONIC_PERIOD_DAYS;
 
 /**

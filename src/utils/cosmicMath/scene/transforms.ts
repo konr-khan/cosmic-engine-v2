@@ -437,3 +437,24 @@ export function calculateShadowCones3D(
     penumbraLengthKm: penumbraLength
   };
 }
+
+/**
+ * Transforms a 3D vector from canonical Z-up Scene Graph space (F_eq) to Y-up Armillary graphics space (F_arm).
+ * [x_arm, y_arm, z_arm] = [x_scene, z_scene, y_scene]
+ */
+export const transformSceneToArmillary = (v: Vector3D): Vector3D => ({
+  x: v.x,
+  y: v.z,
+  z: v.y
+});
+
+/**
+ * Transforms a 3D vector from Y-up Armillary graphics space (F_arm) to canonical Z-up Scene Graph space (F_eq).
+ * [x_scene, y_scene, z_scene] = [x_arm, z_arm, y_arm]
+ */
+export const transformArmillaryToScene = (v: Vector3D): Vector3D => ({
+  x: v.x,
+  y: v.z,
+  z: v.y
+});
+

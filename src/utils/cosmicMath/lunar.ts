@@ -464,8 +464,7 @@ export const calculateAnnualLunarMatrix = (
     const solarPos = calculateSolarPosition(jd);
     const lunarPos = calculateLunarPosition(jd);
     
-    const raDiff = ((lunarPos.rightAscension - solarPos.rightAscension) % 360 + 360) % 360;
-    const phaseVal = raDiff / 360;
+    const phaseVal = Number(lunarPos.phase ?? 0);
 
     list.push({
       day,

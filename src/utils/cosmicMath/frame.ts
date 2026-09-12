@@ -38,8 +38,8 @@ export const calculateEphemerisFrame = (
   const solarNoon = 12 - (longitude / 15) - (eotCorrection / 60);
   const dayLength = calculateDaylightDurationPrecise(latitude, solarPos.declination, CONFIG.SOLAR.TWILIGHT.OFFICIAL);
 
-  const subsolarLon = ((((gmst - solarPos.rightAscension + 540) % 360) + 360) % 360) - 180;
-  const sublunarLon = ((((gmst - lunarPos.rightAscension + 540) % 360) + 360) % 360) - 180;
+  const subsolarLon = ((((solarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
+  const sublunarLon = ((((lunarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
 
   return {
     julianDate: jd,
