@@ -5,6 +5,13 @@ import {
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
 import { EphemerisWorkerRequest, EphemerisWorkerResponse } from '../types/worker';
+import {
+  sanitizeYear,
+  sanitizeLatitude,
+  sanitizeLongitude,
+  sanitizeJulianDate,
+  sanitizeTimeOfDay
+} from './workerSanitizers';
 
 /**
  * Dedicated Web Worker for off-main-thread Meeus lunar ephemeris,
@@ -18,16 +25,15 @@ self.onmessage = (event: MessageEvent<EphemerisWorkerRequest>) => {
 
   if (type === 'CALCULATE_EPHEMERIS') {
     try {
-      const {
-        latitude,
-        longitude,
-        julianDate,
-        timeOfDay,
-        calculateLunar = true,
-        calculateEclipse = true
-      } = message.payload || {};
+      const raw = message.payload || {};
+      const latitude = sanitizeLatitude(raw.latitude);
+      const longitude = sanitizeLongitude(raw.longitude);
+      const julianDate = sanitizeJulianDate(raw.julianDate);
+      const timeOfDay = sanitizeTimeOfDay(raw.timeOfDay);
+      const calculateLunar = raw.calculateLunar !== false;
+      const calculateEclipse = raw.calculateEclipse !== false;
 
-      const JD_midnight = julianDate - (timeOfDay / 24);
+      const JD_midnight = Number(julianDate) - (timeOfDay / 24);
 
       const lunarEvents = calculateLunar
         ? calculateLunarEvents(latitude, longitude, JD_midnight, timeOfDay)
@@ -58,7 +64,9 @@ self.onmessage = (event: MessageEvent<EphemerisWorkerRequest>) => {
   } else if (type === 'CALCULATE_ANNUAL_SOLAR') {
     try {
       const { year, latitude } = message.payload || {};
-      const annualSolar = calculateAnnualSolarMatrix(year, latitude);
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      const annualSolar = calculateAnnualSolarMatrix(safeYear, safeLat);
 
       const response: EphemerisWorkerResponse = {
         type: 'ANNUAL_SOLAR_SUCCESS',
@@ -79,7 +87,10 @@ self.onmessage = (event: MessageEvent<EphemerisWorkerRequest>) => {
   } else if (type === 'CALCULATE_ANNUAL_LUNAR') {
     try {
       const { year, latitude, longitude } = message.payload || {};
-      const annualLunar = calculateAnnualLunarMatrix(year, latitude, longitude);
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      const safeLon = sanitizeLongitude(longitude);
+      const annualLunar = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
 
       const response: EphemerisWorkerResponse = {
         type: 'ANNUAL_LUNAR_SUCCESS',

@@ -891,5 +891,162 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       }
     });
   });
+
+  describe("Synchronous Fallback Hardening & Pathological Input Resilience", () => {
+    it("handles NaN coordinates and non-finite Julian Date in useEphemerisWorker without throwing", () => {
+      expect(() => {
+        const result = useEphemerisWorker({
+          latitude: NaN as any,
+          longitude: NaN as any,
+          julianDate: NaN as any,
+          timeOfDay: NaN as any,
+          isLunarActive: true,
+          isEclipseActive: true,
+          isOrbitalActive: true
+        });
+        expect(result).toBeDefined();
+        expect(result.isWorkerActive).toBe(false);
+        expect(result.lunarEvents).not.toBeNull();
+        expect(result.eclipse).not.toBeNull();
+      }).not.toThrow();
+    });
+
+    it("handles extreme out-of-range coordinates in useEphemerisWorker gracefully", () => {
+      const result = useEphemerisWorker({
+        latitude: 999 as any,
+        longitude: -5000 as any,
+        julianDate: 2451545.0,
+        timeOfDay: 35 as any,
+        isLunarActive: true,
+        isEclipseActive: true,
+        isOrbitalActive: true
+      });
+
+      expect(result).toBeDefined();
+      expect(result.lunarEvents).not.toBeNull();
+      expect(result.eclipse).not.toBeNull();
+    });
+
+    it("handles NaN and extreme years in useAnnualSolarWorker without throwing", () => {
+      const nanSolar = useAnnualSolarWorker({
+        year: NaN,
+        latitude: 47.06
+      });
+      expect(nanSolar).toBeDefined();
+      expect(Array.isArray(nanSolar)).toBe(true);
+      expect(nanSolar.length).toBeGreaterThan(0);
+
+      const extremeSolar = useAnnualSolarWorker({
+        year: 999999,
+        latitude: 47.06
+      });
+      expect(extremeSolar).toBeDefined();
+      expect(extremeSolar.length).toBeGreaterThan(0);
+    });
+
+    it("handles NaN and extreme years in useAnnualLunarWorker without throwing", () => {
+      const nanLunar = useAnnualLunarWorker({
+        year: NaN,
+        latitude: 47.06,
+        longitude: -122.81
+      });
+      expect(nanLunar).toBeDefined();
+      expect(Array.isArray(nanLunar)).toBe(true);
+      expect(nanLunar.length).toBeGreaterThan(0);
+
+      const extremeLunar = useAnnualLunarWorker({
+        year: 999999,
+        latitude: 47.06,
+        longitude: -122.81
+      });
+      expect(extremeLunar).toBeDefined();
+      expect(extremeLunar.length).toBeGreaterThan(0);
+    });
+
+    it("guarantees callback delivery in EphemerisWorkerManager fallback even under simulated calculation error", () => {
+      const manager = new EphemerisWorkerManager();
+      manager._isAvailable = false;
+
+      const solarCb = vi.fn();
+      manager.requestAnnualSolarCalculation({ year: NaN, latitude: NaN as any }, solarCb);
+      expect(solarCb).toHaveBeenCalledTimes(1);
+      expect(solarCb.mock.calls[0][0].annualSolar).toBeDefined();
+
+      const lunarCb = vi.fn();
+      manager.requestAnnualLunarCalculation({ year: NaN, latitude: NaN as any, longitude: NaN as any }, lunarCb);
+      expect(lunarCb).toHaveBeenCalledTimes(1);
+      expect(lunarCb.mock.calls[0][0].annualLunar).toBeDefined();
+    });
+
+    it("guarantees callback dispatch with safe empty payloads in _executeSyncFallbackForEntry when error occurs", () => {
+      const manager = new EphemerisWorkerManager();
+      const solarCb = vi.fn();
+
+      const brokenSolarEntry: any = {
+        type: 'ANNUAL_SOLAR',
+        signature: 'BROKEN_SOLAR',
+        callbacks: new Set([solarCb]),
+        params: {
+          get year() {
+            throw new Error('Simulated property accessor failure');
+          },
+          latitude: 45
+        }
+      };
+
+      expect(() => {
+        manager._executeSyncFallbackForEntry(brokenSolarEntry);
+      }).not.toThrow();
+
+      expect(solarCb).toHaveBeenCalledWith({ annualSolar: [] });
+
+      const lunarCb = vi.fn();
+      const brokenLunarEntry: any = {
+        type: 'ANNUAL_LUNAR',
+        signature: 'BROKEN_LUNAR',
+        callbacks: new Set([lunarCb]),
+        params: {
+          get year() {
+            throw new Error('Simulated property accessor failure');
+          },
+          latitude: 45,
+          longitude: 0
+        }
+      };
+
+      expect(() => {
+        manager._executeSyncFallbackForEntry(brokenLunarEntry);
+      }).not.toThrow();
+
+      expect(lunarCb).toHaveBeenCalledWith({ annualLunar: [] });
+
+      const ephemerisCb = vi.fn();
+      const brokenEphemerisEntry: any = {
+        type: 'EPHEMERIS',
+        signature: 'BROKEN_EPHEMERIS',
+        callbacks: new Set([ephemerisCb]),
+        params: {
+          get latitude() {
+            throw new Error('Simulated property accessor failure');
+          },
+          longitude: 0,
+          julianDate: 2451545.0,
+          timeOfDay: 12,
+          calculateLunar: true,
+          calculateEclipse: true
+        }
+      };
+
+      expect(() => {
+        manager._executeSyncFallbackForEntry(brokenEphemerisEntry);
+      }).not.toThrow();
+
+      expect(ephemerisCb).toHaveBeenCalledWith(expect.objectContaining({
+        lunarEvents: null,
+        eclipse: null
+      }));
+    });
+  });
 });
+
 

@@ -17,6 +17,13 @@ import {
 import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude } from '../types/units';
 import { LruCache } from '../utils/lruCache';
+import {
+  sanitizeYear,
+  sanitizeLatitude,
+  sanitizeLongitude,
+  sanitizeJulianDate,
+  sanitizeTimeOfDay
+} from './workerSanitizers';
 
 export interface PendingThrottledEphemerisEntry {
   signature: string;
@@ -126,9 +133,15 @@ export class EphemerisWorkerManager {
     if (!entry || entry.callbacks.size === 0) return;
     try {
       if (entry.type === 'ANNUAL_SOLAR') {
-        const { year, latitude } = entry.params;
-        const annualSolar = calculateAnnualSolarMatrix(year, latitude);
-        this._setInAnnualCache(this.annualSolarCache, entry.signature, annualSolar);
+        const safeYear = sanitizeYear(entry.params.year);
+        const safeLat = sanitizeLatitude(entry.params.latitude);
+        let annualSolar: AnnualSolarMatrixItem[] = [];
+        try {
+          annualSolar = calculateAnnualSolarMatrix(safeYear, safeLat);
+          this._setInAnnualCache(this.annualSolarCache, entry.signature, annualSolar);
+        } catch (calcError) {
+          console.error('[EphemerisWorkerManager] Annual solar sync calculation failed:', calcError);
+        }
         const payload = { annualSolar };
         entry.callbacks.forEach((cb) => {
           try {
@@ -138,9 +151,16 @@ export class EphemerisWorkerManager {
           }
         });
       } else if (entry.type === 'ANNUAL_LUNAR') {
-        const { year, latitude, longitude } = entry.params;
-        const annualLunar = calculateAnnualLunarMatrix(year, latitude, longitude);
-        this._setInAnnualCache(this.annualLunarCache, entry.signature, annualLunar);
+        const safeYear = sanitizeYear(entry.params.year);
+        const safeLat = sanitizeLatitude(entry.params.latitude);
+        const safeLon = sanitizeLongitude(entry.params.longitude);
+        let annualLunar: AnnualLunarMatrixItem[] = [];
+        try {
+          annualLunar = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
+          this._setInAnnualCache(this.annualLunarCache, entry.signature, annualLunar);
+        } catch (calcError) {
+          console.error('[EphemerisWorkerManager] Annual lunar sync calculation failed:', calcError);
+        }
         const payload = { annualLunar };
         entry.callbacks.forEach((cb) => {
           try {
@@ -150,14 +170,32 @@ export class EphemerisWorkerManager {
           }
         });
       } else {
-        const { latitude, longitude, julianDate, timeOfDay, calculateLunar, calculateEclipse } = entry.params;
-        const JD_midnight = julianDate - (timeOfDay / 24);
-        const lunarEvents = calculateLunar
-          ? calculateLunarEvents(latitude, longitude, JD_midnight, timeOfDay)
-          : null;
-        const eclipse = calculateEclipse
-          ? calculateEclipseData(julianDate)
-          : null;
+        const safeLat = sanitizeLatitude(entry.params.latitude);
+        const safeLon = sanitizeLongitude(entry.params.longitude);
+        const safeJD = sanitizeJulianDate(entry.params.julianDate);
+        const safeTime = sanitizeTimeOfDay(entry.params.timeOfDay);
+        const { calculateLunar, calculateEclipse } = entry.params;
+
+        let lunarEvents = null;
+        let eclipse = null;
+
+        if (calculateLunar) {
+          try {
+            const JD_midnight = Number(safeJD) - (safeTime / 24);
+            lunarEvents = calculateLunarEvents(safeLat, safeLon, JD_midnight, safeTime);
+          } catch (lunarError) {
+            console.error('[EphemerisWorkerManager] Lunar events fallback calculation failed:', lunarError);
+          }
+        }
+
+        if (calculateEclipse) {
+          try {
+            eclipse = calculateEclipseData(safeJD);
+          } catch (eclipseError) {
+            console.error('[EphemerisWorkerManager] Eclipse fallback calculation failed:', eclipseError);
+          }
+        }
+
         const payload: EphemerisWorkerPayload = {
           lunarEvents,
           eclipse,
@@ -172,7 +210,23 @@ export class EphemerisWorkerManager {
         });
       }
     } catch (e) {
-      console.error('Ephemeris synchronous fallback calculation failed:', e);
+      console.error('[EphemerisWorkerManager] Ephemeris synchronous fallback calculation failed:', e);
+      // Failsafe callback dispatch: never leave callers hung in a zombie state
+      try {
+        if (entry.type === 'ANNUAL_SOLAR') {
+          entry.callbacks.forEach((cb) => {
+            try { cb({ annualSolar: [] }); } catch {}
+          });
+        } else if (entry.type === 'ANNUAL_LUNAR') {
+          entry.callbacks.forEach((cb) => {
+            try { cb({ annualLunar: [] }); } catch {}
+          });
+        } else {
+          entry.callbacks.forEach((cb) => {
+            try { cb({ lunarEvents: null, eclipse: null, timestamp: Date.now() }); } catch {}
+          });
+        }
+      } catch {}
     }
   }
 
@@ -572,13 +626,16 @@ export class EphemerisWorkerManager {
 
     // Synchronous fallback if worker unavailable
     if (!this.isAvailable()) {
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      let annualSolar: AnnualSolarMatrixItem[] = [];
       try {
-        const annualSolar = calculateAnnualSolarMatrix(year, latitude);
+        annualSolar = calculateAnnualSolarMatrix(safeYear, safeLat);
         this._setInAnnualCache(this.annualSolarCache, signature, annualSolar);
-        onResult({ annualSolar });
       } catch (e) {
         console.error('Annual solar sync execution failed:', e);
       }
+      onResult({ annualSolar });
       return () => {};
     }
 
@@ -596,13 +653,16 @@ export class EphemerisWorkerManager {
 
     const worker = this._getWorker();
     if (!worker) {
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      let annualSolar: AnnualSolarMatrixItem[] = [];
       try {
-        const annualSolar = calculateAnnualSolarMatrix(year, latitude);
+        annualSolar = calculateAnnualSolarMatrix(safeYear, safeLat);
         this._setInAnnualCache(this.annualSolarCache, signature, annualSolar);
-        onResult({ annualSolar });
       } catch (e) {
         console.error('Annual solar sync execution failed:', e);
       }
+      onResult({ annualSolar });
       return () => {};
     }
 
@@ -652,13 +712,17 @@ export class EphemerisWorkerManager {
 
     // Synchronous fallback if worker unavailable
     if (!this.isAvailable()) {
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      const safeLon = sanitizeLongitude(longitude);
+      let annualLunar: AnnualLunarMatrixItem[] = [];
       try {
-        const annualLunar = calculateAnnualLunarMatrix(year, latitude, longitude);
+        annualLunar = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
         this._setInAnnualCache(this.annualLunarCache, signature, annualLunar);
-        onResult({ annualLunar });
       } catch (e) {
         console.error('Annual lunar sync execution failed:', e);
       }
+      onResult({ annualLunar });
       return () => {};
     }
 
@@ -676,13 +740,17 @@ export class EphemerisWorkerManager {
 
     const worker = this._getWorker();
     if (!worker) {
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      const safeLon = sanitizeLongitude(longitude);
+      let annualLunar: AnnualLunarMatrixItem[] = [];
       try {
-        const annualLunar = calculateAnnualLunarMatrix(year, latitude, longitude);
+        annualLunar = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
         this._setInAnnualCache(this.annualLunarCache, signature, annualLunar);
-        onResult({ annualLunar });
       } catch (e) {
         console.error('Annual lunar sync execution failed:', e);
       }
+      onResult({ annualLunar });
       return () => {};
     }
 

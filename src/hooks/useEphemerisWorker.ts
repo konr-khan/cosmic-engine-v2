@@ -9,6 +9,13 @@ import { ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
 import { EphemerisWorkerPayload } from '../types/worker';
 import { LunarEvents, EclipseData, AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude, JulianDate, HoursDecimal } from '../types/units';
+import {
+  sanitizeYear,
+  sanitizeLatitude,
+  sanitizeLongitude,
+  sanitizeJulianDate,
+  sanitizeTimeOfDay
+} from '../workers/workerSanitizers';
 
 export interface UseEphemerisWorkerParams {
   latitude: Latitude;
@@ -87,15 +94,25 @@ export const useEphemerisWorker = ({
     if (!isOrbitalActive) return { lunarEvents: null, eclipse: null };
     if (isWorkerActive && !isWorkerEpochStale && activePayload !== null) return null;
 
-    const JD_midnight = Number(julianDate) - (timeOfDay / 24);
-    const lunarEvents = isLunarActive 
-      ? calculateLunarEvents(latitude, longitude, JD_midnight, timeOfDay)
-      : null;
-    const eclipse = isEclipseActive
-      ? calculateEclipseData(julianDate)
-      : null;
+    try {
+      const safeLat = sanitizeLatitude(latitude);
+      const safeLon = sanitizeLongitude(longitude);
+      const safeJD = sanitizeJulianDate(julianDate);
+      const safeTime = sanitizeTimeOfDay(timeOfDay);
 
-    return { lunarEvents, eclipse };
+      const JD_midnight = Number(safeJD) - (safeTime / 24);
+      const lunarEvents = isLunarActive 
+        ? calculateLunarEvents(safeLat, safeLon, JD_midnight, safeTime)
+        : null;
+      const eclipse = isEclipseActive
+        ? calculateEclipseData(safeJD)
+        : null;
+
+      return { lunarEvents, eclipse };
+    } catch (err) {
+      console.error('[useEphemerisWorker] Synchronous fallback calculation failed:', err);
+      return { lunarEvents: null, eclipse: null };
+    }
   }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, isWorkerActive, isWorkerEpochStale, activePayload]);
 
   const lunarEvents = activePayload ? activePayload.lunarEvents : (syncResult ? syncResult.lunarEvents : null);
@@ -140,7 +157,14 @@ export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitud
 
   const syncSolar = useMemo(() => {
     if (isWorkerActive && workerSolar !== null) return null;
-    return calculateAnnualSolarMatrix(year, latitude);
+    try {
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      return calculateAnnualSolarMatrix(safeYear, safeLat);
+    } catch (err) {
+      console.error('[useAnnualSolarWorker] Synchronous fallback calculation failed:', err);
+      return [];
+    }
   }, [year, latitude, isWorkerActive, workerSolar !== null]);
 
   return workerSolar || syncSolar || [];
@@ -186,7 +210,15 @@ export const useAnnualLunarWorker = ({
 
   const syncLunar = useMemo(() => {
     if (isWorkerActive && workerLunar !== null) return null;
-    return calculateAnnualLunarMatrix(year, latitude, longitude);
+    try {
+      const safeYear = sanitizeYear(year);
+      const safeLat = sanitizeLatitude(latitude);
+      const safeLon = sanitizeLongitude(longitude);
+      return calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
+    } catch (err) {
+      console.error('[useAnnualLunarWorker] Synchronous fallback calculation failed:', err);
+      return [];
+    }
   }, [year, latitude, longitude, isWorkerActive, workerLunar !== null]);
 
   return workerLunar || syncLunar || [];

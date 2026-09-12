@@ -170,7 +170,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 44 specialized domain suites (**657 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 45 specialized domain suites (**679 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -191,7 +191,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` (9 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (20 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^circ	ext{N}, -90^circ	ext{S}$) |
 | **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (9 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`), and `shallowEqual` protection |
-| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (23 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
+| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (29 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (8 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **MiniGlobe SVG Component** | `src/components/common/MiniGlobe.test.tsx` (12 tests) | 9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (9 tests) | Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience |
