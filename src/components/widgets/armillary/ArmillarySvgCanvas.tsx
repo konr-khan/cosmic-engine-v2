@@ -187,6 +187,10 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
 
     if (is3D) {
       setIsDraggingCamera(true);
+      setHoveredMilestone(null);
+      setHoveredStar(null);
+      setHoveredBead(null);
+      setHoveredNode(null);
       dragStartRef.current = {
         x: e.clientX,
         y: e.clientY,
@@ -366,6 +370,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           sun={sun}
           moon={moon}
           milestones={milestones}
+          hoveredMilestone={isDraggingCamera ? null : hoveredMilestone}
+          isDragging={isDraggingCamera || isDraggingRete || isDraggingRule}
           lunarNodes={lunarNodes}
           projectionMode={projectionMode}
           isOrbital={isOrbital}

@@ -146,6 +146,9 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
   const nodalThemeColor = isNodalModeActive
     ? (isAscendingBranch ? '#38bdf8' : '#f43f5e')
     : '#e2e8f0';
+  const moonTrackDash = isNodalModeActive
+    ? (nodalData.isWaxing ? undefined : '4 3')
+    : undefined;
 
   // Ecliptic Node Crossing point on Meridian (where β = 0°)
   const eclipticCulmination = useMemo(() => {
@@ -364,6 +367,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
         chord: todayChord,
         stroke: nodalThemeColor,
         strokeWidth: 1.5,
+        strokeDasharray: moonTrackDash,
         strokeOpacity: 0.85,
         daylightTitle: `Today's Lunar Diurnal Path (Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag})`,
       }}

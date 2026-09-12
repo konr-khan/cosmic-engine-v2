@@ -65,11 +65,21 @@ export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
               opacity={isHovered ? 0.9 : 0.25}
             />
 
-            {/* Star Pointer Diamond Core */}
-            <circle
-              cx={star.screenPos.x}
-              cy={star.screenPos.y}
-              r={starRadius}
+            {/* Star Magnitude Glowing Halo on Hover */}
+            {isHovered && (
+              <circle
+                cx={star.screenPos.x}
+                cy={star.screenPos.y}
+                r={starRadius * 2.6}
+                fill="#fbbf24"
+                fillOpacity="0.25"
+                className="animate-pulse pointer-events-none"
+              />
+            )}
+
+            {/* Navigational Astrolabe Star Diamond Floret Core */}
+            <polygon
+              points={`${star.screenPos.x},${star.screenPos.y - starRadius} ${star.screenPos.x + starRadius},${star.screenPos.y} ${star.screenPos.x},${star.screenPos.y + starRadius} ${star.screenPos.x - starRadius},${star.screenPos.y}`}
               fill={isHovered ? '#fbbf24' : '#e0f2fe'}
               stroke="#0284c7"
               strokeWidth={isHovered ? 1.2 : 0.6}

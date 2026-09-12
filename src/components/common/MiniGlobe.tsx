@@ -256,6 +256,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
     const dayPath = generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, 0);
     const civilPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -6) : '';
     const nauticalPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -12) : '';
+    const astroPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -18) : '';
 
     // Rotated Polar Axis (North Pole is at Y = +1)
     const poleCam = rotateEuler3D({ x: 0, y: 1, z: 0 }, pitch, yaw, roll);
@@ -315,6 +316,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
       dayPath,
       civilPath,
       nauticalPath,
+      astroPath,
       polePx,
       polePy,
       obsPx,

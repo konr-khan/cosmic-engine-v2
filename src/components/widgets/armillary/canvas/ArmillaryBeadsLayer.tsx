@@ -14,6 +14,8 @@ export interface ArmillaryBeadsLayerProps {
   sun: ArmillaryModelOutput['sun'];
   moon: ArmillaryModelOutput['moon'];
   milestones: ArmillaryMilestoneNode[];
+  hoveredMilestone?: ArmillaryMilestoneNode | null;
+  isDragging?: boolean;
   lunarNodes?: ArmillaryLunarNodes;
   projectionMode?: ArmillaryProjectionMode;
   modelType?: 'orbit' | 'apparent' | 'rete' | 'rojas' | 'horizon' | 'heliocentric' | 'geocentric' | 'stereographic';
@@ -44,6 +46,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   sun,
   moon,
   milestones,
+  hoveredMilestone,
   lunarNodes,
   projectionMode,
   modelType,
@@ -60,6 +63,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   timeOfDay = 12.0,
   sunLambdaDeg,
   isOrbital = false,
+  isDragging = false,
   orbitRingOpacity = 1,
   milestonesOpacity = 1,
   lunarOrbitOpacity = 1,
@@ -139,57 +143,61 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       )}
 
       {/* 2. Seasonal Milestone Nodes (Heliocentric / Geocentric) */}
-      {milestonesOpacity > 0.05 && milestones.map((m) => (
-        <g
-          key={m.id}
-          className="cursor-pointer transition-transform hover:scale-110"
-          style={{ touchAction: 'none' }}
-          opacity={milestonesOpacity * (m.isFront ? 1.0 : 0.4)}
-          onPointerEnter={() => onHoverMilestone(m)}
-          onPointerLeave={() => onHoverMilestone(null)}
-        >
-          {/* Invisible Touch Hitbox */}
-          <circle
-            cx={m.screenPos.x}
-            cy={m.screenPos.y}
-            r="10"
-            fill="transparent"
-          />
-          {/* Milestone Halo */}
-          <circle
-            cx={m.screenPos.x}
-            cy={m.screenPos.y}
-            r="4.5"
-            fill={m.color}
-            fillOpacity="0.2"
-            stroke={m.color}
-            strokeWidth="0.6"
-            strokeDasharray="2 2"
-          />
-          {/* Milestone Core */}
-          <circle
-            cx={m.screenPos.x}
-            cy={m.screenPos.y}
-            r="2.0"
-            fill={m.color}
-            stroke="#ffffff"
-            strokeWidth="0.75"
-          />
-          {/* Milestone Label */}
-          <text
-            x={m.screenPos.x}
-            y={m.screenPos.y - 5.5}
-            fontSize="3.0"
-            fill={m.color}
-            fontFamily="monospace"
-            fontWeight="bold"
-            textAnchor="middle"
-            className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+      {milestonesOpacity > 0.05 && milestones.map((m) => {
+        const isHovered = !isDragging && hoveredMilestone?.id === m.id;
+        return (
+          <g
+            key={m.id}
+            className={isDragging ? 'pointer-events-none' : 'cursor-pointer'}
+            style={{ touchAction: 'none' }}
+            opacity={milestonesOpacity * (m.isFront ? 1.0 : 0.4)}
+            onPointerEnter={() => {
+              if (!isDragging) onHoverMilestone(m);
+            }}
+            onPointerLeave={() => onHoverMilestone(null)}
           >
-            {m.label}
-          </text>
-        </g>
-      ))}
+            {/* Invisible Touch Hitbox */}
+            <circle
+              cx={m.screenPos.x}
+              cy={m.screenPos.y}
+              r={isHovered ? 9 : 7}
+              fill="transparent"
+            />
+            {/* Persistent Translucent Glowing Halo Node (Expands on Hover) */}
+            <circle
+              cx={m.screenPos.x}
+              cy={m.screenPos.y}
+              r={isHovered ? 7.0 : 4.5}
+              fill={m.color}
+              opacity={isHovered ? 0.45 : 0.20}
+              className={`pointer-events-none transition-all duration-200 ${isHovered ? 'animate-pulse' : ''}`}
+            />
+            {/* Milestone Core */}
+            <circle
+              cx={m.screenPos.x}
+              cy={m.screenPos.y}
+              r={isHovered ? 2.8 : 2.0}
+              fill={m.color}
+              stroke="#ffffff"
+              strokeWidth={isHovered ? 1.2 : 0.75}
+              className="pointer-events-none transition-all duration-150 drop-shadow-md"
+            />
+            {/* Milestone Label */}
+            <text
+              x={m.screenPos.x}
+              y={m.screenPos.y - (isHovered ? 6.5 : 5.0)}
+              fontSize="3.0"
+              fill={m.color}
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+            >
+              {m.label}
+            </text>
+          </g>
+        );
+      })}
 
       {/* 4. High-Precision Earth Mini-Globe with 3D Euler Orientation / 2D Flat Plate Pin */}
       <g

@@ -154,7 +154,6 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       d: todayPathResult.twilightD,
       stroke: '#f59e0b',
       strokeWidth: 1.0,
-      strokeDasharray: '2 2',
       strokeOpacity: 0.4,
       title: "Today's Twilight Track (0° to −18°)"
     });

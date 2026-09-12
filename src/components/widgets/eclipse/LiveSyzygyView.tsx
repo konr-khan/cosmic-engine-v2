@@ -26,7 +26,7 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
   const phaseDeg = Math.round(phaseVal * 360);
   const scalePxPerDeg = 8.5;
   const isAscending = eclipse.isAscendingHemisphere ?? (beta >= 0);
-  const isWaxing = phaseVal <= 0.5;
+  const isWaxing = phaseVal < 0.5;
 
   const liveEarthX = 310;
   const liveEarthY = 110;
@@ -75,8 +75,8 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       </defs>
 
       {/* Ecliptic Reference Centerline (0°) */}
-      <line x1="10" y1="110" x2="510" y2="110" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-      <text x="92" y="104" className="text-[8px] font-mono fill-slate-500">Ecliptic Plane (0°)</text>
+      <line x1="10" y1="110" x2="510" y2="110" stroke="#f59e0b" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+      <text x="92" y="104" className="text-[8px] font-mono fill-amber-500/70">Ecliptic Plane (0°)</text>
 
       {/* 1. SUN BODY (Left) */}
       <g 

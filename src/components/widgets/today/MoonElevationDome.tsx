@@ -241,7 +241,6 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       d: todayPathResult.twilightD,
       stroke: isNodalModeActive ? moonTrackColor : '#94a3b8',
       strokeWidth: 0.8,
-      strokeDasharray: isNodalModeActive ? moonTrackDash : undefined,
       strokeOpacity: 0.20,
       title: "Today's Sub-Horizon Lunar Track"
     });

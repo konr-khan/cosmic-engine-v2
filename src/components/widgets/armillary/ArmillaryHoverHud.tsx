@@ -76,6 +76,26 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
         </div>
       )}
 
+      {/* Floating Glassmorphic Milestone Hover HUD Popover */}
+      {hoveredMilestone && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5" style={{ color: hoveredMilestone.color }}>
+            <strong className="font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: hoveredMilestone.color }} />
+              {hoveredMilestone.label}
+            </strong>
+            <span className="text-[10px] text-slate-400 font-normal">{hoveredMilestone.date}</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Heliocentric Dist: <strong className="text-white">{hoveredMilestone.distanceAU.toFixed(3)} AU</strong> ({Math.round(hoveredMilestone.distanceKm).toLocaleString()} km)</div>
+            <div>Orbital Velocity: <strong className="text-emerald-400">{hoveredMilestone.speedKms.toFixed(1)} km/s</strong></div>
+            <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
+              {hoveredMilestone.description}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Sun Hover Popover */}
       {hoveredBead === 'sun' && (
         <div className="absolute top-4 right-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-amber-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">

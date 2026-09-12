@@ -49,6 +49,9 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
           {/* EULER3D Twilight & Daylight Bands */}
           {viewMode === 'euler3d' && eulerGeometry && (
             <g fillRule="evenodd">
+              {eulerGeometry.astroPath && (
+                <path d={eulerGeometry.astroPath} fill="#0f172a" fillRule="evenodd" />
+              )}
               {eulerGeometry.nauticalPath && (
                 <path d={eulerGeometry.nauticalPath} fill="#1e293b" fillRule="evenodd" />
               )}

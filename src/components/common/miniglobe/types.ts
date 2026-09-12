@@ -45,6 +45,7 @@ export interface EulerGlobeGeometry {
   dayPath: string;
   civilPath: string;
   nauticalPath: string;
+  astroPath?: string;
   polePx: number;
   polePy: number;
   obsPx: number;

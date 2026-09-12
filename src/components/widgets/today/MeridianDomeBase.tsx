@@ -49,6 +49,7 @@ export interface MeridianDiurnalChordConfig {
   chord: MeridianDiurnalChord;
   stroke: string;
   strokeWidth?: number;
+  strokeDasharray?: string;
   strokeOpacity?: number;
   twilightStroke?: string;
   twilightWidth?: number;
@@ -166,6 +167,7 @@ export const MeridianDiurnalChordPath: React.FC<MeridianDiurnalChordConfig> = ({
   chord,
   stroke,
   strokeWidth = 1.5,
+  strokeDasharray,
   strokeOpacity = 0.85,
   twilightStroke = '#d97706',
   twilightWidth = 1.0,
@@ -185,6 +187,7 @@ export const MeridianDiurnalChordPath: React.FC<MeridianDiurnalChordConfig> = ({
           fill="none"
           stroke={stroke}
           strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
           strokeOpacity={strokeOpacity}
         >
           {daylightTitle && <title>{daylightTitle}</title>}
