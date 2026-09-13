@@ -19,7 +19,6 @@ export interface SunMeridianDomeProps {
   displayTime: number;
   latitude: number;
   currentDate?: Date;
-  onSetTime?: (time: number) => void;
   initialTwilightMode?: boolean;
   isTwilightMode?: boolean;
   onToggleTwilight?: () => void;
@@ -31,8 +30,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   solarData,
   displayTime,
   latitude,
-  currentDate: _currentDate = new Date(),
-  onSetTime: _onSetTime,
+  currentDate = new Date(),
   initialTwilightMode = false,
   isTwilightMode,
   onToggleTwilight,
@@ -165,10 +163,10 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       const normLambda = ((sunLambda % 360) + 360) % 360;
       return normLambda >= 270 || normLambda < 90;
     }
-    const startOfYear = new Date(_currentDate.getFullYear(), 0, 1);
-    const dayOfYear = Math.floor((_currentDate.getTime() - startOfYear.getTime()) / 86400000);
+    const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
+    const dayOfYear = Math.floor((currentDate.getTime() - startOfYear.getTime()) / 86400000);
     return dayOfYear < 172 || dayOfYear >= 355;
-  }, [sunLambda, _currentDate]);
+  }, [sunLambda, currentDate]);
 
   const isNorth = latitude >= 0;
   const summerSolsticeColor = isNorth ? '#fbbf24' : '#d97706';

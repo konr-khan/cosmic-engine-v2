@@ -285,7 +285,7 @@ export const slerp3D = (v1: Vector3D, v2: Vector3D, t: number): Vector3D => {
  * Computes Greenwich Mean Sidereal Time (GMST) in degrees [0, 360).
  */
 export function calculateGMST(julianDate: JulianDate | number): Degrees {
-  const d = (typeof julianDate === 'number' ? julianDate : julianDate) - J2000_JD;
+  const d = Number(julianDate) - J2000_JD;
   const gmst = (280.46061837 + 360.98564736629 * d) % 360;
   return asDegrees(((gmst % 360) + 360) % 360);
 }

@@ -292,6 +292,34 @@ export const calculateParallacticAngle = (
 };
 
 /**
+ * Refines a candidate lunar rise or set event timestamp using topocentric coordinate recalculation.
+ */
+function refineLunarEventHour(
+  julianDate: number,
+  estHour: number,
+  transitUTC: number,
+  sinAlt: number,
+  sinLat: number,
+  cosLat: number,
+  isRise: boolean
+): number | null {
+  const jdEvent = julianDate + (estHour / 24.0);
+  const lunarPos = calculateLunarPosition(jdEvent);
+  const decRad = toRadians(lunarPos.declination);
+  const denom = cosLat * Math.cos(decRad);
+  if (Math.abs(denom) < 1e-9) return null;
+  const cosH = (sinAlt - sinLat * Math.sin(decRad)) / denom;
+
+  if (cosH >= -1 && cosH <= 1) {
+    const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;
+    return isRise
+      ? (transitUTC - halfDayHours + 24) % 24
+      : (transitUTC + halfDayHours + 24) % 24;
+  }
+  return null;
+}
+
+/**
  * Calculates Moonrise, Transit, Moonset, Perigee/Apogee, and Parallactic Angle.
  * Implements 2-step iterative refinement for sub-minute accuracy across mid & polar latitudes.
  * @param lat - Observer latitude
@@ -328,34 +356,6 @@ export const calculateLunarEvents = (
   const cosH0 = Math.abs(denom0) < 1e-9
     ? (sinAlt >= sinLat * Math.sin(decRadTransit) ? 2 : -2)
     : (sinAlt - sinLat * Math.sin(decRadTransit)) / denom0;
-
-/**
- * Refines a candidate lunar rise or set event timestamp using topocentric coordinate recalculation.
- */
-function refineLunarEventHour(
-  julianDate: number,
-  estHour: number,
-  transitUTC: number,
-  sinAlt: number,
-  sinLat: number,
-  cosLat: number,
-  isRise: boolean
-): number | null {
-  const jdEvent = julianDate + (estHour / 24.0);
-  const lunarPos = calculateLunarPosition(jdEvent);
-  const decRad = toRadians(lunarPos.declination);
-  const denom = cosLat * Math.cos(decRad);
-  if (Math.abs(denom) < 1e-9) return null;
-  const cosH = (sinAlt - sinLat * Math.sin(decRad)) / denom;
-
-  if (cosH >= -1 && cosH <= 1) {
-    const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;
-    return isRise
-      ? (transitUTC - halfDayHours + 24) % 24
-      : (transitUTC + halfDayHours + 24) % 24;
-  }
-  return null;
-}
 
   let moonriseUTC: number | null = null;
   let moonsetUTC: number | null = null;
@@ -461,7 +461,6 @@ export const calculateAnnualLunarMatrix = (
     const jd0 = getJulianDate(d, 0);
     const jd = getJulianDate(d, 12);
     const events = calculateLunarEvents(latitude, longitude, jd0, 12);
-    const solarPos = calculateSolarPosition(jd);
     const lunarPos = calculateLunarPosition(jd);
     
     const phaseVal = Number(lunarPos.phase ?? 0);

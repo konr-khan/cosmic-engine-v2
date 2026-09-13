@@ -4,13 +4,11 @@ import { CONFIG, toRadians } from '../../utils/cosmicMath';
 export interface LatitudeSliderProps {
   latitude: number;
   onChange: (lat: number) => void;
-  isDarkMode?: boolean;
 }
 
 export const LatitudeSlider: React.FC<LatitudeSliderProps> = ({ 
   latitude, 
-  onChange, 
-  isDarkMode = true 
+  onChange 
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const globeRef = useRef<HTMLDivElement>(null);

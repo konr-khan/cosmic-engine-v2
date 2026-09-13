@@ -25,7 +25,6 @@ export interface MoonMeridianDomeProps {
   displayTime: number;
   latitude: number;
   currentDate?: Date;
-  onSetTime?: (time: number) => void;
   initialNodalMode?: boolean;
   isNodalMode?: boolean;
   onToggleNodal?: () => void;
@@ -39,7 +38,6 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
   displayTime,
   latitude,
   currentDate = new Date(),
-  onSetTime: _onSetTime,
   initialNodalMode = false,
   isNodalMode,
   onToggleNodal,

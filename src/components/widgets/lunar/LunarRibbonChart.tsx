@@ -1,21 +1,10 @@
 import React, { useMemo, useCallback } from 'react';
 import { Moon } from 'lucide-react';
-import { formatTime, getDayOfYear } from '../../../utils/cosmicMath';
+import { formatTime, getDayOfYear, getPhaseName } from '../../../utils/cosmicMath';
 import { AnnualLunarMatrixItem } from '../../../types';
 import { useRibbonScrubber } from '../common/useRibbonScrubber';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function getPhaseName(phaseValue: number): string {
-  if (phaseValue < 0.03 || phaseValue > 0.97) return 'New Moon';
-  if (phaseValue < 0.22) return 'Waxing Crescent';
-  if (phaseValue < 0.28) return 'First Quarter';
-  if (phaseValue < 0.47) return 'Waxing Gibbous';
-  if (phaseValue < 0.53) return 'Full Moon';
-  if (phaseValue < 0.72) return 'Waning Gibbous';
-  if (phaseValue < 0.78) return 'Last Quarter';
-  return 'Waning Crescent';
-}
 
 export interface LunarRibbonChartProps {
   annualLunarData: AnnualLunarMatrixItem[];

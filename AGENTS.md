@@ -57,6 +57,7 @@ src/
 │   ├── lunar.ts           # Lunar ephemeris solver, disc illumination, Newton-Raphson crossing solver
 │   ├── eclipse.ts         # Syzygy shadow geometry & eclipse recurrence scanner
 │   ├── today/             # Decomposed topocentric horizon (elevation, meridian, draconic)
+│   ├── terminatorTracks.ts# Diurnal celestial ground tracks & antimeridian seam
 │   ├── globe.ts           # Spherical continent projection & analytical limb horizon clipping
 │   ├── projection.ts      # Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
 │   ├── scene/             # Unified 3D Astronomical Scene Graph & Camera Rigs
@@ -136,7 +137,7 @@ All complex architectural changes and feature additions must follow the structur
 2. **Modularity & Clean Architecture**: Ensure single responsibility per component/module; prevent circular imports.
 3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, loose unchecked type assertions, or disabling linters without explicit approval. Run `npm run typecheck` (`tsc --noEmit`) to verify.
 4. **Preserve Math Accuracy & Provenance**: Preserve all formal Jean Meeus / IAU chapter citations, constant derivations, and inline LaTeX/math derivation comments when refactoring `src/utils/cosmicMath/`.
-5. **No Regressions**: All unit tests across the comprehensive test suite must pass on every modification without regressions. When extending functions or APIs, add corresponding unit tests to the appropriate domain suite (`src/utils/cosmicMath.test.ts` for pure math, `src/hooks/useEphemerisWorker.test.ts` for worker RPC, `src/hooks/useCosmicEngine.test.ts` for engine hooks, `src/components/widgets/widgets.test.ts` for widgets, `src/hooks/useDashboardLayout.test.ts` for layout state, `src/store/cosmicStore.test.ts` for state store, or `src/components/common/WindowErrorBoundary.test.tsx` for error boundaries).
+5. **No Regressions**: All unit tests across the comprehensive test suite must pass on every modification without regressions. When extending functions or APIs, add corresponding unit tests to the appropriate domain suite (`src/utils/cosmicMath/core.test.ts` for pure math, `src/hooks/useEphemerisWorker.test.ts` for worker RPC, `src/hooks/useCosmicEngine.test.ts` for engine hooks, `src/components/widgets/today/TodayWidget.test.tsx` for widgets, `src/hooks/useDashboardLayout.test.ts` for layout state, `src/store/cosmicStore.test.ts` for state store, or `src/components/common/WindowErrorBoundary.test.tsx` for error boundaries).
 6. **React 19 & Modern Directives**:
    - **Direct `ref` Passing**: Pass `ref` directly as a standard component prop; do not wrap components in `React.forwardRef()` (deprecated in React 19).
    - **Document Metadata**: Leverage React 19's native document metadata tags (`<title>`, `<meta>`) or React 19 form/action primitives where applicable instead of legacy third-party wrappers (e.g. `react-helmet`).

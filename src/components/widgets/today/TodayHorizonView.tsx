@@ -130,7 +130,6 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
                 displayTime={displayTime}
                 latitude={latitude}
                 currentDate={currentDate}
-                onSetTime={onSetTime}
                 isTwilightMode={isTwilightMode}
                 onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
                 hideFooter={true}
@@ -161,7 +160,6 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
                 displayTime={displayTime}
                 latitude={latitude}
                 currentDate={currentDate}
-                onSetTime={onSetTime}
                 isNodalMode={isNodalMode}
                 onToggleNodal={() => setIsNodalMode((prev) => !prev)}
                 hideFooter={true}

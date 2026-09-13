@@ -171,9 +171,12 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `geoData.ts` — World landmass continent outline polygons
       - `milestones.ts` — Canonical Earth orbital milestones (single source of truth)
       - `frame.ts` — Centralized EphemerisFrame snapshot generator
+      - `terminatorTracks.ts` — Diurnal celestial ground tracks & antimeridian seam interpolation (ADR-0027)
       - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
       - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade, `generatorRings.ts`, `generatorBeads.ts`, `generatorGeometry.ts`)
       - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
+  - `constants/`
+    - `dashboardPresets.ts` — Observatory dashboard window layouts & configuration presets
   - `store/`
     - `cosmicStore.ts` — External state store & animation frame ticker
     - `hoverStore.ts` — Atomic external store for 60 FPS ribbon scrubber isolation
@@ -196,9 +199,9 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, modular canvas layers)
       - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`)
       - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`)
-      - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`)
-      - `terminator/` — Daylight Terminator Map (`TerminatorMap`)
-      - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView`, `OrbitSvgCanvas`)
+      - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`, `ShadowRayHoverHud.tsx`)
+      - `terminator/` — Daylight Terminator Map (`TerminatorMap`, `TerminatorHoverHud.tsx`)
+      - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView`, `OrbitSvgCanvas`, `OrbitPhysicsHud.tsx`)
       - `tides/` — Earth Gravitational Tidal Force (`MicroTideView`)
     - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
     - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/`, `AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`)
@@ -207,4 +210,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0026`)
+  - `adr/` — Architecture Decision Records (`0001` through `0028`)

@@ -4,7 +4,6 @@ import { toRadians, toDegrees } from '../../utils/cosmicMath';
 export interface PolarLongitudeSelectorProps {
   longitude: number;
   onChange: (lon: number) => void;
-  isDarkMode?: boolean;
 }
 
 const CITY_MERIDIANS = [
@@ -16,8 +15,7 @@ const CITY_MERIDIANS = [
 
 export const PolarLongitudeSelector: React.FC<PolarLongitudeSelectorProps> = ({ 
   longitude, 
-  onChange, 
-  isDarkMode = true 
+  onChange 
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const svgRef = useRef<HTMLDivElement>(null);
