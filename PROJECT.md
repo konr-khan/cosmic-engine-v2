@@ -105,6 +105,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F51 | Sky & Moon Dome Container/Presenter Hooks & Shared UI Primitives | Extracted calculation cascades into `useMoonElevationMath` & `useSunElevationMath`; unified shared presentation primitives (`SkyDomeFooter`, `DraconicTimelineRail`, `LunarPhaseDisc`), cutting dome monoliths by 40–62% with zero visual divergence | M25 | ADR-0025 |
 | F52 | Ephemeris Worker Fallback Hardening & Parameter Boundary Gatekeepers | Defensive parameter clamping gatekeepers (`workerSanitizers.ts`), failsafe callback delivery invariant in `EphemerisWorkerManager`, and synchronous fallback exception isolation across hooks | M26 | ADR-0026 |
 | F53 | 24-Hour Diurnal Ground Tracks & Antimeridian Seam Interpolation | 24-hour diurnal subsolar & sublunar ground tracks on Terminator Map (`terminatorTracks.ts`, `TerminatorMap.tsx`), independent top-rail toggles (`[☀️ Sun]`, `[🌙 Moon]`), boundary-safe antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons ($\Omega / \mho$), forward-weighted temporal dash conventions, and proximity-gated hover HUD telemetry | M27 | ADR-0027 |
+| F54 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | Parameterized store selectors in `useCosmicEngine` and `useCosmicScene`, decomposed `App.tsx` into memoized widget content components with isolated store subscriptions, local `timeOfDay` subscription in `PolarSunlightDial`, and `React.memo` ribbon protection | M28 | ADR-0028 |
 
 ## Milestones
 
