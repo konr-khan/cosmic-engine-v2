@@ -4,6 +4,9 @@
  * sublunar ground tracks on an equirectangular world map with antimeridian seam
  * splitting, active ecliptic lunar node crossing detection, and proximity telemetry.
  *
+ * Hardened with defensive boundary clamping, non-finite guardrails, and singularity
+ * protection ensuring zero NaN propagation and valid SVG path strings under all inputs.
+ *
  * References:
  * - Jean Meeus, Astronomical Algorithms (Chapters 12, 25, 47, 48)
  * - Standard Greenwich Mean Sidereal Time (GMST) and hour angle projections
@@ -11,7 +14,7 @@
 
 import { JulianDate, asJulianDate } from '../../types/units';
 import { J2000_JD } from './astroConstants';
-import { calculateGMST } from './core';
+import { calculateGMST, clamp } from './core';
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition, calculateTrueLunarNodeEvents, TrueLunarNodeCrossing } from './lunar';
 
@@ -72,6 +75,36 @@ export interface LunarNodeProximityTelemetry {
 }
 
 /**
+ * Defensive parameter gatekeeper for Julian Dates.
+ * Clamps to valid astronomical range [0, 5,000,000] and defaults to J2000_JD on NaN/non-finite.
+ */
+export const sanitizeTrackJD = (jd: JulianDate | number): JulianDate => {
+  const num = Number(jd);
+  if (!Number.isFinite(num) || num < 0 || num > 5000000) {
+    return asJulianDate(J2000_JD);
+  }
+  return asJulianDate(num);
+};
+
+/**
+ * Defensive parameter gatekeeper for geographic longitudes.
+ * Normalizes to standard [-180, 180] and defaults to 0.0 on NaN/non-finite.
+ */
+export const sanitizeTrackLon = (lon: number): number => {
+  if (!Number.isFinite(lon)) return 0;
+  return ((lon + 180) % 360 + 360) % 360 - 180;
+};
+
+/**
+ * Defensive parameter gatekeeper for geographic latitudes.
+ * Clamps to [-90, 90] and defaults to 0.0 on NaN/non-finite.
+ */
+export const sanitizeTrackLat = (lat: number): number => {
+  if (!Number.isFinite(lat)) return 0;
+  return clamp(lat, -90, 90);
+};
+
+/**
  * Calculates instantaneous subsolar point (lat, lon) on Earth where the Sun is at zenith (+90°).
  *
  * @param julianDate - Julian Date epoch
@@ -80,13 +113,13 @@ export interface LunarNodeProximityTelemetry {
 export const calculateSubsolarPoint = (
   julianDate: JulianDate | number = J2000_JD
 ): { lat: number; lon: number } => {
-  const jd = typeof julianDate === 'number' ? asJulianDate(julianDate) : julianDate;
-  const solarPos = calculateSolarPosition(jd);
-  const gmst = calculateGMST(jd);
+  const safeJD = sanitizeTrackJD(julianDate);
+  const solarPos = calculateSolarPosition(safeJD);
+  const gmst = calculateGMST(safeJD);
   const lon = ((((solarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
   return {
-    lat: Number(solarPos.declination),
-    lon
+    lat: clamp(Number(solarPos.declination), -90, 90),
+    lon: sanitizeTrackLon(lon)
   };
 };
 
@@ -99,52 +132,60 @@ export const calculateSubsolarPoint = (
 export const calculateSublunarPoint = (
   julianDate: JulianDate | number = J2000_JD
 ): { lat: number; lon: number } => {
-  const jd = typeof julianDate === 'number' ? asJulianDate(julianDate) : julianDate;
-  const lunarPos = calculateLunarPosition(jd);
-  const gmst = calculateGMST(jd);
+  const safeJD = sanitizeTrackJD(julianDate);
+  const lunarPos = calculateLunarPosition(safeJD);
+  const gmst = calculateGMST(safeJD);
   const lon = ((((lunarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
   return {
-    lat: Number(lunarPos.declination),
-    lon
+    lat: clamp(Number(lunarPos.declination), -90, 90),
+    lon: sanitizeTrackLon(lon)
   };
 };
 
 /**
  * Converts a geographic longitude to observer-centered map coordinate X [0..360].
  * Observer meridian is centered at X = 180.
+ * Hardened with defensive sanitization and boundary clamping.
  */
 export const projectMapX = (lon: number, observerLon: number): number => {
-  return ((lon - observerLon + 180 + 360) % 360 + 360) % 360;
+  const safeLon = sanitizeTrackLon(lon);
+  const safeObserverLon = sanitizeTrackLon(observerLon);
+  const x = ((safeLon - safeObserverLon + 180 + 360) % 360 + 360) % 360;
+  return clamp(x, 0, 360);
 };
 
 /**
  * Converts a geographic latitude / declination to map coordinate Y [0..180].
  * North Pole (+90°) = 0, Equator (0°) = 90, South Pole (-90°) = 180.
+ * Hardened with defensive sanitization and boundary clamping.
  */
 export const projectMapY = (lat: number): number => {
-  return 90 - lat;
+  const safeLat = sanitizeTrackLat(lat);
+  return clamp(90 - safeLat, 0, 180);
 };
 
 /**
  * Connects an array of sequential map points into an SVG path `d` string,
  * automatically handling antimeridian seam wrapping across X = 0 / 360.
  *
- * If |x_i - x_{i-1}| > 180, the path interpolates to the border boundary (0 or 360),
- * lifts the pen, and resumes at the opposite boundary to eliminate streak artifacts.
+ * Hardened with point filtering, Y_edge boundary clamping [0..180], and
+ * non-finite coordinate rejection.
  *
  * @param points - Array of sequential map coordinates
  * @returns SVG path string `d`
  */
 export const buildSeamSafeSvgPath = (points: Array<{ x: number; y: number }>): string => {
-  if (points.length < 2) return '';
+  if (!Array.isArray(points)) return '';
+  const validPoints = points.filter(pt => pt && Number.isFinite(pt.x) && Number.isFinite(pt.y));
+  if (validPoints.length < 2) return '';
 
   let d = '';
   let inSegment = false;
 
-  for (let i = 0; i < points.length; i++) {
-    const pt = points[i];
-    const curX = parseFloat(pt.x.toFixed(2));
-    const curY = parseFloat(pt.y.toFixed(2));
+  for (let i = 0; i < validPoints.length; i++) {
+    const pt = validPoints[i];
+    const curX = clamp(parseFloat(pt.x.toFixed(2)), 0, 360);
+    const curY = clamp(parseFloat(pt.y.toFixed(2)), 0, 180);
 
     if (!inSegment) {
       d += `M ${curX} ${curY}`;
@@ -152,7 +193,7 @@ export const buildSeamSafeSvgPath = (points: Array<{ x: number; y: number }>): s
       continue;
     }
 
-    const prevPt = points[i - 1];
+    const prevPt = validPoints[i - 1];
     const deltaX = pt.x - prevPt.x;
 
     // Check for antimeridian seam wrapping across 0 <-> 360
@@ -162,8 +203,9 @@ export const buildSeamSafeSvgPath = (points: Array<{ x: number; y: number }>): s
         const distTo360 = 360 - prevPt.x;
         const distFrom0 = pt.x;
         const total = distTo360 + distFrom0;
-        const f = total > 0 ? distTo360 / total : 0.5;
-        const yEdge = parseFloat((prevPt.y + f * (pt.y - prevPt.y)).toFixed(2));
+        const f = total > 0 ? clamp(distTo360 / total, 0, 1) : 0.5;
+        const rawYEdge = prevPt.y + f * (pt.y - prevPt.y);
+        const yEdge = clamp(parseFloat(rawYEdge.toFixed(2)), 0, 180);
 
         d += ` L 360 ${yEdge} M 0 ${yEdge} L ${curX} ${curY}`;
       } else {
@@ -171,8 +213,9 @@ export const buildSeamSafeSvgPath = (points: Array<{ x: number; y: number }>): s
         const distTo0 = prevPt.x;
         const distFrom360 = 360 - pt.x;
         const total = distTo0 + distFrom360;
-        const f = total > 0 ? distTo0 / total : 0.5;
-        const yEdge = parseFloat((prevPt.y + f * (pt.y - prevPt.y)).toFixed(2));
+        const f = total > 0 ? clamp(distTo0 / total, 0, 1) : 0.5;
+        const rawYEdge = prevPt.y + f * (pt.y - prevPt.y);
+        const yEdge = clamp(parseFloat(rawYEdge.toFixed(2)), 0, 180);
 
         d += ` L 0 ${yEdge} M 360 ${yEdge} L ${curX} ${curY}`;
       }
@@ -188,6 +231,8 @@ export const buildSeamSafeSvgPath = (points: Array<{ x: number; y: number }>): s
  * Generates a 24-hour diurnal ground track ([-12h..+12h]) for either the Sun or Moon,
  * returning separate SVG path strings for past (-12h..0h) and future (0h..+12h).
  *
+ * Hardened with parameter bounds clamping and graceful fallbacks.
+ *
  * @param type - 'sun' or 'moon'
  * @param targetJD - Central Julian Date epoch (active time)
  * @param observerLon - Observer longitude for map centering
@@ -200,9 +245,13 @@ export const generate24HourGroundTrack = (
   observerLon: number = 0,
   stepMinutes: number = 30
 ): GroundTrackResult => {
-  const jd0 = typeof targetJD === 'number' ? asJulianDate(targetJD) : targetJD;
-  const numSteps = Math.round((24 * 60) / stepMinutes);
-  const stepHours = stepMinutes / 60;
+  const safeType = type === 'moon' ? 'moon' : 'sun';
+  const safeJD0 = sanitizeTrackJD(targetJD);
+  const safeObserverLon = sanitizeTrackLon(observerLon);
+  const safeStepMinutes = Number.isFinite(stepMinutes) && stepMinutes > 0 ? clamp(stepMinutes, 5, 720) : 30;
+
+  const numSteps = Math.round((24 * 60) / safeStepMinutes);
+  const stepHours = safeStepMinutes / 60;
   const points: GroundTrackPoint[] = [];
 
   const pastPoints: Array<{ x: number; y: number }> = [];
@@ -210,10 +259,10 @@ export const generate24HourGroundTrack = (
 
   for (let i = 0; i <= numSteps; i++) {
     const hoursOffset = -12 + i * stepHours;
-    const jd = asJulianDate(Number(jd0) + hoursOffset / 24);
+    const jd = asJulianDate(Number(safeJD0) + hoursOffset / 24);
 
-    const geo = type === 'sun' ? calculateSubsolarPoint(jd) : calculateSublunarPoint(jd);
-    const x = projectMapX(geo.lon, observerLon);
+    const geo = safeType === 'sun' ? calculateSubsolarPoint(jd) : calculateSublunarPoint(jd);
+    const x = projectMapX(geo.lon, safeObserverLon);
     const y = projectMapY(geo.lat);
 
     const pt: GroundTrackPoint = {
@@ -247,6 +296,8 @@ export const generate24HourGroundTrack = (
  * Scans for true ecliptic lunar node crossings (where ecliptic latitude beta = 0)
  * falling strictly within the active [-12h..+12h] window.
  *
+ * Hardened with defensive date checks and null-safety guards.
+ *
  * @param targetJD - Central Julian Date epoch
  * @param observerLon - Observer longitude for map coordinate projection
  * @returns Active nodal marker if a crossing occurs today, or null
@@ -255,19 +306,24 @@ export const findActiveNodalCrossing = (
   targetJD: JulianDate | number = J2000_JD,
   observerLon: number = 0
 ): ActiveNodalMarker | null => {
-  const jd0 = typeof targetJD === 'number' ? asJulianDate(targetJD) : targetJD;
-  const trueEvents = calculateTrueLunarNodeEvents(jd0, 2);
+  const safeJD = sanitizeTrackJD(targetJD);
+  const safeObserverLon = sanitizeTrackLon(observerLon);
+  const trueEvents = calculateTrueLunarNodeEvents(safeJD, 2);
+
+  if (!trueEvents || !Array.isArray(trueEvents.allCrossings)) {
+    return null;
+  }
 
   // Find any crossing with |daysOffset| <= 0.5 (within +-12 hours)
   const crossing: TrueLunarNodeCrossing | undefined = trueEvents.allCrossings.find(
-    (c) => Math.abs(c.daysOffset) <= 0.5
+    (c) => c && Number.isFinite(c.daysOffset) && Math.abs(c.daysOffset) <= 0.5
   );
 
-  if (!crossing) return null;
+  if (!crossing || !Number.isFinite(crossing.jd)) return null;
 
   const crossingJD = asJulianDate(Number(crossing.jd));
   const sublunar = calculateSublunarPoint(crossingJD);
-  const x = projectMapX(sublunar.lon, observerLon);
+  const x = projectMapX(sublunar.lon, safeObserverLon);
   const y = projectMapY(sublunar.lat);
   const hoursOffset = crossing.daysOffset * 24;
 
@@ -297,17 +353,22 @@ export const findActiveNodalCrossing = (
  * Evaluates lunar node proximity telemetry for the Moon hover HUD.
  * Only returns active telemetry if the Moon is within +-24 hours of an ecliptic node crossing.
  *
+ * Hardened with defensive date checks and non-finite guards.
+ *
  * @param targetJD - Julian Date epoch
  * @returns LunarNodeProximityTelemetry object
  */
 export const getLunarNodeProximityTelemetry = (
   targetJD: JulianDate | number = J2000_JD
 ): LunarNodeProximityTelemetry => {
-  const jd0 = typeof targetJD === 'number' ? asJulianDate(targetJD) : targetJD;
-  const trueEvents = calculateTrueLunarNodeEvents(jd0, 2);
+  const safeJD = sanitizeTrackJD(targetJD);
+  const trueEvents = calculateTrueLunarNodeEvents(safeJD, 2);
 
-  // Gated condition: within +-24 hours (1.0 day)
-  if (trueEvents.nearestNodeDistDays > 1.0) {
+  if (
+    !trueEvents ||
+    !Number.isFinite(trueEvents.nearestNodeDistDays) ||
+    trueEvents.nearestNodeDistDays > 1.0
+  ) {
     return { isNear: false };
   }
 

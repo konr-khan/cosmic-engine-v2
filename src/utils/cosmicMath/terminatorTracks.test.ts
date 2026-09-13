@@ -7,7 +7,10 @@ import {
   buildSeamSafeSvgPath,
   generate24HourGroundTrack,
   findActiveNodalCrossing,
-  getLunarNodeProximityTelemetry
+  getLunarNodeProximityTelemetry,
+  sanitizeTrackJD,
+  sanitizeTrackLon,
+  sanitizeTrackLat
 } from './terminatorTracks';
 import { J2000_JD } from './astroConstants';
 import { calculateTrueLunarNodeEvents } from './lunar';
@@ -131,5 +134,99 @@ describe('terminatorTracks - Diurnal Ground Tracks & Lunar Node Engine', () => {
     const farTelemetry = getLunarNodeProximityTelemetry(crossingJD + 5.0);
     expect(farTelemetry.isNear).toBe(false);
     expect(farTelemetry.badgeText).toBeUndefined();
+  });
+});
+
+describe('terminatorTracks - Adversarial Hardening & Singularity Protection Suite', () => {
+  it('safely sanitizes non-finite, negative, and extreme Julian Dates', () => {
+    expect(sanitizeTrackJD(NaN as any)).toBe(J2000_JD);
+    expect(sanitizeTrackJD(Infinity as any)).toBe(J2000_JD);
+    expect(sanitizeTrackJD(-Infinity as any)).toBe(J2000_JD);
+    expect(sanitizeTrackJD(-500)).toBe(J2000_JD);
+    expect(sanitizeTrackJD(99999999)).toBe(J2000_JD);
+    expect(sanitizeTrackJD(2451545.0)).toBe(2451545.0);
+  });
+
+  it('safely sanitizes non-finite and extreme longitudes', () => {
+    expect(sanitizeTrackLon(NaN)).toBe(0);
+    expect(sanitizeTrackLon(Infinity)).toBe(0);
+    expect(sanitizeTrackLon(-Infinity)).toBe(0);
+    expect(sanitizeTrackLon(0)).toBe(0);
+    expect(sanitizeTrackLon(360)).toBe(0);
+    expect(sanitizeTrackLon(720)).toBe(0);
+    expect(sanitizeTrackLon(-180)).toBe(-180);
+    expect(sanitizeTrackLon(-540)).toBe(-180);
+    expect(sanitizeTrackLon(190)).toBe(-170);
+  });
+
+  it('safely sanitizes non-finite and extreme latitudes', () => {
+    expect(sanitizeTrackLat(NaN)).toBe(0);
+    expect(sanitizeTrackLat(Infinity)).toBe(0);
+    expect(sanitizeTrackLat(-Infinity)).toBe(0);
+    expect(sanitizeTrackLat(150)).toBe(90);
+    expect(sanitizeTrackLat(-120)).toBe(-90);
+    expect(sanitizeTrackLat(45)).toBe(45);
+  });
+
+  it('projectMapX and projectMapY never return NaN or values outside map bounds', () => {
+    expect(projectMapX(NaN, NaN)).toBe(180);
+    expect(projectMapX(Infinity, -Infinity)).toBe(180);
+    expect(projectMapX(720, 360)).toBe(180);
+    expect(projectMapX(10000, -10000)).toBeGreaterThanOrEqual(0);
+    expect(projectMapX(10000, -10000)).toBeLessThanOrEqual(360);
+
+    expect(projectMapY(NaN)).toBe(90);
+    expect(projectMapY(Infinity)).toBe(90);
+    expect(projectMapY(150)).toBe(0); // clamped to North Pole Y = 0
+    expect(projectMapY(-150)).toBe(180); // clamped to South Pole Y = 180
+  });
+
+  it('buildSeamSafeSvgPath rejects non-finite points and clamps seam edges within [0, 180]', () => {
+    // Malformed inputs
+    expect(buildSeamSafeSvgPath([] as any)).toBe('');
+    expect(buildSeamSafeSvgPath(null as any)).toBe('');
+    expect(buildSeamSafeSvgPath([{ x: NaN, y: 10 }] as any)).toBe('');
+    expect(buildSeamSafeSvgPath([{ x: NaN, y: 10 }, { x: 50, y: NaN }] as any)).toBe('');
+
+    // Steep wrap-around near polar boundaries
+    const polarWrap = [
+      { x: 2, y: -50 }, // out of bounds Y
+      { x: 358, y: 250 } // out of bounds Y
+    ];
+    const path = buildSeamSafeSvgPath(polarWrap);
+    expect(path).not.toContain('NaN');
+    expect(path).toContain('L 0');
+    expect(path).toContain('M 360');
+
+    // Verify all Y values in path are clamped between 0 and 180
+    const numbers = path.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+    for (let i = 1; i < numbers.length; i += 2) {
+      const yVal = numbers[i];
+      expect(yVal).toBeGreaterThanOrEqual(0);
+      expect(yVal).toBeLessThanOrEqual(180);
+    }
+  });
+
+  it('generate24HourGroundTrack survives non-finite inputs, 0 step size, and negative steps', () => {
+    // Zero or negative step size
+    const zeroStep = generate24HourGroundTrack('sun', J2000_JD, 0, 0);
+    expect(zeroStep.points.length).toBeGreaterThan(0);
+    expect(zeroStep.pastD).not.toContain('NaN');
+    expect(zeroStep.futureD).not.toContain('NaN');
+
+    // NaN targetJD and observerLon
+    const nanInput = generate24HourGroundTrack('moon', NaN as any, NaN as any, NaN as any);
+    expect(nanInput.points.length).toBeGreaterThan(0);
+    expect(nanInput.pastD).not.toContain('NaN');
+    expect(nanInput.futureD).not.toContain('NaN');
+  });
+
+  it('findActiveNodalCrossing and getLunarNodeProximityTelemetry survive NaN and extreme inputs', () => {
+    expect(() => findActiveNodalCrossing(NaN as any, NaN as any)).not.toThrow();
+    expect(findActiveNodalCrossing(NaN as any, NaN as any)).toBeNull();
+
+    expect(() => getLunarNodeProximityTelemetry(NaN as any)).not.toThrow();
+    const nanTelemetry = getLunarNodeProximityTelemetry(NaN as any);
+    expect(nanTelemetry.isNear).toBe(false);
   });
 });
