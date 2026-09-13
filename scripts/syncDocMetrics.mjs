@@ -162,6 +162,11 @@ const CANONICAL_SUITES = [
     focus: 'Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback'
   },
   {
+    domain: 'Worker Parameter Sanitization & Clamping',
+    file: 'src/workers/workerSanitizers.test.ts',
+    focus: 'Boundary validation and clamping gatekeepers: Meeus year validity range ([-2000, 3000]), geographic latitude/longitude bounds, astronomical Julian Date clamping, decimal hour wrapping, and NaN/Infinity resilience'
+  },
+  {
     domain: 'Dashboard Layout Hook',
     file: 'src/hooks/useDashboardLayout.test.ts',
     focus: 'Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset'
@@ -200,6 +205,11 @@ const CANONICAL_SUITES = [
     domain: 'SkyDomeBase Primitive',
     file: 'src/components/widgets/today/SkyDomeBase.test.tsx',
     focus: 'Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors'
+  },
+  {
+    domain: 'Sky Dome Hooks & Primitives',
+    file: 'src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx',
+    focus: 'Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer'
   },
   {
     domain: 'Today Horizon Widget',

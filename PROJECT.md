@@ -102,6 +102,8 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F48 | Polar Directional Singularity Rectification & Longitudinal Horizon Reference Geometry | At polar latitudes ($|\phi| \ge 89.9^\circ$), replaces misleading mid-latitude labels (`N`, `E`, `W`, `Noon Peak`) with astronomically authentic longitudinal colures (`S (0°) — Z (+90°) — S (180°)` at North Pole, `N (0°) — Z (-90°) — N (180°)` at South Pole; `90°E — 0° (Grw) — 90°W` on elevation domes), constant altitude peak telemetry, and polar sighting banners | M22 | ADR-0022 |
 | F49 | Deadwood Purge & Domain Invariants Hardening | Purged unreferenced legacy type files, deleted dead test mocks, unified AST unit-safety enforcement across all 80 UI files, and expanded empirical physics conservation tests | M23 | ADR-0023 |
 | F50 | Principles & Design System Alignment Pass | Reconciled codebase against `docs/DESIGN_SYSTEM.md` and `docs/MATH_SPEC.md`: subsolar/sublunar ground track longitude $\lambda_{\text{geo}} = \operatorname{wrap180}(\alpha - \text{GMST})$, 3D scene involution matrix $\mathbf{M}_{\text{scene}\leftrightarrow\text{arm}}$, unified $520\times 220$ dual-pane eclipse canvas parity, axial sightline negative cosine depth convention, warm gold glowing diurnal chords (`#f59e0b`), Armillary milestone tokens ($r=4.5\to 7\text{px}$), and complete 3-tier twilight strata | M23 | ADR-0023 |
+| F51 | Sky & Moon Dome Container/Presenter Hooks & Shared UI Primitives | Extracted calculation cascades into `useMoonElevationMath` & `useSunElevationMath`; unified shared presentation primitives (`SkyDomeFooter`, `DraconicTimelineRail`, `LunarPhaseDisc`), cutting dome monoliths by 40–62% with zero visual divergence | M25 | ADR-0025 |
+| F52 | Ephemeris Worker Fallback Hardening & Parameter Boundary Gatekeepers | Defensive parameter clamping gatekeepers (`workerSanitizers.ts`), failsafe callback delivery invariant in `EphemerisWorkerManager`, and synchronous fallback exception isolation across hooks | M26 | ADR-0026 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
@@ -130,6 +132,8 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M22 | Polar Directional Singularity Rectification & Longitudinal Horizon Reference Geometry | `src/utils/cosmicMath/today/elevation.ts` (`calculateCulminationBearing` polar singularity branch), `SkyDomeBase.tsx` (`90°E — 0° (Grw) — 90°W`), `MeridianDomeBase.tsx` (`S (0°) — Z (+90°) — S (180°)`, `N (0°) — Z (-90°) — N (180°)`), `SunElevationDome.tsx`, `SunMeridianDome.tsx`, `MoonElevationDome.tsx`, `MoonMeridianDome.tsx` (`Constant Altitude` peak label), ADR-0022, 595 tests across 40 suites | M1-M21 | DONE |
 | M23 | Principles & Design Alignment, Invariant Hardening & Specs Reconciliation | Pure domain math & invariants (`frame.ts`, `sceneMath.ts`), vector stroke encodings (dual-pane eclipse $520\times 220$, 3-tier twilight strata, Armillary milestone halos), semantic tokens (Sky Blue time/tides, Rose Red cursors/phases, Amber longitude/sun, warm gold glowing chords), persistent specs alignment (`DESIGN_SYSTEM.md`, `MATH_SPEC.md`), ADR-0023, 600 tests across 40 suites | M1-M22 | DONE |
 | M24 | Concurrency Hardening, Domain Math Purity, Visual Polish & Component Test Expansion | Ephemeris memoization, date jump cache invalidation, todayTokens extraction, sync parallactic angle, dashboardPresets, lruCache, expanded component tests (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`, `lruCache.test.ts`), ADR-0024, 648 tests across 43 suites | M1-M23 | DONE |
+| M25 | Sky & Moon Dome Container/Presenter Refactoring & Component Primitives | `useMoonElevationMath.ts`, `useSunElevationMath.ts`, `SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`, `SkyDomeHooksAndPrimitives.test.tsx`, ADR-0025, 657 tests across 44 suites | M1-M24 | DONE |
+| M26 | Web Worker Fallback Hardening, Parameter Gatekeepers & Error Boundaries | `workerSanitizers.ts`, `workerSanitizers.test.ts`, `ephemerisWorkerManager.ts`, `useEphemerisWorker.ts`, `ephemerisWorker.ts`, ADR-0026, 679 tests across 45 suites | M1-M25 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -183,6 +187,8 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `workers/`
     - `ephemerisWorker.ts` — Dedicated worker thread for Meeus ephemeris & 365-day matrices
     - `ephemerisWorkerManager.ts` — Application singleton worker manager, deduplication & matrix cache
+    - `workerSanitizers.ts` — Parameter boundary clamping & defensive input gatekeepers
+    - `workerSanitizers.test.ts` — Boundary validation & pathological input test suite
   - `hooks/`
     - `useCosmicEngine.ts` — Selective domain engine hook
     - `useCosmicScene.ts` — Reactive 3D scene hook & specialized projection selectors
@@ -192,6 +198,8 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
     - `widgets/` — Lazy-loaded observatory visualizers (`React.lazy()`)
       - `common/useRibbonScrubber.ts` — Bidirectional timeline coordinate & pointer dragging hook
       - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`, `todayTokens.ts`)
+        - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`)
+        - `common/` — Shared today visual primitives (`SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`)
       - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, modular canvas layers)
       - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`)
       - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`)
@@ -206,4 +214,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0024`)
+  - `adr/` — Architecture Decision Records (`0001` through `0026`)
