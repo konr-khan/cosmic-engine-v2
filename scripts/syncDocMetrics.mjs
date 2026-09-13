@@ -139,7 +139,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Unit-Safety AST Guardrails',
     file: 'src/types/unitSafety.test.ts',
-    focus: 'Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), ensuring verified boundary conversion gatekeepers'
+    focus: 'Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), and strict $\\le 18\\text{ KB}$ `AGENTS.md` kernel size budget'
   },
   {
     domain: 'Cosmic State Store',
@@ -319,6 +319,16 @@ if (fs.existsSync(agentsPath)) {
 
   fs.writeFileSync(agentsPath, agentsContent, 'utf8');
   console.log('✔ AGENTS.md test metrics synchronized.');
+
+  // C. Size budget assertion: AGENTS.md must remain <= 18 KB to prevent AI prompt truncation
+  const agentsSize = fs.statSync(agentsPath).size;
+  const maxBudget = 18 * 1024; // 18 KB
+  if (agentsSize > maxBudget) {
+    console.error(`❌ AGENTS.md exceeds the 18 KB size budget: ${(agentsSize / 1024).toFixed(2)} KB > 18.00 KB.`);
+    console.error('Please pare down or relocate non-kernel documentation to docs/ to prevent AI prompt truncation.');
+    process.exit(1);
+  }
+  console.log(`✔ AGENTS.md size budget verified: ${(agentsSize / 1024).toFixed(2)} KB <= 18.00 KB.`);
 }
 
 // ==========================================

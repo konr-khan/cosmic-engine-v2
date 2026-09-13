@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 // @ts-expect-error - lintUnitSafety is a Node ESM module executed in Vitest runner
-import { runUnitSafetyCheck } from '../../scripts/lintUnitSafety.mjs';
+import { runUnitSafetyCheck, getAgentsSizeBudget } from '../../scripts/lintUnitSafety.mjs';
 import { parse } from '@babel/parser';
 
 interface UnitViolation {
@@ -85,5 +85,19 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
     expect(foundViolations).toContain('call:asRadians');
     expect(foundViolations).not.toContain('call:toRadians');
     expect(foundViolations).toHaveLength(4);
+  });
+
+  it('enforces AGENTS.md size budget strictly under 18 KB to prevent AI prompt truncation', () => {
+    const budget = getAgentsSizeBudget() as {
+      path: string;
+      sizeBytes: number;
+      sizeKb: number;
+      maxKb: number;
+      isUnderBudget: boolean;
+    };
+
+    expect(budget.isUnderBudget).toBe(true);
+    expect(budget.sizeKb).toBeLessThanOrEqual(18.0);
+    expect(budget.sizeKb).toBeGreaterThan(5.0);
   });
 });

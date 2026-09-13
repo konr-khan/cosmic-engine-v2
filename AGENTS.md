@@ -26,7 +26,7 @@ To eliminate documentation drift and adhere to **Smallest Effective Difference (
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 47 modules, 707 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 47 modules, 708 tests)
 
 ### Essential Commands
 
@@ -94,6 +94,7 @@ src/
 - **Temporal Purity & J2000 Standardization**: Pure domain algorithms and generator functions in `src/utils/cosmicMath/` must never instantiate unparameterized `new Date()` internally. Temporal inputs must be explicitly supplied as `JulianDate` or `Date` and default to `J2000_JD` (`2451545.0`).
 - **`< 0.8 ms` Hot-Loop Latency Budget**: Armillary model generation hot loops must compute frames in $< 0.8\text{ ms}$ on average across 1,000 frames (`armillaryBenchmark.test.ts`). Reuse pre-computed Euler rotators (`createEulerCameraRotator`), cached 3x3 matrices, and single-pass SVG path streaming in `paths.ts` without allocating temporary objects inside per-frame render loops.
 - **Documentation Synchronization**: When adding features or modifying contracts, keep `README.md`, `AGENTS.md`, and relevant `docs/` specifications updated in tandem.
+- **Context Budget Guardrail**: `AGENTS.md` is an operational prompt kernel, not a domain wiki. Never write astronomical formulas, pixel coordinates, SVG markup, or feature changelogs in this file. Delegate mathematical models to `docs/MATH_SPEC.md` and visual tokens to `docs/DESIGN_SYSTEM.md`. Maintain file size strictly $\le 18\text{ KB}$ (enforced by `unitSafety.test.ts` and `syncDocMetrics.mjs`).
 
 ---
 

@@ -151,9 +151,31 @@ export function runUnitSafetyCheck(targetDir = componentsDir) {
   };
 }
 
+/**
+ * Verifies that AGENTS.md adheres to the strict 18 KB prompt kernel budget to prevent AI prompt truncation.
+ */
+export function getAgentsSizeBudget() {
+  const agentsPath = path.resolve(rootDir, 'AGENTS.md');
+  if (!fs.existsSync(agentsPath)) {
+    throw new Error(`AGENTS.md not found at ${agentsPath}`);
+  }
+  const stat = fs.statSync(agentsPath);
+  const sizeBytes = stat.size;
+  const sizeKb = Number((sizeBytes / 1024).toFixed(2));
+  const maxKb = 18.0;
+  return {
+    path: agentsPath,
+    sizeBytes,
+    sizeKb,
+    maxKb,
+    isUnderBudget: sizeKb <= maxKb
+  };
+}
+
 // CLI execution
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { totalFiles, violations } = runUnitSafetyCheck();
+  const agentsBudget = getAgentsSizeBudget();
 
   if (violations.length > 0) {
     console.error('\n❌ [unit-safety] Unit-Safety AST Guardrail Violations Detected:');
@@ -167,9 +189,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     }
 
     process.exit(1);
-  } else {
-    console.log(`\n✔ [unit-safety] All UI components (${totalFiles} files) conform to branded unit safety guardrails.`);
-    console.log('  0 instances of asDegrees() or asRadians() found in src/components/**.\n');
-    process.exit(0);
   }
+
+  if (!agentsBudget.isUnderBudget) {
+    console.error(`\n❌ [unit-safety] AGENTS.md size budget violated: ${agentsBudget.sizeKb} KB > ${agentsBudget.maxKb} KB.`);
+    console.error('Please pare down or relocate non-kernel documentation to docs/ to prevent AI prompt truncation.\n');
+    process.exit(1);
+  }
+
+  console.log(`\n✔ [unit-safety] All UI components (${totalFiles} files) conform to branded unit safety guardrails.`);
+  console.log('  0 instances of asDegrees() or asRadians() found in src/components/**.');
+  console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).\n`);
+  process.exit(0);
 }
