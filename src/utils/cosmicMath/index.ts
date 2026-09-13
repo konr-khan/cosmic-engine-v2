@@ -12,3 +12,4 @@ export * from './milestones';
 export * from './frame';
 export * from './scene';
 export * from './todaySky';
+export * from './terminatorTracks';

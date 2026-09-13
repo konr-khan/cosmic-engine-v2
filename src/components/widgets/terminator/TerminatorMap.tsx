@@ -5,7 +5,10 @@ import {
   clamp, 
   calculateEarthOrbitalPhysics, 
   getJulianDate,
-  WORLD_LANDMASSES 
+  WORLD_LANDMASSES,
+  generate24HourGroundTrack,
+  findActiveNodalCrossing,
+  getLunarNodeProximityTelemetry
 } from '../../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
 import { useHoverTime } from '../../../store/hoverStore';
@@ -18,6 +21,8 @@ export interface TerminatorMapProps {
   timeOfDay?: number;
   hoverTime?: number | null;
   currentDate?: Date;
+  initialShowSunTrack?: boolean;
+  initialShowMoonTrack?: boolean;
 }
 
 export const TerminatorMap: React.FC<TerminatorMapProps> = ({ 
@@ -27,19 +32,24 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   longitude = -122.81, 
   timeOfDay = 12, 
   hoverTime,
-  currentDate = new Date()
+  currentDate = new Date(),
+  initialShowSunTrack = false,
+  initialShowMoonTrack = false
 }) => {
   const storeHoverTime = useHoverTime();
   const effectiveHoverTime = hoverTime !== undefined ? hoverTime : storeHoverTime;
   const [hoveredPoint, setHoveredPoint] = useState<'sun' | 'moon' | 'observer' | null>(null);
+  const [showSunTrack, setShowSunTrack] = useState<boolean>(initialShowSunTrack);
+  const [showMoonTrack, setShowMoonTrack] = useState<boolean>(initialShowMoonTrack);
 
   const declination = (solarData?.declination ?? 0) as number;
   const activeTime = effectiveHoverTime !== null ? effectiveHoverTime : timeOfDay;
+  const activeJD = useMemo(() => getJulianDate(currentDate, activeTime), [currentDate, activeTime]);
 
   // --- 1. Earth-Sun Keplerian Distance & Dynamic Disc Scaling ---
   const fallbackPhysics = useMemo(
-    () => calculateEarthOrbitalPhysics(getJulianDate(currentDate, activeTime)),
-    [currentDate, activeTime]
+    () => calculateEarthOrbitalPhysics(activeJD),
+    [activeJD]
   );
   const sunDistanceAU = solarData?.distanceAU ?? fallbackPhysics.distanceAU;
   const sunDistanceKm = solarData?.distanceKm ?? fallbackPhysics.distanceKm;
@@ -75,6 +85,26 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   const moonHourAngle = (activeTime - transit) * 15;
   const relMoonX = ((180 - moonHourAngle) % 360 + 360) % 360;
   const moonCy = 90 - lunarDec;
+
+  // --- 3. 24-Hour Diurnal Subsolar & Sublunar Ground Tracks ---
+  const sunTrack = useMemo(() => {
+    if (!showSunTrack) return null;
+    return generate24HourGroundTrack('sun', activeJD, longitude, 30);
+  }, [showSunTrack, activeJD, longitude]);
+
+  const moonTrack = useMemo(() => {
+    if (!showMoonTrack) return null;
+    return generate24HourGroundTrack('moon', activeJD, longitude, 30);
+  }, [showMoonTrack, activeJD, longitude]);
+
+  const activeNodalMarker = useMemo(() => {
+    if (!showMoonTrack) return null;
+    return findActiveNodalCrossing(activeJD, longitude);
+  }, [showMoonTrack, activeJD, longitude]);
+
+  const lunarNodeTelemetry = useMemo(() => {
+    return getLunarNodeProximityTelemetry(activeJD);
+  }, [activeJD]);
 
   // Render landmasses relative to the centered longitude with wrapping offsets (-360, 0, +360)
   const landmassPaths = useMemo(() => {
@@ -124,11 +154,45 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
-      {/* Top Inline Declination & Meridian Info Rail */}
+      {/* Top Inline Declination & Meridian Info Rail with Ground Track Toggles */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-        <p className="text-xs text-slate-400">
-          Map dynamically centers on observer meridian ({longitude >= 0 ? `+${longitude.toFixed(1)}` : `${longitude.toFixed(1)}`}°)
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-xs text-slate-400">
+            Map dynamically centers on observer meridian ({longitude >= 0 ? `+${longitude.toFixed(1)}` : `${longitude.toFixed(1)}`}°)
+          </p>
+          {/* Ground Track Layer Toggles */}
+          <div className="flex items-center gap-1.5 font-mono text-[11px]">
+            <button
+              type="button"
+              aria-label="Toggle 24-hour Sun Track"
+              aria-pressed={showSunTrack}
+              onClick={() => setShowSunTrack(prev => !prev)}
+              className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-colors flex items-center gap-1 cursor-pointer select-none ${
+                showSunTrack
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
+                  : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-300'
+              }`}
+            >
+              <span>☀️</span>
+              <span>Sun Track</span>
+            </button>
+            <button
+              type="button"
+              aria-label="Toggle 24-hour Moon Track"
+              aria-pressed={showMoonTrack}
+              onClick={() => setShowMoonTrack(prev => !prev)}
+              className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold transition-colors flex items-center gap-1 cursor-pointer select-none ${
+                showMoonTrack
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm shadow-cyan-500/10'
+                  : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-300'
+              }`}
+            >
+              <span>🌙</span>
+              <span>Moon Track</span>
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/80 text-slate-300">
           <span className="text-[10px] uppercase font-bold text-slate-400">Solar Declination:</span>
           <strong className="text-amber-400 font-bold">{declination >= 0 ? `+${declination.toFixed(1)}` : declination.toFixed(1)}°</strong>
@@ -182,6 +246,12 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             <div className="text-slate-300">
               Apparent Diam: <strong className="text-white">{moonAngularDiamArcmin.toFixed(1)}'</strong> <span className="text-slate-400 text-[9px]">({isSupermoon ? 'Supermoon' : isMicromoon ? 'Micromoon' : 'Mean Size'})</span>
             </div>
+            {lunarNodeTelemetry.isNear && lunarNodeTelemetry.badgeText && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-indigo-950/80 border border-indigo-500/30 text-indigo-200 text-[9px] font-mono">
+                <span className="text-cyan-400 font-bold">{lunarNodeTelemetry.symbol}</span>
+                <span>{lunarNodeTelemetry.badgeText}</span>
+              </div>
+            )}
             <div className="text-slate-400 text-[9px] pt-1 border-t border-slate-800">
               The Moon is at local zenith (+90° altitude) directly overhead at this surface location.
             </div>
@@ -244,6 +314,95 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               <path d={dayShadow.linePath} fill="none" stroke="#fbbf24" strokeWidth="1" strokeOpacity="0.8" strokeDasharray="3 2" />
             )}
 
+            {/* 24-Hour Diurnal Subsolar Ground Track */}
+            {showSunTrack && sunTrack && (
+              <g className="sun-ground-track pointer-events-none">
+                {/* Past 12h: subtle dotted amber (historical trail) */}
+                {sunTrack.pastD && (
+                  <path
+                    d={sunTrack.pastD}
+                    fill="none"
+                    stroke="#fbbf24"
+                    strokeWidth="1"
+                    strokeDasharray="1 3"
+                    strokeOpacity="0.30"
+                  />
+                )}
+                {/* Future 12h: prominent dashed amber (future trajectory) */}
+                {sunTrack.futureD && (
+                  <path
+                    d={sunTrack.futureD}
+                    fill="none"
+                    stroke="#fbbf24"
+                    strokeWidth="1"
+                    strokeDasharray="4 3"
+                    strokeOpacity="0.55"
+                  />
+                )}
+              </g>
+            )}
+
+            {/* 24-Hour Diurnal Sublunar Ground Track & Active Nodal Crossing */}
+            {showMoonTrack && moonTrack && (
+              <g className="moon-ground-track">
+                {/* Past 12h: subtle dotted cyan/slate (historical trail) */}
+                {moonTrack.pastD && (
+                  <path
+                    d={moonTrack.pastD}
+                    fill="none"
+                    stroke="#38bdf8"
+                    strokeWidth="1"
+                    strokeDasharray="1 3"
+                    strokeOpacity="0.30"
+                    className="pointer-events-none"
+                  />
+                )}
+                {/* Future 12h: prominent dashed cyan/slate (future trajectory) */}
+                {moonTrack.futureD && (
+                  <path
+                    d={moonTrack.futureD}
+                    fill="none"
+                    stroke="#818cf8"
+                    strokeWidth="1.1"
+                    strokeDasharray="3.5 2.5"
+                    strokeOpacity="0.55"
+                    className="pointer-events-none"
+                  />
+                )}
+                {/* Active Ecliptic Nodal Crossing Marker if within +-12h */}
+                {activeNodalMarker && (
+                  <g className="nodal-crossing-marker cursor-help pointer-events-auto">
+                    <circle
+                      cx={activeNodalMarker.x}
+                      cy={activeNodalMarker.y}
+                      r="7"
+                      fill={activeNodalMarker.type === 'ascending' ? '#06b6d4' : '#f43f5e'}
+                      fillOpacity="0.25"
+                      className="animate-pulse"
+                    />
+                    <circle
+                      cx={activeNodalMarker.x}
+                      cy={activeNodalMarker.y}
+                      r="3"
+                      fill={activeNodalMarker.type === 'ascending' ? '#22d3ee' : '#fb7185'}
+                      stroke="#ffffff"
+                      strokeWidth="0.75"
+                    />
+                    <text
+                      x={activeNodalMarker.x + 5}
+                      y={activeNodalMarker.y - 4}
+                      className={`text-[8px] font-mono font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] select-none ${
+                        activeNodalMarker.type === 'ascending' ? 'fill-cyan-300' : 'fill-rose-300'
+                      }`}
+                    >
+                      {activeNodalMarker.symbol} Node
+                    </text>
+                    <title>{activeNodalMarker.label}</title>
+                  </g>
+                )}
+              </g>
+            )}
+
             {/* Subsolar Point Marker with Soft Dynamic Distance-Scaled Glow */}
             <g 
               className="cursor-pointer"
@@ -300,6 +459,13 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 border border-amber-300 inline-block" /> Subsolar</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300 border border-slate-400 inline-block" /> Sublunar</span>
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-400 border border-sky-300 inline-block" /> You</span>
+           {showMoonTrack && activeNodalMarker && (
+             <span className={`flex items-center gap-1 font-semibold ${
+               activeNodalMarker.type === 'ascending' ? 'text-cyan-300' : 'text-rose-300'
+             }`}>
+               <span>{activeNodalMarker.symbol}</span> Active Node
+             </span>
+           )}
          </div>
          <div className="flex items-center gap-2.5">
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400 inline-block" /> Day</span>

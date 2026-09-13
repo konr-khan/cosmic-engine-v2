@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { TerminatorMap } from './TerminatorMap';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
+import { julianDateToDate, calculateTrueLunarNodeEvents, J2000_JD } from '../../../utils/cosmicMath';
 
 describe('TerminatorMap Component & Twilight Projection Suite', () => {
   const mockSolarData: SolarAlmanacData = {
@@ -190,5 +191,85 @@ describe('TerminatorMap Component & Twilight Projection Suite', () => {
     expect(html).toContain('Nautical (-12°)');
     expect(html).toContain('Astro (-18°)');
     expect(html).toContain('Night');
+  });
+
+  it('renders independent Sun and Moon track toggles in top info rail', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TerminatorMap, {
+        solarData: mockSolarData,
+        orbitalData: mockOrbitalData,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12
+      })
+    );
+
+    expect(html).toContain('aria-label="Toggle 24-hour Sun Track"');
+    expect(html).toContain('aria-label="Toggle 24-hour Moon Track"');
+    expect(html).toContain('Sun Track');
+    expect(html).toContain('Moon Track');
+  });
+
+  it('renders 24-hour subsolar ground track when initialShowSunTrack is true', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TerminatorMap, {
+        solarData: mockSolarData,
+        orbitalData: mockOrbitalData,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        initialShowSunTrack: true
+      })
+    );
+
+    expect(html).toContain('sun-ground-track');
+    // Verifies past subtle dotted amber path
+    expect(html).toContain('stroke-dasharray="1 3"');
+    // Verifies future prominent dashed amber path
+    expect(html).toContain('stroke-dasharray="4 3"');
+  });
+
+  it('renders 24-hour sublunar ground track when initialShowMoonTrack is true', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TerminatorMap, {
+        solarData: mockSolarData,
+        orbitalData: mockOrbitalData,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        initialShowMoonTrack: true
+      })
+    );
+
+    expect(html).toContain('moon-ground-track');
+    // Verifies past subtle dotted cyan path
+    expect(html).toContain('stroke-dasharray="1 3"');
+    // Verifies future prominent dashed cyan path
+    expect(html).toContain('stroke-dasharray="3.5 2.5"');
+  });
+
+  it('renders active nodal marker on the Moon track during a true nodal crossing', () => {
+    // Find a true node crossing near J2000
+    const events = calculateTrueLunarNodeEvents(J2000_JD, 30);
+    expect(events.allCrossings.length).toBeGreaterThan(0);
+    const targetCrossing = events.allCrossings[0];
+    const crossingDate = julianDateToDate(Number(targetCrossing.jd));
+
+    const html = renderToStaticMarkup(
+      React.createElement(TerminatorMap, {
+        solarData: mockSolarData,
+        orbitalData: mockOrbitalData,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: crossingDate.getUTCHours() + crossingDate.getUTCMinutes() / 60,
+        currentDate: crossingDate,
+        initialShowMoonTrack: true
+      })
+    );
+
+    // Verifies nodal marker and active node symbol render
+    expect(html).toContain('nodal-crossing-marker');
+    expect(html).toContain(targetCrossing.type === 'ascending' ? '☊' : '☋');
+    expect(html).toContain('Active Node');
   });
 });

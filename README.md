@@ -170,7 +170,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 45 specialized domain suites (**679 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 46 specialized domain suites (**690 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -206,7 +206,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Solar Almanac Widget** | `src/components/widgets/solar/SolarWidget.test.tsx` (4 tests) | Keplerian solar metrics, perihelion orbital dynamics, interactive SolarRibbonChart hover hairline, and PolarSunlightDial 24h circular polar sector dial |
 | **Lunar Almanac Widget** | `src/components/widgets/lunar/LunarWidget.test.tsx` (5 tests) | 30-day synodic daily phase discs, 365-day annual braided ribbon, polar circumpolar statuses (24h moonlight / down all day), and TidalWaveOscillator ocean deformation wave |
 | **Eclipse Demonstrator Widget** | `src/components/widgets/eclipse/EclipseWidget.test.tsx` (9 tests) | Historic Great American Eclipse data, 520x220 viewBox parity, dual-zone masking, nodal depth muting behind Earth, and prograde right-to-left SkyViewSimulator transit without bounce |
-| **Terminator Map Widget** | `src/components/widgets/terminator/TerminatorMap.test.tsx` (6 tests) | Dynamic observer meridian centering, wrapped landmass polygons, topocentric YOU pin crosshairs, distance-scaled Subsolar (AU) and Sublunar (km) disc markers, and 4-tier twilight shadow boundaries |
+| **Terminator Map Widget** | `src/components/widgets/terminator/TerminatorMap.test.tsx` (10 tests) | Dynamic observer meridian centering, wrapped landmass polygons, topocentric YOU pin crosshairs, distance-scaled Subsolar (AU) and Sublunar (km) disc markers, and 4-tier twilight shadow boundaries |
 | **Macro Orbit Widget** | `src/components/widgets/macro/MacroOrbitWidget.test.tsx` (4 tests) | Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD |
 | **Micro Tide Widget** | `src/components/widgets/tides/TidesWidget.test.tsx` (5 tests) | MicroTideView Earth tidal gravity, MiniGlobe 3D vector integration, segmented Nodal Loop and potential toggles, and counter-clockwise prograde Moon revolution |
 | **Armillary Visualizer Widget** | `src/components/widgets/armillary/ArmillaryWidget.test.tsx` (18 tests) | Continuum model generation, camera staging timing (pitch/yaw at $lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification |
