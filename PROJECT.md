@@ -105,7 +105,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F51 | Sky & Moon Dome Container/Presenter Hooks & Shared UI Primitives | Extracted calculation cascades into `useMoonElevationMath` & `useSunElevationMath`; unified shared presentation primitives (`SkyDomeFooter`, `DraconicTimelineRail`, `LunarPhaseDisc`), cutting dome monoliths by 40–62% with zero visual divergence | M25 | ADR-0025 |
 | F52 | Ephemeris Worker Fallback Hardening & Parameter Boundary Gatekeepers | Defensive parameter clamping gatekeepers (`workerSanitizers.ts`), failsafe callback delivery invariant in `EphemerisWorkerManager`, and synchronous fallback exception isolation across hooks | M26 | ADR-0026 |
 | F53 | 24-Hour Diurnal Ground Tracks & Antimeridian Seam Interpolation | 24-hour diurnal subsolar & sublunar ground tracks on Terminator Map (`terminatorTracks.ts`, `TerminatorMap.tsx`), independent top-rail toggles (`[☀️ Sun]`, `[🌙 Moon]`), boundary-safe antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons ($\Omega / \mho$), forward-weighted temporal dash conventions, and proximity-gated hover HUD telemetry | M27 | ADR-0027 |
-| F54 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | Parameterized store selectors in `useCosmicEngine` and `useCosmicScene`, decomposed `App.tsx` into memoized widget content components with isolated store subscriptions, local `timeOfDay` subscription in `PolarSunlightDial`, and `React.memo` ribbon protection | M28 | ADR-0028 |
+| F54 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | Parameterized store selectors in `useCosmicEngine` and `useCosmicScene`, decomposed `App.tsx` into memoized widget content components with isolated store subscriptions, local `timeOfDay` subscription in `PolarSunlightDial`, and `React.memo` ribbon protection | M29 | ADR-0029 |
 
 ## Milestones
 
@@ -117,7 +117,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M28)
+### Recent Milestones (M21–M29)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -128,6 +128,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M26 | Web Worker Fallback Hardening & Parameter Gatekeepers | `workerSanitizers.ts`, `ephemerisWorkerManager.ts`, ADR-0026 | M1–M25 | DONE |
 | M27 | Terminator Map Diurnal Ground Tracks & Seam Interpolation | `terminatorTracks.ts`, `TerminatorMap.tsx`, ADR-0027 | M1–M26 | DONE |
 | M28 | Gyro-Morph Mathematical Hardening & Modular Ring Subsystem | `src/utils/cosmicMath/armillary/`, ADR-0028 | M1–M27 | DONE |
+| M29 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | src/hooks/, src/App.tsx, src/components/widgets/ | M1–M28 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -211,4 +212,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0028`)
+  - `adr/` — Architecture Decision Records (`0001` through `0029`)

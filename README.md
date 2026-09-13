@@ -18,7 +18,7 @@
 - 🧩 **Dynamic Code-Splitting & Lazy Loading**: Dynamic `React.lazy()` imports wrapped in dark glassmorphic `<Suspense>` skeletons across all observatory windows, cutting initial bundle size by 50% and eliminating chunk limit warnings.
 - 🌐 **Unified 3D Astronomical Scene Graph**: Single geometric source of truth (`src/utils/cosmicMath/scene/`) uniting Heliocentric orbits, Geocentric inclined lunar orbits with continuous nodal precession, Earth axial obliquity, and reusable modular `<MiniGlobe />` with physical day/night terminator clipping.
 - ⚡ **Web Worker Ephemeris Multiprocessing**: Offloads heavy Meeus ephemeris and syzygy shadow algorithms to dedicated Web Workers via a singleton manager with 100ms throttling, monotonic sequence stamping, and automatic synchronous fallback.
-- ⏱️ **External 60 FPS Chronometer & Hover Stores**: High-frequency animation loops powered by React 19 `useSyncExternalStore` and `requestAnimationFrame`, isolating time ticking and ribbon scrubbing from the React render tree to maintain smooth 60 FPS performance without garbage collection stutter.
+- ⏱️ **External 60 FPS Chronometer, Hover Stores & Render Decoupling**: High-frequency animation loops powered by React 19 `useSyncExternalStore` and `requestAnimationFrame`, isolating time ticking and ribbon scrubbing from the React render tree with parameterized selective hook selectors (`useCosmicEngine`, `useCosmicScene`) and decomposed, memoized widget content components to maintain smooth 60 FPS performance with zero unnecessary re-render cascades.
 - 🛡️ **Fault-Tolerant Window Grid**: Responsive drag-and-drop workspace layout with customizable window sizing, lock states, curated workspace presets, and isolated React Error Boundaries for every widget.
 
 ---
@@ -90,13 +90,13 @@ Cosmic Engine V2.0/
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Master feature ledger (F1–F53) & milestone matrix (M1–M28)
+├── PROJECT.md                   # Master feature ledger (F1–F54) & milestone matrix (M1–M29)
 ├── README.md                    # Repository documentation & quick start
 ├── AGENTS.md                    # Agent protocols & full granular file navigation map
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001–0028)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001–0029)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
