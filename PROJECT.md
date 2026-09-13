@@ -107,36 +107,26 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F53 | 24-Hour Diurnal Ground Tracks & Antimeridian Seam Interpolation | 24-hour diurnal subsolar & sublunar ground tracks on Terminator Map (`terminatorTracks.ts`, `TerminatorMap.tsx`), independent top-rail toggles (`[☀️ Sun]`, `[🌙 Moon]`), boundary-safe antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons ($\Omega / \mho$), forward-weighted temporal dash conventions, and proximity-gated hover HUD telemetry | M27 | ADR-0027 |
 
 ## Milestones
+
+### Completed Foundation Milestones (M1–M20)
+| Milestones | Focus Areas | Key Deliverables & ADRs |
+| :--- | :--- | :--- |
+| **M1–M5** | 3D Scene Graph, MiniGlobe & Cameras | Unified scene graph, `<MiniGlobe />`, reactive scene hooks, ADR-0001–0005 |
+| **M6–M10** | Performance, Benchmark & Canonical Rigs | < 0.8ms hot loop, controls harness, canonical camera alignments, ADR-0006–0008 |
+| **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
+| **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
+
+### Recent Milestones (M21–M28)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Pure 3D Scene Graph & Coordinate Transforms | `src/utils/cosmicMath/scene/` (`types.ts`, `transforms.ts`, `cameras.ts`, `generator.ts`, `index.ts`, `scene.test.ts`) | none | DONE |
-| M2 | Reusable High-Precision `<MiniGlobe />` SVG Component | `src/components/common/MiniGlobe.tsx`, `src/components/common/MiniGlobe.test.tsx` | M1 | DONE |
-| M3 | Reactive Scene Hook & Widget Refactoring | `src/hooks/useCosmicScene.ts`, `src/hooks/useCosmicScene.test.ts`, `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `EclipseDemonstrator.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | M1, M2 | DONE |
-| M4 | Armillary Groundwork, Architecture Record & Documentation | `ArmillaryBeadsLayer.tsx`, `docs/adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md`, `docs/MATH_SPEC.md`, `docs/DESIGN_SYSTEM.md`, `AGENTS.md` | M1, M2, M3 | DONE |
-| M5 | MiniGlobe Ecosystem & Tidal Nodal Loops | `ArmillaryEarthPip.tsx`, `MicroTideView.tsx` (Nodal mode), ADR-0005, AST unit safety | M1, M2, M3, M4 | DONE |
-| M6 | Sub-Renderer Decomposition & Math Extraction | `MiniGlobeFlat.tsx`, `MiniGlobeSphere.tsx`, `globe.ts`, `generatorGeometry.ts`, `generatorBeads.ts`, `astroConstants.ts` | M1-M5 | DONE |
-| M7 | Armillary Hot-Loop Performance & Latency Benchmark | Pre-computed Euler rotators, single-pass SVG streaming, `armillaryBenchmark.test.ts` (< 0.8ms), ADR-0006 | M6 | DONE |
-| M8 | Controls & Layout Test Harness | `controls.test.tsx` (19 tests), `DashboardWindow.test.tsx` (16 tests), header drag gating | M7 | DONE |
-| M9 | Complete Documentation Review & Alignment | Reconcile `AGENTS.md`, `README.md`, `MATH_SPEC.md` Section 11, `DESIGN_SYSTEM.md`, `DEAD_ENDS.md` | M1-M8 | DONE |
-| M10 | Canonical Camera Rig Alignment & Sky View Prograde Kinematics | `cameras.ts`, `useCosmicScene.ts`, `SkyViewSimulator.tsx`, `cameras.stress.test.ts`, ADR-0008, 387 tests | M1-M9 | DONE |
-| M11 | Ground-Truth Heliocentric & Geocentric Prograde Kinematics | `scene/generator.ts`, `milestones.ts`, `cameras.stress.test.ts`, ADR-0009, 389 tests | M1-M10 | DONE |
-| M12 | Post-Kinematics Deadwood Purge & Prograde Model Harmonization | `useCosmicEngine.ts`, `generatorBeads.ts`, `ArmillaryBeadsLayer.tsx`, `generator.ts`, type deduplication, 393 tests | M1-M11 | DONE |
-| M13 | Domain Invariant & Physics Conservation Hardening | `astroConstants.ts`, `domainInvariants.test.ts`, ADR-0010, 412 tests across 21 suites | M1-M12 | DONE |
-| M14 | Symmetrical Sky Dome ViewBox, Atmospheric Twilight Strata & Shared Primitives | `SkyDomeBase.tsx`, `useRibbonScrubber.ts`, `DashboardWindow.tsx` (React.lazy code-splitting), `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` (depth sorting), ADR-0011, ADR-0012, ADR-0013, ADR-0014, 470 tests across 37 suites | M1-M13 | DONE |
-| M15 | True Ecliptic Lunar Node Crossing Kinematics & Cross-Widget Synchronization | `src/utils/cosmicMath/lunar.ts` (`findTrueLunarNodeCrossing`), `todaySky.ts` (`calculateTrueLunarNodeEvents`), `MoonElevationDome.tsx`, `MicroTideView.tsx`, `LiveSyzygyView.tsx`, ADR-0015, 482 tests across 38 suites | M1-M14 | DONE |
-| M16 | Dynamic Sighting-Aware Horizon Dome & Tropical Culmination Inversions | `src/utils/cosmicMath/todaySky.ts` (`calculateCulminationBearing`, `calculateRiseSetAzimuth`), `SkyDomeBase.tsx`, `SunElevationDome.tsx`, `MoonElevationDome.tsx`, ADR-0016, 496 tests across 38 suites | M1-M15 | DONE |
-| M17 | Quad-View Celestial Meridian Profiles & Multi-Perspective Horizon Observatory | `TodayHorizonView.tsx` (`2-Dome` vs `4-Dome`), `SunMeridianDome.tsx`, `MoonMeridianDome.tsx`, `src/utils/cosmicMath/todaySky.ts` (`calculateMeridianPoint`, `generateMeridianSwathD`, `calculateMeridianRadialTick`, `calculateMeridianDiurnalPoint`, `calculateMeridianDiurnalChord`), Approach C ghost anchors, Central Ribbon architecture, ADR-0017, 518 tests across 38 suites | M1-M16 | DONE |
-| M18 | Performance Optimization, Modular Ephemeris Decoupling & Build Hardening | `src/store/hoverStore.ts`, `useEphemerisWorker.ts` (throttling & monotonic stamping), `core.ts` (GMST/LST hoisting), `astroConstants.ts`, `src/utils/cosmicMath/today/` (`elevation.ts`, `meridian.ts`, `draconic.ts`), `MeridianDomeBase.tsx`, widget barrel deletion, build pipeline hardening (`tsc --noEmit && vite build`), `globe.test.ts`, `App.test.tsx`, ADR-0018, 559 tests across 40 suites | M1-M17 | DONE |
-| M19 | Domain Invariant Hardening, Polar Singularity Rectification & Syzygy Apparent Ratio | `meridian.ts` (horizontal polar chords), `elevation.ts` (polar azimuth suppression), `eclipse.ts` (apparent radius ratio $k \ge 1.0$), `domainInvariants.test.ts` (Suites 8-11), `useRibbonScrubber.ts` (bounds clamping), `core.ts` (century leap rules), ADR-0019, 580 tests across 40 suites | M1-M18 | DONE |
-| M20 | Living Marble Meridian Ring, Dynamic 3D Orbit Bead & Multi-Scale Orbit Zoom Controls | `MiniGlobe.tsx` ($0^\circ / 180^\circ$ Great Meridian Ring), `MiniGlobeSphere.tsx` (polar axis gating in `euler3d`), `ArmillaryBeadsLayer.tsx` (dynamic 3D Earth bead & subsolar camera vector), `ArmillaryEarthPip.tsx` (telephoto subsolar alignment), `ArmillarySvgCanvas.tsx` & `MacroOrbitView.tsx` (wheel zoom & floating controls), 588 tests across 40 suites | M1-M19 | DONE |
-| M21 | Meridian Profile Solstice Bifurcation, Sub-Horizon Twilight Kinematics & Compact Telemetry | `SunMeridianDome.tsx` (split swaths, direction vector, sub-horizon twilight), `MeridianDomeBase.tsx` (`hideElevationBanner`), `SkyDomeBase.tsx`, `src/utils/cosmicMath/today/meridian.ts` (`minAltitudeDeg = -18`), ADR-0021, 592 tests across 40 suites | M1-M20 | DONE |
-| M22 | Polar Directional Singularity Rectification & Longitudinal Horizon Reference Geometry | `src/utils/cosmicMath/today/elevation.ts` (`calculateCulminationBearing` polar singularity branch), `SkyDomeBase.tsx` (`90°E — 0° (Grw) — 90°W`), `MeridianDomeBase.tsx` (`S (0°) — Z (+90°) — S (180°)`, `N (0°) — Z (-90°) — N (180°)`), `SunElevationDome.tsx`, `SunMeridianDome.tsx`, `MoonElevationDome.tsx`, `MoonMeridianDome.tsx` (`Constant Altitude` peak label), ADR-0022, 595 tests across 40 suites | M1-M21 | DONE |
-| M23 | Principles & Design Alignment, Invariant Hardening & Specs Reconciliation | Pure domain math & invariants (`frame.ts`, `sceneMath.ts`), vector stroke encodings (dual-pane eclipse $520\times 220$, 3-tier twilight strata, Armillary milestone halos), semantic tokens (Sky Blue time/tides, Rose Red cursors/phases, Amber longitude/sun, warm gold glowing chords), persistent specs alignment (`DESIGN_SYSTEM.md`, `MATH_SPEC.md`), ADR-0023, 600 tests across 40 suites | M1-M22 | DONE |
-| M24 | Concurrency Hardening, Domain Math Purity, Visual Polish & Component Test Expansion | Ephemeris memoization, date jump cache invalidation, todayTokens extraction, sync parallactic angle, dashboardPresets, lruCache, expanded component tests (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`, `lruCache.test.ts`), ADR-0024, 648 tests across 43 suites | M1-M23 | DONE |
-| M25 | Sky & Moon Dome Container/Presenter Refactoring & Component Primitives | `useMoonElevationMath.ts`, `useSunElevationMath.ts`, `SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`, `SkyDomeHooksAndPrimitives.test.tsx`, ADR-0025, 657 tests across 44 suites | M1-M24 | DONE |
-| M26 | Web Worker Fallback Hardening, Parameter Gatekeepers & Error Boundaries | `workerSanitizers.ts`, `workerSanitizers.test.ts`, `ephemerisWorkerManager.ts`, `useEphemerisWorker.ts`, `ephemerisWorker.ts`, ADR-0026, 679 tests across 45 suites | M1-M25 | DONE |
-| M27 | Terminator Map Diurnal Ground Tracks, Antimeridian Seam Interpolation & Gated Lunar Nodal Kinematics | `terminatorTracks.ts`, `terminatorTracks.test.ts`, `TerminatorMap.tsx`, `TerminatorMap.test.tsx`, `TerminatorHoverHud.tsx`, `TerminatorHoverHud.test.tsx`, ADR-0027, 701 tests across 47 suites | M1-M26 | DONE |
-| M28 | Gyro-Morph Mathematical Hardening, Projection Singularities & Modular Ring Subsystem | `src/utils/cosmicMath/armillary/` (`projections.ts`, `astrolabe.ts`, `coordinates.ts`, `generatorRings.ts`, `generator.ts`, `armillary.test.ts`), ADR-0028, 707 tests across 47 suites | M1-M27 | DONE |
+| M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
+| M22 | Polar Directional Singularity Rectification & Horizon Geometry | `elevation.ts`, `SkyDomeBase.tsx`, `MeridianDomeBase.tsx`, ADR-0022 | M1–M21 | DONE |
+| M23 | Principles & Design Alignment, Invariant Hardening | Pure domain math & invariants, dual-pane eclipse 520x220, ADR-0023 | M1–M22 | DONE |
+| M24 | Concurrency Hardening, Domain Math Purity & Component Tests | Ephemeris memoization, date cache invalidation, expanded tests, ADR-0024 | M1–M23 | DONE |
+| M25 | Sky & Moon Dome Container/Presenter Hooks & Primitives | `useMoonElevationMath.ts`, `SkyDomeFooter.tsx`, ADR-0025 | M1–M24 | DONE |
+| M26 | Web Worker Fallback Hardening & Parameter Gatekeepers | `workerSanitizers.ts`, `ephemerisWorkerManager.ts`, ADR-0026 | M1–M25 | DONE |
+| M27 | Terminator Map Diurnal Ground Tracks & Seam Interpolation | `terminatorTracks.ts`, `TerminatorMap.tsx`, ADR-0027 | M1–M26 | DONE |
+| M28 | Gyro-Morph Mathematical Hardening & Modular Ring Subsystem | `src/utils/cosmicMath/armillary/`, ADR-0028 | M1–M27 | DONE |
 
 ## Interface Contracts & Domain Models
 
