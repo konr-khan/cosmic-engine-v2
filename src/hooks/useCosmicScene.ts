@@ -7,7 +7,7 @@
  * Eclipse Demonstrator, and Gyro-Morph Armillary subsystems.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useChronometerStore } from '../store/cosmicStore';
 import { CosmicStoreState } from '../types/store';
 import { 
@@ -36,14 +36,6 @@ import {
   MilestoneNode3D
 } from '../utils/cosmicMath/scene';
 
-/** Selector for store synchronization with shallow equality protection */
-const selectStoreState = (state: CosmicStoreState) => ({
-  date: state.date,
-  timeOfDay: state.timeOfDay,
-  latitude: state.latitude,
-  longitude: state.longitude,
-  useAnalemma: state.useAnalemma
-});
 
 /** Master configuration options for useCosmicScene */
 export interface UseCosmicSceneOptions {
@@ -74,13 +66,24 @@ export interface CosmicSceneData {
  * @returns CosmicSceneData containing Julian Date, 3D scene graph, and ephemeris frame
  */
 export function useCosmicScene(options?: UseCosmicSceneOptions): CosmicSceneData {
-  const storeState = useChronometerStore(selectStoreState);
-
-  const date = options?.date ?? storeState.date;
-  const timeOfDay = options?.timeOfDay ?? storeState.timeOfDay;
-  const latitude = options?.latitude ?? storeState.latitude;
-  const longitude = options?.longitude ?? storeState.longitude;
-  const useAnalemma = options?.useAnalemma ?? storeState.useAnalemma;
+  const isDateProvided = options?.date != null;
+  const isTimeProvided = options?.timeOfDay != null;
+  const isLatProvided = options?.latitude != null;
+  const isLonProvided = options?.longitude != null;
+  const isAnalemmaProvided = options?.useAnalemma != null;
+  const selector = useCallback((state: CosmicStoreState) => ({
+    date: isDateProvided ? null : state.date,
+    timeOfDay: isTimeProvided ? null : state.timeOfDay,
+    latitude: isLatProvided ? null : state.latitude,
+    longitude: isLonProvided ? null : state.longitude,
+    useAnalemma: isAnalemmaProvided ? null : state.useAnalemma,
+  }), [isDateProvided, isTimeProvided, isLatProvided, isLonProvided, isAnalemmaProvided]);
+  const storeState = useChronometerStore(selector);
+  const date = (options?.date ?? storeState.date) as Date;
+  const timeOfDay = (options?.timeOfDay ?? storeState.timeOfDay) as HoursDecimal | number;
+  const latitude = (options?.latitude ?? storeState.latitude) as Latitude | number;
+  const longitude = (options?.longitude ?? storeState.longitude) as Longitude | number;
+  const useAnalemma = (options?.useAnalemma ?? storeState.useAnalemma) as boolean;
   const scaleMode = options?.scaleMode ?? 'true';
 
   // 1. Memoized Julian Date derivation

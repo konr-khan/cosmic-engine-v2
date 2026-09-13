@@ -24,7 +24,7 @@ export interface LunarRibbonChartProps {
   onViewModeChange?: (mode: 'synodic' | 'annual') => void;
 }
 
-export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
+export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = React.memo(({
   annualLunarData,
   activeDay,
   totalDays,
@@ -318,6 +318,8 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = ({
       </div>
     </div>
   );
-};
+});
+
+LunarRibbonChart.displayName = 'LunarRibbonChart';
 
 export default LunarRibbonChart;

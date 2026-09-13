@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { 
   CONFIG, 
   getJulianDate, 
@@ -8,17 +8,10 @@ import {
   toRadians
 } from '../utils/cosmicMath';
 import { useChronometerStore } from '../store/cosmicStore';
+import { CosmicStoreState } from '../types/store';
 import { useEphemerisWorker } from './useEphemerisWorker';
 import { ActiveWidgetsFilter, CosmicEngineData, SolarAlmanacData, OrbitalData, TideType } from '../types/astronomy';
 import { Latitude, Longitude, HoursDecimal } from '../types/units';
-
-const selectStoreState = (state: { date: Date; timeOfDay: number; latitude: number; longitude: number; useAnalemma: boolean }) => ({
-  date: state.date,
-  timeOfDay: state.timeOfDay,
-  latitude: state.latitude,
-  longitude: state.longitude,
-  useAnalemma: state.useAnalemma
-});
 
 const ORBITAL_WIDGET_KEYS = ['macroOrbit', 'microTides', 'lunarAlmanac', 'armillary', 'eclipse', 'today', 'map'] as const;
 const LUNAR_WIDGET_KEYS = ['lunarAlmanac', 'armillary', 'today', 'map'] as const;
@@ -32,13 +25,24 @@ export const useCosmicEngine = (
   paramUseAnalemma?: boolean | null,
   activeWidgets: ActiveWidgetsFilter = {}
 ): CosmicEngineData => {
-  const storeState = useChronometerStore(selectStoreState);
-
-  const date = paramDate ?? storeState.date;
-  const timeOfDay = paramTimeOfDay ?? storeState.timeOfDay;
-  const latitude = paramLatitude ?? storeState.latitude;
-  const longitude = paramLongitude ?? storeState.longitude;
-  const useAnalemma = paramUseAnalemma ?? storeState.useAnalemma;
+  const isDateProvided = paramDate != null;
+  const isTimeProvided = paramTimeOfDay != null;
+  const isLatProvided = paramLatitude != null;
+  const isLonProvided = paramLongitude != null;
+  const isAnalemmaProvided = paramUseAnalemma != null;
+  const selector = useCallback((state: CosmicStoreState) => ({
+    date: isDateProvided ? null : state.date,
+    timeOfDay: isTimeProvided ? null : state.timeOfDay,
+    latitude: isLatProvided ? null : state.latitude,
+    longitude: isLonProvided ? null : state.longitude,
+    useAnalemma: isAnalemmaProvided ? null : state.useAnalemma,
+  }), [isDateProvided, isTimeProvided, isLatProvided, isLonProvided, isAnalemmaProvided]);
+  const storeState = useChronometerStore(selector);
+  const date = (paramDate ?? storeState.date) as Date;
+  const timeOfDay = (paramTimeOfDay ?? storeState.timeOfDay) as HoursDecimal;
+  const latitude = (paramLatitude ?? storeState.latitude) as Latitude;
+  const longitude = (paramLongitude ?? storeState.longitude) as Longitude;
+  const useAnalemma = (paramUseAnalemma ?? storeState.useAnalemma) as boolean;
 
   const hasExplicitPositiveOnly = 
     Object.values(activeWidgets).some(v => v === true) && 

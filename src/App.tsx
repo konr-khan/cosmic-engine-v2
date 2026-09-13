@@ -16,8 +16,17 @@ const MacroOrbitView = React.lazy(() => import('./components/widgets/macro/Macro
 const GyroArmillaryView = React.lazy(() => import('./components/widgets/armillary/GyroArmillaryView'));
 const MicroTideView = React.lazy(() => import('./components/widgets/tides/MicroTideView'));
 import { getDayOfYear } from './utils/cosmicMath';
+import { HoursDecimal, Latitude, Longitude } from './types/units';
+import { CosmicStoreState } from './types/store';
 
-const selectObserverParams = (state: { date: Date; timeOfDay: number; latitude: number; longitude: number; useAnalemma: boolean }) => ({
+const selectCalendarParams = (state: CosmicStoreState) => ({
+  date: state.date,
+  latitude: state.latitude,
+  longitude: state.longitude,
+  useAnalemma: state.useAnalemma
+});
+
+const selectRealtimeParams = (state: CosmicStoreState) => ({
   date: state.date,
   timeOfDay: state.timeOfDay,
   latitude: state.latitude,
@@ -29,131 +38,216 @@ export interface MemoizedWidgetContentProps {
   id: string;
 }
 
-const MacroOrbitWidgetContent: React.FC = () => {
+const MacroOrbitWidgetContent = React.memo(function MacroOrbitWidgetContent() {
   const date = useChronometerStore(s => s.date);
   return <MacroOrbitView currentDate={date} />;
-};
+});
 
-const StandardWidgetContent: React.FC<{ id: string }> = ({ id }) => {
-  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectObserverParams);
-
-  const { solarData, orbitalData, julianDate } = useCosmicEngine(
+const LunarAlmanacWidgetContent = React.memo(function LunarAlmanacWidgetContent() {
+  const { date, latitude, longitude, useAnalemma } = useChronometerStore(selectCalendarParams);
+  const { orbitalData } = useCosmicEngine(
     date,
-    timeOfDay,
-    latitude,
-    longitude,
+    12 as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
     useAnalemma,
-    { [id]: true }
+    { lunarAlmanac: true }
   );
 
   const dayOfYear = getDayOfYear(date);
-
   const handleDateSlider = (val: number) => {
     cosmicActions.setDate(new Date(Date.UTC(date.getUTCFullYear(), 0, val)));
   };
 
-  switch (id) {
-    case 'today':
-      return (
-        <TodayHorizonView
-          solarData={solarData}
-          orbitalData={orbitalData}
-          currentTime={timeOfDay}
-          latitude={latitude}
-          longitude={longitude}
-          currentDate={date}
-          onSetTime={cosmicActions.setTimeOfDay}
-        />
-      );
-    case 'almanac':
-      return (
-        <SolarAlmanac 
-          latitude={latitude} 
-          longitude={longitude} 
-          currentDay={dayOfYear} 
-          onDayChange={handleDateSlider} 
-          year={date.getFullYear()} 
-          solarData={solarData}
-          currentTime={timeOfDay}
-        />
-      );
-    case 'lunarAlmanac':
-      return (
-        <LunarAlmanacCard 
-          orbitalData={orbitalData} 
-          onSetTime={cosmicActions.setTimeOfDay} 
-          latitude={latitude}
-          longitude={longitude}
-          currentDay={dayOfYear}
-          onDayChange={handleDateSlider}
-          currentDate={date}
-        />
-      );
-    case 'eclipse':
-      return (
-        <EclipseDemonstrator 
-          currentDate={date} 
-          onDateChange={cosmicActions.setDate} 
-          onTimeChange={cosmicActions.setTimeOfDay} 
-          orbitalData={orbitalData} 
-          latitude={latitude}
-          longitude={longitude}
-          timeOfDay={timeOfDay}
-        />
-      );
-    case 'map':
-      return (
-        <TerminatorMap 
-          solarData={solarData} 
-          orbitalData={orbitalData}
-          latitude={latitude} 
-          longitude={longitude} 
-          timeOfDay={timeOfDay} 
-          currentDate={date}
-        />
-      );
-    case 'armillary':
-      return (
-        <GyroArmillaryView
-          solarData={solarData}
-          orbitalData={orbitalData}
-          latitude={latitude}
-          longitude={longitude}
-          timeOfDay={timeOfDay}
-          currentDate={date}
-          onSetTime={cosmicActions.setTimeOfDay}
-          onSetDate={cosmicActions.setDate}
-        />
-      );
-    case 'microTides':
-      return (
-        <MicroTideView 
-          tides={orbitalData?.tides} 
-          angles={orbitalData?.angles} 
-          localTideStatus={orbitalData?.localTideStatus}
-          phaseValue={orbitalData?.phase?.value}
-          latitude={latitude}
-          longitude={longitude}
-          timeOfDay={timeOfDay}
-          sunLambdaDeg={solarData?.lambda}
-          nodeLongitude={orbitalData?.angles?.nodeLongitude ?? orbitalData?.nodeLongitude}
-          moonBetaDeg={orbitalData?.lunarPos?.beta}
-          currentDate={date}
-          julianDate={julianDate}
-        />
-      );
-    default:
-      return null;
-  }
-};
+  return (
+    <LunarAlmanacCard 
+      orbitalData={orbitalData} 
+      onSetTime={cosmicActions.setTimeOfDay} 
+      latitude={latitude}
+      longitude={longitude}
+      currentDay={dayOfYear}
+      onDayChange={handleDateSlider}
+      currentDate={date}
+    />
+  );
+});
+
+const SolarAlmanacWidgetContent = React.memo(function SolarAlmanacWidgetContent() {
+  const { date, latitude, longitude, useAnalemma } = useChronometerStore(selectCalendarParams);
+  const { solarData } = useCosmicEngine(
+    date,
+    12 as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
+    useAnalemma,
+    { almanac: true }
+  );
+
+  const dayOfYear = getDayOfYear(date);
+  const handleDateSlider = (val: number) => {
+    cosmicActions.setDate(new Date(Date.UTC(date.getUTCFullYear(), 0, val)));
+  };
+
+  return (
+    <SolarAlmanac 
+      latitude={latitude} 
+      longitude={longitude} 
+      currentDay={dayOfYear} 
+      onDayChange={handleDateSlider} 
+      year={date.getFullYear()} 
+      solarData={solarData}
+    />
+  );
+});
+
+const TodayWidgetContent = React.memo(function TodayWidgetContent() {
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectRealtimeParams);
+  const { solarData, orbitalData } = useCosmicEngine(
+    date,
+    timeOfDay as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
+    useAnalemma,
+    { today: true }
+  );
+
+  return (
+    <TodayHorizonView
+      solarData={solarData}
+      orbitalData={orbitalData}
+      currentTime={timeOfDay}
+      latitude={latitude}
+      longitude={longitude}
+      currentDate={date}
+      onSetTime={cosmicActions.setTimeOfDay}
+    />
+  );
+});
+
+const TerminatorWidgetContent = React.memo(function TerminatorWidgetContent() {
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectRealtimeParams);
+  const { solarData, orbitalData } = useCosmicEngine(
+    date,
+    timeOfDay as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
+    useAnalemma,
+    { map: true }
+  );
+
+  return (
+    <TerminatorMap 
+      solarData={solarData} 
+      orbitalData={orbitalData}
+      latitude={latitude} 
+      longitude={longitude} 
+      timeOfDay={timeOfDay} 
+      currentDate={date}
+    />
+  );
+});
+
+const ArmillaryWidgetContent = React.memo(function ArmillaryWidgetContent() {
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectRealtimeParams);
+  const { solarData, orbitalData } = useCosmicEngine(
+    date,
+    timeOfDay as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
+    useAnalemma,
+    { armillary: true }
+  );
+
+  return (
+    <GyroArmillaryView
+      solarData={solarData}
+      orbitalData={orbitalData}
+      latitude={latitude}
+      longitude={longitude}
+      timeOfDay={timeOfDay}
+      currentDate={date}
+      onSetTime={cosmicActions.setTimeOfDay}
+      onSetDate={cosmicActions.setDate}
+    />
+  );
+});
+
+const MicroTidesWidgetContent = React.memo(function MicroTidesWidgetContent() {
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectRealtimeParams);
+  const { solarData, orbitalData, julianDate } = useCosmicEngine(
+    date,
+    timeOfDay as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
+    useAnalemma,
+    { microTides: true }
+  );
+
+  return (
+    <MicroTideView 
+      tides={orbitalData?.tides} 
+      angles={orbitalData?.angles} 
+      localTideStatus={orbitalData?.localTideStatus}
+      phaseValue={orbitalData?.phase?.value}
+      latitude={latitude}
+      longitude={longitude}
+      timeOfDay={timeOfDay}
+      sunLambdaDeg={solarData?.lambda}
+      nodeLongitude={orbitalData?.angles?.nodeLongitude ?? orbitalData?.nodeLongitude}
+      moonBetaDeg={orbitalData?.lunarPos?.beta}
+      currentDate={date}
+      julianDate={julianDate}
+    />
+  );
+});
+
+const EclipseWidgetContent = React.memo(function EclipseWidgetContent() {
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectRealtimeParams);
+  const { orbitalData } = useCosmicEngine(
+    date,
+    timeOfDay as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
+    useAnalemma,
+    { eclipse: true }
+  );
+
+  return (
+    <EclipseDemonstrator 
+      currentDate={date} 
+      onDateChange={cosmicActions.setDate} 
+      onTimeChange={cosmicActions.setTimeOfDay} 
+      orbitalData={orbitalData} 
+      latitude={latitude}
+      longitude={longitude}
+      timeOfDay={timeOfDay}
+    />
+  );
+});
 
 const MemoizedWidgetContent = React.memo<MemoizedWidgetContentProps>(function MemoizedWidgetContent({
   id
 }) {
-  if (id === 'macroOrbit') {
-    return <MacroOrbitWidgetContent />;
+  switch (id) {
+    case 'macroOrbit':
+      return <MacroOrbitWidgetContent />;
+    case 'lunarAlmanac':
+      return <LunarAlmanacWidgetContent />;
+    case 'almanac':
+      return <SolarAlmanacWidgetContent />;
+    case 'today':
+      return <TodayWidgetContent />;
+    case 'map':
+      return <TerminatorWidgetContent />;
+    case 'armillary':
+      return <ArmillaryWidgetContent />;
+    case 'microTides':
+      return <MicroTidesWidgetContent />;
+    case 'eclipse':
+      return <EclipseWidgetContent />;
+    default:
+      return null;
   }
-  return <StandardWidgetContent id={id} />;
 });
 
 export interface MemoizedChronometerDockProps {
@@ -165,13 +259,13 @@ const MemoizedChronometerDock = React.memo<MemoizedChronometerDockProps>(functio
   isDockCollapsed,
   onToggleCollapse
 }) {
-  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectObserverParams);
+  const { date, timeOfDay, latitude, longitude, useAnalemma } = useChronometerStore(selectRealtimeParams);
 
   const { solarData } = useCosmicEngine(
     date,
-    timeOfDay,
-    latitude,
-    longitude,
+    12 as HoursDecimal,
+    latitude as Latitude,
+    longitude as Longitude,
     useAnalemma,
     { almanac: true }
   );

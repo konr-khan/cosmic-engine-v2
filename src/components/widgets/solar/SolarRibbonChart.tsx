@@ -26,7 +26,7 @@ export interface SolarRibbonChartProps {
   year?: number;
 }
 
-export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
+export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = React.memo(({
   almanacData,
   totalDays,
   activeDay,
@@ -412,6 +412,8 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = ({
       </svg>
     </div>
   );
-};
+});
+
+SolarRibbonChart.displayName = 'SolarRibbonChart';
 
 export default SolarRibbonChart;

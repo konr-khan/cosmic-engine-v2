@@ -29,7 +29,7 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
   onDayChange, 
   year = 2026, 
   solarData,
-  currentTime = 12,
+  currentTime,
   hoverTime, 
   onHoverTime,
   hoverDate,

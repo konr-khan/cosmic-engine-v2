@@ -7,6 +7,7 @@ import {
   getSectorPath 
 } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem, SolarAlmanacData } from '../../../types';
+import { useChronometerStore, selectTimeOfDay } from '../../../store/cosmicStore';
 
 export interface PolarSunlightDialProps {
   solarData?: SolarAlmanacData | null;
@@ -23,7 +24,7 @@ export interface PolarSunlightDialProps {
 export const PolarSunlightDial: React.FC<PolarSunlightDialProps> = ({
   solarData,
   activeData,
-  currentTime = 12,
+  currentTime,
   hoverTime,
   onHoverTime,
   timeMode,
@@ -31,6 +32,9 @@ export const PolarSunlightDial: React.FC<PolarSunlightDialProps> = ({
   lonOffsetHours,
   eotOffsetHours,
 }) => {
+  const storeTime = useChronometerStore(selectTimeOfDay);
+  const effectiveCurrentTime = currentTime !== undefined ? currentTime : storeTime;
+
   const {
     dayLength = activeData.dayLength,
     civil = 13,
@@ -43,7 +47,7 @@ export const PolarSunlightDial: React.FC<PolarSunlightDialProps> = ({
 
   const radius = 90;
   const center = 110;
-  const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : currentTime;
+  const displayTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : effectiveCurrentTime;
 
   // Mode-dependent rotation & hand calculation
   const rotationAngle = timeMode === 'solar' ? 0 : solarNoon * 15;

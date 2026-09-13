@@ -9,10 +9,9 @@ import { MacroOrbitViewProps, MacroOrbitHoverData } from './types';
 import { useHeliocentricScene } from '../../../hooks/useCosmicScene';
 import { useChronometerStore } from '../../../store/cosmicStore';
 
-const selectMacroObserverParams = (s: { latitude: number; longitude: number; timeOfDay: number }) => ({
+const selectMacroObserverParams = (s: { latitude: number; longitude: number }) => ({
   latitude: s.latitude,
-  longitude: s.longitude,
-  timeOfDay: s.timeOfDay
+  longitude: s.longitude
 });
 
 export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({ 
@@ -40,7 +39,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
       orbitalRadius: 200,
       latitude: storeState.latitude,
       longitude: storeState.longitude,
-      timeOfDay: storeState.timeOfDay
+      timeOfDay: 12
     }
   );
 
@@ -121,7 +120,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           sunLambdaDeg={sunLambdaDeg}
           latitude={storeState.latitude}
           longitude={storeState.longitude}
-          timeOfDay={storeState.timeOfDay}
+          timeOfDay={12}
           lunarOrbitPath={helioScene.lunarOrbitPath}
           zoom={zoom}
           onWheelZoom={handleWheelZoom}
