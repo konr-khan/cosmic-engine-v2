@@ -170,7 +170,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               r={isHovered ? 7.0 : 4.5}
               fill={m.color}
               opacity={isHovered ? 0.45 : 0.20}
-              className={`pointer-events-none transition-all duration-200 ${isHovered ? 'animate-pulse' : ''}`}
+              className={`pointer-events-none transition-[r,opacity] duration-200 ${isHovered ? 'animate-pulse' : ''}`}
             />
             {/* Milestone Core */}
             <circle
@@ -180,7 +180,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               fill={m.color}
               stroke="#ffffff"
               strokeWidth={isHovered ? 1.2 : 0.75}
-              className="pointer-events-none transition-all duration-150 drop-shadow-md"
+              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
             />
             {/* Milestone Label */}
             <text

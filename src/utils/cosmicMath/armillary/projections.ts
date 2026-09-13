@@ -125,19 +125,29 @@ export function createContinuousProjectionResolver(
     return createContinuousProjectionResolver(undefined, fromMode, 1.0, r0, latitude, lstDeg);
   }
 
-  // 1. Stereographic <-> Horizon (Continuous Latitude Rotation on S^2)
+  // 1. Stereographic <-> Horizon (Continuous Latitude Rotation on S^2 + Coordinate Alignment & Phase Bridge)
   if (
     (fromMode === 'stereographic' && targetMode === 'horizon') ||
     (fromMode === 'horizon' && targetMode === 'stereographic')
   ) {
     const isToHorizon = targetMode === 'horizon';
-    const currentT = isToHorizon ? t : 1 - t;
+    const currentT = isToHorizon ? t : 1 - t; // 0.0 = Stereographic, 1.0 = Horizon
     const effLat = 90 - (90 - latitude) * currentT;
     const effLst = lstDeg * currentT;
+
+    // Smooth C1 Hermite blend weight for coordinate phase bridge
+    const w = currentT * currentT * (3 - 2 * currentT);
+
     return (p3d: Vector3D) => {
       const { raDeg, decDeg } = cartesian3DToEquatorial(p3d);
       const horiz = equatorialToHorizontal(raDeg, decDeg, effLat, effLst);
-      return projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
+      const pHoriz = projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
+      const pStereo = projectStereographicConformal(p3d, r0);
+
+      return {
+        x: w * pHoriz.x + (1 - w) * pStereo.x,
+        y: w * pHoriz.y + (1 - w) * pStereo.y
+      };
     };
   }
 

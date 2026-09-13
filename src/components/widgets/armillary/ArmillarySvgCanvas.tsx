@@ -147,13 +147,25 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
     return `${-half} ${-half} ${2 * half} ${2 * half}`;
   }, [zoom]);
 
-  // Wheel zoom handler isolated to 3D Orbit view
-  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
-    if (!isOrbital || morphLambda > 0.05) return;
-    e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    setZoom((prev) => Math.min(3.5, Math.max(0.75, parseFloat((prev * zoomFactor).toFixed(2)))));
-  };
+  // Native non-passive wheel zoom listener isolated to 3D Orbit view
+  // (Prevents browser from falling back to page scroll due to passive React synthetic events)
+  useEffect(() => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      if (!isOrbital || morphLambda > 0.05) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      setZoom((prev) => Math.min(3.5, Math.max(0.75, parseFloat((prev * zoomFactor).toFixed(2)))));
+    };
+
+    svgEl.addEventListener('wheel', handleNativeWheel, { passive: false });
+    return () => {
+      svgEl.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [isOrbital, morphLambda]);
 
   // --- Mouse / Pointer Drag for 3D Camera, Free Rete, and Alidade ---
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -290,7 +302,6 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         ref={svgRef}
         viewBox={viewBoxStr}
         style={{ touchAction: 'none' }}
-        onWheel={handleWheel}
         onDragStart={(e) => {
           e.preventDefault();
           e.stopPropagation();

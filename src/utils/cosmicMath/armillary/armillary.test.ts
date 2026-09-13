@@ -296,12 +296,35 @@ describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
       expect(projEnd.x).toBeCloseTo(rojas2D.x, 3);
       expect(projEnd.y).toBeCloseTo(rojas2D.y, 3);
 
-      // Verify smooth intermediate projection between stereographic and horizon
-      const projStereoToHorizon = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.5, 100, 47.06, 0);
-      expect(typeof projStereoToHorizon.x).toBe('number');
-      expect(typeof projStereoToHorizon.y).toBe('number');
-      expect(isNaN(projStereoToHorizon.x)).toBe(false);
-      expect(isNaN(projStereoToHorizon.y)).toBe(false);
+      // Verify smooth intermediate projection & zero endpoint snap between stereographic and horizon
+      const horizon2D = computeProjection2D(p3d, 'horizon', 100, 47.06, 0);
+
+      // Stereographic -> Horizon
+      const projStereoStart = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.0, 100, 47.06, 0);
+      const projStereoMid = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.5, 100, 47.06, 0);
+      const projStereoNearEnd = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.999, 100, 47.06, 0);
+      const projStereoEnd = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 1.0, 100, 47.06, 0);
+
+      expect(projStereoStart.x).toBeCloseTo(stereo2D.x, 3);
+      expect(projStereoStart.y).toBeCloseTo(stereo2D.y, 3);
+      expect(typeof projStereoMid.x).toBe('number');
+      expect(typeof projStereoMid.y).toBe('number');
+      expect(projStereoNearEnd.x).toBeCloseTo(horizon2D.x, 1);
+      expect(projStereoNearEnd.y).toBeCloseTo(horizon2D.y, 1);
+      expect(projStereoEnd.x).toBeCloseTo(horizon2D.x, 3);
+      expect(projStereoEnd.y).toBeCloseTo(horizon2D.y, 3);
+
+      // Horizon -> Stereographic (Zero 90° snap at t -> 1.0)
+      const projHorizonStart = computeContinuousProjection2D(p3d, 'horizon', 'stereographic', 0.0, 100, 47.06, 0);
+      const projHorizonNearEnd = computeContinuousProjection2D(p3d, 'horizon', 'stereographic', 0.999, 100, 47.06, 0);
+      const projHorizonEnd = computeContinuousProjection2D(p3d, 'horizon', 'stereographic', 1.0, 100, 47.06, 0);
+
+      expect(projHorizonStart.x).toBeCloseTo(horizon2D.x, 3);
+      expect(projHorizonStart.y).toBeCloseTo(horizon2D.y, 3);
+      expect(projHorizonNearEnd.x).toBeCloseTo(stereo2D.x, 1);
+      expect(projHorizonNearEnd.y).toBeCloseTo(stereo2D.y, 1);
+      expect(projHorizonEnd.x).toBeCloseTo(stereo2D.x, 3);
+      expect(projHorizonEnd.y).toBeCloseTo(stereo2D.y, 3);
 
       // Halfway transition between stereographic and rojas
       const modelCross = generateArmillaryModel({
