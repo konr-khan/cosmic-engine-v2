@@ -14,7 +14,7 @@ import {
   ASTRONOMICAL_UNIT_KM, 
   EARTH_RADIUS_WGS84_KM,
   SUN_RADIUS_KM,
-  EARTH_AXIAL_OBLIQUITY_J2000_DEG, 
+  calculateEarthObliquity, 
   EARTH_ECCENTRICITY_TRUE, 
   EARTH_ECCENTRICITY_EXAGGERATED,
   EARTH_PERIHELION_LONGITUDE_DEG,
@@ -24,7 +24,7 @@ import {
 } from '../astroConstants';
 import { calculateEarthOrbitalPhysics } from '../solar';
 import { calculateLunarPosition } from '../lunar';
-import { calculateEclipseData } from '../eclipse';
+import { calculateEclipseData, calculateNodalPhaseParameters } from '../eclipse';
 import { EARTH_MILESTONES } from '../milestones';
 import { 
   GenerateCosmicSceneParams, 
@@ -71,7 +71,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const lunarPos = calculateLunarPosition(jd);
   const eclipse = calculateEclipseData(jd);
 
-  const obliquityDeg = EARTH_AXIAL_OBLIQUITY_J2000_DEG - 0.0000004 * (jd - J2000_JD);
+  const obliquityDeg = calculateEarthObliquity(jd);
   const obliquityRad = toRadians(obliquityDeg);
 
   const sunLambdaDeg = solarPhysics.lambda ?? solarPhysics.eclipticLongitude ?? 0;
@@ -188,8 +188,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const descNodeLonDeg = lunarPos.descendingNodeLongitude !== undefined
     ? lunarPos.descendingNodeLongitude
     : (((nodeLonDeg + 180) % 360 + 360) % 360);
-  const nodeAngleDeg = ((sunLambdaDeg - nodeLonDeg) % 360 + 360) % 360;
-  const nodeAngleRad = toRadians(nodeAngleDeg);
+  const { nodeAngleDeg, nodeAngleRad, tAsc, tDesc } = calculateNodalPhaseParameters(sunLambdaDeg, nodeLonDeg);
 
   const lunarOrbitalRadiusAU = lunarDistKm / ASTRONOMICAL_UNIT_KM; // ~0.00257 AU
   const lunarVisualRadius = isExag ? 40 : lunarOrbitalRadiusAU;
@@ -228,9 +227,6 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       isAscending: sampleBetaDeg >= 0
     });
   }
-
-  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
 
   const ascendingNodePosition: Vector3D = {
     x: -lunarVisualRadius * Math.cos(tAsc),

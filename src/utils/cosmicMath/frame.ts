@@ -10,6 +10,7 @@ import { EphemerisFrame } from '../../types/astronomy';
 import { calculateSolarPosition, calculateDaylightDurationPrecise } from './solar';
 import { calculateLunarPosition } from './lunar';
 import { calculateGMST, calculateLST } from './core';
+import { calculateSubPointLon } from './terminatorTracks';
 
 let lastJd: JulianDate | number | null = null;
 let lastLat: Latitude | number | null = null;
@@ -69,8 +70,8 @@ export const calculateEphemerisFrame = (
   const solarNoon = 12 - (longitude / 15) - (eotCorrection / 60);
   const dayLength = calculateDaylightDurationPrecise(latitude, solarPos.declination, CONFIG.SOLAR.TWILIGHT.OFFICIAL);
 
-  const subsolarLon = ((((solarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
-  const sublunarLon = ((((lunarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
+  const subsolarLon = calculateSubPointLon(solarPos.rightAscension, gmst);
+  const sublunarLon = calculateSubPointLon(lunarPos.rightAscension, gmst);
 
   const frame: EphemerisFrame = {
     julianDate: jd,

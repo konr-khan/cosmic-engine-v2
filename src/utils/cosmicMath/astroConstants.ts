@@ -82,6 +82,20 @@ export const SUN_ANGULAR_DIAMETER_1AU_ARCMIN = 31.986;
 export const EARTH_AXIAL_OBLIQUITY_J2000_DEG: Degrees = asDegrees(23.439281);
 
 /**
+ * Calculates the mean obliquity of the ecliptic for a given Julian Date epoch.
+ * Conforms to IAU standard linear secular variation formula:
+ * ε = ε0 - 0.0000004 * (JD - J2000.0)
+ * (Jean Meeus, Astronomical Algorithms, Chapter 22 / IAU standard).
+ *
+ * @param julianDate - Astronomical Julian Date epoch (defaults to J2000.0)
+ * @returns Earth axial obliquity in degrees
+ */
+export function calculateEarthObliquity(julianDate: JulianDate | number = J2000_JD): Degrees {
+  const jd = Number(julianDate);
+  return asDegrees(Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG) - 0.0000004 * (jd - J2000_JD));
+}
+
+/**
  * Lunar orbital inclination to the ecliptic plane in degrees (5.145°).
  */
 export const MOON_ORBIT_INCLINATION_DEG: Degrees = asDegrees(5.145);

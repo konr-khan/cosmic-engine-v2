@@ -24,6 +24,7 @@ import {
 import { createEulerRotationMatrix } from './transforms';
 import { generateOrbitalSegments } from '../projection';
 import { EARTH_ECCENTRICITY_TRUE, EARTH_ECCENTRICITY_EXAGGERATED } from '../astroConstants';
+import { calculateNodalOrbitalAngles } from '../eclipse';
 
 /** Canonical lunar orbit segment design tokens */
 const LUNAR_NODE_ASC_STROKE = '#38bdf8';
@@ -314,8 +315,7 @@ export function projectGeocentricTransverse(
   };
 
   // 6. Node Markers (where transverse orbital loop crosses horizontal ecliptic plane cy)
-  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
   const ascNodeX = earthX - Math.cos(tAsc) * liveOrbitalRx;
   const descNodeX = earthX - Math.cos(tDesc) * liveOrbitalRx;
 
@@ -439,8 +439,7 @@ export function projectGeocentricAxial(
   ].filter(seg => seg.path.length > 0);
 
   // 5. Node Markers (where orbital loop crosses horizontal ecliptic plane cy)
-  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
   const ascNodeX = cx - Math.sin(tAsc) * orbitalRx;
   const descNodeX = cx - Math.sin(tDesc) * orbitalRx;
 

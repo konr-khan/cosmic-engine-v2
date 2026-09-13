@@ -5,7 +5,8 @@ import {
   calculateEarthOrbitalPhysics, 
   getJulianDate, 
   generateOrbitalSegments,
-  toRadians
+  toRadians,
+  calculateNodalOrbitalAngles
 } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
 
@@ -83,8 +84,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   );
 
   // Node Positions where orbital loop crosses horizontal ecliptic plane (Y = 110)
-  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
   const ascNodeX = centerX - (Math.sin(tAsc) * orbitalRx);
   const ascNodeY = centerY;
   const descNodeX = centerX - (Math.sin(tDesc) * orbitalRx);

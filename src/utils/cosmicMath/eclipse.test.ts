@@ -8,6 +8,8 @@ import {
   calculateEclipseData,
   findUpcomingEclipses,
   ECLIPSE_PRESETS,
+  calculateNodalPhaseParameters,
+  calculateNodalOrbitalAngles,
   getJulianDate,
   calculateEarthOrbitalPhysics,
   calculateLunarPosition,
@@ -337,4 +339,44 @@ describe('Cosmic Math: Eclipse Presets & Syzygy Geometry', () => {
     });
   });
 
+  describe('Nodal Alignment & Orbital Phase Parameter Helpers', () => {
+    it('calculates parametric nodal orbital angles (tAsc, tDesc) from nodeAngleRad', () => {
+      // At nodeAngleRad = 0 (node directly behind Earth in sightline)
+      const angles0 = calculateNodalOrbitalAngles(0);
+      expect(angles0.tAsc).toBeCloseTo(0, 5);
+      expect(angles0.tDesc).toBeCloseTo(Math.PI, 5);
+
+      // At nodeAngleRad = pi/2 (node 90° rotated)
+      const angles90 = calculateNodalOrbitalAngles(Math.PI / 2);
+      expect(angles90.tAsc).toBeCloseTo((3 * Math.PI) / 2, 5);
+      expect(angles90.tDesc).toBeCloseTo(Math.PI / 2, 5);
+
+      // Wraps cleanly within [0, 2pi)
+      const anglesWrap = calculateNodalOrbitalAngles(3 * Math.PI);
+      expect(anglesWrap.tAsc).toBeCloseTo(Math.PI, 5);
+      expect(anglesWrap.tDesc).toBeCloseTo(0, 5);
+    });
+
+    it('calculates unified nodal phase parameters from solar and lunar node longitudes', () => {
+      // Sun at 90°, Node at 90° -> Node angle is 0°
+      const resAligned = calculateNodalPhaseParameters(90, 90);
+      expect(Number(resAligned.nodeAngleDeg)).toBeCloseTo(0, 5);
+      expect(resAligned.nodeAngleRad).toBeCloseTo(0, 5);
+      expect(resAligned.tAsc).toBeCloseTo(0, 5);
+      expect(resAligned.tDesc).toBeCloseTo(Math.PI, 5);
+
+      // Sun at 100°, Node at 10° -> Node angle is 90°
+      const res90 = calculateNodalPhaseParameters(100, 10);
+      expect(Number(res90.nodeAngleDeg)).toBeCloseTo(90, 5);
+      expect(res90.nodeAngleRad).toBeCloseTo(Math.PI / 2, 5);
+      expect(res90.tAsc).toBeCloseTo((3 * Math.PI) / 2, 5);
+      expect(res90.tDesc).toBeCloseTo(Math.PI / 2, 5);
+
+      // Wraps negative differences into [0, 360)
+      const resWrap = calculateNodalPhaseParameters(10, 100);
+      expect(Number(resWrap.nodeAngleDeg)).toBeCloseTo(270, 5);
+      expect(resWrap.nodeAngleRad).toBeCloseTo((3 * Math.PI) / 2, 5);
+    });
+  });
 });
+

@@ -105,6 +105,18 @@ export const sanitizeTrackLat = (lat: number): number => {
 };
 
 /**
+ * Calculates the sub-point geographic longitude [-180..180] for a celestial object
+ * given its Right Ascension and Greenwich Mean Sidereal Time (GMST) in degrees.
+ *
+ * @param raDeg - Right Ascension in degrees
+ * @param gmstDeg - Greenwich Mean Sidereal Time in degrees
+ * @returns Geographic longitude in degrees [-180..180]
+ */
+export const calculateSubPointLon = (raDeg: number, gmstDeg: number): number => {
+  return ((((raDeg - gmstDeg + 540) % 360) + 360) % 360) - 180;
+};
+
+/**
  * Calculates instantaneous subsolar point (lat, lon) on Earth where the Sun is at zenith (+90°).
  *
  * @param julianDate - Julian Date epoch
@@ -116,7 +128,7 @@ export const calculateSubsolarPoint = (
   const safeJD = sanitizeTrackJD(julianDate);
   const solarPos = calculateSolarPosition(safeJD);
   const gmst = calculateGMST(safeJD);
-  const lon = ((((solarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
+  const lon = calculateSubPointLon(solarPos.rightAscension, gmst);
   return {
     lat: clamp(Number(solarPos.declination), -90, 90),
     lon: sanitizeTrackLon(lon)
@@ -135,7 +147,7 @@ export const calculateSublunarPoint = (
   const safeJD = sanitizeTrackJD(julianDate);
   const lunarPos = calculateLunarPosition(safeJD);
   const gmst = calculateGMST(safeJD);
-  const lon = ((((lunarPos.rightAscension - gmst + 540) % 360) + 360) % 360) - 180;
+  const lon = calculateSubPointLon(lunarPos.rightAscension, gmst);
   return {
     lat: clamp(Number(lunarPos.declination), -90, 90),
     lon: sanitizeTrackLon(lon)

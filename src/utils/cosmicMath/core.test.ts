@@ -38,6 +38,7 @@ import {
   SOLAR_IRRADIANCE_1AU_WM2,
   SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
   EARTH_AXIAL_OBLIQUITY_J2000_DEG,
+  calculateEarthObliquity,
   LUNAR_PERIGEE_THRESHOLD_KM,
   LUNAR_APOGEE_THRESHOLD_KM,
   calculateGMST,
@@ -444,6 +445,14 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
 
     it('consistently relates Moon radius and diameter', () => {
       expect(MOON_DIAMETER_KM).toBe(MOON_RADIUS_MEAN_KM * 2 - 0.8); // 3474 vs 2*1737.4 = 3474.8 (standard truncated diameter)
+    });
+
+    it('calculates mean Earth obliquity with linear secular variation (Meeus Ch. 22)', () => {
+      expect(calculateEarthObliquity(J2000_JD)).toBeCloseTo(23.439281, 6);
+      expect(calculateEarthObliquity()).toBeCloseTo(23.439281, 6);
+      // 1 Julian century (36525 days): drift = -0.0000004 * 36525 = -0.01461°
+      const jd100y = J2000_JD + 36525;
+      expect(calculateEarthObliquity(jd100y)).toBeCloseTo(23.439281 - 0.01461, 5);
     });
   });
 

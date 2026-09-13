@@ -10,8 +10,52 @@ import {
 } from './astroConstants';
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
-import { JulianDate, asJulianDate } from '../../types/units';
+import { JulianDate, asJulianDate, Degrees, Radians, asDegrees } from '../../types/units';
 import { EclipseType } from '../../types/astronomy';
+
+export interface NodalPhaseParameters {
+  nodeAngleDeg: Degrees;
+  nodeAngleRad: Radians;
+  tAsc: number;
+  tDesc: number;
+}
+
+/**
+ * Calculates the ascending and descending parametric orbital angles (tAsc, tDesc)
+ * from a resolved nodal alignment angle in radians.
+ *
+ * @param nodeAngleRad - Nodal alignment angle in radians
+ * @returns Parametric orbital angles tAsc and tDesc in radians [0, 2pi)
+ */
+export function calculateNodalOrbitalAngles(nodeAngleRad: Radians | number): { tAsc: number; tDesc: number } {
+  const rad = Number(nodeAngleRad);
+  const tAsc = (-rad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const tDesc = ((Math.PI - rad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return { tAsc, tDesc };
+}
+
+/**
+ * Calculates the annual seasonal node alignment angle and the ascending/descending
+ * orbital phase parameter angles (tAsc, tDesc) for live syzygy and nodal plane projection.
+ *
+ * @param sunLambdaDeg - Sun ecliptic longitude in degrees
+ * @param nodeLonDeg - Moon ascending node longitude in degrees
+ * @returns Nodal alignment angle in degrees/radians, and parametric orbital positions tAsc and tDesc
+ */
+export function calculateNodalPhaseParameters(
+  sunLambdaDeg: number,
+  nodeLonDeg: number
+): NodalPhaseParameters {
+  const nodeAngleDeg = ((sunLambdaDeg - nodeLonDeg) % 360 + 360) % 360;
+  const nodeAngleRad = toRadians(nodeAngleDeg);
+  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
+  return {
+    nodeAngleDeg: asDegrees(nodeAngleDeg),
+    nodeAngleRad,
+    tAsc,
+    tDesc
+  };
+}
 
 export interface EclipseCalculationResult {
   type: EclipseType;
@@ -172,7 +216,7 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
     elongation: parseFloat(elongation.toFixed(2)),
     phaseValue: parseFloat(phaseValue.toFixed(3)),
     apparentRadiusRatio: sSun > 0 ? parseFloat((sMoon / sSun).toFixed(4)) : undefined,
-    nodeAngleDeg: parseFloat((((sunLambda - (lunarPos.nodeLongitude ?? 0)) % 360 + 360) % 360).toFixed(2)),
+    nodeAngleDeg: parseFloat(Number(calculateNodalPhaseParameters(sunLambda, lunarPos.nodeLongitude ?? 0).nodeAngleDeg).toFixed(2)),
     argumentOfLatitude,
     isAscendingHemisphere,
     nodeLongitude,

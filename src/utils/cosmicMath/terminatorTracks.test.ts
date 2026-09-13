@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateSubsolarPoint,
   calculateSublunarPoint,
+  calculateSubPointLon,
   projectMapX,
   projectMapY,
   buildSeamSafeSvgPath,
@@ -30,6 +31,17 @@ describe('terminatorTracks - Diurnal Ground Tracks & Lunar Node Engine', () => {
     expect(sublunar.lat).toBeLessThanOrEqual(29);
     expect(sublunar.lon).toBeGreaterThanOrEqual(-180);
     expect(sublunar.lon).toBeLessThanOrEqual(180);
+  });
+
+  it('calculates geographic sub-point longitude within [-180..180]', () => {
+    // When RA == GMST, sub-point is on Prime Meridian (0°)
+    expect(calculateSubPointLon(100, 100)).toBeCloseTo(0, 5);
+    // When RA is 90° East of GMST, lon is +90°
+    expect(calculateSubPointLon(190, 100)).toBeCloseTo(90, 5);
+    // When RA is 90° West of GMST, lon is -90°
+    expect(calculateSubPointLon(10, 100)).toBeCloseTo(-90, 5);
+    // Wraps cleanly at +/- 180° antimeridian (-180° is canonical boundary)
+    expect(calculateSubPointLon(280, 100)).toBeCloseTo(-180, 5);
   });
 
   it('projects geographic coordinates onto observer-centered equirectangular map', () => {

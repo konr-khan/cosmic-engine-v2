@@ -1,6 +1,6 @@
 import React from 'react';
 import { EclipseData } from '../../../types';
-import { generateOrbitalSegments, toRadians } from '../../../utils/cosmicMath';
+import { generateOrbitalSegments, toRadians, calculateNodalOrbitalAngles } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
 
 export interface LiveSyzygyViewProps {
@@ -46,8 +46,7 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
     72
   );
 
-  const tAsc = (-nodeAngleRad % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const tDesc = ((Math.PI - nodeAngleRad) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
   const ascNodeX = liveEarthX - (Math.cos(tAsc) * liveOrbitalRx);
   const ascNodeY = liveEarthY;
   const descNodeX = liveEarthX - (Math.cos(tDesc) * liveOrbitalRx);

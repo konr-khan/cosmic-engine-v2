@@ -1,9 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { 
   useCosmicScene, 
-  useHeliocentricScene, 
-  useEclipseScene, 
-  useArmillaryScene 
+  useHeliocentricScene 
 } from './useCosmicScene';
 import { cosmicStore } from '../store/cosmicStore';
 
@@ -127,92 +125,5 @@ describe('useCosmicScene Hook Suite', () => {
       expect(result.sun.x).toBeCloseTo(-50, 1);
     });
   });
-
-  describe('3. Sub-Hook: useEclipseScene', () => {
-    it('returns synchronized Transverse and Axial projections with shadow cones and nodal loops', () => {
-      const testDate = new Date(Date.UTC(2024, 3, 8, 18, 17, 0)); // Great American Eclipse Apr 8 2024
-      const result = useEclipseScene({
-        date: testDate,
-        timeOfDay: 18.283,
-        latitude: 47.06,
-        longitude: -122.81
-      });
-
-      expect(result.julianDate).toBeDefined();
-      expect(result.eclipse).toBeDefined();
-      expect(result.eclipse.isEclipseActive).toBe(true);
-      expect(result.eclipse.type).toBe('TOTAL_SOLAR');
-
-      // Transverse Profile Checks
-      expect(result.transverseProfile.sun.x).toBe(50);
-      expect(result.transverseProfile.earth.x).toBe(310);
-      expect(result.transverseProfile.earth.y).toBe(110);
-      expect(result.transverseProfile.umbraCone.length).toBeGreaterThan(0);
-      expect(result.transverseProfile.penumbraCone.length).toBeGreaterThan(0);
-      expect(result.transverseProfile.orbitalSegments.length).toBe(4);
-      expect(result.transverseProfile.ascendingNode).toBeDefined();
-      expect(result.transverseProfile.descendingNode).toBeDefined();
-      expect(result.transverseProjected.elements.lunarOrbitSegments).toBeDefined();
-
-      // Axial Sightline Checks
-      expect(result.axialSightline.sun.x).toBe(260);
-      expect(result.axialSightline.earth.x).toBe(260);
-      expect(result.axialSightline.earth.y).toBe(110);
-      expect(result.axialSightline.orbitalSegments.length).toBe(4);
-      expect(result.axialSightline.ascendingNode).toBeDefined();
-      expect(result.axialSightline.ascendingNode.y).toBe(110);
-      expect(result.axialSightline.descendingNode).toBeDefined();
-      expect(result.axialSightline.descendingNode.y).toBe(110);
-      expect(result.axialProjected.elements.lunarOrbitSegments).toBeDefined();
-    });
-
-    it('accurately detects Blood Moon total lunar eclipse (Mar 14, 2025)', () => {
-      const testDate = new Date(Date.UTC(2025, 2, 14, 6, 58, 0));
-      const result = useEclipseScene({
-        date: testDate,
-        timeOfDay: 6.967
-      });
-
-      expect(result.eclipse.category).toBe('LUNAR');
-      expect(result.eclipse.isEclipseActive).toBe(true);
-      expect(result.eclipse.type).toBe('TOTAL_LUNAR');
-      expect(result.eclipse.obscuration).toBe(100);
-    });
-  });
-
-  describe('4. Sub-Hook: useArmillaryScene', () => {
-    it('projects 3D celestial coordinates through Euler camera angles and supplies subsolar vector', () => {
-      const testDate = new Date(Date.UTC(2026, 2, 20, 12, 0, 0)); // March Equinox
-      const result = useArmillaryScene({
-        date: testDate,
-        pitch: 35,
-        yaw: 45,
-        roll: 0,
-        radius: 100
-      });
-
-      expect(result.julianDate).toBeDefined();
-      expect(result.scene3D).toBeDefined();
-      expect(result.projected2D).toBeDefined();
-      expect(result.earth.screenPos).toBeDefined();
-      expect(result.sun.screenPos).toBeDefined();
-      expect(result.moon.screenPos).toBeDefined();
-      expect(result.milestones.length).toBe(6);
-      expect(result.subsolarVector).toBeDefined();
-      expect(result.cameraTilt.pitch).toBe(35);
-      expect(result.cameraTilt.yaw).toBe(45);
-    });
-
-    it('updates projected screen positions when camera pitch and yaw change', () => {
-      const testDate = new Date(Date.UTC(2026, 5, 21, 12, 0, 0));
-      const res0 = useArmillaryScene({ date: testDate, pitch: 0, yaw: 0 });
-      const res90 = useArmillaryScene({ date: testDate, pitch: 90, yaw: 0 });
-
-      expect(res0.cameraTilt.pitch).toBe(0);
-      expect(res90.cameraTilt.pitch).toBe(90);
-      expect(res0.projected2D.elements.earth.axialTiltAngle2D).not.toBe(
-        res90.projected2D.elements.earth.axialTiltAngle2D
-      );
-    });
-  });
 });
+

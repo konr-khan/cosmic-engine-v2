@@ -6,7 +6,7 @@ import {
   EARTH_RADIUS_MEAN_KM,
   MOON_RADIUS_MEAN_KM,
   MOON_MEAN_DISTANCE_KM,
-  EARTH_AXIAL_OBLIQUITY_J2000_DEG,
+  calculateEarthObliquity,
   LUNAR_PERIGEE_THRESHOLD_KM, 
   LUNAR_APOGEE_THRESHOLD_KM,
   DRACONIC_PERIOD_DAYS
@@ -69,7 +69,7 @@ export const calculateLunarPosition = (julianDate: JulianDate | number): LunarPo
     - 2956 * Math.cos(2 * dRad)
     - 569 * Math.cos(2 * mpRad);
 
-  const epsilon = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG) - 0.0000004 * (julianDate - J2000_JD);
+  const epsilon = calculateEarthObliquity(julianDate);
   const epsRad = toRadians(epsilon);
   const lRad = toRadians(lambda);
   const bRad = toRadians(beta);
