@@ -104,6 +104,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F50 | Principles & Design System Alignment Pass | Reconciled codebase against `docs/DESIGN_SYSTEM.md` and `docs/MATH_SPEC.md`: subsolar/sublunar ground track longitude $\lambda_{\text{geo}} = \operatorname{wrap180}(\alpha - \text{GMST})$, 3D scene involution matrix $\mathbf{M}_{\text{scene}\leftrightarrow\text{arm}}$, unified $520\times 220$ dual-pane eclipse canvas parity, axial sightline negative cosine depth convention, warm gold glowing diurnal chords (`#f59e0b`), Armillary milestone tokens ($r=4.5\to 7\text{px}$), and complete 3-tier twilight strata | M23 | ADR-0023 |
 | F51 | Sky & Moon Dome Container/Presenter Hooks & Shared UI Primitives | Extracted calculation cascades into `useMoonElevationMath` & `useSunElevationMath`; unified shared presentation primitives (`SkyDomeFooter`, `DraconicTimelineRail`, `LunarPhaseDisc`), cutting dome monoliths by 40–62% with zero visual divergence | M25 | ADR-0025 |
 | F52 | Ephemeris Worker Fallback Hardening & Parameter Boundary Gatekeepers | Defensive parameter clamping gatekeepers (`workerSanitizers.ts`), failsafe callback delivery invariant in `EphemerisWorkerManager`, and synchronous fallback exception isolation across hooks | M26 | ADR-0026 |
+| F53 | 24-Hour Diurnal Ground Tracks & Antimeridian Seam Interpolation | 24-hour diurnal subsolar & sublunar ground tracks on Terminator Map (`terminatorTracks.ts`, `TerminatorMap.tsx`), independent top-rail toggles (`[☀️ Sun]`, `[🌙 Moon]`), boundary-safe antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons ($\Omega / \mho$), forward-weighted temporal dash conventions, and proximity-gated hover HUD telemetry | M27 | ADR-0027 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
@@ -134,6 +135,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M24 | Concurrency Hardening, Domain Math Purity, Visual Polish & Component Test Expansion | Ephemeris memoization, date jump cache invalidation, todayTokens extraction, sync parallactic angle, dashboardPresets, lruCache, expanded component tests (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`, `lruCache.test.ts`), ADR-0024, 648 tests across 43 suites | M1-M23 | DONE |
 | M25 | Sky & Moon Dome Container/Presenter Refactoring & Component Primitives | `useMoonElevationMath.ts`, `useSunElevationMath.ts`, `SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`, `SkyDomeHooksAndPrimitives.test.tsx`, ADR-0025, 657 tests across 44 suites | M1-M24 | DONE |
 | M26 | Web Worker Fallback Hardening, Parameter Gatekeepers & Error Boundaries | `workerSanitizers.ts`, `workerSanitizers.test.ts`, `ephemerisWorkerManager.ts`, `useEphemerisWorker.ts`, `ephemerisWorker.ts`, ADR-0026, 679 tests across 45 suites | M1-M25 | DONE |
+| M27 | Terminator Map Diurnal Ground Tracks, Antimeridian Seam Interpolation & Gated Lunar Nodal Kinematics | `terminatorTracks.ts`, `terminatorTracks.test.ts`, `TerminatorMap.tsx`, `TerminatorMap.test.tsx`, ADR-0027, 690 tests across 46 suites | M1-M26 | DONE |
 
 ## Interface Contracts & Domain Models
 

@@ -383,3 +383,37 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
     - *Column 3*: Winter Solstice Peak / 30-Day Monthly Range.
     - *Column 4*: Hoisted `[Std | Twilight]` / `[Std | ☊ Nodes]` segmented toggle control.
   - **Lower Meridian Viewport (`hideFooter={true}`)**: Strips all redundant bottom bars, rendering a borderless flush bottom dome that visually anchors directly to the card floor.
+
+---
+
+## 8. Terminator Map Diurnal Ground Tracks & Nodal Encodings
+
+The **Terminator Map** (`TerminatorMap.tsx`) features dynamic 24-hour diurnal ground tracks ($[-12\text{h}, +12\text{h}]$) for the Subsolar and Sublunar points with forward-weighted temporal stroke encodings and proximity-gated nodal beacons:
+
+* **Top-Rail Independent Layer Toggles**:
+  - Twin glassmorphic pill buttons placed in the top information bar:
+    - `[ ☀️ Sun Track ]` and `[ 🌙 Moon Track ]`.
+  - **Inactive State**: Muted slate (`bg-slate-900/60 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-300`).
+  - **Sun Active**: Warm amber glow (`bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10`).
+  - **Moon Active**: Cool cyan glow (`bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm shadow-cyan-500/10`).
+  - **Default**: Both default to `OFF` to maintain a clean day/night baseline view upon initial mount.
+
+* **Forward-Weighted Temporal Vector Encodings**:
+  - Designed to emphasize physical forward motion while keeping the historical wake subtle:
+  - **Subsolar Ground Track (`#fbbf24`)**:
+    - *Past 12h (Historical Wake)*: Fine dotted amber (`stroke="#fbbf24"`, `strokeWidth="1.0"`, `strokeDasharray="1 3"`, `strokeOpacity="0.30"`).
+    - *Future 12h (Forward Trajectory)*: Bold dashed amber (`stroke="#fbbf24"`, `strokeWidth="1.0"`, `strokeDasharray="4 3"`, `strokeOpacity="0.55"`).
+  - **Sublunar Ground Track (`#38bdf8` / `#818cf8`)**:
+    - *Past 12h (Historical Wake)*: Fine dotted cyan (`stroke="#38bdf8"`, `strokeWidth="1.0"`, `strokeDasharray="1 3"`, `strokeOpacity="0.30"`).
+    - *Future 12h (Forward Trajectory)*: Bold dashed indigo/cyan (`stroke="#818cf8"`, `strokeWidth="1.1"`, `strokeDasharray="3.5 2.5"`, `strokeOpacity="0.55"`).
+
+* **Active Ecliptic Nodal Crossing Beacons ($\Omega$ / $\mho$)**:
+  - When a true ecliptic crossing falls strictly within $[-12\text{h}, +12\text{h}]$:
+    - **Ascending Node ($\Omega$)**: Outer pulsing glow halo (`r="7px"`, `fill="#06b6d4"`, `fillOpacity="0.25"`, `className="animate-pulse"`), inner core (`r="3px"`, `fill="#22d3ee"`, `stroke="#ffffff"`, `strokeWidth="0.75"`), text label `text-[8px] font-mono font-bold fill-cyan-300` with native `<title>` tooltip.
+    - **Descending Node ($\mho$)**: Outer pulsing glow halo (`r="7px"`, `fill="#f43f5e"`, `fillOpacity="0.25"`, `className="animate-pulse"`), inner core (`r="3px"`, `fill="#fb7185"`, `stroke="#ffffff"`, `strokeWidth="0.75"`), text label `text-[8px] font-mono font-bold fill-rose-300` with native `<title>` tooltip.
+  - **Bottom Legend Indicator**: Displays `☊ Active Node` or `☋ Active Node` in the map footer when `showMoonTrack` is active and an active crossing occurs today.
+
+* **Hover HUD Gated Telemetry**:
+  - When hovering over the Moon disc, surfaces an unobtrusive single-line badge:
+    `bg-indigo-950/80 border border-indigo-500/30 text-indigo-200 text-[9px] font-mono px-2 py-1 rounded`
+  - Displayed *strictly* when the Moon is within $\pm 24\text{h}$ of a node ($|\Delta t| \le 1.0\text{ day}$); otherwise, completely suppressed.

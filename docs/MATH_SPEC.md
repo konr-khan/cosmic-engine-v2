@@ -1591,3 +1591,89 @@ W(z) = \frac{W_0}{z}, \quad H(z) = \frac{H_0}{z}
 \]
 This preserves the origin $(0, 0)$ at the canvas center while providing continuous zooming across 3D heliocentric orbits without altering SVG vertex coordinates or hit-target geometries.
 
+---
+
+## 14. Diurnal Celestial Ground Tracks, Antimeridian Seam Interpolation & Gated Lunar Nodes
+
+### A. Instantaneous Subsolar & Sublunar Geographic Coordinates (`terminatorTracks.ts`)
+
+For any astronomical Julian Date epoch $\text{JD}$, the instantaneous position on Earth's surface where a celestial body (Sun or Moon) is at local zenith ($+90^\circ$ topocentric altitude) is defined by its geographic coordinates $(\lambda_{\text{geo}}, \phi_{\text{geo}})$:
+
+1. **Subsolar Coordinates**:
+   Given solar right ascension $\alpha_\odot$, declination $\delta_\odot$, and Greenwich Mean Sidereal Time $\text{GMST}(\text{JD})$:
+   \[
+   \lambda_{\odot, \text{geo}} = \operatorname{wrap180}(\alpha_\odot - \text{GMST}) = \left( ((\alpha_\odot - \text{GMST} + 540^\circ) \pmod{360^\circ}) + 360^\circ \right) \pmod{360^\circ} - 180^\circ
+   \]
+   \[
+   \phi_{\odot, \text{geo}} = \delta_\odot
+   \]
+
+2. **Sublunar Coordinates**:
+   Given lunar right ascension $\alpha_{\text{moon}}$, declination $\delta_{\text{moon}}$, and $\text{GMST}(\text{JD})$:
+   \[
+   \lambda_{\text{moon}, \text{geo}} = \operatorname{wrap180}(\alpha_{\text{moon}} - \text{GMST}) = \left( ((\alpha_{\text{moon}} - \text{GMST} + 540^\circ) \pmod{360^\circ}) + 360^\circ \right) \pmod{360^\circ} - 180^\circ
+   \]
+   \[
+   \phi_{\text{moon}, \text{geo}} = \delta_{\text{moon}}
+   \]
+
+### B. Observer-Centered Equirectangular Projection
+
+The Terminator Map renders Earth on an equirectangular canvas ($360 \times 180$ user units) dynamically centered on observer longitude $\lambda_{\text{observer}}$:
+\[
+X = ((\lambda_{\text{geo}} - \lambda_{\text{observer}} + 180^\circ + 360^\circ) \pmod{360^\circ})
+\]
+\[
+Y = 90^\circ - \phi_{\text{geo}}
+\]
+- When $\lambda_{\text{geo}} = \lambda_{\text{observer}}$, $X = 180$ (Prime Center).
+- North Pole ($\phi = +90^\circ$) maps to $Y = 0$; Equator ($\phi = 0^\circ$) maps to $Y = 90$; South Pole ($\phi = -90^\circ$) maps to $Y = 180$.
+
+### C. 24-Hour Diurnal Trajectory Sampling & Westward Apparent Drift
+
+For central active epoch $\text{JD}_0$, the 24-hour diurnal ground track samples $N = 49$ equidistant epochs across the centered temporal interval $\Delta t \in [-12\text{h}, +12\text{h}]$ with step size $h = 0.5\text{h}$ (30 minutes):
+\[
+\text{JD}_i = \text{JD}_0 + \frac{-12.0 + i \times 0.5}{24.0}, \quad i \in \{0, 1, \dots, 48\}
+\]
+- **Solar Sweep**: Because Earth rotates at $15^\circ/\text{hour}$ and the Sun's orbital drift is $\sim 0.9856^\circ/\text{day}$, the Sun's ground track sweeps westward at:
+  \[
+  \dot{\lambda}_\odot \approx -15.0^\circ/\text{hour}
+  \]
+  forming a nearly horizontal declination band at $\phi = \delta_\odot$.
+- **Lunar Sweep**: Accounting for Earth's rotation ($15^\circ/\text{h}$) and the Moon's prograde orbital motion ($\approx 13.176^\circ/\text{day} \approx 0.549^\circ/\text{h}$), the sublunar point sweeps westward at:
+  \[
+  \dot{\lambda}_{\text{moon}} \approx -(15.0 - 0.549)^\circ/\text{h} \approx -14.451^\circ/\text{hour}
+  \]
+  completing one full Earth circuit in $T_{\text{lunar day}} \approx 24.84\text{ hours}$. Because lunar declination changes rapidly (up to $\sim 5^\circ/\text{day}$), its 24-hour ground track forms an inclined sinusoidal wave.
+
+### D. Antimeridian Seam Boundary Interpolation (`buildSeamSafeSvgPath`)
+
+When sequential points $P_{i-1}(X_{i-1}, Y_{i-1})$ and $P_i(X_i, Y_i)$ cross the map border ($X = 0 \leftrightarrow 360$), $|\Delta X| = |X_i - X_{i-1}| > 180^\circ$. To eliminate horizontal wrapping streak lines, the boundary intersection $Y_{\text{edge}}$ is analytically interpolated:
+
+1. **Westward Boundary Wrap ($X_{i-1} \to 0, X_i \to 360$)**:
+   The track crosses the left edge ($X = 0$) and re-enters on the right edge ($X = 360$):
+   \[
+   f = \frac{X_{i-1}}{X_{i-1} + (360 - X_i)}
+   \]
+   \[
+   Y_{\text{edge}} = Y_{i-1} + f \cdot (Y_i - Y_{i-1})
+   \]
+   SVG command sequence: `L 0 Y_edge M 360 Y_edge L X_i Y_i`.
+
+2. **Eastward Boundary Wrap ($X_{i-1} \to 360, X_i \to 0$)**:
+   The track crosses the right edge ($X = 360$) and re-enters on the left edge ($X = 0$):
+   \[
+   f = \frac{360 - X_{i-1}}{(360 - X_{i-1}) + X_i}
+   \]
+   \[
+   Y_{\text{edge}} = Y_{i-1} + f \cdot (Y_i - Y_{i-1})
+   \]
+   SVG command sequence: `L 360 Y_edge M 0 Y_edge L X_i Y_i`.
+
+### E. Gated True Ecliptic Nodal Crossing Detection (`findActiveNodalCrossing`)
+
+Using the Meeus Chapter 47 Newton-Raphson crossing solver `calculateTrueLunarNodeEvents`:
+1. Crossings within $[-12\text{h}, +12\text{h}]$ ($|\Delta \text{JD}| \le 0.5\text{ days}$) are identified.
+2. If an active crossing occurs, its exact coordinates $(X_{\text{node}}, Y_{\text{node}})$ are evaluated at $\text{JD}_{\text{crossing}}$ and rendered on the lunar track with symbol $\Omega$ (Ascending, $\beta = 0^\circ, \dot{\beta} > 0$) or $\mho$ (Descending, $\beta = 0^\circ, \dot{\beta} < 0$).
+3. **Hover HUD Proximity Gate**: Telemetry is strictly suppressed when the Moon is $> 1.0\text{ day}$ away from the nearest node, preventing visual clutter during off-node periods.
+
