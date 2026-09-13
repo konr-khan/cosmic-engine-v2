@@ -16,21 +16,25 @@ export function calculateAlmucantarCircle(altDeg: Degrees | number, latitude: La
   const cosAlt = Math.cos(altRad);
 
   const denom = sinLat + sinAlt;
-  if (Math.abs(denom) < 1e-6) {
+  const maxRadius = r0 * 25; // 2500px finite limit preventing SVG GPU clipping issues
+  if (Math.abs(denom) < 1e-4) {
     return {
       altitude: asDegrees(altDeg),
       centerY: 0,
-      radius: r0 * 10,
+      radius: maxRadius,
       isHorizon: Math.abs(altDeg) < 0.1
     };
   }
 
-  const centerY = r0 * (cosLat / denom);
-  const radius = Math.abs(r0 * (cosAlt / denom));
+  const rawCenterY = r0 * (cosLat / denom);
+  const rawRadius = Math.abs(r0 * (cosAlt / denom));
+
+  const centerY = clamp(rawCenterY, -maxRadius, maxRadius);
+  const radius = clamp(rawRadius, 0.1, maxRadius);
 
   return {
     altitude: asDegrees(altDeg),
-    centerY: parseFloat(centerY.toFixed(2)),
+    centerY: parseFloat((Object.is(centerY, -0) ? 0 : centerY).toFixed(2)),
     radius: parseFloat(radius.toFixed(2)),
     isHorizon: Math.abs(altDeg) < 0.1
   };
@@ -100,6 +104,7 @@ export function calculatePlanetaryHour(
   sunset: HoursDecimal,
   dayOfWeek: number // 0 = Sunday, 1 = Monday, ... 6 = Saturday
 ): { hourNumber: number; isDay: boolean; rulingPlanet: string; label: string; progressPercent: number } {
+  const curTime = ((currentTime % 24) + 24) % 24;
   let isDay = false;
   let hourNumber = 1;
   let progressPercent = 0;
@@ -112,17 +117,17 @@ export function calculatePlanetaryHour(
   const dayLength = rawDayLength > 0.01 && rawDayLength < 23.99 ? rawDayLength : 12;
   const nightLength = Math.max(0.1, 24 - dayLength);
 
-  if (currentTime >= sunrise && currentTime < sunset) {
+  if (curTime >= sunrise && curTime < sunset) {
     isDay = true;
-    const elapsed = currentTime - sunrise;
-    const fraction = elapsed / dayLength;
+    const elapsed = curTime - sunrise;
+    const fraction = Math.max(0, Math.min(1, elapsed / dayLength));
     const hourFraction = fraction * 12;
     hourNumber = Math.min(12, Math.floor(hourFraction) + 1);
     progressPercent = Math.round((hourFraction - Math.floor(hourFraction)) * 100);
   } else {
     isDay = false;
-    const elapsed = (currentTime - sunset + 24) % 24;
-    const fraction = elapsed / nightLength;
+    const elapsed = (curTime - sunset + 24) % 24;
+    const fraction = Math.max(0, Math.min(1, elapsed / nightLength));
     const hourFraction = fraction * 12;
     hourNumber = Math.min(12, Math.floor(hourFraction) + 1);
     progressPercent = Math.round((hourFraction - Math.floor(hourFraction)) * 100);
@@ -130,7 +135,7 @@ export function calculatePlanetaryHour(
 
   // Chaldean rotation of hours: ruler advances by 1 in Chaldean sequence every unequal hour
   const totalHoursElapsed = isDay ? (hourNumber - 1) : (12 + hourNumber - 1);
-  const currentRulerIndex = (dayRulerIndex + totalHoursElapsed) % 7;
+  const currentRulerIndex = ((dayRulerIndex + totalHoursElapsed) % 7 + 7) % 7;
   const rulingPlanet = CHALDEAN_PLANETS[currentRulerIndex];
 
   const ordinalSuffix = hourNumber === 1 ? '1st' : hourNumber === 2 ? '2nd' : hourNumber === 3 ? '3rd' : `${hourNumber}th`;
@@ -141,7 +146,7 @@ export function calculatePlanetaryHour(
     isDay,
     rulingPlanet,
     label,
-    progressPercent
+    progressPercent: clamp(progressPercent, 0, 100)
   };
 }
 

@@ -1346,4 +1346,139 @@ describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
         }
       });
   });
+
+  // =========================================================================
+  // Phase 1 Mathematical Hardening & Singularity Safeguards
+  // =========================================================================
+  describe('Phase 1 Mathematical Hardening & Singularity Safeguards', () => {
+    // 1. Polar Observers (+/- 90 deg)
+    it('produces finite, valid models for extreme polar observers (North and South Poles)', () => {
+      const poles: Latitude[] = [90 as Latitude, -90 as Latitude, 89.99 as Latitude, -89.99 as Latitude];
+      const modes: ArmillaryProjectionMode[] = ['heliocentric', 'geocentric', 'stereographic', 'rojas', 'horizon'];
+
+      for (const lat of poles) {
+        for (const mode of modes) {
+          const model = generateArmillaryModel({
+            julianDate: 2451545.0,
+            latitude: lat,
+            longitude: 0 as Longitude,
+            timeOfDay: 12 as HoursDecimal,
+            sunRaDeg: 0 as Degrees,
+            sunDecDeg: 0 as Degrees,
+            sunLambdaDeg: 0 as Degrees,
+            moonRaDeg: 90 as Degrees,
+            moonDecDeg: 5 as Degrees,
+            moonLambdaDeg: 90 as Degrees,
+            moonPhase: 0.5,
+            morphLambda: 0.5,
+            projectionMode: mode,
+            cameraPitch: 45,
+            cameraYaw: 45,
+            r0: 100
+          });
+
+          expect(Number.isFinite(model.sun.screenPos.x)).toBe(true);
+          expect(Number.isFinite(model.sun.screenPos.y)).toBe(true);
+          expect(Number.isFinite(model.moon.screenPos.x)).toBe(true);
+          expect(Number.isFinite(model.moon.screenPos.y)).toBe(true);
+          expect(Number.isFinite(model.earth.screenPos.x)).toBe(true);
+          expect(Number.isFinite(model.earth.screenPos.y)).toBe(true);
+          expect(model.rings.length).toBeGreaterThanOrEqual(6);
+
+          for (const ring of model.rings) {
+            expect(ring.fullPathD).not.toContain('NaN');
+            expect(ring.fullPathD).not.toContain('Infinity');
+          }
+        }
+      }
+    });
+
+    // 2. Equatorial Observers (0 deg)
+    it('generates consistent Almucantar circles and horizontal coordinates at the Equator', () => {
+      const almucantars = generateAlmucantars(0 as Latitude, 15, 100);
+      expect(almucantars.length).toBe(6);
+      for (const a of almucantars) {
+        expect(Number.isFinite(a.centerY)).toBe(true);
+        expect(Number.isFinite(a.radius)).toBe(true);
+        expect(a.radius).toBeLessThanOrEqual(2500);
+      }
+    });
+
+    // 3. Southern Hemisphere Almucantar singularity guards
+    it('strictly bounds Almucantar radius and center coordinates in Southern Hemisphere latitudes (alt ~ -lat)', () => {
+      // Testing exact potential zero denominators sin(lat) + sin(alt) = 0
+      const southernLats: Latitude[] = [-30 as Latitude, -45 as Latitude, -60 as Latitude, -15 as Latitude];
+      for (const lat of southernLats) {
+        const matchingAlt = Math.abs(lat);
+        const circle = calculateAlmucantarCircle(matchingAlt, lat, 100);
+        expect(Number.isFinite(circle.radius)).toBe(true);
+        expect(Number.isFinite(circle.centerY)).toBe(true);
+        expect(circle.radius).toBeLessThanOrEqual(2500);
+        expect(Math.abs(circle.centerY)).toBeLessThanOrEqual(2500);
+
+        // Perturbed latitude (near-singularity)
+        const perturbedLat = (lat + 0.001) as Latitude;
+        const perturbedCircle = calculateAlmucantarCircle(matchingAlt, perturbedLat, 100);
+        expect(Number.isFinite(perturbedCircle.radius)).toBe(true);
+        expect(perturbedCircle.radius).toBeLessThanOrEqual(2500);
+      }
+    });
+
+    // 4. Nadir Sinking Boundary Guard in projectTopocentricHorizon
+    it('clamps runaway radial coordinates when celestial beads sink toward Nadir (alt -> -90°)', () => {
+      const r0 = 100;
+      const nadirAlts = [-89.9, -89.99, -90, -120];
+      for (const alt of nadirAlts) {
+        const proj = projectTopocentricHorizon(alt, 45, r0);
+        expect(Number.isFinite(proj.x)).toBe(true);
+        expect(Number.isFinite(proj.y)).toBe(true);
+        expect(Math.abs(proj.x)).toBeLessThanOrEqual(r0 * 10);
+        expect(Math.abs(proj.y)).toBeLessThanOrEqual(r0 * 10);
+      }
+    });
+
+    // 5. Circumpolar & Polar Day/Night Robustness in calculatePlanetaryHour
+    it('reliably solves unequal planetary hours during midnight sun, polar night, and out-of-range hours', () => {
+      // Polar Day (midnight sun: 24h daylight)
+      const polarDay = calculatePlanetaryHour(14 as HoursDecimal, 0 as HoursDecimal, 24 as HoursDecimal, 0);
+      expect(polarDay.isDay).toBe(true);
+      expect(polarDay.hourNumber).toBeGreaterThanOrEqual(1);
+      expect(polarDay.hourNumber).toBeLessThanOrEqual(12);
+      expect(polarDay.progressPercent).toBeGreaterThanOrEqual(0);
+      expect(polarDay.progressPercent).toBeLessThanOrEqual(100);
+
+      // Polar Night (24h darkness)
+      const polarNight = calculatePlanetaryHour(3 as HoursDecimal, 12 as HoursDecimal, 12 as HoursDecimal, 1);
+      expect(polarNight.isDay).toBe(false);
+      expect(polarNight.hourNumber).toBeGreaterThanOrEqual(1);
+      expect(polarNight.hourNumber).toBeLessThanOrEqual(12);
+
+      // Negative hour wrapping (e.g. -5h UTC -> 19h local)
+      const wrappedNeg = calculatePlanetaryHour(-5 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 2);
+      const wrappedEquivalent = calculatePlanetaryHour(19 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 2);
+      expect(wrappedNeg.hourNumber).toBe(wrappedEquivalent.hourNumber);
+      expect(wrappedNeg.isDay).toBe(wrappedEquivalent.isDay);
+      expect(wrappedNeg.rulingPlanet).toBe(wrappedEquivalent.rulingPlanet);
+
+      // Overflow hour wrapping (28h -> 4h)
+      const wrappedOver = calculatePlanetaryHour(28 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 3);
+      const wrappedOverEq = calculatePlanetaryHour(4 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 3);
+      expect(wrappedOver.hourNumber).toBe(wrappedOverEq.hourNumber);
+    });
+
+    // 6. Negative Zero Normalization
+    it('normalizes negative zeroes across equatorial, horizontal, and 2D projections', () => {
+      const eq = cartesian3DToEquatorial({ x: 0, y: 0, z: 0 });
+      expect(Object.is(eq.raDeg, -0)).toBe(false);
+      expect(Object.is(eq.decDeg, -0)).toBe(false);
+
+      const horizZenith = equatorialToHorizontal(0 as Degrees, 90 as Degrees, 90 as Latitude, 0 as Degrees);
+      expect(Object.is(horizZenith.altDeg, -0)).toBe(false);
+      expect(Object.is(horizZenith.azDeg, -0)).toBe(false);
+
+      const projRojas = projectRojasOrthographic({ x: -0, y: -0, z: 0 }, 100);
+      expect(Object.is(projRojas.x, -0)).toBe(false);
+      expect(Object.is(projRojas.y, -0)).toBe(false);
+    });
+  });
 });

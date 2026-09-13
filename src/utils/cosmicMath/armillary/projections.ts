@@ -23,15 +23,19 @@ export function projectStereographicConformal(p: Vector3D, r0: number = 100): Ve
   const maxBound = r0 * 10;
   if (Math.abs(denom) < 1e-6) {
     const safeSign = denom >= 0 ? 1 : -1;
+    const xClamped = clamp(p.x * (r0 / (safeSign * 1e-6)), -maxBound, maxBound);
+    const yClamped = clamp(p.z * (r0 / (safeSign * 1e-6)), -maxBound, maxBound);
     return {
-      x: clamp(p.x * (r0 / (safeSign * 1e-6)), -maxBound, maxBound),
-      y: clamp(p.z * (r0 / (safeSign * 1e-6)), -maxBound, maxBound)
+      x: Object.is(xClamped, -0) ? 0 : xClamped,
+      y: Object.is(yClamped, -0) ? 0 : yClamped
     };
   }
   const scale = r0 / denom;
+  const xClamped = clamp(p.x * scale, -maxBound, maxBound);
+  const yClamped = clamp(p.z * scale, -maxBound, maxBound);
   return {
-    x: clamp(p.x * scale, -maxBound, maxBound),
-    y: clamp(p.z * scale, -maxBound, maxBound)
+    x: Object.is(xClamped, -0) ? 0 : xClamped,
+    y: Object.is(yClamped, -0) ? 0 : yClamped
   };
 }
 
@@ -42,8 +46,8 @@ export function projectStereographicConformal(p: Vector3D, r0: number = 100): Ve
  */
 export function projectRojasOrthographic(p: Vector3D, _r0: number = 100): Vector2D {
   return {
-    x: p.x,
-    y: p.y
+    x: Object.is(p.x, -0) ? 0 : p.x,
+    y: Object.is(p.y, -0) ? 0 : p.y
   };
 }
 
@@ -51,15 +55,21 @@ export function projectRojasOrthographic(p: Vector3D, _r0: number = 100): Vector
  * Topocentric Horizon Stereonet Projection
  * Projected from Nadir (a = -90°) onto the horizon plane (a = 0°).
  * Zenith (a = +90°) is at (0, 0), horizon is a circle of radius R0.
+ * Singularity Guard: Bounded finite clamping for points near Nadir (a -> -90°).
  */
 export function projectTopocentricHorizon(altDeg: number, azDeg: number, r0: number = 100): Vector2D {
   const clampedAlt = clamp(altDeg, -89.9, 90);
-  const r = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+  const rRaw = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+  const maxBound = r0 * 10;
+  const r = Math.min(rRaw, maxBound);
   const azRad = toRadians(azDeg);
 
+  const xClamped = clamp(r * Math.sin(azRad), -maxBound, maxBound);
+  const yClamped = clamp(-r * Math.cos(azRad), -maxBound, maxBound);
+
   return {
-    x: r * Math.sin(azRad),
-    y: -r * Math.cos(azRad)
+    x: Object.is(xClamped, -0) ? 0 : xClamped,
+    y: Object.is(yClamped, -0) ? 0 : yClamped
   };
 }
 

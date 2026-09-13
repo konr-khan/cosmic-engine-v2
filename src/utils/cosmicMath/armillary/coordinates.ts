@@ -30,11 +30,12 @@ export function cartesian3DToEquatorial(p: Vector3D): { raDeg: Degrees; decDeg: 
 
   const decRad = Math.asin(clamp(p.y / r, -1, 1));
   const raRad = Math.atan2(p.z, p.x);
-  const raDeg = (toDegrees(raRad) + 360) % 360;
+  const raDeg = ((toDegrees(raRad) % 360) + 360) % 360;
+  const decDeg = toDegrees(decRad);
 
   return {
-    raDeg: asDegrees(raDeg),
-    decDeg: asDegrees(toDegrees(decRad))
+    raDeg: asDegrees(Object.is(raDeg, -0) || raDeg === 360 ? 0 : raDeg),
+    decDeg: asDegrees(Object.is(decDeg, -0) ? 0 : decDeg)
   };
 }
 
@@ -75,12 +76,26 @@ export function equatorialToHorizontal(
   const altRad = Math.asin(clamp(sinAlt, -1, 1));
   const altDeg = toDegrees(altRad);
 
+  // Exact Zenith / Nadir pole singularity guard
+  if (Math.abs(altDeg - 90) < 1e-5) {
+    return { altDeg: 90, azDeg: 0 };
+  }
+  if (Math.abs(altDeg + 90) < 1e-5) {
+    return { altDeg: -90, azDeg: 0 };
+  }
+
   const sinAz = -Math.cos(decRad) * Math.sin(hRad);
   const cosAz = Math.sin(decRad) * Math.cos(latRad) - Math.cos(decRad) * Math.sin(latRad) * Math.cos(hRad);
   const azRad = Math.atan2(sinAz, cosAz);
   const azDeg = ((toDegrees(azRad) % 360) + 360) % 360;
 
-  return { altDeg: parseFloat(altDeg.toFixed(2)), azDeg: parseFloat(azDeg.toFixed(2)) };
+  const altVal = parseFloat(altDeg.toFixed(2));
+  const azVal = parseFloat(azDeg.toFixed(2));
+
+  return { 
+    altDeg: Object.is(altVal, -0) ? 0 : altVal, 
+    azDeg: Object.is(azVal, -0) || azVal === 360 ? 0 : azVal 
+  };
 }
 
 /**
