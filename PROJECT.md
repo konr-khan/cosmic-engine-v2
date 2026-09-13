@@ -136,6 +136,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M25 | Sky & Moon Dome Container/Presenter Refactoring & Component Primitives | `useMoonElevationMath.ts`, `useSunElevationMath.ts`, `SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`, `SkyDomeHooksAndPrimitives.test.tsx`, ADR-0025, 657 tests across 44 suites | M1-M24 | DONE |
 | M26 | Web Worker Fallback Hardening, Parameter Gatekeepers & Error Boundaries | `workerSanitizers.ts`, `workerSanitizers.test.ts`, `ephemerisWorkerManager.ts`, `useEphemerisWorker.ts`, `ephemerisWorker.ts`, ADR-0026, 679 tests across 45 suites | M1-M25 | DONE |
 | M27 | Terminator Map Diurnal Ground Tracks, Antimeridian Seam Interpolation & Gated Lunar Nodal Kinematics | `terminatorTracks.ts`, `terminatorTracks.test.ts`, `TerminatorMap.tsx`, `TerminatorMap.test.tsx`, `TerminatorHoverHud.tsx`, `TerminatorHoverHud.test.tsx`, ADR-0027, 701 tests across 47 suites | M1-M26 | DONE |
+| M28 | Gyro-Morph Mathematical Hardening, Projection Singularities & Modular Ring Subsystem | `src/utils/cosmicMath/armillary/` (`projections.ts`, `astrolabe.ts`, `coordinates.ts`, `generatorRings.ts`, `generator.ts`, `armillary.test.ts`), ADR-0028, 707 tests across 47 suites | M1-M27 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -181,7 +182,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `milestones.ts` — Canonical Earth orbital milestones (single source of truth)
       - `frame.ts` — Centralized EphemerisFrame snapshot generator
       - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
-      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade)
+      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade, `generatorRings.ts`, `generatorBeads.ts`, `generatorGeometry.ts`)
       - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
   - `store/`
     - `cosmicStore.ts` — External state store & animation frame ticker

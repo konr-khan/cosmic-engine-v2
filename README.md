@@ -170,7 +170,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 47 specialized domain suites (**701 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 47 specialized domain suites (**707 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -180,7 +180,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Today Sky & Diurnal Kinematics** | `src/utils/cosmicMath/todaySky.test.ts` (66 tests) | Sky dome coordinate projection ($X, Y$), diurnal path generation, celestial meridian coordinate projection and swaths (`calculateMeridianPoint`, `generateMeridianSwathD`), radial tick pins, monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification |
 | **Eclipse Geometry & Presets** | `src/utils/cosmicMath/eclipse.test.ts` (23 tests) | Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`) |
 | **3D Obliquity & Earth Projections** | `src/utils/cosmicMath/projection.test.ts` (11 tests) | Earth axial obliquity ($23.439^circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping |
-| **Armillary Continuum & Projections** | `src/utils/cosmicMath/armillary/armillary.test.ts` (34 tests) | Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0secepsilon$) |
+| **Armillary Continuum & Projections** | `src/utils/cosmicMath/armillary/armillary.test.ts` (40 tests) | Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0secepsilon$) |
 | **Armillary Benchmark** | `src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts` (5 tests) | 1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation |
 | **Armillary Adversarial** | `src/utils/cosmicMath/armillary/m3_adversarial.test.ts` (7 tests) | Analytical closed-form Stereographic Ecliptic invariant ($R_0secepsilon$), Sun bead clamping residuals ($< 1.42 	imes 10^{-13}	ext{ px}$), and 10,000-sample randomized Monte Carlo transitions |
 | **Domain Invariants & Physics Conservation** | `src/utils/cosmicMath/domainInvariants.test.ts` (24 tests) | Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 dot{	heta} = 	ext{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance |

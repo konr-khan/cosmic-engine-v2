@@ -546,6 +546,7 @@ While $\mathcal{F}_{\text{arm}}$ utilizes $+Y$ for the polar axis for SVG projec
      - **Tropic of Capricorn ($\delta = -\epsilon$)**: Concentric circle with radius $R_{\text{Cap}} = R_0 \tan\left(\frac{90^\circ + \epsilon}{2}\right)$.
      - **Ecliptic Great Circle (inclined by $\epsilon = 23.439^\circ$)**: Eccentric circle with Center $(X_c, Y_c) = (0, -R_0 \tan\epsilon)$ and Radius $R_{\text{ecl}} = \frac{R_0}{\cos\epsilon} = R_0 \sec\epsilon$. In screen coordinates where $Y$ is inverted, the center is $(0, +R_0 \tan\epsilon)$.
      - **Almucantar (Altitude $a$) Circles**: Center $y_c = R_0 \frac{\cos\phi}{\sin\phi + \sin a}$, Radius $r_a = R_0 \frac{\cos a}{\sin\phi + \sin a}$.
+        * *Southern Hemisphere Singularity Guard ($\phi < 0$, $a \approx |\phi|$)*: When the altitude parallel passes through the South Celestial Pole (the projection pole), $\sin\phi + \sin a \to 0$, causing $r_a, y_c \to \infty$. The engine applies a guard $|\sin\phi + \sin a| < 10^{-4}$ and clamps radius $r_a \le 25 R_0$ and center $|y_c| \le 25 R_0$ ($2500\text{px}$ at $R_0 = 100$) to eliminate SVG clipping failures and infinite rendering artifacts.
 
 2. **Universal Rojas Orthographic Projection (Solstitial Colure Plane)**:
    Projected orthographically onto $z = 0$:
@@ -560,6 +561,7 @@ While $\mathcal{F}_{\text{arm}}$ utilizes $+Y$ for the polar axis for SVG projec
    \[
    r_{\text{horiz}} = R_0 \tan\left(\frac{90^\circ - a}{2}\right), \quad x_{\text{horiz}} = r_{\text{horiz}} \sin A, \quad y_{\text{horiz}} = -r_{\text{horiz}} \cos A
    \]
+   * *Nadir Sinking Radial Clamping*: When celestial bodies sink below the local horizon toward the Nadir ($a \to -90^\circ$), $\tan((90^\circ - a)/2) \to \infty$. The engine strictly clamps radial distance $r_{\text{horiz}} \le 10 R_0$ and bounds Cartesian output coordinates $(x_{\text{horiz}}, y_{\text{horiz}}) \in [-10 R_0, 10 R_0]$ ($[-1000\text{px}, 1000\text{px}]$ at $R_0 = 100$) to prevent SVG coordinate explosion.
 
 ### F. Universal Any-to-Any Morphing Engine & Staged Choreography
 
@@ -699,6 +701,56 @@ Given sighting rule angle $\theta_{\text{rule}} \in [0^\circ, 360^\circ)$:
    \]
 3. **Nearest Target Sighting Lock**:
    Target angle $\theta_{\text{target}} = (\operatorname{atan2}(y_{\text{screen}}, x_{\text{screen}}) \times \frac{180^\circ}{\pi} + 90^\circ + 360^\circ) \bmod 360^\circ$. Sighting locks when $|\Delta\theta| \le 10.0^\circ$.
+
+### J. Unequal Planetary Hours & High-Latitude Piecewise Kinematics (`calculatePlanetaryHour`)
+Historical astrolabes partition local daylight and nighttime into 12 unequal (temporal) planetary hours:
+1. **Input Sanitization & Euclidean Positive Modulo**:
+   Given raw solar or decimal time $t_{\text{raw}} \in \mathbb{R}$:
+   \[
+   t_{\text{local}} = ((t_{\text{raw}} \bmod 24) + 24) \bmod 24
+   \]
+2. **Canonical Diurnal & Nocturnal Hours**:
+   Given sunrise time $t_{\text{rise}}$ and sunset time $t_{\text{set}}$:
+   \[
+   \Delta t_{\text{day}} = (t_{\text{set}} \ge t_{\text{rise}}) ? (t_{\text{set}} - t_{\text{rise}}) : (24 - t_{\text{rise}} + t_{\text{set}})
+   \]
+   * *Daytime ($t_{\text{local}} \in [t_{\text{rise}}, t_{\text{set}}]$)*:
+     Hour duration $L_{\text{day}} = \frac{\Delta t_{\text{day}}}{12}$.
+     Hour index $H = \lfloor \frac{t_{\text{local}} - t_{\text{rise}}}{L_{\text{day}}} \rfloor + 1 \in [1, 12]$.
+     Progression percentage $P = \operatorname{clamp}\left(\frac{(t_{\text{local}} - t_{\text{rise}}) \bmod L_{\text{day}}}{L_{\text{day}}} \times 100\%, 0\%, 100\%\right)$.
+   * *Nighttime ($t_{\text{local}} \notin [t_{\text{rise}}, t_{\text{set}}]$)*:
+     Night duration $\Delta t_{\text{night}} = 24 - \Delta t_{\text{day}}$, hour duration $L_{\text{night}} = \frac{\Delta t_{\text{night}}}{12}$.
+     Hour index $H = \lfloor \frac{t_{\text{elapsed, night}}}{L_{\text{night}}} \rfloor + 1 \in [1, 12]$.
+
+3. **High-Latitude Piecewise Circumpolar Handling**:
+   At polar latitudes where $\Delta t_{\text{day}} \ge 23.99\text{h}$ (Midnight Sun / Polar Day) or $\Delta t_{\text{day}} \le 0.01\text{h}$ (Polar Night):
+   * *Polar Day*: $L_{\text{day}} = 2.0\text{h}$, $H = \lfloor \frac{t_{\text{local}}}{2.0} \rfloor + 1 \in [1, 12]$, $\text{isDay} = \text{true}$.
+   * *Polar Night*: $L_{\text{night}} = 2.0\text{h}$, $H = \lfloor \frac{t_{\text{local}}}{2.0} \rfloor + 1 \in [1, 12]$, $\text{isDay} = \text{false}$.
+   This prevents division by zero ($\Delta t \to 0$) and guarantees non-NaN progression metrics throughout circumpolar seasons.
+
+4. **Chaldean Order of Ruling Planets**:
+   Planetary hours cycle continuously according to geocentric orbital distance:
+   \[
+   \text{Chaldean Sequence: } \text{Saturn (0)} \to \text{Jupiter (1)} \to \text{Mars (2)} \to \text{Sun (3)} \to \text{Venus (4)} \to \text{Mercury (5)} \to \text{Moon (6)}
+   \]
+   Given day of week $D \in [0, 6]$ ($0 = \text{Sunday}$ ruled by Sun index 3) and elapsed hour index $h_{\text{elapsed}} \in [0, 23]$:
+   \[
+   \text{planetIndex} = (\text{dayRulerIndex}(D) + h_{\text{elapsed}}) \bmod 7
+   \]
+
+### K. Singularity Normalization & Coordinate Hygiene (`coordinates.ts`, `projections.ts`)
+1. **Zenith & Nadir Azimuth Indeterminacy**:
+   When altitude $a \to \pm 90^\circ$ (within $|a \mp 90^\circ| < 10^{-6}$), the horizontal sightline aligns with the local vertical axis where azimuth $A$ is geometrically undefined. The coordinate engine sets $A \equiv 0.0^\circ$ exactly, preventing $\operatorname{atan2}(0, 0)$ indeterminate results.
+2. **Euclidean Right Ascension Wrapping**:
+   Right ascension derived from 3D coordinates is wrapped strictly into $[0^\circ, 360^\circ)$:
+   \[
+   \alpha_{\text{norm}} = ((\alpha \bmod 360^\circ) + 360^\circ) \bmod 360^\circ
+   \]
+3. **Negative Zero Normalization**:
+   All coordinate transformations and projection kernels normalize IEEE 754 floating-point negative zero (`-0`) to positive zero (`0`):
+   \[
+   \operatorname{normalizeZero}(x) = \operatorname{Object.is}(x, -0) \;?\; 0 : x
+   \]
 
 ---
 
