@@ -26,7 +26,7 @@ To eliminate documentation drift and adhere to **Smallest Effective Difference (
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 46 modules, 697 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 47 modules, 701 tests)
 
 ### Essential Commands
 

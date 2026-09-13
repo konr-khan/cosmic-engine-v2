@@ -135,7 +135,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M24 | Concurrency Hardening, Domain Math Purity, Visual Polish & Component Test Expansion | Ephemeris memoization, date jump cache invalidation, todayTokens extraction, sync parallactic angle, dashboardPresets, lruCache, expanded component tests (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`, `lruCache.test.ts`), ADR-0024, 648 tests across 43 suites | M1-M23 | DONE |
 | M25 | Sky & Moon Dome Container/Presenter Refactoring & Component Primitives | `useMoonElevationMath.ts`, `useSunElevationMath.ts`, `SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`, `SkyDomeHooksAndPrimitives.test.tsx`, ADR-0025, 657 tests across 44 suites | M1-M24 | DONE |
 | M26 | Web Worker Fallback Hardening, Parameter Gatekeepers & Error Boundaries | `workerSanitizers.ts`, `workerSanitizers.test.ts`, `ephemerisWorkerManager.ts`, `useEphemerisWorker.ts`, `ephemerisWorker.ts`, ADR-0026, 679 tests across 45 suites | M1-M25 | DONE |
-| M27 | Terminator Map Diurnal Ground Tracks, Antimeridian Seam Interpolation & Gated Lunar Nodal Kinematics | `terminatorTracks.ts`, `terminatorTracks.test.ts`, `TerminatorMap.tsx`, `TerminatorMap.test.tsx`, ADR-0027, 690 tests across 46 suites | M1-M26 | DONE |
+| M27 | Terminator Map Diurnal Ground Tracks, Antimeridian Seam Interpolation & Gated Lunar Nodal Kinematics | `terminatorTracks.ts`, `terminatorTracks.test.ts`, `TerminatorMap.tsx`, `TerminatorMap.test.tsx`, `TerminatorHoverHud.tsx`, `TerminatorHoverHud.test.tsx`, ADR-0027, 701 tests across 47 suites | M1-M26 | DONE |
 
 ## Interface Contracts & Domain Models
 
