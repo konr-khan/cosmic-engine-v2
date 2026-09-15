@@ -5,7 +5,10 @@ import {
   SolarAlmanac, 
   SolarShortcutsRail, 
   PolarSunlightDial, 
-  SolarRibbonChart 
+  SolarRibbonChart,
+  SolarRibbonAxes,
+  SolarRibbonBands,
+  SolarRibbonOverlay
 } from './index';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem } from '../../../types';
@@ -16,6 +19,9 @@ describe('Solar Almanac Subsystem', () => {
     expect(SolarShortcutsRail).toBeDefined();
     expect(PolarSunlightDial).toBeDefined();
     expect(SolarRibbonChart).toBeDefined();
+    expect(SolarRibbonAxes).toBeDefined();
+    expect(SolarRibbonBands).toBeDefined();
+    expect(SolarRibbonOverlay).toBeDefined();
   });
 
   it('computes accurate Keplerian solar metrics through calculateSolarPosition and calculateEarthOrbitalPhysics', () => {
@@ -28,6 +34,149 @@ describe('Solar Almanac Subsystem', () => {
     expect(solar.isPerihelion).toBe(true);
     expect(solar.sunAngularDiameterArcmin).toBeGreaterThan(32.0);
     expect(solar.orbitalSpeedKms).toBeGreaterThan(30.0);
+  });
+
+  it('renders SolarRibbonAxes with month dividers and 24-hour time labels', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(SolarRibbonAxes, {
+          width: 800,
+          height: 440,
+          paddingLeft: 55,
+          paddingTop: 30,
+          chartW: 680,
+          chartH: 375,
+          dayToX: (d: number) => 55 + (d / 365) * 680,
+          timeToY: (t: number) => 30 + (t / 24) * 375,
+        })
+      )
+    );
+
+    // Verify month dividers & labels
+    expect(html).toContain('Jan');
+    expect(html).toContain('Jun');
+    expect(html).toContain('Dec');
+
+    // Verify time labels
+    expect(html).toContain('12 AM');
+    expect(html).toContain('12 PM');
+    expect(html).toContain('Noon');
+    expect(html).toContain('Midnight');
+  });
+
+  it('renders SolarRibbonBands with gradient defs, twilight bands, and key stats', () => {
+    const mockData = Array.from({ length: 10 }, (_, i) => ({
+      day: i + 1,
+      sunrise: 6.0,
+      sunset: 18.0,
+      solarNoon: 12.0,
+      civilDawn: 5.5,
+      civilDusk: 18.5,
+      nauticalDawn: 5.0,
+      nauticalDusk: 19.0,
+      astroDawn: 4.5,
+      astroDusk: 19.5,
+      dayLength: 12.0,
+      declination: 0.0,
+    })) as unknown as AnnualSolarMatrixItem[];
+
+    const html = renderToStaticMarkup(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(SolarRibbonBands, {
+          almanacData: mockData,
+          keyStats: {
+            earliestSunrise: mockData[2],
+            latestSunset: mockData[7],
+          },
+          dayToX: (d: number) => 55 + (d / 10) * 680,
+          timeToY: (t: number) => 30 + (t / 24) * 375,
+          getDayLabel: (d: number) => `Day ${d}`,
+          buildBandPath: () => 'M 0 0 Z',
+          buildLinePath: () => 'M 0 0',
+          paddingLeft: 55,
+          paddingTop: 30,
+          chartW: 680,
+          chartH: 375,
+        })
+      )
+    );
+
+    // Gradient defs
+    expect(html).toContain('solarAlmanacDayGrad');
+    expect(html).toContain('solarAlmanacCivilGrad');
+    expect(html).toContain('solarAlmanacNauticalGrad');
+    expect(html).toContain('solarAlmanacAstroGrad');
+
+    // Night base canvas
+    expect(html).toContain('#020617');
+
+    // Twilight filled bands
+    expect(html).toContain('url(#solarAlmanacDayGrad)');
+    expect(html).toContain('url(#solarAlmanacCivilGrad)');
+    expect(html).toContain('url(#solarAlmanacNauticalGrad)');
+    expect(html).toContain('url(#solarAlmanacAstroGrad)');
+
+    // Key stats
+    expect(html).toContain('Day 3');
+    expect(html).toContain('Day 8');
+  });
+
+  it('renders SolarRibbonOverlay with active markers, mirrored day guide, and tooltip', () => {
+    const mockData = Array.from({ length: 365 }, (_, i) => ({
+      day: i + 1,
+      sunrise: 7.0,
+      sunset: 17.0,
+      solarNoon: 12.0,
+      dayLength: 10.0,
+      declination: -20.0,
+    })) as unknown as AnnualSolarMatrixItem[];
+
+    const html = renderToStaticMarkup(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(SolarRibbonOverlay, {
+          width: 800,
+          paddingLeft: 55,
+          paddingRight: 65,
+          paddingTop: 30,
+          chartW: 680,
+          chartH: 375,
+          activeDay: 10,
+          activeData: mockData[9],
+          hoverDay: 20,
+          hoverDate: null,
+          hoverTime: 14.5,
+          almanacData: mockData,
+          currentMirrorDayData: mockData[350],
+          lonOffsetHours: 0,
+          eotOffsetHours: 0,
+          dayToX: (d: number) => 55 + (d / 365) * 680,
+          timeToY: (t: number) => 30 + (t / 24) * 375,
+          getDayLabel: (d: number) => `Day ${d}`,
+        })
+      )
+    );
+
+    // Active day sunrise/sunset right-axis labels
+    expect(html).toContain('07:00');
+    expect(html).toContain('17:00');
+
+    // Hover time badge & guideline
+    expect(html).toContain('LST');
+    expect(html).toContain('Z)');
+
+    // Solstice mirrored equivalent daylight guide & badge
+    expect(html).toContain('Equiv: Day 351');
+
+    // Hover tooltip card
+    expect(html).toContain('Day 20');
+    expect(html).toContain('10.0h Day');
+    expect(html).toContain('Solar Noon:');
   });
 
   it('renders SolarRibbonChart with interactive hover hairline and tooltip', () => {

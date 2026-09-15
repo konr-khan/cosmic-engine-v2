@@ -107,6 +107,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F53 | 24-Hour Diurnal Ground Tracks & Antimeridian Seam Interpolation | 24-hour diurnal subsolar & sublunar ground tracks on Terminator Map (`terminatorTracks.ts`, `TerminatorMap.tsx`), independent top-rail toggles (`[☀️ Sun]`, `[🌙 Moon]`), boundary-safe antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons ($\Omega / \mho$), forward-weighted temporal dash conventions, and proximity-gated hover HUD telemetry | M27 | ADR-0027 |
 | F54 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | Parameterized store selectors in `useCosmicEngine` and `useCosmicScene`, decomposed `App.tsx` into memoized widget content components with isolated store subscriptions, local `timeOfDay` subscription in `PolarSunlightDial`, and `React.memo` ribbon protection | M29 | ADR-0029 |
 | F55 | Meridian Dome Container/Presenter Hooks & Filter Logic Consolidation | Extracted mathematical cascades from `SunMeridianDome` and `MoonMeridianDome` into `useSunMeridianMath` and `useMoonMeridianMath`; reduced dome components by >50% LOC; removed redundant type assertions in `App.tsx`; extracted `resolveActiveCategory` filter helper in `useCosmicEngine` | M30 | ADR-0030 |
+| F56 | Solar Ribbon Chart Modular Decomposition | Decomposed 420-line `SolarRibbonChart.tsx` monolith into modular ribbon subcomponents under `src/components/widgets/solar/ribbon/` (`SolarRibbonAxes`, `SolarRibbonBands`, `SolarRibbonOverlay`), establishing architectural symmetry with lunar ribbon and cutting chart component by 69% LOC | M31 | ADR-0031 |
 
 ## Milestones
 
@@ -118,7 +119,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M30)
+### Recent Milestones (M21–M31)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -131,6 +132,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M28 | Gyro-Morph Mathematical Hardening & Modular Ring Subsystem | `src/utils/cosmicMath/armillary/`, ADR-0028 | M1–M27 | DONE |
 | M29 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | src/hooks/, src/App.tsx, src/components/widgets/ | M1–M28 | DONE |
 | M30 | Meridian Dome Container/Presenter Hooks & Type/Filter Hygiene | `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`, `SunMeridianDome.tsx`, `MoonMeridianDome.tsx`, `App.tsx`, `useCosmicEngine.ts`, ADR-0030 | M1–M29 | DONE |
+| M31 | Solar Ribbon Chart Modular Decomposition | `SolarRibbonAxes.tsx`, `SolarRibbonBands.tsx`, `SolarRibbonOverlay.tsx`, `SolarRibbonChart.tsx`, `solar/index.ts`, ADR-0031 | M1–M30 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -201,7 +203,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
         - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`)
         - `common/` — Shared today visual primitives (`SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`)
       - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, modular canvas layers)
-      - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`)
+      - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`, `ribbon/`)
       - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`, `ribbon/`)
       - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`, `ShadowRayHoverHud.tsx`)
       - `terminator/` — Daylight Terminator Map (`TerminatorMap`, `TerminatorHoverHud.tsx`)
@@ -214,4 +216,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0030`)
+  - `adr/` — Architecture Decision Records (`0001` through `0031`)

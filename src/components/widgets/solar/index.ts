@@ -6,3 +6,4 @@ export { PolarSunlightDial } from './PolarSunlightDial';
 export type { PolarSunlightDialProps } from './PolarSunlightDial';
 export { SolarShortcutsRail } from './SolarShortcutsRail';
 export type { SolarShortcutsRailProps, SolarShortcut } from './SolarShortcutsRail';
+export * from './ribbon';
