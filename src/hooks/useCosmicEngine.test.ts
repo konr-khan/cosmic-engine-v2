@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { useCosmicEngine } from './useCosmicEngine';
+import { useCosmicEngine, resolveActiveCategory } from './useCosmicEngine';
 
 // Mock React hooks to execute immediately in pure unit test environment
 vi.mock('react', async (importOriginal) => {
@@ -117,6 +117,25 @@ describe('useCosmicEngine Hook Suite', () => {
       expect(result.orbitalData).not.toBeNull();
       expect(result.orbitalData!.lunarEvents).not.toBeNull();
       expect(result.orbitalData!.eclipse).toBeNull();
+    });
+  });
+
+  describe('resolveActiveCategory helper', () => {
+    it('returns true when explicit positive filters match category keys', () => {
+      const category = ['macroOrbit', 'eclipse'] as const;
+      expect(resolveActiveCategory(category, { macroOrbit: true })).toBe(true);
+      expect(resolveActiveCategory(category, { today: true })).toBe(false);
+    });
+
+    it('returns true when no negative filters are applied to category', () => {
+      const category = ['macroOrbit', 'eclipse'] as const;
+      expect(resolveActiveCategory(category, {})).toBe(true);
+      expect(resolveActiveCategory(category, { today: false })).toBe(true);
+    });
+
+    it('returns false when all category keys are negated or excluded in explicit mode', () => {
+      const category = ['macroOrbit', 'eclipse'] as const;
+      expect(resolveActiveCategory(category, { macroOrbit: false, eclipse: false })).toBe(false);
     });
   });
 

@@ -17,6 +17,20 @@ const ORBITAL_WIDGET_KEYS = ['macroOrbit', 'microTides', 'lunarAlmanac', 'armill
 const LUNAR_WIDGET_KEYS = ['lunarAlmanac', 'armillary', 'today', 'map'] as const;
 const ECLIPSE_WIDGET_KEYS = ['eclipse', 'macroOrbit'] as const;
 
+export const resolveActiveCategory = (
+  categoryKeys: readonly string[],
+  activeWidgets: ActiveWidgetsFilter
+): boolean => {
+  const hasExplicitPositiveOnly = 
+    Object.values(activeWidgets).some(v => v === true) && 
+    !Object.values(activeWidgets).some(v => v === false);
+
+  return hasExplicitPositiveOnly
+    ? categoryKeys.some(k => Boolean(activeWidgets[k as keyof ActiveWidgetsFilter]))
+    : categoryKeys.some(k => activeWidgets[k as keyof ActiveWidgetsFilter] === true) ||
+      (!categoryKeys.some(k => activeWidgets[k as keyof ActiveWidgetsFilter] === false));
+};
+
 export const useCosmicEngine = (
   paramDate?: Date | null, 
   paramTimeOfDay?: HoursDecimal | null, 
@@ -44,24 +58,9 @@ export const useCosmicEngine = (
   const longitude = (paramLongitude ?? storeState.longitude) as Longitude;
   const useAnalemma = (paramUseAnalemma ?? storeState.useAnalemma) as boolean;
 
-  const hasExplicitPositiveOnly = 
-    Object.values(activeWidgets).some(v => v === true) && 
-    !Object.values(activeWidgets).some(v => v === false);
-
-  const isLunarActive = hasExplicitPositiveOnly 
-    ? LUNAR_WIDGET_KEYS.some(k => Boolean(activeWidgets[k]))
-    : LUNAR_WIDGET_KEYS.some(k => activeWidgets[k] === true) ||
-      (!LUNAR_WIDGET_KEYS.some(k => activeWidgets[k] === false));
-
-  const isEclipseActive = hasExplicitPositiveOnly
-    ? ECLIPSE_WIDGET_KEYS.some(k => Boolean(activeWidgets[k]))
-    : ECLIPSE_WIDGET_KEYS.some(k => activeWidgets[k] === true) ||
-      (!ECLIPSE_WIDGET_KEYS.every(k => activeWidgets[k] === false) && !ECLIPSE_WIDGET_KEYS.some(k => activeWidgets[k] === false));
-
-  const isOrbitalActive = hasExplicitPositiveOnly
-    ? ORBITAL_WIDGET_KEYS.some(k => Boolean(activeWidgets[k]))
-    : ORBITAL_WIDGET_KEYS.some(k => activeWidgets[k] === true) ||
-      (!ORBITAL_WIDGET_KEYS.some(k => activeWidgets[k] === false));
+  const isLunarActive = resolveActiveCategory(LUNAR_WIDGET_KEYS, activeWidgets);
+  const isEclipseActive = resolveActiveCategory(ECLIPSE_WIDGET_KEYS, activeWidgets);
+  const isOrbitalActive = resolveActiveCategory(ORBITAL_WIDGET_KEYS, activeWidgets);
 
   const julianDate = useMemo(() => getJulianDate(date, timeOfDay), [date, timeOfDay]);
 

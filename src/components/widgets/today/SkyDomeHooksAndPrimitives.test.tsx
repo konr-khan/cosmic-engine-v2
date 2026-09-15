@@ -4,13 +4,17 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   useSunElevationMath, 
   useMoonElevationMath, 
+  useSunMeridianMath,
+  useMoonMeridianMath,
   SkyDomeFooter, 
   DraconicTimelineRail, 
   LunarPhaseDisc,
   OBLIQUITY,
   LUNAR_MAX_DEC,
   SunElevationMathResult,
-  MoonElevationMathResult
+  MoonElevationMathResult,
+  SunMeridianMathResult,
+  MoonMeridianMathResult
 } from './index';
 import { calculateSkyDomeLunarNodes, getJulianDate } from '../../../utils/cosmicMath';
 
@@ -96,6 +100,211 @@ describe('Sky Dome Refactored Hooks & Primitives', () => {
       expect(mathResult.maxAnnualMoonNoon).toBeCloseTo(90 - 47.06 + LUNAR_MAX_DEC, 1);
       expect(mathResult.diurnalPaths.some((p: { id: string }) => p.id === 'ecliptic-reference-path')).toBe(true);
       expect(mathResult.nodalData).toBeDefined();
+    });
+  });
+
+  describe('useSunMeridianMath', () => {
+    it('computes solar meridian coordinates, solstice swaths, and radial ticks for temperate latitude', () => {
+      let mathResult!: SunMeridianMathResult;
+      const TestSunMeridianHarness: React.FC = () => {
+        mathResult = useSunMeridianMath({
+          solarData: {
+            noonElevation: 50,
+            solarNoon: 12,
+            equationOfTime: -3.2,
+            sunrise: 6,
+            sunset: 18,
+            declination: 10,
+            distanceAU: 1.0,
+            distanceKm: 149597870,
+            dayLength: 12,
+            civil: 0.5,
+            nautical: 1,
+            astronomical: 1.5,
+            daysSinceEpoch: 100,
+            lambda: 0,
+            eclipticLongitude: 0,
+            isMidnightSun: false,
+            isPolarNight: false,
+          },
+          displayTime: 12,
+          latitude: 47.06,
+          isTwilightModeActive: false,
+        });
+        return null;
+      };
+
+      renderToStaticMarkup(<TestSunMeridianHarness />);
+
+      expect(mathResult.currentSunElevation).toBeGreaterThan(0);
+      expect(mathResult.peakAlt).toBeCloseTo(90 - 47.06 + 10, 1);
+      expect(mathResult.todayCulmination.shortTag).toBe('S');
+      expect(mathResult.solsticeSpanDeg).toBeCloseTo(2 * OBLIQUITY, 2);
+      expect(mathResult.swaths.some(s => s.id === 'solstice-swath-june')).toBe(true);
+      expect(mathResult.swaths.some(s => s.id === 'solstice-swath-december')).toBe(true);
+      expect(mathResult.radialTicks.some(t => t.id === 'summer-solstice-tick')).toBe(true);
+      expect(mathResult.radialTicks.some(t => t.id === 'winter-solstice-tick')).toBe(true);
+      expect(mathResult.radialTicks.some(t => t.id === 'equinox-tick')).toBe(true);
+      expect(mathResult.todayChordConfig.daylightId).toBe('sun-today-diurnal-chord');
+      expect(mathResult.todayChordConfig.twilightId).toBeUndefined();
+      expect(mathResult.gateAnchor).toBeUndefined();
+      expect(mathResult.activeSunPoint.isParked).toBe(false);
+    });
+
+    it('activates twilight gate anchor, sub-horizon extensions, and twilight ticks in Twilight mode', () => {
+      let mathResult!: SunMeridianMathResult;
+      const TestTwilightHarness: React.FC = () => {
+        mathResult = useSunMeridianMath({
+          solarData: {
+            solarNoon: 12,
+            declination: -23.44,
+          } as any,
+          displayTime: 12,
+          latitude: 69.65, // Tromsø (noon culmination: 90 - 69.65 - 23.44 = -3.09°)
+          isTwilightModeActive: true,
+        });
+        return null;
+      };
+
+      renderToStaticMarkup(<TestTwilightHarness />);
+
+      expect(mathResult.peakAlt).toBeLessThan(0);
+      expect(mathResult.peakAlt).toBeGreaterThan(-18);
+      expect(mathResult.elevationSubtitle).toBe('Civil Twilight');
+      expect(mathResult.todayChordConfig.twilightId).toBe('sun-today-twilight-chord');
+      expect(mathResult.gateAnchor).toBeDefined();
+      expect(mathResult.gateAnchor?.id).toBe('sun-twilight-gate-anchor');
+      expect(mathResult.showDecemberTick).toBe(true);
+    });
+
+    it('handles polar singularity and antimeridian chords at North Pole (90°N)', () => {
+      let mathResult!: SunMeridianMathResult;
+      const TestPolarHarness: React.FC = () => {
+        mathResult = useSunMeridianMath({
+          solarData: {
+            solarNoon: 12,
+            declination: 0,
+          } as any,
+          displayTime: 12,
+          latitude: 90.0,
+          isTwilightModeActive: true,
+        });
+        return null;
+      };
+
+      renderToStaticMarkup(<TestPolarHarness />);
+
+      expect(mathResult.isPolar).toBe(true);
+      expect(mathResult.showPolarSummerChord).toBe(true);
+      expect(mathResult.polarSummerCounterpart).toBeDefined();
+      expect(mathResult.radialTicks.some(t => t.id === 'polar-counterpart-summer-tick')).toBe(true);
+      expect(mathResult.swaths.some(s => s.id === 'polar-counterpart-summer-swath')).toBe(true);
+    });
+  });
+
+  describe('useMoonMeridianMath', () => {
+    it('computes lunar transit elevation, standstill bounds, and swaths', () => {
+      let mathResult!: MoonMeridianMathResult;
+      const TestMoonMeridianHarness: React.FC = () => {
+        mathResult = useMoonMeridianMath({
+          orbitalData: {
+            phase: { value: 0.5, name: 'Full Moon' },
+            lunarEvents: {
+              moonrise: 18,
+              transit: 12,
+              moonset: 6,
+              distanceKm: 384400,
+              distanceEarthRadii: 60.3,
+              isPerigee: false,
+              isApogee: false,
+              declination: -5,
+              parallacticAngle: 30,
+            },
+          } as any,
+          solarData: {
+            solarNoon: 12,
+            declination: 10,
+          } as any,
+          displayTime: 12,
+          latitude: 47.06,
+          isNodalModeActive: false,
+        });
+        return null;
+      };
+
+      renderToStaticMarkup(<TestMoonMeridianHarness />);
+
+      expect(mathResult.currentMoonElevation).toBeGreaterThan(0);
+      expect(mathResult.standstillSpanDeg).toBeCloseTo(2 * LUNAR_MAX_DEC, 2);
+      expect(mathResult.swaths.some(s => s.id === 'lunar-migration-swath-max')).toBe(true);
+      expect(mathResult.swaths.some(s => s.id === 'lunar-migration-swath-min')).toBe(true);
+      expect(mathResult.radialTicks.some(t => t.id === 'standstill-max-tick')).toBe(true);
+      expect(mathResult.radialTicks.some(t => t.id === 'monthly-max-tick')).toBe(true);
+      expect(mathResult.gateAnchor.id).toBe('moon-horizon-gate-anchor');
+      expect(mathResult.todayChordConfig.daylightId).toBe('moon-today-diurnal-chord');
+    });
+
+    it('computes nodal kinematics and ecliptic marker in Nodal Mode', () => {
+      let mathResult!: MoonMeridianMathResult;
+      const TestNodalHarness: React.FC = () => {
+        mathResult = useMoonMeridianMath({
+          orbitalData: {
+            phase: { value: 0.25, name: 'First Quarter' },
+            lunarEvents: {
+              transit: 14,
+              declination: 15,
+              parallacticAngle: 20,
+            },
+            lunarPos: {
+              declination: 15,
+              beta: 2.5,
+              lambda: 90,
+            },
+          } as any,
+          solarData: {
+            solarNoon: 12,
+            lambda: 0,
+          } as any,
+          displayTime: 14,
+          latitude: 47.06,
+          isNodalModeActive: true,
+        });
+        return null;
+      };
+
+      renderToStaticMarkup(<TestNodalHarness />);
+
+      expect(mathResult.nodalData).toBeDefined();
+      expect(mathResult.eclipticNodePoint).toBeDefined();
+      expect(mathResult.eclipticNodeTick).toBeDefined();
+      expect(mathResult.nodalThemeColor).toBe('#38bdf8'); // β >= 0 is sky blue
+      expect(mathResult.radialTicks.some(t => t.id === 'standstill-max-tick')).toBe(true);
+    });
+
+    it('parks active Moon bead when Moon is sub-horizon', () => {
+      let mathResult!: MoonMeridianMathResult;
+      const TestSubHorizonHarness: React.FC = () => {
+        mathResult = useMoonMeridianMath({
+          orbitalData: {
+            phase: { value: 0, name: 'New Moon' },
+            lunarEvents: {
+              transit: 12,
+              declination: -10,
+              parallacticAngle: 0,
+            },
+          } as any,
+          displayTime: 0, // Opposite side of day (midnight)
+          latitude: 47.06,
+          isNodalModeActive: false,
+        });
+        return null;
+      };
+
+      renderToStaticMarkup(<TestSubHorizonHarness />);
+
+      expect(mathResult.currentMoonElevation).toBeLessThan(0);
+      expect(mathResult.activeMoonPoint.isParked).toBe(true);
+      expect(mathResult.elevationStatusSubtitle).toBe('Sub-Horizon');
     });
   });
 
