@@ -13,7 +13,6 @@ export interface CosmicStoreState {
   isPlaying: boolean;
   latitude: Latitude;
   longitude: Longitude;
-  useAnalemma: boolean;
 }
 
 /** Partial state updater for store mutations */

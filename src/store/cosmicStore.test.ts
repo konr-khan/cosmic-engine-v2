@@ -7,8 +7,7 @@ import {
   selectDate, 
   selectTimeOfDay, 
   selectIsPlaying, 
-  selectSpeed, 
-  selectUseAnalemma 
+  selectSpeed 
 } from './cosmicStore';
 
 describe('Cosmic Store & State Isolation Suite', () => {
@@ -17,7 +16,6 @@ describe('Cosmic Store & State Isolation Suite', () => {
     cosmicActions.setTimeOfDay(12);
     cosmicActions.setLatitude(47.06);
     cosmicActions.setLongitude(-122.81);
-    cosmicActions.setUseAnalemma(true);
     cosmicActions.setSpeed(1);
     cosmicActions.setIsPlaying(false);
   });
@@ -26,7 +24,6 @@ describe('Cosmic Store & State Isolation Suite', () => {
     const state = cosmicStore.getState();
     expect(state.latitude).toBe(47.06);
     expect(state.longitude).toBe(-122.81);
-    expect(state.useAnalemma).toBe(true);
     expect(state.timeOfDay).toBe(12);
   });
 
@@ -149,7 +146,6 @@ describe('Cosmic Store & State Isolation Suite', () => {
     cosmicActions.setObserverLocation(51.5074, -0.1278);
     cosmicActions.setTimeOfDay(16.75);
     cosmicActions.setSpeed(10);
-    cosmicActions.setUseAnalemma(false);
 
     const state = cosmicStore.getState();
     expect(selectObserverLocation(state)).toEqual({ latitude: 51.5074, longitude: -0.1278 });
@@ -157,7 +153,6 @@ describe('Cosmic Store & State Isolation Suite', () => {
     expect(selectTimeOfDay(state)).toBe(16.75);
     expect(selectIsPlaying(state)).toBe(false);
     expect(selectSpeed(state)).toBe(10);
-    expect(selectUseAnalemma(state)).toBe(false);
   });
 });
 

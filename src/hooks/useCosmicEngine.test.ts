@@ -18,7 +18,7 @@ vi.mock('react', async (importOriginal) => {
 describe('useCosmicEngine Hook Suite', () => {
   it('returns valid solarData, orbitalData, and julianDate structures', () => {
     const testDate = new Date(2026, 5, 21); // June 21, 2026
-    const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true);
+    const result = useCosmicEngine(testDate, 12, 47.06, -122.81);
 
     expect(result.julianDate).toBeDefined();
     expect(result.solarData).toBeDefined();
@@ -36,7 +36,7 @@ describe('useCosmicEngine Hook Suite', () => {
 
   it('merges partial parameter overrides with cosmicStore state', () => {
     const customDate = new Date(2026, 11, 21); // Winter solstice
-    const result = useCosmicEngine(customDate, null, null, null, null);
+    const result = useCosmicEngine(customDate, null, null, null);
 
     expect(result.julianDate).toBeDefined();
     expect(result.solarData.declination).toBeLessThan(-23.0);
@@ -46,7 +46,7 @@ describe('useCosmicEngine Hook Suite', () => {
     it('skips lunarEvents when lunarAlmanac widget is set to false', () => {
       const testDate = new Date(2026, 5, 21);
       const activeWidgets = { lunarAlmanac: false, macroOrbit: true, microTides: true };
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, activeWidgets);
 
       expect(result.orbitalData).not.toBeNull();
       expect(result.orbitalData!.lunarEvents).toBeNull();
@@ -55,7 +55,7 @@ describe('useCosmicEngine Hook Suite', () => {
     it('skips eclipse calculations when eclipse and macroOrbit widgets are false', () => {
       const testDate = new Date(2026, 5, 21);
       const activeWidgets = { eclipse: false, macroOrbit: false, lunarAlmanac: true, microTides: true };
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, activeWidgets);
 
       expect(result.orbitalData).not.toBeNull();
       expect(result.orbitalData!.eclipse).toBeNull();
@@ -68,7 +68,7 @@ describe('useCosmicEngine Hook Suite', () => {
         map: false,
         lunarAlmanac: false, eclipse: false, macroOrbit: false, microTides: false 
       };
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, activeWidgets);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, activeWidgets);
 
       expect(result.solarData).not.toBeNull();
       expect(result.orbitalData).toBeNull();
@@ -76,7 +76,7 @@ describe('useCosmicEngine Hook Suite', () => {
 
     it('computes lunarEvents and eclipse when default/unfiltered widgets active', () => {
       const testDate = new Date(2026, 5, 21);
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81);
 
       expect(result.orbitalData!.lunarEvents).not.toBeNull();
       expect(result.orbitalData!.lunarEvents!.distanceKm).toBeGreaterThan(350000);
@@ -85,7 +85,7 @@ describe('useCosmicEngine Hook Suite', () => {
 
     it('scopes calculations for solar-only widget { almanac: true } bypassing orbitalData and worker', () => {
       const testDate = new Date(2026, 5, 21);
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { almanac: true });
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, { almanac: true });
 
       expect(result.solarData).not.toBeNull();
       expect(result.orbitalData).toBeNull();
@@ -93,7 +93,7 @@ describe('useCosmicEngine Hook Suite', () => {
 
     it('scopes calculations for { lunarAlmanac: true } calculating lunarEvents and skipping eclipse', () => {
       const testDate = new Date(2026, 5, 21);
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { lunarAlmanac: true });
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, { lunarAlmanac: true });
 
       expect(result.orbitalData).not.toBeNull();
       expect(result.orbitalData!.lunarEvents).not.toBeNull();
@@ -102,7 +102,7 @@ describe('useCosmicEngine Hook Suite', () => {
 
     it('scopes calculations for { eclipse: true } calculating eclipse and skipping lunarEvents', () => {
       const testDate = new Date(2026, 5, 21);
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { eclipse: true });
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, { eclipse: true });
 
       expect(result.orbitalData).not.toBeNull();
       expect(result.orbitalData!.eclipse).not.toBeNull();
@@ -111,7 +111,7 @@ describe('useCosmicEngine Hook Suite', () => {
 
     it('scopes calculations for { today: true } calculating lunarEvents and orbital data', () => {
       const testDate = new Date(2026, 5, 21);
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true, { today: true });
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, { today: true });
 
       expect(result.solarData).not.toBeNull();
       expect(result.orbitalData).not.toBeNull();
@@ -203,7 +203,7 @@ describe('useCosmicEngine Hook Suite', () => {
         longitudes.forEach(lon => {
           dates.forEach(date => {
             times.forEach(t => {
-              const res = useCosmicEngine(date, t, lat, lon, true);
+              const res = useCosmicEngine(date, t, lat, lon);
               const { solarData, orbitalData, julianDate } = res;
 
               // Julian Date check
@@ -242,25 +242,24 @@ describe('useCosmicEngine Hook Suite', () => {
     });
   });
 
-  describe('Analemma Toggle & Solar Noon Equation of Time Correction', () => {
-    it('bypasses Equation of Time correction when useAnalemma is false', () => {
+  describe('Solar Noon Equation of Time Fidelity', () => {
+    it('faithfully incorporates equationOfTime into solarData and solarNoon', () => {
       const testDate = new Date(2026, 10, 3); // November 3 (EoT ~ +16.4 min)
       const longitude = -122.81;
       
-      const withoutAnalemma = useCosmicEngine(testDate, 12, 47.06, longitude, false);
-      expect(withoutAnalemma.solarData.equationOfTime).toBe(0);
-      expect(withoutAnalemma.solarData.solarNoon).toBeCloseTo(12 - (longitude / 15), 5);
-
-      const withAnalemma = useCosmicEngine(testDate, 12, 47.06, longitude, true);
-      expect(withAnalemma.solarData.equationOfTime).not.toBe(0);
-      expect(withAnalemma.solarData.solarNoon).not.toBeCloseTo(withoutAnalemma.solarData.solarNoon, 2);
+      const result = useCosmicEngine(testDate, 12, 47.06, longitude);
+      expect(result.solarData.equationOfTime).not.toBe(0);
+      const uncorrectedSolarNoon = 12 - (longitude / 15);
+      const expectedSolarNoon = uncorrectedSolarNoon - (result.solarData.equationOfTime / 60);
+      expect(result.solarData.solarNoon).toBeCloseTo(expectedSolarNoon, 5);
+      expect(result.solarData.solarNoon).not.toBeCloseTo(uncorrectedSolarNoon, 2);
     });
   });
 
   describe('Gravitational Tidal Physics & Local Tide Vector Status', () => {
     it('calculates Spring Tide during syzygy alignment and assigns valid tide states', () => {
       const newMoonDate = new Date(2024, 3, 8); // Syzygy
-      const result = useCosmicEngine(newMoonDate, 12, 0, 0, true);
+      const result = useCosmicEngine(newMoonDate, 12, 0, 0);
 
       expect(result.orbitalData).not.toBeNull();
       expect(['Spring Tide', 'Neap Tide', 'Transitional']).toContain(result.orbitalData!.tides.type);
@@ -270,7 +269,7 @@ describe('useCosmicEngine Hook Suite', () => {
 
     it('aligns angles.sunDegrees and angles.moonDegrees directly with canonical Meeus ephemeris', () => {
       const testDate = new Date(2026, 5, 21); // June Solstice
-      const result = useCosmicEngine(testDate, 12, 47.06, -122.81, true);
+      const result = useCosmicEngine(testDate, 12, 47.06, -122.81);
 
       expect(result.orbitalData).not.toBeNull();
       // Sun at June Solstice is at ~90° ecliptic longitude

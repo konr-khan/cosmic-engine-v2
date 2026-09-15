@@ -7,7 +7,6 @@ import {
   Unlock, 
   RefreshCcw, 
   Check, 
-  Sliders,
   Sun, 
   Moon, 
   Sparkles, 
@@ -17,7 +16,6 @@ import {
   Compass
 } from 'lucide-react';
 import { PRESET_LAYOUTS, PresetLayout } from '../../hooks/useDashboardLayout';
-import { cosmicActions, useChronometerStore } from '../../store/cosmicStore';
 
 export interface ObsNavbarProps {
   activePresetKey: string;
@@ -40,8 +38,6 @@ const SIMULATION_LAYERS = [
   { key: 'microTides', label: 'Earth & Tidal Gravity Micro View', icon: RotateCw }
 ];
 
-const selectUseAnalemma = (state: { useAnalemma: boolean }) => state.useAnalemma;
-
 export const ObsNavbar: React.FC<ObsNavbarProps> = ({
   activePresetKey,
   onSelectPreset,
@@ -53,7 +49,6 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
 }) => {
   const [showPresetsMenu, setShowPresetsMenu] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const useAnalemma = useChronometerStore(selectUseAnalemma);
 
   const handleSelectPresetClick = (presetId: string) => {
     onSelectPreset(presetId);
@@ -172,20 +167,6 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
                     {widgets[opt.key] !== false ? <Check className="w-3.5 h-3.5 text-indigo-400 shrink-0" /> : <div className="w-3.5 h-3.5 rounded border border-slate-800 shrink-0" />}
                   </button>
                 ))}
-
-                <div className="h-px bg-slate-800 my-1.5" />
-
-                <button
-                  onClick={() => cosmicActions.setUseAnalemma(!useAnalemma)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                    useAnalemma ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-800/80' : 'hover:bg-slate-900 text-slate-400 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Sliders className="w-3.5 h-3.5 text-indigo-400" /> Analemma Equation of Time
-                  </div>
-                  {useAnalemma ? <Check className="w-3.5 h-3.5 text-indigo-400" /> : <div className="w-3.5 h-3.5 rounded border border-slate-800" />}
-                </button>
               </div>
             )}
           </div>

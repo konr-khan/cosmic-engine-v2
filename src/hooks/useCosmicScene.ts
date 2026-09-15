@@ -43,7 +43,6 @@ export interface UseCosmicSceneOptions {
   timeOfDay?: HoursDecimal | number | null;
   latitude?: Latitude | number | null;
   longitude?: Longitude | number | null;
-  useAnalemma?: boolean | null;
   scaleMode?: ScaleMode;
 }
 
@@ -70,20 +69,17 @@ export function useCosmicScene(options?: UseCosmicSceneOptions): CosmicSceneData
   const isTimeProvided = options?.timeOfDay != null;
   const isLatProvided = options?.latitude != null;
   const isLonProvided = options?.longitude != null;
-  const isAnalemmaProvided = options?.useAnalemma != null;
   const selector = useCallback((state: CosmicStoreState) => ({
     date: isDateProvided ? null : state.date,
     timeOfDay: isTimeProvided ? null : state.timeOfDay,
     latitude: isLatProvided ? null : state.latitude,
     longitude: isLonProvided ? null : state.longitude,
-    useAnalemma: isAnalemmaProvided ? null : state.useAnalemma,
-  }), [isDateProvided, isTimeProvided, isLatProvided, isLonProvided, isAnalemmaProvided]);
+  }), [isDateProvided, isTimeProvided, isLatProvided, isLonProvided]);
   const storeState = useChronometerStore(selector);
   const date = (options?.date ?? storeState.date) as Date;
   const timeOfDay = (options?.timeOfDay ?? storeState.timeOfDay) as HoursDecimal | number;
   const latitude = (options?.latitude ?? storeState.latitude) as Latitude | number;
   const longitude = (options?.longitude ?? storeState.longitude) as Longitude | number;
-  const useAnalemma = (options?.useAnalemma ?? storeState.useAnalemma) as boolean;
   const scaleMode = options?.scaleMode ?? 'true';
 
   // 1. Memoized Julian Date derivation
@@ -107,10 +103,9 @@ export function useCosmicScene(options?: UseCosmicSceneOptions): CosmicSceneData
     return calculateEphemerisFrame(
       julianDate,
       latitude as Latitude,
-      longitude as Longitude,
-      useAnalemma
+      longitude as Longitude
     );
-  }, [julianDate, latitude, longitude, useAnalemma]);
+  }, [julianDate, latitude, longitude]);
 
   return useMemo(() => ({
     julianDate,

@@ -53,7 +53,6 @@ export class CosmicStore {
       isPlaying: false,
       latitude: 47.06,
       longitude: -122.81,
-      useAnalemma: true,
     };
 
     this.listeners = new Set();
@@ -98,7 +97,6 @@ export class CosmicStore {
   setLongitude = (longitude: number): void => this.setState({ longitude });
   setObserverLocation = (latitude: number, longitude: number): void => this.setState({ latitude, longitude });
   setSpeed = (speed: number): void => this.setState({ speed });
-  setUseAnalemma = (useAnalemma: boolean): void => this.setState({ useAnalemma });
 
   setIsPlaying = (isPlaying: boolean): void => {
     this.setState({ isPlaying });
@@ -210,7 +208,6 @@ export const cosmicActions = {
   setSpeed: (s: number) => cosmicStore.setSpeed(s),
   setIsPlaying: (p: boolean) => cosmicStore.setIsPlaying(p),
   togglePlay: () => cosmicStore.togglePlay(),
-  setUseAnalemma: (u: boolean) => cosmicStore.setUseAnalemma(u),
   tickTime: (dt: number) => cosmicStore.tickTime(dt),
 };
 
@@ -220,5 +217,4 @@ export const selectDate = (s: CosmicStoreState) => s.date;
 export const selectTimeOfDay = (s: CosmicStoreState) => s.timeOfDay;
 export const selectIsPlaying = (s: CosmicStoreState) => s.isPlaying;
 export const selectSpeed = (s: CosmicStoreState) => s.speed;
-export const selectUseAnalemma = (s: CosmicStoreState) => s.useAnalemma;
 

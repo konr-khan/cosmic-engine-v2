@@ -6,6 +6,7 @@ Accepted (Amended by ADR 0011 and ADR 0012)
 > [!NOTE]
 > **Evolutionary Scope**: The math layer synchronization to $520 \times 220$, pure presentational decoupling of visualizers, and signed $\Delta\lambda$ transit kinematics in `SkyViewSimulator` established here remain authoritative.
 > Note that the axial camera orientation in Section 1 was subsequently rectified to the anti-solar perpetual night perspective in [ADR 0011](0011-axial-sightline-anti-solar-camera-rectification.md) and refined with line-of-sight depth sorting in [ADR 0012](0012-lunar-orbit-dual-depth-sorting-and-node-muting.md).
+> Furthermore, the experimental Lunar Surface POV perspective was subsequently retired to focus the simulator strictly on the physically faithful Central Path Totality Track view (see `DEAD_ENDS.md`).
 
 ## Context
 Following the completion of ADR 0007 (Eclipse Demonstrator Viewport Upsizing & Prograde Astronomical Kinematics), a comprehensive audit of the Ground Truth 3D Astronomical Scene Graph and component consumers identified three architectural considerations:

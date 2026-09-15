@@ -3,6 +3,10 @@
 ## Status
 Accepted
 
+> [!NOTE]
+> **Evolutionary Amendment Banner (Post-ADR 0029 Simplification)**:
+> As part of codebase simplification and fidelity enforcement, the artificial `useAnalemma` toggle was subsequently retired. True physical Equation of Time ($EOT$) is now unconditionally evaluated in `frame.ts`, and `useAnalemma` has been stripped from store state, hook parameters, and container selectors.
+
 ## Context
 Cosmic Engine V2.0 features an interactive Orbital Chronometer dock driven by a continuous 60 FPS animation ticker (`requestAnimationFrame` in `src/store/cosmicStore.ts`). When the chronometer is running, `cosmicStore` increments `timeOfDay` and updates Julian dates at 60 Hz.
 

@@ -36,27 +36,23 @@ export const useCosmicEngine = (
   paramTimeOfDay?: HoursDecimal | null, 
   paramLatitude?: Latitude | null, 
   paramLongitude?: Longitude | null, 
-  paramUseAnalemma?: boolean | null,
   activeWidgets: ActiveWidgetsFilter = {}
 ): CosmicEngineData => {
   const isDateProvided = paramDate != null;
   const isTimeProvided = paramTimeOfDay != null;
   const isLatProvided = paramLatitude != null;
   const isLonProvided = paramLongitude != null;
-  const isAnalemmaProvided = paramUseAnalemma != null;
   const selector = useCallback((state: CosmicStoreState) => ({
     date: isDateProvided ? null : state.date,
     timeOfDay: isTimeProvided ? null : state.timeOfDay,
     latitude: isLatProvided ? null : state.latitude,
     longitude: isLonProvided ? null : state.longitude,
-    useAnalemma: isAnalemmaProvided ? null : state.useAnalemma,
-  }), [isDateProvided, isTimeProvided, isLatProvided, isLonProvided, isAnalemmaProvided]);
+  }), [isDateProvided, isTimeProvided, isLatProvided, isLonProvided]);
   const storeState = useChronometerStore(selector);
   const date = (paramDate ?? storeState.date) as Date;
   const timeOfDay = (paramTimeOfDay ?? storeState.timeOfDay) as HoursDecimal;
   const latitude = (paramLatitude ?? storeState.latitude) as Latitude;
   const longitude = (paramLongitude ?? storeState.longitude) as Longitude;
-  const useAnalemma = (paramUseAnalemma ?? storeState.useAnalemma) as boolean;
 
   const isLunarActive = resolveActiveCategory(LUNAR_WIDGET_KEYS, activeWidgets);
   const isEclipseActive = resolveActiveCategory(ECLIPSE_WIDGET_KEYS, activeWidgets);
@@ -76,7 +72,7 @@ export const useCosmicEngine = (
 
   return useMemo(() => {
     const JD = julianDate;
-    const frame = calculateEphemerisFrame(JD, latitude, longitude, useAnalemma);
+    const frame = calculateEphemerisFrame(JD, latitude, longitude);
     const { solarPos } = frame;
     const { declination, n, lambda: solarLambda } = solarPos;
     const { CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
@@ -154,5 +150,5 @@ export const useCosmicEngine = (
     }
 
     return { solarData, orbitalData, julianDate: JD };
-  }, [date, timeOfDay, latitude, longitude, useAnalemma, isLunarActive, isEclipseActive, isOrbitalActive, julianDate, lunarEvents, eclipse]);
+  }, [date, timeOfDay, latitude, longitude, isLunarActive, isEclipseActive, isOrbitalActive, julianDate, lunarEvents, eclipse]);
 };

@@ -28,7 +28,6 @@ describe('useCosmicScene Hook Suite', () => {
         timeOfDay: 12,
         latitude: 47.06,
         longitude: -122.81,
-        useAnalemma: true,
         scaleMode: 'true'
       });
 

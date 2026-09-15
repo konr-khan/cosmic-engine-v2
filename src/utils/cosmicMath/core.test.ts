@@ -370,7 +370,7 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
           const lat: Latitude = 47.06;
           const lon: Longitude = -122.81;
 
-          const frame = calculateEphemerisFrame(jd, lat, lon, true);
+          const frame = calculateEphemerisFrame(jd, lat, lon);
 
           // Structural presence
           expect(frame.julianDate).toBe(jd);
@@ -410,19 +410,19 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
           const lat: Latitude = 47.06;
           const lon: Longitude = -122.81;
 
-          const frame1 = calculateEphemerisFrame(jd, lat, lon, true);
-          const frame2 = calculateEphemerisFrame(jd, lat, lon, true);
+          const frame1 = calculateEphemerisFrame(jd, lat, lon);
+          const frame2 = calculateEphemerisFrame(jd, lat, lon);
 
           // Exact same reference (memoized)
           expect(frame1).toBe(frame2);
 
           // Parameter changed -> newly calculated frame
-          const frame3 = calculateEphemerisFrame(jd + 0.001, lat, lon, true);
+          const frame3 = calculateEphemerisFrame(jd + 0.001, lat, lon);
           expect(frame3).not.toBe(frame1);
 
           // Clearing cache forces recalculation
           _clearEphemerisFrameCache();
-          const frame4 = calculateEphemerisFrame(jd, lat, lon, true);
+          const frame4 = calculateEphemerisFrame(jd, lat, lon);
           expect(frame4).not.toBe(frame1);
           expect(frame4.julianDate).toBe(frame1.julianDate);
         });
