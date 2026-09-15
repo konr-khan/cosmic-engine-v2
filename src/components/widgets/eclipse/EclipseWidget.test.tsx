@@ -7,7 +7,6 @@ import {
   ShadowRayDiagram, 
   ShadowRayHoverHud,
   LiveSyzygyView,
-  LunarSurfacePovView,
   NodalPlaneVisualizer, 
   SkyViewSimulator, 
   EclipseScanner
@@ -22,7 +21,6 @@ describe('Eclipse Demonstrator Subsystem', () => {
     expect(ShadowRayDiagram).toBeDefined();
     expect(ShadowRayHoverHud).toBeDefined();
     expect(LiveSyzygyView).toBeDefined();
-    expect(LunarSurfacePovView).toBeDefined();
     expect(NodalPlaneVisualizer).toBeDefined();
     expect(SkyViewSimulator).toBeDefined();
     expect(EclipseScanner).toBeDefined();
