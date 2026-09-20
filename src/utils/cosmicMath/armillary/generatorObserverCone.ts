@@ -7,7 +7,7 @@
 import { Latitude, Longitude } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
 import { toRadians, toDegrees, clamp } from '../core';
-import { ArmillaryRingVertex, ArmillaryObserverCone } from './types';
+import { ArmillaryRingVertex, ArmillaryObserverCone, ArmillaryProjectionMode, LaserRay } from './types';
 
 export interface ComputeArmillaryObserverConeParams {
   orbitRingOpacity: number;
@@ -19,10 +19,16 @@ export interface ComputeArmillaryObserverConeParams {
   blendedEarth3D: Vector3D;
   blendedSun3D: Vector3D;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
+  morphLambda?: number;
+  projectionMode?: ArmillaryProjectionMode;
+  r0?: number;
+  cameraPitch?: number;
+  cameraYaw?: number;
 }
 
 /**
  * Derives the topocentric observer sky cone, zenith ray, and tangent horizon disc.
+ * Seamlessly morphs into volumetric laser projection rays across Phase B (morphLambda in (0.45, 1.0]).
  */
 export function computeArmillaryObserverCone(params: ComputeArmillaryObserverConeParams): ArmillaryObserverCone | undefined {
   const {
@@ -33,10 +39,13 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
     gmstDeg,
     blendedEarth3D,
     blendedSun3D,
-    transformVertex
+    transformVertex,
+    morphLambda = 0.0,
+    projectionMode = 'stereographic',
+    r0 = 100
   } = params;
 
-  if (orbitRingOpacity <= 0.05) return undefined;
+  if (orbitRingOpacity <= 0.05 && morphLambda <= 0.05) return undefined;
 
   const phi = toRadians(latitude);
   // Match MiniGlobe euler3d hourAngle convention: ((timeOfDay - 12) * 15) + longitude
@@ -74,51 +83,122 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
   const u = { x: uRaw.x / uLen, y: uRaw.y / uLen, z: uRaw.z / uLen };
   const w = { x: nzY * u.z - nzZ * u.y, y: nzZ * u.x - nzX * u.z, z: nzX * u.y - nzY * u.x };
 
-  // 1. Expanding celestial canopy base in outer space (radius 20 around zenith tip)
-  const canopyPoints: Vector2D[] = [];
-  const NUM_DISC_SAMPLES = 24;
+  const NUM_DISC_SAMPLES = 72;
   const rCanopy = 20;
-  for (let i = 0; i <= NUM_DISC_SAMPLES; i++) {
-    const aRad = (i / NUM_DISC_SAMPLES) * 2 * Math.PI;
+  const phaseBU = clamp((morphLambda - 0.45) / 0.55, 0, 1);
+  const oneMinusU = 1 - phaseBU;
+
+  // Target focal screen position:
+  // For stereographic/horizon: { x: 0, y: r0 * 1.2 }
+  // For Rojas: { x: 0, y: 0 }
+  const targetFocalY = projectionMode === 'rojas' ? 0 : r0 * 1.2;
+  const fScreen: Vector2D = { x: 0, y: targetFocalY };
+
+  // Morphed Apex: A(u) = (1 - phaseBU) * S_obs + phaseBU * F_screen
+  const rawAx = oneMinusU * obsV.screenPos.x + phaseBU * fScreen.x;
+  const rawAy = oneMinusU * obsV.screenPos.y + phaseBU * fScreen.y;
+  const A: Vector2D = {
+    x: Object.is(rawAx, -0) ? 0 : rawAx,
+    y: Object.is(rawAy, -0) ? 0 : rawAy
+  };
+
+  // 1. Compute 72 rim vertices around the circumference
+  const morphedPoints: Vector2D[] = [];
+  for (let k = 0; k < NUM_DISC_SAMPLES; k++) {
+    const alphaK = (k / NUM_DISC_SAMPLES) * 2 * Math.PI;
+    const cosA = Math.cos(alphaK);
+    const sinA = Math.sin(alphaK);
+
+    // Celestial canopy point around zenith tip
     const pt3D: Vector3D = {
-      x: pZenith3D.x + rCanopy * (u.x * Math.cos(aRad) + w.x * Math.sin(aRad)),
-      y: pZenith3D.y + rCanopy * (u.y * Math.cos(aRad) + w.y * Math.sin(aRad)),
-      z: pZenith3D.z + rCanopy * (u.z * Math.cos(aRad) + w.z * Math.sin(aRad))
+      x: pZenith3D.x + rCanopy * (u.x * cosA + w.x * sinA),
+      y: pZenith3D.y + rCanopy * (u.y * cosA + w.y * sinA),
+      z: pZenith3D.z + rCanopy * (u.z * cosA + w.z * sinA)
     };
-    canopyPoints.push(transformVertex(pt3D).screenPos);
+    const ScK = transformVertex(pt3D).screenPos;
+
+    if (phaseBU === 0) {
+      morphedPoints.push(ScK);
+    } else {
+      // Plate base ring vertex in equatorial plane
+      const l3D: Vector3D = {
+        x: r0 * cosA,
+        y: 0,
+        z: r0 * sinA
+      };
+      const SlK = transformVertex(l3D).screenPos;
+      const px = oneMinusU * ScK.x + phaseBU * SlK.x;
+      const py = oneMinusU * ScK.y + phaseBU * SlK.y;
+      morphedPoints.push({
+        x: Object.is(px, -0) ? 0 : px,
+        y: Object.is(py, -0) ? 0 : py
+      });
+    }
   }
 
-  // Circular rim disc in the sky
+  // Close loop: index 72 matches index 0
+  morphedPoints.push(morphedPoints[0]);
+
+  // 2. Continuous closed disc path (Horizon tangent disc -> Astrolabe plate base rim)
   let horizonDiscPathD = '';
-  if (canopyPoints.length > 0) {
-    horizonDiscPathD = `M ${canopyPoints[0].x.toFixed(1)} ${canopyPoints[0].y.toFixed(1)} `;
-    for (let i = 1; i < canopyPoints.length; i++) {
-      horizonDiscPathD += `L ${canopyPoints[i].x.toFixed(1)} ${canopyPoints[i].y.toFixed(1)} `;
+  if (morphedPoints.length > 0) {
+    horizonDiscPathD = `M ${morphedPoints[0].x.toFixed(1)} ${morphedPoints[0].y.toFixed(1)} `;
+    for (let i = 1; i < morphedPoints.length; i++) {
+      horizonDiscPathD += `L ${morphedPoints[i].x.toFixed(1)} ${morphedPoints[i].y.toFixed(1)} `;
     }
     horizonDiscPathD += 'Z';
   }
 
-  // 2. Compute the two extreme silhouette tangent points on the celestial canopy as seen from the observer
-  const zDirX = zenithV.screenPos.x - obsV.screenPos.x;
-  const zDirY = zenithV.screenPos.y - obsV.screenPos.y;
+  // 3. Volumetric conical fill envelope connecting Apex A to the outer rim
+  let conePathD = `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} `;
+  for (let i = 0; i < morphedPoints.length; i++) {
+    conePathD += `L ${morphedPoints[i].x.toFixed(1)} ${morphedPoints[i].y.toFixed(1)} `;
+  }
+  conePathD += `L ${A.x.toFixed(1)} ${A.y.toFixed(1)} Z`;
+
+  // 4. Morphed 8 cardinal/intercardinal compass rays (indices: [0, 9, 18, 27, 36, 45, 54, 63])
+  const RAY_INDICES = [0, 9, 18, 27, 36, 45, 54, 63];
+  const laserRays: LaserRay[] = [];
+  for (let j = 0; j < RAY_INDICES.length; j++) {
+    const angleDeg = j * 45;
+    const rayIdx = RAY_INDICES[j];
+    laserRays.push({
+      start: A,
+      end: morphedPoints[rayIdx],
+      color: angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24',
+      opacity: 0.6
+    });
+  }
+
+  // 5. Morphed zenith ray
+  const rawZenithEndX = oneMinusU * zenithV.screenPos.x;
+  const rawZenithEndY = oneMinusU * zenithV.screenPos.y;
+  const zenithEnd: Vector2D = {
+    x: Object.is(rawZenithEndX, -0) ? 0 : rawZenithEndX,
+    y: Object.is(rawZenithEndY, -0) ? 0 : rawZenithEndY
+  };
+
+  // 6. Silhouette rays connecting Apex A to extreme tangent points of the rim
+  const zDirX = zenithEnd.x - A.x;
+  const zDirY = zenithEnd.y - A.y;
   const zDirLen = Math.hypot(zDirX, zDirY);
 
   let pLeft: Vector2D;
   let pRight: Vector2D;
 
   if (zDirLen < 1e-4) {
-    // When camera sightline looks directly down the zenith ray, use opposite rim points to prevent ray collapse
-    pLeft = canopyPoints[0] || obsV.screenPos;
-    pRight = canopyPoints[Math.floor(NUM_DISC_SAMPLES / 2)] || obsV.screenPos;
+    pLeft = morphedPoints[0] || A;
+    pRight = morphedPoints[Math.floor(NUM_DISC_SAMPLES / 2)] || A;
   } else {
     let minCross = Infinity;
     let maxCross = -Infinity;
-    pLeft = canopyPoints[0] || obsV.screenPos;
-    pRight = canopyPoints[0] || obsV.screenPos;
+    pLeft = morphedPoints[0] || A;
+    pRight = morphedPoints[0] || A;
 
-    for (const pt of canopyPoints) {
-      const vx = pt.x - obsV.screenPos.x;
-      const vy = pt.y - obsV.screenPos.y;
+    for (let i = 0; i < NUM_DISC_SAMPLES; i++) {
+      const pt = morphedPoints[i];
+      const vx = pt.x - A.x;
+      const vy = pt.y - A.y;
       const cross = zDirX * vy - zDirY * vx;
       if (cross < minCross) {
         minCross = cross;
@@ -131,17 +211,9 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
     }
   }
 
-  // Symmetrical silhouette rays connecting observer to both outer edges of the sky canopy circle
-  const silhouetteLinesPathD = `M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} L ${pLeft.x.toFixed(1)} ${pLeft.y.toFixed(1)} M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} L ${pRight.x.toFixed(1)} ${pRight.y.toFixed(1)}`;
+  const silhouetteLinesPathD = `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} L ${pLeft.x.toFixed(1)} ${pLeft.y.toFixed(1)} M ${A.x.toFixed(1)} ${A.y.toFixed(1)} L ${pRight.x.toFixed(1)} ${pRight.y.toFixed(1)}`;
 
-  // 3. Volumetric conical fill envelope connecting observer to outer rim
-  let conePathD = `M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} `;
-  for (const pt of canopyPoints) {
-    conePathD += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
-  }
-  conePathD += `L ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} Z`;
-
-  // Solar elevation angle for observer
+  // 7. Solar elevation angle for observer
   const sunDir = {
     x: blendedSun3D.x - blendedEarth3D.x,
     y: blendedSun3D.y - blendedEarth3D.y,
@@ -152,15 +224,21 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
   const sunElevationDeg = toDegrees(Math.asin(clamp(sinAlt, -1, 1)));
   const isDaytime = sunElevationDeg > -0.833;
 
+  const label = phaseBU >= 0.8
+    ? 'Projection Focal Beacon'
+    : (isDaytime ? 'Observer Sky (Daylight)' : 'Observer Sky (Night Cosmos)');
+
   return {
-    observerScreenPos: obsV.screenPos,
-    zenithScreenPos: zenithV.screenPos,
+    observerScreenPos: A,
+    zenithScreenPos: zenithEnd,
     horizonDiscPathD,
     conePathD,
     silhouetteLinesPathD,
-    zenithRay: { start: obsV.screenPos, end: zenithV.screenPos },
+    zenithRay: { start: A, end: zenithEnd },
     isDaytime,
     sunElevationDeg: parseFloat(sunElevationDeg.toFixed(1)),
-    label: isDaytime ? 'Observer Sky (Daylight)' : 'Observer Sky (Night Cosmos)'
+    label,
+    morphProgress: phaseBU,
+    laserRays
   };
 }

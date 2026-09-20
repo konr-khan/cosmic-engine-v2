@@ -266,7 +266,7 @@ export function generateArmillaryModel(params: {
     morphLambda
   });
 
-  // Observer FOV Sky Cone
+  // Observer FOV Sky Cone & Volumetric Laser Morph
   const observerCone = computeArmillaryObserverCone({
     orbitRingOpacity,
     latitude,
@@ -276,8 +276,20 @@ export function generateArmillaryModel(params: {
     obliquity,
     blendedEarth3D,
     blendedSun3D,
-    transformVertex
+    transformVertex,
+    morphLambda: lambdaClamp,
+    projectionMode,
+    r0,
+    cameraPitch,
+    cameraYaw
   });
+
+  // Forward morphed apex, conePathD, and laserRays to focalBeacon across Phase B (morphLambda > 0.45)
+  if (observerCone && lambdaClamp > 0.45 && observerCone.laserRays) {
+    focalBeacon.focalScreenPos = observerCone.observerScreenPos;
+    focalBeacon.conePathD = observerCone.conePathD;
+    focalBeacon.laserRays = observerCone.laserRays;
+  }
 
   // Earth, Sun (clamped), and Moon beads
   const bodies = computeArmillaryBodies({

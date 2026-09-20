@@ -27,9 +27,12 @@ export function generateProjectionFocalBeacon(
   }
 
   const pCam = rotateEuler3D(focal3D, cameraPitch, cameraYaw, 0);
+  const targetFocalY = projectionMode === 'rojas' ? 0 : r0 * 1.2;
+  const rawX = (1 - morphLambda) * pCam.x;
+  const rawY = (1 - morphLambda) * (-pCam.y) + morphLambda * targetFocalY;
   const focalScreenPos: Vector2D = {
-    x: (1 - morphLambda) * pCam.x,
-    y: (1 - morphLambda) * (-pCam.y) + morphLambda * (r0 * 1.2)
+    x: Object.is(rawX, -0) ? 0 : rawX,
+    y: Object.is(rawY, -0) ? 0 : rawY
   };
 
   const laserRays: LaserRay[] = [];

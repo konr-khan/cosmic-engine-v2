@@ -93,6 +93,8 @@ export interface ArmillaryObserverCone {
   isDaytime: boolean;
   sunElevationDeg: number;
   label: string;
+  morphProgress?: number; // Phase B progress u in [0, 1]
+  laserRays?: LaserRay[];
 }
 
 export interface ArmillaryLunarNodes {
