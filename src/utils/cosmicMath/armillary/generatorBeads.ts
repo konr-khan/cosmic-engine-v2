@@ -227,22 +227,33 @@ export function computeArmillaryObserverCone(params: {
   // 2. Compute the two extreme silhouette tangent points on the celestial canopy as seen from the observer
   const zDirX = zenithV.screenPos.x - obsV.screenPos.x;
   const zDirY = zenithV.screenPos.y - obsV.screenPos.y;
-  let minCross = Infinity;
-  let maxCross = -Infinity;
-  let pLeft = canopyPoints[0] || obsV.screenPos;
-  let pRight = canopyPoints[0] || obsV.screenPos;
+  const zDirLen = Math.hypot(zDirX, zDirY);
 
-  for (const pt of canopyPoints) {
-    const vx = pt.x - obsV.screenPos.x;
-    const vy = pt.y - obsV.screenPos.y;
-    const cross = zDirX * vy - zDirY * vx;
-    if (cross < minCross) {
-      minCross = cross;
-      pLeft = pt;
-    }
-    if (cross > maxCross) {
-      maxCross = cross;
-      pRight = pt;
+  let pLeft: Vector2D;
+  let pRight: Vector2D;
+
+  if (zDirLen < 1e-4) {
+    // When camera sightline looks directly down the zenith ray, use opposite rim points to prevent ray collapse
+    pLeft = canopyPoints[0] || obsV.screenPos;
+    pRight = canopyPoints[Math.floor(NUM_DISC_SAMPLES / 2)] || obsV.screenPos;
+  } else {
+    let minCross = Infinity;
+    let maxCross = -Infinity;
+    pLeft = canopyPoints[0] || obsV.screenPos;
+    pRight = canopyPoints[0] || obsV.screenPos;
+
+    for (const pt of canopyPoints) {
+      const vx = pt.x - obsV.screenPos.x;
+      const vy = pt.y - obsV.screenPos.y;
+      const cross = zDirX * vy - zDirY * vx;
+      if (cross < minCross) {
+        minCross = cross;
+        pLeft = pt;
+      }
+      if (cross > maxCross) {
+        maxCross = cross;
+        pRight = pt;
+      }
     }
   }
 

@@ -81,10 +81,11 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const isHeliocentric = rawMode === 'heliocentric' || rawMode === 'orbit' || !!isOrbital;
   const isGeocentric = rawMode === 'geocentric' || rawMode === 'apparent';
 
-  // In 3D Apparent mode & 3D Heliocentric Orbit mode (when lambda === 0), pass viewMode="euler3d"
-  // In 2D astrolabe plate modes ('rete', 'rojas', 'horizon', 'stereographic') or when morphing (lambda > 0), lock MiniGlobe viewMode="flat"
+  // In 3D Apparent mode & 3D Heliocentric Orbit mode during 3D phase (effectiveLambda <= 0.45),
+  // retain 3D Euler orientation for Earth and Moon.
+  // In 2D astrolabe plate modes or once geometry flattens (effectiveLambda > 0.45), lock MiniGlobe viewMode="flat"
   let miniGlobeViewMode: 'topdown' | 'euler3d' | 'flat';
-  if ((isHeliocentric || isGeocentric) && effectiveLambda === 0) {
+  if ((isHeliocentric || isGeocentric) && effectiveLambda <= 0.45) {
     miniGlobeViewMode = 'euler3d';
   } else {
     miniGlobeViewMode = 'flat';
@@ -107,7 +108,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
     const dx = sun.pCam.x - earth.pCam.x;
     const dy = sun.pCam.y - earth.pCam.y;
     const dz = sun.pCam.z - earth.pCam.z;
-    const len = Math.hypot(dx, dy, dz) || 1;
+    const len = Math.hypot(dx, dy, dz);
+    if (len < 1e-6) return { x: 0, y: 0, z: 1 };
     return {
       x: dx / len,
       y: dy / len,
@@ -142,7 +144,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
     const dx = sun.pCam.x - moon.pCam.x;
     const dy = sun.pCam.y - moon.pCam.y;
     const dz = sun.pCam.z - moon.pCam.z;
-    const len = Math.hypot(dx, dy, dz) || 1;
+    const len = Math.hypot(dx, dy, dz);
+    if (len < 1e-6) return { x: 0, y: 0, z: 1 };
     return {
       x: dx / len,
       y: dy / len,

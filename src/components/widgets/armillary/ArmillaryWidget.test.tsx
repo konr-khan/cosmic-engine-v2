@@ -22,7 +22,7 @@ import {
   type ArmillaryModelOutput,
   type ArmillaryRingPath
 } from './index';
-import { getJulianDate, generateArmillaryModel, computeMoonPhasePath } from '../../../utils/cosmicMath';
+import { getJulianDate, generateArmillaryModel, computeMoonPhasePath, computeArmillaryObserverCone } from '../../../utils/cosmicMath';
 
 describe('Gyro-Morph Armillary Subsystem', () => {
   it('exports all decomposed armillary sub-components cleanly', () => {
@@ -1086,6 +1086,87 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
       // Earth globe with 3D euler orientation and subsolar terminator
       expect(html).toContain('miniglobe-root');
+    });
+
+    it('prevents silhouette ray collapse when camera sightline aligns directly with observer zenith ray', () => {
+      // Create scenario where observer zenith ray points straight along camera sightline
+      // In camera coordinates, looking directly down zenith (obsScreenPos == zenithScreenPos)
+      const mockTransformVertex = (p3d: { x: number; y: number; z: number }) => ({
+        p3d,
+        pCam: { x: 0, y: 0, z: p3d.z },
+        pProj: { x: 0, y: 0 },
+        // Same screen position for observer and zenith
+        screenPos: { x: 100, y: 100 },
+        isFront: true
+      });
+
+      const cone = computeArmillaryObserverCone({
+        orbitRingOpacity: 1.0,
+        latitude: 90 as any,
+        longitude: 0 as any,
+        timeOfDay: 12.0,
+        blendedEarth3D: { x: 0, y: 0, z: 0 },
+        blendedSun3D: { x: 100, y: 0, z: 0 },
+        transformVertex: mockTransformVertex
+      });
+
+      expect(cone).toBeDefined();
+      expect(cone!.silhouetteLinesPathD).toBeDefined();
+      // Silhouette path should contain valid move and line commands with numbers
+      expect(cone!.silhouetteLinesPathD).toMatch(/M \d+(\.\d+)? \d+(\.\d+)? L/);
+      expect(cone!.silhouetteLinesPathD).not.toContain('NaN');
+    });
+
+    it('maintains 3D euler orientation and analytical moon model during Phase A morphing (lambda <= 0.45)', () => {
+      const jd = getJulianDate(new Date(2026, 2, 20), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 20,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 0.25, // Phase A mid-transition
+        projectionMode: 'geocentric',
+        cameraPitch: 45,
+        cameraYaw: 20,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            lunarNodes: model.lunarNodes,
+            projectionMode: 'geocentric',
+            modelType: 'apparent',
+            morphLambda: 0.25,
+            isOrbital: false,
+            camera: { pitch: 45, yaw: 20, roll: 0 },
+            timeOfDay: 12.0,
+            orbitRingOpacity: 0,
+            milestonesOpacity: 1,
+            lunarOrbitOpacity: 1,
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      // Earth globe retains 3D view (shows label and euler atmosphere glow)
+      expect(html).toContain('⊕ EARTH (Center)');
+      // Moon retains 3D analytical terminator
+      expect(html).toMatch(/<path d="M[^"]+" fill="#f8fafc"/);
     });
   });
 });

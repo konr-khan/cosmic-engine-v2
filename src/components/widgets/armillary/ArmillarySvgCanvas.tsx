@@ -137,7 +137,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
     const dx = sun.pCam.x - earth.pCam.x;
     const dy = sun.pCam.y - earth.pCam.y;
     const dz = sun.pCam.z - earth.pCam.z;
-    const len = Math.hypot(dx, dy, dz) || 1;
+    const len = Math.hypot(dx, dy, dz);
+    if (len < 1e-6) return { x: 0, y: 0, z: 1 };
     return { x: dx / len, y: dy / len, z: dz / len };
   }, [sun?.pCam, earth?.pCam]);
 
