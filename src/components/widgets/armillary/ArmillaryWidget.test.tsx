@@ -1184,5 +1184,161 @@ describe('Gyro-Morph Armillary Subsystem', () => {
       // Moon retains 3D analytical terminator
       expect(html).toMatch(/<path d="M[^"]+" fill="#f8fafc"/);
     });
+
+    it('dynamically sorts Moon behind Earth when z_moon < z_earth in 3D Apparent mode', () => {
+      const baseModel = generateArmillaryModel({
+        julianDate: getJulianDate(new Date(2026, 2, 20), 12),
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 0,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Earth at center (z = 0)
+      const mockEarth = {
+        ...baseModel.earth,
+        pCam: { x: 0, y: 0, z: 0 },
+        screenPos: { x: 0, y: 0 }
+      };
+
+      // 1. Moon behind Earth (z_moon = -26 < z_earth = 0)
+      const mockMoonFar = {
+        ...baseModel.moon,
+        pCam: { x: 0, y: 0, z: -26 },
+        screenPos: { x: 0, y: 0 }
+      };
+
+      const htmlFar = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: mockEarth,
+            sun: baseModel.sun,
+            moon: mockMoonFar,
+            milestones: [],
+            projectionMode: 'geocentric',
+            modelType: 'apparent',
+            isOrbital: false,
+            camera: { pitch: 0, yaw: 0, roll: 0 },
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      const moonIndexFar = htmlFar.indexOf('☽ MOON');
+      const earthIndexFar = htmlFar.indexOf('miniglobe-root');
+      expect(moonIndexFar).toBeGreaterThan(-1);
+      expect(earthIndexFar).toBeGreaterThan(-1);
+      // Moon rendered BEFORE Earth -> Earth occludes Moon
+      expect(moonIndexFar).toBeLessThan(earthIndexFar);
+
+      // 2. Moon in front of Earth (z_moon = +26 > z_earth = 0)
+      const mockMoonNear = {
+        ...baseModel.moon,
+        pCam: { x: 0, y: 0, z: 26 },
+        screenPos: { x: 0, y: 0 }
+      };
+
+      const htmlNear = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: mockEarth,
+            sun: baseModel.sun,
+            moon: mockMoonNear,
+            milestones: [],
+            projectionMode: 'geocentric',
+            modelType: 'apparent',
+            isOrbital: false,
+            camera: { pitch: 0, yaw: 0, roll: 0 },
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      const moonIndexNear = htmlNear.indexOf('☽ MOON');
+      const earthIndexNear = htmlNear.indexOf('miniglobe-root');
+      expect(moonIndexNear).toBeGreaterThan(-1);
+      expect(earthIndexNear).toBeGreaterThan(-1);
+      // Earth rendered BEFORE Moon -> Moon is on top of Earth
+      expect(earthIndexNear).toBeLessThan(moonIndexNear);
+    });
+
+    it('dynamically sorts Moon behind Earth in 3D Heliocentric Orbit mode and anchors ray to Earth', () => {
+      const baseModel = generateArmillaryModel({
+        julianDate: getJulianDate(new Date(2026, 2, 20), 12),
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 90,
+        moonDecDeg: 0,
+        moonLambdaDeg: 90,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Earth at screen (80, 50), depth z = 50
+      const mockEarth = {
+        ...baseModel.earth,
+        pCam: { x: 80, y: 50, z: 50 },
+        screenPos: { x: 80, y: 50 }
+      };
+
+      // Moon behind Earth (z_moon = 34 < z_earth = 50)
+      const mockMoon = {
+        ...baseModel.moon,
+        pCam: { x: 85, y: 52, z: 34 },
+        screenPos: { x: 85, y: 52 }
+      };
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: mockEarth,
+            sun: baseModel.sun,
+            moon: mockMoon,
+            milestones: [],
+            projectionMode: 'heliocentric',
+            modelType: 'orbit',
+            isOrbital: true,
+            camera: { pitch: 0, yaw: 0, roll: 0 },
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      const moonIndex = html.indexOf('☽ MOON');
+      const earthIndex = html.indexOf('miniglobe-root');
+      // Moon rendered before Earth
+      expect(moonIndex).toBeLessThan(earthIndex);
+
+      // Moon's connection ray connects Earth (80, 50) to Moon (85, 52), NOT (0, 0)
+      expect(html).toContain('x1="80" y1="50" x2="85" y2="52"');
+    });
   });
 });

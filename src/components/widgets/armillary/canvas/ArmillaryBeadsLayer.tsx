@@ -200,216 +200,243 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         );
       })}
 
-      {/* 4. High-Precision Earth Mini-Globe with 3D Euler Orientation / 2D Flat Plate Pin */}
-      <g
-        className="cursor-pointer"
-        style={{ touchAction: 'none' }}
-        onPointerEnter={() => onHoverBead('earth')}
-        onPointerLeave={() => onHoverBead(null)}
-      >
-        <MiniGlobe
-          cx={globeX}
-          cy={globeY}
-          radius={globeRadius}
-          viewMode={miniGlobeViewMode}
-          camera={{
-            pitch: cameraPitch,
-            yaw: cameraYaw,
-            roll: cameraRoll
-          }}
-          sunAngleDeg={sunAngleDeg}
-          sunLambdaDeg={sunLambda}
-          subsolarCameraVector={earth.subsolarCameraVector}
-          declination={sun?.decDeg}
-          rightAscension={sun?.raDeg}
-          latitude={lat}
-          longitude={lon}
-          timeOfDay={timeOfDay}
-          showTerminator={miniGlobeViewMode !== 'flat'}
-          showTwilightBands={miniGlobeViewMode === 'euler3d'}
-          showParallels={miniGlobeViewMode !== 'flat'}
-          showPolarAxis={miniGlobeViewMode !== 'flat'}
-          showObserverPin={true}
-          showAtmosphereGlow={miniGlobeViewMode !== 'flat'}
-          showLabel={false}
-          onPointerEnter={() => onHoverBead('earth')}
-          onPointerLeave={() => onHoverBead(null)}
-        />
-
-        {/* Monospace text label below globe */}
-        {miniGlobeViewMode !== 'flat' && (
-          <text
-            x={globeX}
-            y={globeY + globeRadius + 3.5}
-            fontSize="3.2"
-            fill="#38bdf8"
-            fontFamily="monospace"
-            fontWeight="bold"
-            textAnchor="middle"
-            className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+      {/* 3. Depth-Sorted Celestial Bodies (Earth, Sun, Moon) */}
+      {(() => {
+        const renderEarth = () => (
+          <g
+            key="bead-earth"
+            className="cursor-pointer"
+            style={{ touchAction: 'none' }}
+            onPointerEnter={() => onHoverBead('earth')}
+            onPointerLeave={() => onHoverBead(null)}
           >
-            {isGeocentric ? '⊕ EARTH (Center)' : '⊕ EARTH'}
-          </text>
-        )}
-      </g>
+            <MiniGlobe
+              cx={globeX}
+              cy={globeY}
+              radius={globeRadius}
+              viewMode={miniGlobeViewMode}
+              camera={{
+                pitch: cameraPitch,
+                yaw: cameraYaw,
+                roll: cameraRoll
+              }}
+              sunAngleDeg={sunAngleDeg}
+              sunLambdaDeg={sunLambda}
+              subsolarCameraVector={earth.subsolarCameraVector}
+              declination={sun?.decDeg}
+              rightAscension={sun?.raDeg}
+              latitude={lat}
+              longitude={lon}
+              timeOfDay={timeOfDay}
+              showTerminator={miniGlobeViewMode !== 'flat'}
+              showTwilightBands={miniGlobeViewMode === 'euler3d'}
+              showParallels={miniGlobeViewMode !== 'flat'}
+              showPolarAxis={miniGlobeViewMode !== 'flat'}
+              showObserverPin={true}
+              showAtmosphereGlow={miniGlobeViewMode !== 'flat'}
+              showLabel={false}
+              onPointerEnter={() => onHoverBead('earth')}
+              onPointerLeave={() => onHoverBead(null)}
+            />
 
-
-      {/* 4. Sun Bead (Golden Orb with Radial Corona - Click to Snap) */}
-      <g 
-        filter="url(#sunGlow)"
-        className="cursor-pointer"
-        style={{ touchAction: 'none' }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onTargetClick('Sun (Sol)', sun.screenPos);
-        }}
-        onPointerEnter={() => onHoverBead('sun')}
-        onPointerLeave={() => onHoverBead(null)}
-      >
-        {/* Invisible Touch Hitbox */}
-        <circle
-          cx={sun.screenPos.x}
-          cy={sun.screenPos.y}
-          r="12"
-          fill="transparent"
-        />
-        {/* Ray to Origin */}
-        <line
-          x1="0"
-          y1="0"
-          x2={sun.screenPos.x}
-          y2={sun.screenPos.y}
-          stroke="#f59e0b"
-          strokeWidth="0.6"
-          opacity="0.5"
-        />
-        {/* Outer Sun Corona */}
-        <circle
-          cx={sun.screenPos.x}
-          cy={sun.screenPos.y}
-          r="5.5"
-          fill="#f59e0b"
-          fillOpacity="0.25"
-        />
-        {/* Core Sun Bead */}
-        <circle
-          cx={sun.screenPos.x}
-          cy={sun.screenPos.y}
-          r="3.0"
-          fill="#fbbf24"
-          stroke="#ffffff"
-          strokeWidth="1.0"
-        />
-        <text
-          x={sun.screenPos.x}
-          y={sun.screenPos.y + 7.0}
-          fontSize="3.5"
-          fill="#fbbf24"
-          fontFamily="monospace"
-          fontWeight="bold"
-          textAnchor="middle"
-          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
-        >
-          ☉ SUN
-        </text>
-      </g>
-
-      {/* 6. Moon Bead (Gray/Silver Phase Disc - Click to Snap) */}
-      <g 
-        filter="url(#starGlow)"
-        className="cursor-pointer"
-        style={{ touchAction: 'none' }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onTargetClick('Moon (Luna)', moon.screenPos);
-        }}
-        onPointerEnter={() => onHoverBead('moon')}
-        onPointerLeave={() => onHoverBead(null)}
-      >
-        {/* Invisible Touch Hitbox */}
-        <circle
-          cx={moon.screenPos.x}
-          cy={moon.screenPos.y}
-          r="12"
-          fill="transparent"
-        />
-        {/* Ray to Origin */}
-        <line
-          x1="0"
-          y1="0"
-          x2={moon.screenPos.x}
-          y2={moon.screenPos.y}
-          stroke="#94a3b8"
-          strokeWidth="0.6"
-          opacity="0.4"
-        />
-        {/* Moon Corona Glow */}
-        <circle
-          cx={moon.screenPos.x}
-          cy={moon.screenPos.y}
-          r="4.8"
-          fill="#94a3b8"
-          fillOpacity="0.2"
-        />
-        {/* Moon Dark Nightside Base Sphere */}
-        <circle
-          cx={moon.screenPos.x}
-          cy={moon.screenPos.y}
-          r={moonRadius}
-          fill="#0f172a"
-        />
-        {/* Directional Illuminated Dayside Hemisphere / Apparent Phase Crescent */}
-        {is3DView ? (
-          // In 3D Orbit & Apparent modes: True 3D analytical spherical terminator facing the Sun in camera perspective
-          moonLimbPath ? (
-            <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y})`}>
-              <path
-                d={moonLimbPath}
-                fill="#f8fafc"
-              />
-            </g>
-          ) : null
-        ) : (
-          // In 2D Plate modes: Renders topocentric apparent phase disc oriented toward the Sun
-          <>
-            {moonPhaseData.isFull && (
-              <circle
-                cx={moon.screenPos.x}
-                cy={moon.screenPos.y}
-                r={moonRadius}
-                fill="#f8fafc"
-              />
+            {/* Monospace text label below globe */}
+            {miniGlobeViewMode !== 'flat' && (
+              <text
+                x={globeX}
+                y={globeY + globeRadius + 3.5}
+                fontSize="3.2"
+                fill="#38bdf8"
+                fontFamily="monospace"
+                fontWeight="bold"
+                textAnchor="middle"
+                className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+              >
+                {isGeocentric ? '⊕ EARTH (Center)' : '⊕ EARTH'}
+              </text>
             )}
-            {!moonPhaseData.isFull && !moonPhaseData.isNew && moonPhaseData.pathD && (
-              <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y}) rotate(${moonToSunAngleDeg})`}>
-                <path d={moonPhaseData.pathD} fill="#f8fafc" />
-              </g>
+          </g>
+        );
+
+        const renderSun = () => (
+          <g 
+            key="bead-sun"
+            filter="url(#sunGlow)"
+            className="cursor-pointer"
+            style={{ touchAction: 'none' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTargetClick('Sun (Sol)', sun.screenPos);
+            }}
+            onPointerEnter={() => onHoverBead('sun')}
+            onPointerLeave={() => onHoverBead(null)}
+          >
+            {/* Invisible Touch Hitbox */}
+            <circle
+              cx={sun.screenPos.x}
+              cy={sun.screenPos.y}
+              r="12"
+              fill="transparent"
+            />
+            {/* Ray to Origin */}
+            <line
+              x1="0"
+              y1="0"
+              x2={sun.screenPos.x}
+              y2={sun.screenPos.y}
+              stroke="#f59e0b"
+              strokeWidth="0.6"
+              opacity="0.5"
+            />
+            {/* Outer Sun Corona */}
+            <circle
+              cx={sun.screenPos.x}
+              cy={sun.screenPos.y}
+              r="5.5"
+              fill="#f59e0b"
+              fillOpacity="0.25"
+            />
+            {/* Core Sun Bead */}
+            <circle
+              cx={sun.screenPos.x}
+              cy={sun.screenPos.y}
+              r="3.0"
+              fill="#fbbf24"
+              stroke="#ffffff"
+              strokeWidth="1.0"
+            />
+            <text
+              x={sun.screenPos.x}
+              y={sun.screenPos.y + 7.0}
+              fontSize="3.5"
+              fill="#fbbf24"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+            >
+              ☉ SUN
+            </text>
+          </g>
+        );
+
+        const renderMoon = () => (
+          <g 
+            key="bead-moon"
+            filter="url(#starGlow)"
+            className="cursor-pointer"
+            style={{ touchAction: 'none' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTargetClick('Moon (Luna)', moon.screenPos);
+            }}
+            onPointerEnter={() => onHoverBead('moon')}
+            onPointerLeave={() => onHoverBead(null)}
+          >
+            {/* Invisible Touch Hitbox */}
+            <circle
+              cx={moon.screenPos.x}
+              cy={moon.screenPos.y}
+              r="12"
+              fill="transparent"
+            />
+            {/* Ray to Earth / Center */}
+            <line
+              x1={globeX}
+              y1={globeY}
+              x2={moon.screenPos.x}
+              y2={moon.screenPos.y}
+              stroke="#94a3b8"
+              strokeWidth="0.6"
+              opacity="0.4"
+            />
+            {/* Moon Corona Glow */}
+            <circle
+              cx={moon.screenPos.x}
+              cy={moon.screenPos.y}
+              r="4.8"
+              fill="#94a3b8"
+              fillOpacity="0.2"
+            />
+            {/* Moon Dark Nightside Base Sphere */}
+            <circle
+              cx={moon.screenPos.x}
+              cy={moon.screenPos.y}
+              r={moonRadius}
+              fill="#0f172a"
+            />
+            {/* Directional Illuminated Dayside Hemisphere / Apparent Phase Crescent */}
+            {is3DView ? (
+              // In 3D Orbit & Apparent modes: True 3D analytical spherical terminator facing the Sun in camera perspective
+              moonLimbPath ? (
+                <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y})`}>
+                  <path
+                    d={moonLimbPath}
+                    fill="#f8fafc"
+                  />
+                </g>
+              ) : null
+            ) : (
+              // In 2D Plate modes: Renders topocentric apparent phase disc oriented toward the Sun
+              <>
+                {moonPhaseData.isFull && (
+                  <circle
+                    cx={moon.screenPos.x}
+                    cy={moon.screenPos.y}
+                    r={moonRadius}
+                    fill="#f8fafc"
+                  />
+                )}
+                {!moonPhaseData.isFull && !moonPhaseData.isNew && moonPhaseData.pathD && (
+                  <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y}) rotate(${moonToSunAngleDeg})`}>
+                    <path d={moonPhaseData.pathD} fill="#f8fafc" />
+                  </g>
+                )}
+              </>
             )}
-          </>
-        )}
-        {/* Outer Rim Stroke */}
-        <circle
-          cx={moon.screenPos.x}
-          cy={moon.screenPos.y}
-          r={moonRadius}
-          fill="none"
-          stroke="#475569"
-          strokeWidth="0.75"
-          className="pointer-events-none"
-        />
-        <text
-          x={moon.screenPos.x}
-          y={moon.screenPos.y + 7.0}
-          fontSize="3.5"
-          fill="#cbd5e1"
-          fontFamily="monospace"
-          fontWeight="bold"
-          textAnchor="middle"
-          className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
-        >
-          ☽ MOON
-        </text>
-      </g>
+            {/* Outer Rim Stroke */}
+            <circle
+              cx={moon.screenPos.x}
+              cy={moon.screenPos.y}
+              r={moonRadius}
+              fill="none"
+              stroke="#475569"
+              strokeWidth="0.75"
+              className="pointer-events-none"
+            />
+            <text
+              x={moon.screenPos.x}
+              y={moon.screenPos.y + 7.0}
+              fontSize="3.5"
+              fill="#cbd5e1"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+            >
+              ☽ MOON
+            </text>
+          </g>
+        );
+
+        // 3D camera depths for z-sorting celestial bodies (furthest to nearest)
+        const earthZ = earth.pCam?.z ?? 0;
+        const sunZ = sun.pCam?.z ?? 0;
+        const moonZ = moon.pCam?.z ?? 0;
+
+        const bodyItems = [
+          { id: 'earth', z: earthZ, order: 0, render: renderEarth },
+          { id: 'sun', z: sunZ, order: 1, render: renderSun },
+          { id: 'moon', z: moonZ, order: 2, render: renderMoon }
+        ];
+
+        if (is3DView) {
+          // Dynamic camera depth sorting: lowest z (furthest from camera) rendered first,
+          // highest z (closest to camera) rendered last so foreground bodies occlude background bodies
+          bodyItems.sort((a, b) => (a.z - b.z) || (a.order - b.order));
+        }
+
+        return bodyItems.map((item) => item.render());
+      })()}
     </>
   );
 };
