@@ -335,13 +335,32 @@ export function computeArmillaryBodies(params: {
   const sunHoriz = equatorialToHorizontal(sunRaDeg, sunDecDeg, latitude, lstDeg);
   const moonHoriz = equatorialToHorizontal(moonRaDeg, moonDecDeg, latitude, lstDeg);
 
+  // Normalized Sun-to-Earth camera-space vector for physical 3D terminator shading
+  const edx = sunV.pCam.x - earthV.pCam.x;
+  const edy = sunV.pCam.y - earthV.pCam.y;
+  const edz = sunV.pCam.z - earthV.pCam.z;
+  const eLen = Math.hypot(edx, edy, edz);
+  const earthSubsolarCameraVector: Vector3D = eLen < 1e-6
+    ? { x: 0, y: 0, z: 1 }
+    : { x: edx / eLen, y: edy / eLen, z: edz / eLen };
+
+  // Normalized Sun-to-Moon camera-space vector for 3D analytical lunar terminator
+  const mdx = sunV.pCam.x - moonV.pCam.x;
+  const mdy = sunV.pCam.y - moonV.pCam.y;
+  const mdz = sunV.pCam.z - moonV.pCam.z;
+  const mLen = Math.hypot(mdx, mdy, mdz);
+  const moonSubsolarCameraVector: Vector3D = mLen < 1e-6
+    ? { x: 0, y: 0, z: 1 }
+    : { x: mdx / mLen, y: mdy / mLen, z: mdz / mLen };
+
   return {
     earth: {
       p3d: blendedEarth3D,
       pCam: earthV.pCam,
       pProj: earthV.pProj,
       screenPos: earthV.screenPos,
-      isFront: earthV.isFront
+      isFront: earthV.isFront,
+      subsolarCameraVector: earthSubsolarCameraVector
     },
     sun: {
       raDeg: asDegrees(sunRaDeg),
@@ -366,7 +385,8 @@ export function computeArmillaryBodies(params: {
       screenPos: moonV.screenPos,
       isFront: moonV.isFront,
       altDeg: moonHoriz.altDeg,
-      azDeg: moonHoriz.azDeg
+      azDeg: moonHoriz.azDeg,
+      subsolarCameraVector: moonSubsolarCameraVector
     }
   };
 }

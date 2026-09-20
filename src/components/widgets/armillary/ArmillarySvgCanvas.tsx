@@ -9,8 +9,8 @@ import {
   ArmillaryMilestoneNode
 } from './types';
 import { calculateAlidadeSighting } from '../../../utils/cosmicMath';
-import { Vector3D } from '../../../types/coordinates';
 import { ArmillaryHoverHud } from './ArmillaryHoverHud';
+
 import {
   ArmillaryDefs,
   ArmillaryBezelLayer,
@@ -131,16 +131,6 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
     ? calculateAlidadeSighting(ruleAngleDeg, latitude, localSiderealTimeDeg, stars, sun, moon)
     : null;
 
-  // Normalized Sun-to-Earth camera-space vector for physical 3D terminator shading in Orbit and Apparent modes
-  const subsolarCameraVector = useMemo<Vector3D | undefined>(() => {
-    if (!sun?.pCam || !earth?.pCam) return undefined;
-    const dx = sun.pCam.x - earth.pCam.x;
-    const dy = sun.pCam.y - earth.pCam.y;
-    const dz = sun.pCam.z - earth.pCam.z;
-    const len = Math.hypot(dx, dy, dz);
-    if (len < 1e-6) return { x: 0, y: 0, z: 1 };
-    return { x: dx / len, y: dy / len, z: dz / len };
-  }, [sun?.pCam, earth?.pCam]);
 
   // Dynamic zoom viewBox for 3D Heliocentric Orbit view and 3D Geocentric Apparent view
   const viewBoxStr = useMemo(() => {
@@ -449,7 +439,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         sunLambdaDeg={sun?.lambdaDeg ?? sun?.raDeg ?? 0}
         declination={sun?.decDeg}
         rightAscension={sun?.raDeg}
-        subsolarCameraVector={subsolarCameraVector}
+        subsolarCameraVector={earth?.subsolarCameraVector}
         projectionMode={projectionMode}
         morphLambda={morphLambda}
         onCameraChange={onCameraChange}

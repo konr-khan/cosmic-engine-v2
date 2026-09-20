@@ -7,7 +7,6 @@ import {
   ArmillaryCameraState
 } from '../types';
 import { MiniGlobe } from '../../../common/MiniGlobe';
-import { Vector3D } from '../../../../types/coordinates';
 import { computeMoonPhasePath } from '../../../../utils/cosmicMath/armillary';
 import { generateAnalyticalLimbPath } from '../../../../utils/cosmicMath/globe';
 
@@ -101,22 +100,6 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
 
   const is3DView = miniGlobeViewMode === 'euler3d';
 
-  // 3D Subsolar unit illumination vector in camera coordinates pointing from Earth toward Sun
-  // Active in both 3D Orbit and 3D Apparent modes
-  const subsolarCamVec = React.useMemo<Vector3D | undefined>(() => {
-    if (!sun?.pCam || !earth?.pCam) return undefined;
-    const dx = sun.pCam.x - earth.pCam.x;
-    const dy = sun.pCam.y - earth.pCam.y;
-    const dz = sun.pCam.z - earth.pCam.z;
-    const len = Math.hypot(dx, dy, dz);
-    if (len < 1e-6) return { x: 0, y: 0, z: 1 };
-    return {
-      x: dx / len,
-      y: dy / len,
-      z: dz / len
-    };
-  }, [sun?.pCam, earth?.pCam]);
-
   // Determine globe position and radius
   // In plate modes or center geocentric mode, Earth is centered at (0, 0)
   // In orbital mode, Earth is at earth.screenPos
@@ -137,27 +120,11 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const moonRadius = 2.6;
   const moonPhaseData = computeMoonPhasePath(moon.phase, moonRadius);
 
-  // 3D Subsolar unit illumination vector in camera coordinates pointing from Moon toward Sun
-  // Active in both 3D Orbit and 3D Apparent modes
-  const moonSunCamVec = React.useMemo<Vector3D | undefined>(() => {
-    if (!is3DView || !sun?.pCam || !moon?.pCam) return undefined;
-    const dx = sun.pCam.x - moon.pCam.x;
-    const dy = sun.pCam.y - moon.pCam.y;
-    const dz = sun.pCam.z - moon.pCam.z;
-    const len = Math.hypot(dx, dy, dz);
-    if (len < 1e-6) return { x: 0, y: 0, z: 1 };
-    return {
-      x: dx / len,
-      y: dy / len,
-      z: dz / len
-    };
-  }, [is3DView, sun?.pCam, moon?.pCam]);
-
   // Dynamic 3D analytical limb path for Moon in 3D Orbit & Apparent modes
   const moonLimbPath = React.useMemo(() => {
-    if (!is3DView || !moonSunCamVec) return '';
-    return generateAnalyticalLimbPath(moonRadius, moonSunCamVec.x, moonSunCamVec.y, moonSunCamVec.z, 0);
-  }, [is3DView, moonSunCamVec, moonRadius]);
+    if (!is3DView || !moon.subsolarCameraVector) return '';
+    return generateAnalyticalLimbPath(moonRadius, moon.subsolarCameraVector.x, moon.subsolarCameraVector.y, moon.subsolarCameraVector.z, 0);
+  }, [is3DView, moon.subsolarCameraVector, moonRadius]);
 
   return (
     <>
@@ -252,7 +219,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           }}
           sunAngleDeg={sunAngleDeg}
           sunLambdaDeg={sunLambda}
-          subsolarCameraVector={subsolarCamVec}
+          subsolarCameraVector={earth.subsolarCameraVector}
           declination={sun?.decDeg}
           rightAscension={sun?.raDeg}
           latitude={lat}

@@ -971,6 +971,14 @@ describe('Gyro-Morph Armillary Subsystem', () => {
         r0: 100
       });
 
+      // Verify generatorBeads derives normalized 3D subsolar vectors for both Earth and Moon
+      expect(baseModel.earth.subsolarCameraVector).toBeDefined();
+      expect(baseModel.moon.subsolarCameraVector).toBeDefined();
+      const eLen = Math.hypot(baseModel.earth.subsolarCameraVector!.x, baseModel.earth.subsolarCameraVector!.y, baseModel.earth.subsolarCameraVector!.z);
+      expect(eLen).toBeCloseTo(1, 4);
+      const mLen = Math.hypot(baseModel.moon.subsolarCameraVector!.x, baseModel.moon.subsolarCameraVector!.y, baseModel.moon.subsolarCameraVector!.z);
+      expect(mLen).toBeCloseTo(1, 4);
+
       const mockMoon = {
         ...baseModel.moon,
         p3d: { x: 0, y: 0, z: 0 },
@@ -984,13 +992,17 @@ describe('Gyro-Morph Armillary Subsystem', () => {
         p3d: { x: 0, y: 0, z: -100 },
         pCam: { x: 0, y: 0, z: -100 }
       };
+      const mockMoonBacklit = {
+        ...mockMoon,
+        subsolarCameraVector: { x: 0, y: 0, z: -1 }
+      };
 
       const htmlBacklit = renderToStaticMarkup(
         React.createElement('svg', null,
           React.createElement(ArmillaryBeadsLayer, {
             earth: baseModel.earth,
             sun: mockSunBacklit,
-            moon: mockMoon,
+            moon: mockMoonBacklit,
             milestones: [],
             projectionMode: 'heliocentric',
             modelType: 'orbit',
@@ -1015,13 +1027,17 @@ describe('Gyro-Morph Armillary Subsystem', () => {
         p3d: { x: 0, y: 0, z: 100 },
         pCam: { x: 0, y: 0, z: 100 }
       };
+      const mockMoonFrontlit = {
+        ...mockMoon,
+        subsolarCameraVector: { x: 0, y: 0, z: 1 }
+      };
 
       const htmlFrontlit = renderToStaticMarkup(
         React.createElement('svg', null,
           React.createElement(ArmillaryBeadsLayer, {
             earth: baseModel.earth,
             sun: mockSunFrontlit,
-            moon: mockMoon,
+            moon: mockMoonFrontlit,
             milestones: [],
             projectionMode: 'heliocentric',
             modelType: 'orbit',
