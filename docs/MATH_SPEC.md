@@ -1662,6 +1662,71 @@ The transition continuum from 3D spheres to 2D astrolabe plates is partitioned a
 - **Phase A ($\lambda \in [0, 0.45]$)**: Camera rotates into pole alignment; Earth and Moon retain 3D Euler orientation (`viewMode="euler3d"`).
 - **Phase B ($\lambda \in (0.45, 1.0]$)**: Geometry flattens onto the planar stereographic / astrolabe plate; bodies lock to flat representations (`viewMode="flat"`).
 
+### F. Continuous Copernican-to-Geocentric 3D Translation & Observer-to-Laser Morphing Continuum
+
+#### 1. Phase A: Copernican ↔ Geocentric 3D Translation ($\lambda \in [0.0, 0.45]$)
+
+Let normalized Phase A translation progress be:
+\[
+t_{\text{geo}} = \operatorname{clamp}\left(\frac{\lambda}{0.45}, 0, 1\right)
+\]
+1. **Continuous Planetary Translation**:
+   - Earth translates continuously from its Keplerian orbit $\vec{P}_{\oplus, \text{helio}} = (a \cos\lambda_\oplus, 0, -b \sin\lambda_\oplus)$ to the coordinate origin $(0, 0, 0)$:
+     \[
+     \vec{P}_{\oplus}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \vec{P}_{\oplus, \text{helio}}
+     \]
+   - The Sun translates continuously from the origin $(0, 0, 0)$ to its apparent geocentric position on the inclined ecliptic track:
+     \[
+     \vec{P}_{\odot}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \vec{P}_{\odot, \text{helio}} + t_{\text{geo}} \vec{P}_{\odot, \text{geo}}
+     \]
+   - The Moon translates continuously with Earth in lockstep:
+     \[
+     \vec{P}_{\text{moon}}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \vec{P}_{\text{moon}, \text{helio}} + t_{\text{geo}} \vec{P}_{\text{moon}, \text{geo}}
+     \]
+
+2. **Milestone Spherical Geodesic SLERP & Center Chord-Cutting Elimination**:
+   Linear Cartesian interpolation $(1 - t)\vec{P}_{\text{helio}} + t\vec{P}_{\text{geo}}$ causes seasonal milestone positions to collapse through the origin ($r \to 0$ at $t_{\text{geo}} = 0.5$) because $\vec{P}_{\text{geo}} \approx -\vec{P}_{\text{helio}}$. To preserve true orbital distance ($r \approx 110\text{px}$) across the continuum, milestone nodes are interpolated via 3D Spherical Linear Interpolation (`slerp3D`):
+   \[
+   \vec{P}_m(t_{\text{geo}}) = \operatorname{slerp3D}(\vec{P}_{m, \text{helio}}, \vec{P}_{m, \text{geo}}, t_{\text{geo}})
+   \]
+
+3. **Continuous Celestial Ring Blooming & Frame Tilt**:
+   - Celestial rings bloom dynamically from miniature planetary radius $R = 14\text{px}$ to macro celestial radius $R = 100\text{px}$:
+     \[
+     R(t_{\text{geo}}) = 14 + 86 \cdot t_{\text{geo}} \quad [\text{px}]
+     \]
+   - Ecliptic orbit tilt smoothly rotates from the ecliptic plane into true equatorial obliquity:
+     \[
+     \varepsilon(t_{\text{geo}}) = t_{\text{geo}} \cdot 23.439281^\circ
+     \]
+   - Lunar orbit radius expands continuously from $16\text{px}$ to $26\text{px}$, with the Ascending Node ($\Omega$) and Descending Node ($\mho$) pins tracking in lockstep.
+
+#### 2. Phase B: Observer Sky Cone ↔ Volumetric Laser Projection Morph ($\lambda \in (0.45, 1.0]$)
+
+Let normalized Phase B flattening progress be:
+\[
+u = \operatorname{clamp}\left(\frac{\lambda - 0.45}{0.55}, 0, 1\right)
+\]
+1. **Continuous Apex Glide**:
+   The apex $\vec{A}(u)$ smoothly glides from the geographic observer pin on Earth's surface $\vec{S}_{\text{obs}}$ to the astrolabe Center of Projection (Focal Pole) $\vec{F}_{\text{screen}}$:
+   \[
+   \vec{A}(u) = (1 - u)\vec{S}_{\text{obs}} + u\vec{F}_{\text{screen}}
+   \]
+   where $\vec{F}_{\text{screen}} = (0, 1.2 R_0)$ for Stereographic/Horizon and $(0, 0)$ for Rojas.
+
+2. **Topocentric Horizon Disc to Astrolabe Base Rim Expansion**:
+   The 72-point circumferential canopy rim $\vec{P}_k(u)$ continuously expands from the topocentric horizon disc ($r \approx 20\text{px}$) to the astrolabe projective base rim ($R_0 = 100\text{px}$):
+   \[
+   \vec{P}_k(u) = (1 - u)\vec{S}_{c, k} + u\vec{S}_{L, k}, \quad k \in \{0, 1, \dots, 71\}
+   \]
+   where $\vec{S}_{c, k}$ is the 3D projected topocentric horizon vertex and $\vec{S}_{L, k}$ is the projected equatorial base ring vertex.
+
+3. **1-to-1 Radial Compass Ray Morphing**:
+   8 cardinal and intercardinal topocentric compass rays ($0^\circ, 45^\circ, \dots, 315^\circ$) connect Apex $\vec{A}(u)$ to rim vertices $\vec{P}_{9j}(u)$ for $j \in \{0, \dots, 7\}$, morphing directly into the 8 stereographic projection laser rays.
+
+4. **Volumetric Conical Envelope**:
+   The closed SVG polygon $\mathcal{P}_{\text{cone}}(u) = [\vec{A}(u), \vec{P}_0(u), \vec{P}_1(u), \dots, \vec{P}_{71}(u), \vec{A}(u)]$ continuously washes from daylight sky blue (`#38bdf8`) / nocturnal indigo (`#818cf8`) into the volumetric laser projection gradient (`url(#laserConeGradient)`).
+
 ---
 
 ## 14. Diurnal Celestial Ground Tracks, Antimeridian Seam Interpolation & Gated Lunar Nodes

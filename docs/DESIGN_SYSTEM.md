@@ -62,6 +62,15 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Parametric Sun Bead**: Mathematically clamped directly to $(r_0 \cos\lambda, r_0 \sin\lambda \sin\epsilon, r_0 \sin\lambda \cos\epsilon)$ on the Ecliptic track across all 4 seasons and free Rete rotation (residual $< 1.42 \times 10^{-13}\text{ px}$).
 * **Ecliptic Rete**: Divided into 12 alternating $30^\circ$ zodiac arcs with standard unicode glyphs (♈, ♉, ♊, ♋, ♌, ♍, ♎, ♏, ♐, ♑, ♒, ♓) rotating with Local Sidereal Time ($\theta_{\text{LST}}$) or freely in Astrolabe Solver Mode.
 * **Navigational Astrolabe Stars**: Rendered as delicate diamond florets (`strokeWidth="0.6"`, `r="1.2-3.2px"`) with hairline dashed flame pointers and glowing magnitude halos.
+* **Volumetric Observer Sky Cone & Laser Projection Morph Continuum**:
+  - **Topocentric Canopy Envelope**: In 3D space ($\lambda \le 0.45$), conical light wash filled with daylight sky blue (`#38bdf8`, opacity 0.16) or nocturnal indigo (`#818cf8`, opacity 0.16) with subtle dashed silhouette lines (`strokeWidth="0.6"`, `strokeDasharray="3 2"`).
+  - **Phase B Cross-Fade**: Over $\lambda \in (0.45, 1.0]$, the 3D cone fill and horizon disc fade out with $(1 - u)$, while the stereographic laser projection cone (`url(#laserConeGradient)`) fades in with $0.75 u$.
+  - **Apex to Focal Pole Glide**: Observer location pin (`"YOU"`, $r=1.8\text{px}$, `#38bdf8`) smoothly fades out and glides into the glowing astrolabe Center of Projection (`"⌖ FOCAL BEACON"`, core $r=2.5\text{px}$, outer halo $r=5\text{px}$, `#0284c7`/`#38bdf8`).
+  - **8-Ray Radial Compass Encoding**: 8 radial rays connecting apex to rim vertices encode cardinal directions in Sky Blue (`#38bdf8`, N, E, S, W) and intercardinals in Amber (`#fbbf24`, NE, SE, SW, NW), fading in smoothly with $\text{opacity} \times \min(1, 1.5u)$.
+* **Interactive Draconic Lunar Node Pins**:
+  - **Ascending Node ($\Omega$ / $☊$)**: Northbound crossing of the Ecliptic in Sky Blue (`#38bdf8`), core radius $1.8\text{px}$ (expands to $2.5\text{px}$ on hover), subtle pulsating halo ($r=4\text{px} \to 6\text{px}$, opacity $0.2 \to 0.45$), white stroke border ($0.6\text{px}$), and bold monospace `☊` symbol.
+  - **Descending Node ($\mho$ / $☋$)**: Southbound crossing of the Ecliptic in Rose Red (`#f43f5e`), matching core and halo geometry with bold monospace `☋` symbol.
+  - **Detail Control**: Equipped with dedicated toggle button (`☊`) in header action rail for customizable visual density.
 * **SED Hairline Alidade Sighting Arm**: Slim $1.6\text{px}$ brass ruler body with dark wood inlay (`#78350f`, $0.75\text{px}$), cyan laser sightline (`#38bdf8`, $0.75\text{px}$ dashed), dual pinhole pinnule sighting vanes, and central reticle pin.
 
 ### B. Lunar Orbit Segmentation & Dual-Zone Depth Encodings (Eclipse Demonstrator)

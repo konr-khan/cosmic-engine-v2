@@ -109,6 +109,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F55 | Meridian Dome Container/Presenter Hooks & Filter Logic Consolidation | Extracted mathematical cascades from `SunMeridianDome` and `MoonMeridianDome` into `useSunMeridianMath` and `useMoonMeridianMath`; reduced dome components by >50% LOC; removed redundant type assertions in `App.tsx`; extracted `resolveActiveCategory` filter helper in `useCosmicEngine` | M30 | ADR-0030 |
 | F56 | Solar Ribbon Chart Modular Decomposition | Decomposed 420-line `SolarRibbonChart.tsx` monolith into modular ribbon subcomponents under `src/components/widgets/solar/ribbon/` (`SolarRibbonAxes`, `SolarRibbonBands`, `SolarRibbonOverlay`), establishing architectural symmetry with lunar ribbon and cutting chart component by 69% LOC | M31 | ADR-0031 |
 | F57 | Observer Co-Location & Dynamic 3D Celestial Continuum | Anchored topocentric sky cone to MiniGlobe observer pin with zenith singularity guards, 3D analytical lunar terminator with camera edge-on perspective, pure-engine subsolar vector centralization, λ ≤ 0.45 morph continuity threshold, and dynamic 3D camera depth sorting | M32 | ADR-0032 |
+| F58 | Copernican ↔ Geocentric 3D Translation, Observer-to-Laser Morph Continuum & Modular Architecture | Continuous 3D translation of Earth, Sun, Moon and milestones along spherical geodesic arcs (λ ≤ 0.45), continuous morph of topocentric Observer Sky Cone into astrolabe Volumetric Laser Projection Rays/Cones (λ > 0.45), interactive Draconic Lunar Node pins (☊/☋) with dedicated toggle switch, context-aware telemetry HUD switching, useArmillaryInteractions gesture hook extraction, and controls/ subcomponents decomposition | M33 | ADR-0033 |
 
 ## Milestones
 
@@ -120,7 +121,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M32)
+### Recent Milestones (M21–M33)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -135,6 +136,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M30 | Meridian Dome Container/Presenter Hooks & Type/Filter Hygiene | `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`, `SunMeridianDome.tsx`, `MoonMeridianDome.tsx`, `App.tsx`, `useCosmicEngine.ts`, ADR-0030 | M1–M29 | DONE |
 | M31 | Solar Ribbon Chart Modular Decomposition | `SolarRibbonAxes.tsx`, `SolarRibbonBands.tsx`, `SolarRibbonOverlay.tsx`, `SolarRibbonChart.tsx`, `solar/index.ts`, ADR-0031 | M1–M30 | DONE |
 | M32 | Observer Co-Location, 3D Analytical Illumination & Dynamic Depth Sorting | `src/utils/cosmicMath/armillary/`, `ArmillaryBeadsLayer.tsx`, ADR-0032 | M1–M31 | DONE |
+| M33 | Copernican ↔ Geocentric Translation, Observer-to-Laser Morph & Modular Controls | `src/utils/cosmicMath/armillary/`, `src/components/widgets/armillary/`, ADR-0033 | M1–M32 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -204,7 +206,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`, `todayTokens.ts`)
         - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`)
         - `common/` — Shared today visual primitives (`SkyDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`)
-      - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, modular canvas layers)
+      - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, `useArmillaryInteractions`, `controls/`, `canvas/`)
       - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`, `ribbon/`)
       - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`, `ribbon/`)
       - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`, `ShadowRayHoverHud.tsx`)
@@ -218,4 +220,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0031`)
+  - `adr/` — Architecture Decision Records (`0001` through `0033`)
