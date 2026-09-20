@@ -22,7 +22,7 @@ import {
   type ArmillaryModelOutput,
   type ArmillaryRingPath
 } from './index';
-import { getJulianDate, generateArmillaryModel } from '../../../utils/cosmicMath';
+import { getJulianDate, generateArmillaryModel, computeMoonPhasePath } from '../../../utils/cosmicMath';
 
 describe('Gyro-Morph Armillary Subsystem', () => {
   it('exports all decomposed armillary sub-components cleanly', () => {
@@ -668,5 +668,234 @@ describe('Gyro-Morph Armillary Subsystem', () => {
     expect(html).toContain('TERRA · LIVING MARBLE');
     expect(html).toContain('0° Prime Meridian (Greenwich)');
     expect(html).toContain('180° Antimeridian');
+  });
+
+  describe('computeMoonPhasePath & Directional Lunar Phase Illumination', () => {
+    it('accurately derives new moon, full moon, crescent, and gibbous paths', () => {
+      const newMoon = computeMoonPhasePath(0.0, 2.6);
+      expect(newMoon.isNew).toBe(true);
+      expect(newMoon.isFull).toBe(false);
+      expect(newMoon.pathD).toBe('');
+
+      const fullMoon = computeMoonPhasePath(0.5, 2.6);
+      expect(fullMoon.isNew).toBe(false);
+      expect(fullMoon.isFull).toBe(true);
+      expect(fullMoon.pathD).toBe('');
+
+      const waxingCrescent = computeMoonPhasePath(0.15, 2.6);
+      expect(waxingCrescent.isNew).toBe(false);
+      expect(waxingCrescent.isFull).toBe(false);
+      expect(waxingCrescent.pathD).toContain('M 0,-2.60');
+      expect(waxingCrescent.pathD).toContain('A 2.6,2.6');
+      expect(waxingCrescent.pathD).toContain('0 0,0 0,-2.60'); // sweep 0 for crescent
+
+      const waxingGibbous = computeMoonPhasePath(0.35, 2.6);
+      expect(waxingGibbous.isNew).toBe(false);
+      expect(waxingGibbous.isFull).toBe(false);
+      expect(waxingGibbous.pathD).toContain('0 0,1 0,-2.60'); // sweep 1 for gibbous
+    });
+
+    it('renders directional lunar phase bead in Heliocentric Orbit mode with sunward dayside', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.15,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            lunarNodes: model.lunarNodes,
+            projectionMode: 'heliocentric',
+            modelType: 'orbit',
+            morphLambda: 0.0,
+            isOrbital: true,
+            camera: { pitch: 0, yaw: 0, roll: 0 },
+            timeOfDay: 12.0,
+            orbitRingOpacity: 1,
+            milestonesOpacity: 1,
+            lunarOrbitOpacity: 1,
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      // Nightside dark base sphere
+      expect(html).toContain('fill="#0f172a"');
+      // Dayside illuminated semicircle
+      expect(html).toContain('fill="#f8fafc"');
+      expect(html).toContain('M 0,-2.6 A 2.6,2.6 0 0,1 0,2.6 Z');
+    });
+
+    it('renders apparent lunar phase crescent in Geocentric Apparent mode', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.25,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 20,
+        cameraYaw: 40,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            lunarNodes: model.lunarNodes,
+            projectionMode: 'geocentric',
+            modelType: 'apparent',
+            morphLambda: 0.0,
+            isOrbital: false,
+            camera: { pitch: 20, yaw: 40, roll: 0 },
+            timeOfDay: 12.0,
+            orbitRingOpacity: 0,
+            milestonesOpacity: 1,
+            lunarOrbitOpacity: 1,
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      // Nightside dark base sphere
+      expect(html).toContain('fill="#0f172a"');
+      // Apparent phase path
+      expect(html).toContain('fill="#f8fafc"');
+      expect(html).toContain('rotate(');
+    });
+
+    it('synchronizes main view Earth continent rotation with camera yaw', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      const htmlYaw0 = renderToStaticMarkup(
+        React.createElement(ArmillarySvgCanvas, {
+          model,
+          projectionMode: 'geocentric',
+          morphLambda: 0.0,
+          showRays: false,
+          showStars: false,
+          showTympan: false,
+          showRule: false,
+          camera: { pitch: 0, yaw: 0, roll: 0 },
+          onCameraChange: () => {},
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12.0
+        })
+      );
+
+      const htmlYaw90 = renderToStaticMarkup(
+        React.createElement(ArmillarySvgCanvas, {
+          model,
+          projectionMode: 'geocentric',
+          morphLambda: 0.0,
+          showRays: false,
+          showStars: false,
+          showTympan: false,
+          showRule: false,
+          camera: { pitch: 0, yaw: 90, roll: 0 },
+          onCameraChange: () => {},
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12.0
+        })
+      );
+
+      // Continents should NOT be identical when camera yaw rotates from 0° to 90°
+      expect(htmlYaw0).not.toEqual(htmlYaw90);
+    });
+
+    it('aligns observer cone position perfectly with MiniGlobe user location dot on Earth', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const lat = 47.06;
+      const lon = -122.81;
+      const tod = 12.0;
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: lat,
+        longitude: lon,
+        timeOfDay: tod,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(model.observerCone).toBeDefined();
+      const obsScreen = model.observerCone!.observerScreenPos;
+      const earthScreen = model.earth.screenPos;
+
+      // Expected offset on Earth disc (radius 4.8px) in camera coordinates (pitch=0, yaw=0)
+      const phiRad = (lat * Math.PI) / 180;
+      const hRad = (((tod - 12) * 15 + lon) * Math.PI) / 180;
+      const expectedDx = 4.8 * Math.cos(phiRad) * Math.sin(hRad);
+      const expectedDy = -4.8 * Math.sin(phiRad);
+
+      expect(obsScreen.x - earthScreen.x).toBeCloseTo(expectedDx, 2);
+      expect(obsScreen.y - earthScreen.y).toBeCloseTo(expectedDy, 2);
+    });
   });
 });

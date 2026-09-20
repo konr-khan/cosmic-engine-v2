@@ -263,6 +263,7 @@ export function generateArmillaryModel(params: {
     orbitRingOpacity,
     latitude,
     longitude,
+    timeOfDay,
     gmstDeg,
     obliquity,
     blendedEarth3D,

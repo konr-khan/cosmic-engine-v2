@@ -144,8 +144,9 @@ export function computeArmillaryObserverCone(params: {
   orbitRingOpacity: number;
   latitude: Latitude;
   longitude: Longitude;
-  gmstDeg: number;
-  obliquity: number;
+  timeOfDay?: number;
+  gmstDeg?: number;
+  obliquity?: number;
   blendedEarth3D: Vector3D;
   blendedSun3D: Vector3D;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
@@ -154,8 +155,8 @@ export function computeArmillaryObserverCone(params: {
     orbitRingOpacity,
     latitude,
     longitude,
+    timeOfDay,
     gmstDeg,
-    obliquity,
     blendedEarth3D,
     blendedSun3D,
     transformVertex
@@ -164,25 +165,23 @@ export function computeArmillaryObserverCone(params: {
   if (orbitRingOpacity <= 0.05) return undefined;
 
   const phi = toRadians(latitude);
-  const rotDeg = (((gmstDeg + longitude) % 360) + 360) % 360;
-  const rotRad = toRadians(rotDeg);
-  const epsRad = toRadians(obliquity);
+  // Match MiniGlobe euler3d hourAngle convention: ((timeOfDay - 12) * 15) + longitude
+  const hourAngleDeg = timeOfDay !== undefined
+    ? (((timeOfDay - 12) * 15 + longitude) % 360 + 360) % 360
+    : (((gmstDeg ?? 0) + longitude) % 360 + 360) % 360;
+  const hRad = toRadians(hourAngleDeg);
 
-  // Observer body vector on Earth
-  const vx = Math.cos(phi) * Math.sin(rotRad);
-  const vy = Math.sin(phi);
-  const vz = Math.cos(phi) * Math.cos(rotRad);
+  // Observer normal vector on Earth in Armillary frame (where North Pole is +Y, matching MiniGlobe euler3d)
+  const nzX = Math.cos(phi) * Math.sin(hRad);
+  const nzY = Math.sin(phi);
+  const nzZ = Math.cos(phi) * Math.cos(hRad);
 
-  // Tilted zenith direction in 3D space
-  const nzX = vx;
-  const nzY = vy * Math.cos(epsRad) - vz * Math.sin(epsRad);
-  const nzZ = vy * Math.sin(epsRad) + vz * Math.cos(epsRad);
-
-  // Observer pin on Earth surface
+  // Observer pin on Earth surface (radius 4.8 matching MiniGlobe globeRadius)
+  const rEarth = 4.8;
   const pObs3D: Vector3D = {
-    x: blendedEarth3D.x + 3.5 * nzX,
-    y: blendedEarth3D.y + 3.5 * nzY,
-    z: blendedEarth3D.z + 3.5 * nzZ
+    x: blendedEarth3D.x + rEarth * nzX,
+    y: blendedEarth3D.y + rEarth * nzY,
+    z: blendedEarth3D.z + rEarth * nzZ
   };
 
   // Zenith ray tip (30 px outward)
@@ -359,4 +358,44 @@ export function computeArmillaryBodies(params: {
       azDeg: moonHoriz.azDeg
     }
   };
+}
+
+/**
+ * Analytical SVG path generator for a 2D lunar phase disc of radius r.
+ * In a local coordinate frame with origin (0, 0), the illuminated bright limb
+ * faces toward +X (0 degrees, pointing toward the Sun).
+ *
+ * @param phase - Normalized lunar phase in [0, 1) (0 = New Moon, 0.25 = First Quarter, 0.5 = Full Moon, 0.75 = Last Quarter)
+ * @param r - Disc radius in SVG user units (default: 2.6)
+ */
+export function computeMoonPhasePath(phase: number, r: number = 2.6): {
+  pathD: string;
+  isFull: boolean;
+  isNew: boolean;
+} {
+  const p = ((phase % 1) + 1) % 1;
+
+  // New Moon threshold (< 2% illuminated)
+  if (p < 0.02 || p > 0.98) {
+    return { pathD: '', isFull: false, isNew: true };
+  }
+
+  // Full Moon threshold (96% - 100% illuminated)
+  if (p >= 0.48 && p <= 0.52) {
+    return { pathD: '', isFull: true, isNew: false };
+  }
+
+  const cosTerm = Math.cos(p * 2 * Math.PI);
+  const rx = Math.abs(r * cosTerm);
+
+  // When cos(2*pi*p) > 0 (crescents near new moon), the terminator curves in the same
+  // direction as the outer limb (sweep 0), creating a thin illuminated crescent.
+  // When cos(2*pi*p) < 0 (gibbous near full moon), the terminator bulges outward (sweep 1).
+  const termSweep = cosTerm > 0 ? 0 : 1;
+
+  // Outer semicircle facing +X: from (0, -r) to (0, r)
+  // Terminator elliptical arc returning from (0, r) back to (0, -r)
+  const pathD = `M 0,${(-r).toFixed(2)} A ${r},${r} 0 0,1 0,${r.toFixed(2)} A ${rx.toFixed(2)},${r} 0 0,${termSweep} 0,${(-r).toFixed(2)} Z`;
+
+  return { pathD, isFull: false, isNew: false };
 }

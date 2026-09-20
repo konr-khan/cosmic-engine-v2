@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { MiniGlobe } from '../../../common/MiniGlobe';
 import { Vector3D } from '../../../../types/coordinates';
+import { computeMoonPhasePath } from '../../../../utils/cosmicMath/armillary';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -124,6 +125,11 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const sunAngleDeg = isHeliocentric
     ? ((Math.atan2(sun.screenPos.y - earth.screenPos.y, sun.screenPos.x - earth.screenPos.x) * 180) / Math.PI + 360) % 360
     : undefined;
+
+  // Dynamic in-plane angle pointing from Moon to Sun in SVG screen coordinates
+  const moonToSunAngleDeg = ((Math.atan2(sun.screenPos.y - moon.screenPos.y, sun.screenPos.x - moon.screenPos.x) * 180) / Math.PI + 360) % 360;
+  const moonRadius = 2.6;
+  const moonPhaseData = computeMoonPhasePath(moon.phase, moonRadius);
 
   return (
     <>
@@ -350,14 +356,51 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           fill="#94a3b8"
           fillOpacity="0.2"
         />
-        {/* Moon Core */}
+        {/* Moon Dark Nightside Base Sphere */}
         <circle
           cx={moon.screenPos.x}
           cy={moon.screenPos.y}
-          r="2.6"
-          fill="#e2e8f0"
+          r={moonRadius}
+          fill="#0f172a"
+          stroke="#334155"
+          strokeWidth="0.75"
+        />
+        {/* Directional Illuminated Dayside Hemisphere / Apparent Phase Crescent */}
+        {isHeliocentric ? (
+          // In Heliocentric Orbit mode: Dayside hemisphere strictly faces the central Sun
+          <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y}) rotate(${moonToSunAngleDeg})`}>
+            <path
+              d={`M 0,${-moonRadius} A ${moonRadius},${moonRadius} 0 0,1 0,${moonRadius} Z`}
+              fill="#f8fafc"
+            />
+          </g>
+        ) : (
+          // In Geocentric Apparent & Plate modes: Renders topocentric apparent phase disc oriented toward the Sun
+          <>
+            {moonPhaseData.isFull && (
+              <circle
+                cx={moon.screenPos.x}
+                cy={moon.screenPos.y}
+                r={moonRadius}
+                fill="#f8fafc"
+              />
+            )}
+            {!moonPhaseData.isFull && !moonPhaseData.isNew && moonPhaseData.pathD && (
+              <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y}) rotate(${moonToSunAngleDeg})`}>
+                <path d={moonPhaseData.pathD} fill="#f8fafc" />
+              </g>
+            )}
+          </>
+        )}
+        {/* Outer Rim Stroke */}
+        <circle
+          cx={moon.screenPos.x}
+          cy={moon.screenPos.y}
+          r={moonRadius}
+          fill="none"
           stroke="#475569"
-          strokeWidth="1.0"
+          strokeWidth="0.75"
+          className="pointer-events-none"
         />
         <text
           x={moon.screenPos.x}
