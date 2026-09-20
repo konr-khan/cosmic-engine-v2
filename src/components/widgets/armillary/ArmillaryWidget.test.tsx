@@ -342,9 +342,9 @@ describe('Gyro-Morph Armillary Subsystem', () => {
     expect(html).toContain('⊕ EARTH (Center)');
     expect(html).toContain('☉ SUN');
     expect(html).toContain('☽ MOON');
-    // Lunar nodes (☊ and ☋) are removed from 3D Apparent mode to avoid visual clutter
-    expect(html).not.toContain('☊');
-    expect(html).not.toContain('☋');
+    // Lunar nodes (☊ and ☋) render on the lunar orbit in 3D Apparent mode
+    expect(html).toContain('☊');
+    expect(html).toContain('☋');
   });
 
   it('renders ArmillaryBeadsLayer in 2D Astrolabe plate modes with MiniGlobe in flat pin mode', () => {
@@ -441,9 +441,9 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
     expect(html).toContain('miniglobe-root');
     expect(html).toContain('⊕ EARTH');
-    // Lunar nodes (☊ and ☋) are removed from Orbit mode to avoid visual clutter
-    expect(html).not.toContain('☊');
-    expect(html).not.toContain('☋');
+    // Lunar nodes (☊ and ☋) render on the lunar orbit in Orbit mode
+    expect(html).toContain('☊');
+    expect(html).toContain('☋');
   });
 
   it('renders ArmillaryEarthPip in Heliocentric Orbit mode with 3D Living Marble MiniGlobe and GMST sync', () => {
@@ -1585,6 +1585,468 @@ describe('Gyro-Morph Armillary Subsystem', () => {
         )
       );
       expect(htmlOff).toBe('<svg></svg>');
+    });
+
+    // ------------------------------------------------------------------------
+    // Phase 1 Hardening: Lunar Nodes, Observer Coordinates & Telemetry Horizon
+    // ------------------------------------------------------------------------
+    describe('Phase 1 Hardening: Functional, Telemetry & Visual Hardening', () => {
+      // Helper function to find a React element in a rendered tree by predicate
+      function findInTree(tree: any, predicate: (el: any) => boolean): any {
+        if (!tree) return null;
+        if (predicate(tree)) return tree;
+        if (Array.isArray(tree)) {
+          for (const child of tree) {
+            const found = findInTree(child, predicate);
+            if (found) return found;
+          }
+        } else if (tree.props && tree.props.children) {
+          return findInTree(tree.props.children, predicate);
+        }
+        return null;
+      }
+
+      // 1. Lunar Nodes Toggle in ArmillaryHeaderControls
+      it('toggles lunar nodes visibility via dedicated ☊ button in ArmillaryHeaderControls', () => {
+        const onToggleLunarNodes = vi.fn();
+        const baseProps = {
+          projectionMode: 'geocentric' as const,
+          onSelectMode: vi.fn(),
+          morphLambda: 0.0,
+          onMorphChange: vi.fn(),
+          showRays: true,
+          onToggleRays: vi.fn(),
+          showStars: true,
+          onToggleStars: vi.fn(),
+          showTympan: true,
+          onToggleTympan: vi.fn(),
+          showRule: false,
+          onToggleRule: vi.fn(),
+          onResetCamera: vi.fn(),
+          onSnapToPreset: vi.fn()
+        };
+
+        // Render with showLunarNodes = true
+        const controlsOn = ArmillaryHeaderControls({
+          ...baseProps,
+          showLunarNodes: true,
+          onToggleLunarNodes
+        });
+        const htmlOn = renderToStaticMarkup(controlsOn as React.ReactElement);
+        expect(htmlOn).toContain('title="Toggle Draconic Lunar Nodes (☊ / ☋)"');
+        expect(htmlOn).toContain('bg-indigo-600 text-white');
+        expect(htmlOn).toContain('☊');
+
+        // Render with showLunarNodes = false
+        const controlsOff = ArmillaryHeaderControls({
+          ...baseProps,
+          showLunarNodes: false,
+          onToggleLunarNodes
+        });
+        const htmlOff = renderToStaticMarkup(controlsOff as React.ReactElement);
+        expect(htmlOff).toContain('title="Toggle Draconic Lunar Nodes (☊ / ☋)"');
+        expect(htmlOff).toContain('text-slate-400 hover:text-slate-200');
+
+        // Simulate click
+        const button = findInTree(controlsOn, (el) => el?.props?.title === 'Toggle Draconic Lunar Nodes (☊ / ☋)');
+        expect(button).toBeDefined();
+        button.props.onClick();
+        expect(onToggleLunarNodes).toHaveBeenCalledTimes(1);
+
+        // When onToggleLunarNodes is omitted, button is not rendered
+        const controlsNoToggle = ArmillaryHeaderControls({
+          ...baseProps
+        });
+        const htmlNoToggle = renderToStaticMarkup(controlsNoToggle as React.ReactElement);
+        expect(htmlNoToggle).not.toContain('title="Toggle Draconic Lunar Nodes (☊ / ☋)"');
+      });
+
+      // 2. Interactive Lunar Node Pins in ArmillaryBeadsLayer
+      it('renders interactive Lunar Node Pins (☊ and ☋) in ArmillaryBeadsLayer when showLunarNodes is true and unmounts when false', () => {
+        const jd = getJulianDate(new Date(2026, 2, 20), 12);
+        const model = generateArmillaryModel({
+          julianDate: jd,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunRaDeg: 0,
+          sunDecDeg: 0,
+          sunLambdaDeg: 0,
+          moonRaDeg: 90,
+          moonDecDeg: 20,
+          moonLambdaDeg: 90,
+          moonPhase: 0.5,
+          morphLambda: 0.0,
+          projectionMode: 'geocentric',
+          cameraPitch: 30,
+          cameraYaw: 45,
+          r0: 100
+        });
+
+        const defaultProps = {
+          earth: model.earth,
+          sun: model.sun,
+          moon: model.moon,
+          milestones: model.milestones,
+          lunarNodes: model.lunarNodes,
+          projectionMode: 'geocentric' as const,
+          modelType: 'apparent' as const,
+          morphLambda: 0.0,
+          camera: { pitch: 30, yaw: 45, roll: 0 },
+          observerLat: 47.06,
+          observerLon: -122.81,
+          isOrbital: false,
+          orbitRingOpacity: 0,
+          milestonesOpacity: 1,
+          lunarOrbitOpacity: 1,
+          onHoverBead: vi.fn(),
+          onHoverMilestone: vi.fn(),
+          onHoverNode: vi.fn(),
+          onTargetClick: vi.fn()
+        };
+
+        // Render with showLunarNodes = true (default)
+        const htmlOn = renderToStaticMarkup(
+          React.createElement('svg', null,
+            React.createElement(ArmillaryBeadsLayer, {
+              ...defaultProps,
+              showLunarNodes: true
+            })
+          )
+        );
+
+        expect(htmlOn).toContain('data-testid="lunar-node-asc"');
+        expect(htmlOn).toContain('data-testid="lunar-node-desc"');
+        expect(htmlOn).toContain('☊');
+        expect(htmlOn).toContain('☋');
+        expect(htmlOn).toContain('#38bdf8'); // Sky blue for ascending node
+        expect(htmlOn).toContain('#f43f5e'); // Rose red for descending node
+
+        // Render with showLunarNodes = false
+        const htmlOff = renderToStaticMarkup(
+          React.createElement('svg', null,
+            React.createElement(ArmillaryBeadsLayer, {
+              ...defaultProps,
+              showLunarNodes: false
+            })
+          )
+        );
+
+        expect(htmlOff).not.toContain('data-testid="lunar-node-asc"');
+        expect(htmlOff).not.toContain('data-testid="lunar-node-desc"');
+        expect(htmlOff).not.toContain('☊');
+        expect(htmlOff).not.toContain('☋');
+
+        // When lunarOrbitOpacity <= 0.05, node pins are hidden
+        const htmlHiddenOrbit = renderToStaticMarkup(
+          React.createElement('svg', null,
+            React.createElement(ArmillaryBeadsLayer, {
+              ...defaultProps,
+              showLunarNodes: true,
+              lunarOrbitOpacity: 0.0
+            })
+          )
+        );
+        expect(htmlHiddenOrbit).not.toContain('data-testid="lunar-node-asc"');
+        expect(htmlHiddenOrbit).not.toContain('data-testid="lunar-node-desc"');
+      });
+
+      // 3. Hovering and Clicking Lunar Node Pins
+      it('triggers onHoverNode and onTargetClick when interacting with Lunar Node Pins in ArmillaryBeadsLayer', () => {
+        const jd = getJulianDate(new Date(2026, 2, 20), 12);
+        const model = generateArmillaryModel({
+          julianDate: jd,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunRaDeg: 0,
+          sunDecDeg: 0,
+          sunLambdaDeg: 0,
+          moonRaDeg: 90,
+          moonDecDeg: 20,
+          moonLambdaDeg: 90,
+          moonPhase: 0.5,
+          morphLambda: 0.0,
+          projectionMode: 'geocentric',
+          cameraPitch: 30,
+          cameraYaw: 45,
+          r0: 100
+        });
+
+        const onHoverNode = vi.fn();
+        const onTargetClick = vi.fn();
+
+        let ascGroup: any = null;
+        let descGroup: any = null;
+
+        const TestWrapper: React.FC = () => {
+          const layerTree = ArmillaryBeadsLayer({
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            lunarNodes: model.lunarNodes,
+            projectionMode: 'geocentric',
+            modelType: 'apparent',
+            morphLambda: 0.0,
+            camera: { pitch: 30, yaw: 45, roll: 0 },
+            observerLat: 47.06,
+            observerLon: -122.81,
+            isOrbital: false,
+            orbitRingOpacity: 0,
+            milestonesOpacity: 1,
+            lunarOrbitOpacity: 1,
+            showLunarNodes: true,
+            hoveredNode: null,
+            isDragging: false,
+            onHoverBead: vi.fn(),
+            onHoverMilestone: vi.fn(),
+            onHoverNode,
+            onTargetClick
+          });
+
+          ascGroup = findInTree(layerTree, (el) => el?.props?.['data-testid'] === 'lunar-node-asc');
+          descGroup = findInTree(layerTree, (el) => el?.props?.['data-testid'] === 'lunar-node-desc');
+
+          return React.createElement('svg', null, layerTree as any);
+        };
+
+        renderToStaticMarkup(React.createElement(TestWrapper));
+
+        expect(ascGroup).toBeDefined();
+        expect(descGroup).toBeDefined();
+
+        // 1. Pointer Enter Ascending Node
+        ascGroup.props.onPointerEnter();
+        expect(onHoverNode).toHaveBeenCalledWith('asc');
+
+        // 2. Pointer Leave Ascending Node
+        ascGroup.props.onPointerLeave();
+        expect(onHoverNode).toHaveBeenCalledWith(null);
+
+        // 3. Click Ascending Node
+        const mockStopPropagation = vi.fn();
+        ascGroup.props.onClick({ stopPropagation: mockStopPropagation });
+        expect(mockStopPropagation).toHaveBeenCalled();
+        expect(onTargetClick).toHaveBeenCalledWith('Ascending Node (☊ Caput)', model.lunarNodes!.ascendingNode.screenPos);
+
+        // 4. Pointer Enter Descending Node
+        descGroup.props.onPointerEnter();
+        expect(onHoverNode).toHaveBeenCalledWith('desc');
+
+        // 5. Pointer Leave Descending Node
+        descGroup.props.onPointerLeave();
+        expect(onHoverNode).toHaveBeenCalledWith(null);
+
+        // 6. Click Descending Node
+        descGroup.props.onClick({ stopPropagation: mockStopPropagation });
+        expect(onTargetClick).toHaveBeenCalledWith('Descending Node (☋ Cauda)', model.lunarNodes!.descendingNode.screenPos);
+      });
+
+      // 4. Negative coordinate formatting in ArmillaryHoverHud
+      it('formats negative observer coordinates with °S and °W hemisphere signs in ArmillaryHoverHud', () => {
+        const jd = getJulianDate(new Date(2026, 2, 20), 12);
+        const model = generateArmillaryModel({
+          julianDate: jd,
+          latitude: -33.8688,
+          longitude: -151.2093,
+          timeOfDay: 12,
+          sunRaDeg: 0,
+          sunDecDeg: 0,
+          sunLambdaDeg: 0,
+          moonRaDeg: 90,
+          moonDecDeg: 20,
+          moonLambdaDeg: 90,
+          moonPhase: 0.5,
+          morphLambda: 0.0,
+          projectionMode: 'geocentric',
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        const southWestHtml = renderToStaticMarkup(
+          React.createElement(ArmillaryHoverHud, {
+            hoveredStar: null,
+            hoveredBead: 'observer',
+            hoveredMilestone: null,
+            hoveredNode: null,
+            lunarNodes: model.lunarNodes,
+            showRule: false,
+            sightingInfo: null,
+            sun: model.sun,
+            moon: model.moon,
+            earth: model.earth,
+            physics: model.physics,
+            observerCone: model.observerCone,
+            latitude: -33.8688,
+            longitude: -151.2093
+          })
+        );
+
+        expect(southWestHtml).toContain('33.87°S, 151.21°W');
+        expect(southWestHtml).not.toContain('-33.87°N');
+        expect(southWestHtml).not.toContain('-151.21°E');
+
+        // Positive coordinates
+        const northEastHtml = renderToStaticMarkup(
+          React.createElement(ArmillaryHoverHud, {
+            hoveredStar: null,
+            hoveredBead: 'observer',
+            hoveredMilestone: null,
+            hoveredNode: null,
+            lunarNodes: model.lunarNodes,
+            showRule: false,
+            sightingInfo: null,
+            sun: model.sun,
+            moon: model.moon,
+            earth: model.earth,
+            physics: model.physics,
+            observerCone: model.observerCone,
+            latitude: 47.06,
+            longitude: 15.44
+          })
+        );
+
+        expect(northEastHtml).toContain('47.06°N, 15.44°E');
+      });
+
+      // 5. Telemetry HUD context-aware transition to Astrolabe Horology
+      it('switches Telemetry HUD to Astrolabe Horology when morphLambda > 0.45 in geocentric mode', () => {
+        const jd = getJulianDate(new Date(2026, 2, 20), 12);
+        const model = generateArmillaryModel({
+          julianDate: jd,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunRaDeg: 0,
+          sunDecDeg: 0,
+          sunLambdaDeg: 0,
+          moonRaDeg: 90,
+          moonDecDeg: 20,
+          moonLambdaDeg: 90,
+          moonPhase: 0.5,
+          morphLambda: 0.0,
+          projectionMode: 'geocentric',
+          cameraPitch: 25,
+          cameraYaw: 35,
+          r0: 100
+        });
+
+        // 1. At morphLambda <= 0.45 (e.g. 0.0): Renders Keplerian / Orbital physics
+        const html3D = renderToStaticMarkup(
+          React.createElement(ArmillaryTelemetryHud, {
+            model,
+            projectionMode: 'geocentric',
+            morphLambda: 0.0,
+            latitude: 47.06,
+            longitude: -122.81,
+            cameraPitch: 25,
+            cameraYaw: 35
+          })
+        );
+        expect(html3D).toContain('Orbital Framework');
+        expect(html3D).toContain('⊕ Geocentric (Apparent)');
+        expect(html3D).toContain('Earth-Sun Distance');
+        expect(html3D).toContain('Keplerian Dynamics');
+        expect(html3D).not.toContain('Sidereal Horology');
+
+        // 2. At morphLambda > 0.45 (e.g. 0.6): Switches to Astrolabe Horology & Chaldean hours
+        const htmlAstrolabe = renderToStaticMarkup(
+          React.createElement(ArmillaryTelemetryHud, {
+            model,
+            projectionMode: 'geocentric',
+            morphLambda: 0.6,
+            latitude: 47.06,
+            longitude: -122.81,
+            cameraPitch: 25,
+            cameraYaw: 35
+          })
+        );
+        expect(htmlAstrolabe).not.toContain('Keplerian Dynamics');
+        expect(htmlAstrolabe).not.toContain('Earth-Sun Distance');
+        expect(htmlAstrolabe).toContain('Projection &amp; Frame');
+        expect(htmlAstrolabe).toContain('Sidereal Horology');
+        expect(htmlAstrolabe).toContain('Historical Unequal Horology');
+        expect(htmlAstrolabe).toContain('Chaldean Ruler');
+      });
+
+      // 6. Defensive fallback for laserRays in ArmillaryLaserLayer
+      it('safely handles undefined laserRays in ArmillaryLaserLayer without throwing', () => {
+        const mockBeacon = {
+          focalScreenPos: { x: 0, y: 0 },
+          focal3D: { x: 0, y: 0, z: -100 },
+          focalZCam: -100,
+          conePathD: 'M 0 0 L 50 100 L -50 100 Z',
+          laserRays: undefined as any
+        };
+
+        expect(() => {
+          renderToStaticMarkup(
+            React.createElement('svg', null,
+              React.createElement(ArmillaryLaserLayer, {
+                showRays: true,
+                focalBeacon: mockBeacon,
+                isOrbital: false,
+                morphLambda: 1.0
+              })
+            )
+          );
+        }).not.toThrow();
+      });
+
+      // 7. Center origin pin cleanup in ArmillarySvgCanvas
+      it('renders alidade center pivot screw in ArmillarySvgCanvas only when showRule is true and !isOrbital', () => {
+        const jd = getJulianDate(new Date(2026, 2, 20), 12);
+        const model = generateArmillaryModel({
+          julianDate: jd,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunRaDeg: 0,
+          sunDecDeg: 0,
+          sunLambdaDeg: 0,
+          moonRaDeg: 90,
+          moonDecDeg: 20,
+          moonLambdaDeg: 90,
+          moonPhase: 0.5,
+          morphLambda: 1.0,
+          projectionMode: 'stereographic',
+          cameraPitch: 90,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        const canvasProps = {
+          model,
+          projectionMode: 'stereographic' as const,
+          morphLambda: 1.0,
+          showRays: false,
+          showStars: false,
+          showTympan: false,
+          camera: { pitch: 90, yaw: 0, roll: 0 },
+          onCameraChange: vi.fn(),
+          r0: 100
+        };
+
+        // When showRule = false: No center origin pin
+        const htmlNoRule = renderToStaticMarkup(
+          React.createElement(ArmillarySvgCanvas, {
+            ...canvasProps,
+            showRule: false
+          })
+        );
+        expect(htmlNoRule).not.toContain('fill="#f59e0b" stroke="#78350f"');
+
+        // When showRule = true and !isOrbital: Center origin pin is rendered
+        const htmlWithRule = renderToStaticMarkup(
+          React.createElement(ArmillarySvgCanvas, {
+            ...canvasProps,
+            showRule: true
+          })
+        );
+        expect(htmlWithRule).toContain('fill="#f59e0b" stroke="#78350f"');
+      });
     });
   });
 });

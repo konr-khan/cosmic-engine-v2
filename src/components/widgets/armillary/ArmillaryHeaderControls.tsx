@@ -27,6 +27,8 @@ export interface ArmillaryHeaderControlsProps {
   onToggleTympan: () => void;
   showRule: boolean;
   onToggleRule: () => void;
+  showLunarNodes?: boolean;
+  onToggleLunarNodes?: () => void;
   onResetCamera: () => void;
   onSnapToPreset: (mode: ArmillaryProjectionMode, targetLambda: number) => void;
   isFreeReteMode?: boolean;
@@ -51,6 +53,8 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
   onToggleTympan,
   showRule,
   onToggleRule,
+  showLunarNodes = true,
+  onToggleLunarNodes,
   showObserverCone = true,
   onToggleObserverCone,
   onResetCamera,
@@ -327,6 +331,18 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
+
+          {onToggleLunarNodes && (
+            <button
+              onClick={onToggleLunarNodes}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer font-mono font-bold text-xs flex items-center justify-center w-7 h-7 ${
+                showLunarNodes ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Toggle Draconic Lunar Nodes (☊ / ☋)"
+            >
+              <span>☊</span>
+            </button>
+          )}
 
           <button
             onClick={onResetCamera}

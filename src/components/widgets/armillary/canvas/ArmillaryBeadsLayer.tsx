@@ -36,6 +36,8 @@ export interface ArmillaryBeadsLayerProps {
   orbitRingOpacity?: number;
   milestonesOpacity?: number;
   lunarOrbitOpacity?: number;
+  showLunarNodes?: boolean;
+  hoveredNode?: 'asc' | 'desc' | null;
   onHoverBead: (bead: 'sun' | 'moon' | 'earth' | null) => void;
   onHoverMilestone: (m: ArmillaryMilestoneNode | null) => void;
   onHoverNode: (node: 'asc' | 'desc' | null) => void;
@@ -68,6 +70,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   orbitRingOpacity = 1,
   milestonesOpacity = 1,
   lunarOrbitOpacity = 1,
+  showLunarNodes = true,
+  hoveredNode,
   onHoverBead,
   onHoverMilestone,
   onHoverNode,
@@ -138,7 +142,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           stroke="#fbbf24"
           strokeWidth="0.75"
           strokeDasharray="3 3"
-          opacity={orbitRingOpacity * 0.6}
+          opacity={lunarOrbitOpacity * 0.6}
           className="pointer-events-none"
         />
       )}
@@ -199,6 +203,125 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           </g>
         );
       })}
+
+      {/* 2b. Interactive Draconic Lunar Node Pins (☊ Ascending & ☋ Descending) */}
+      {showLunarNodes && lunarNodes && lunarOrbitOpacity > 0.05 && (
+        <>
+          {/* Ascending Node (☊ Caput Draconis) */}
+          <g
+            key="lunar-node-asc"
+            data-testid="lunar-node-asc"
+            className={isDragging ? 'pointer-events-none' : 'cursor-pointer'}
+            style={{ touchAction: 'none' }}
+            opacity={lunarOrbitOpacity * (lunarNodes.ascendingNode.isFront ? 1.0 : 0.4)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTargetClick('Ascending Node (☊ Caput)', lunarNodes.ascendingNode.screenPos);
+            }}
+            onPointerEnter={() => {
+              if (!isDragging) onHoverNode('asc');
+            }}
+            onPointerLeave={() => onHoverNode(null)}
+          >
+            {/* Touch hitbox */}
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r={hoveredNode === 'asc' ? 10 : 8}
+              fill="transparent"
+            />
+            {/* Halo circle */}
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r={hoveredNode === 'asc' ? 6.0 : 4.0}
+              fill="#38bdf8"
+              opacity={hoveredNode === 'asc' ? 0.45 : 0.20}
+              className={`pointer-events-none transition-[r,opacity] duration-200 ${hoveredNode === 'asc' ? 'animate-pulse' : ''}`}
+            />
+            {/* Core circle */}
+            <circle
+              cx={lunarNodes.ascendingNode.screenPos.x}
+              cy={lunarNodes.ascendingNode.screenPos.y}
+              r={hoveredNode === 'asc' ? 2.5 : 1.8}
+              fill="#38bdf8"
+              stroke="#ffffff"
+              strokeWidth={hoveredNode === 'asc' ? 1.0 : 0.6}
+              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
+            />
+            {/* Text badge */}
+            <text
+              x={lunarNodes.ascendingNode.screenPos.x}
+              y={lunarNodes.ascendingNode.screenPos.y - (hoveredNode === 'asc' ? 5.5 : 4.0)}
+              fontSize="3.2"
+              fill="#38bdf8"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+            >
+              ☊
+            </text>
+          </g>
+
+          {/* Descending Node (☋ Cauda Draconis) */}
+          <g
+            key="lunar-node-desc"
+            data-testid="lunar-node-desc"
+            className={isDragging ? 'pointer-events-none' : 'cursor-pointer'}
+            style={{ touchAction: 'none' }}
+            opacity={lunarOrbitOpacity * (lunarNodes.descendingNode.isFront ? 1.0 : 0.4)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTargetClick('Descending Node (☋ Cauda)', lunarNodes.descendingNode.screenPos);
+            }}
+            onPointerEnter={() => {
+              if (!isDragging) onHoverNode('desc');
+            }}
+            onPointerLeave={() => onHoverNode(null)}
+          >
+            {/* Touch hitbox */}
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r={hoveredNode === 'desc' ? 10 : 8}
+              fill="transparent"
+            />
+            {/* Halo circle */}
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r={hoveredNode === 'desc' ? 6.0 : 4.0}
+              fill="#f43f5e"
+              opacity={hoveredNode === 'desc' ? 0.45 : 0.20}
+              className={`pointer-events-none transition-[r,opacity] duration-200 ${hoveredNode === 'desc' ? 'animate-pulse' : ''}`}
+            />
+            {/* Core circle */}
+            <circle
+              cx={lunarNodes.descendingNode.screenPos.x}
+              cy={lunarNodes.descendingNode.screenPos.y}
+              r={hoveredNode === 'desc' ? 2.5 : 1.8}
+              fill="#f43f5e"
+              stroke="#ffffff"
+              strokeWidth={hoveredNode === 'desc' ? 1.0 : 0.6}
+              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
+            />
+            {/* Text badge */}
+            <text
+              x={lunarNodes.descendingNode.screenPos.x}
+              y={lunarNodes.descendingNode.screenPos.y - (hoveredNode === 'desc' ? 5.5 : 4.0)}
+              fontSize="3.2"
+              fill="#f43f5e"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
+            >
+              ☋
+            </text>
+          </g>
+        </>
+      )}
 
       {/* 3. Depth-Sorted Celestial Bodies (Earth, Sun, Moon) */}
       {(() => {
@@ -277,16 +400,18 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               r="12"
               fill="transparent"
             />
-            {/* Ray to Origin */}
-            <line
-              x1="0"
-              y1="0"
-              x2={sun.screenPos.x}
-              y2={sun.screenPos.y}
-              stroke="#f59e0b"
-              strokeWidth="0.6"
-              opacity="0.5"
-            />
+            {/* Ray to Earth / Center */}
+            {(!isHeliocentric || effectiveLambda > 0.05) && (
+              <line
+                x1={globeX}
+                y1={globeY}
+                x2={sun.screenPos.x}
+                y2={sun.screenPos.y}
+                stroke="#f59e0b"
+                strokeWidth="0.6"
+                opacity="0.5"
+              />
+            )}
             {/* Outer Sun Corona */}
             <circle
               cx={sun.screenPos.x}

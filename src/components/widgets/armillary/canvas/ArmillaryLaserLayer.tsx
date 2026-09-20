@@ -35,7 +35,7 @@ export const ArmillaryLaserLayer: React.FC<ArmillaryLaserLayerProps> = ({
       )}
 
       {/* Radiating Laser Rays from Focal Pole through Celestial Circles */}
-      {focalBeacon.laserRays.map((ray, idx) => (
+      {(focalBeacon.laserRays ?? []).map((ray, idx) => (
         <line
           key={`laser-ray-${idx}`}
           x1={ray.start.x}

@@ -32,6 +32,7 @@ export interface ArmillarySvgCanvasProps {
   showStars: boolean;
   showTympan: boolean;
   showRule: boolean;
+  showLunarNodes?: boolean;
   camera: ArmillaryCameraState;
   onCameraChange: (cam: ArmillaryCameraState) => void;
   r0?: number;
@@ -54,6 +55,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   showStars,
   showTympan,
   showRule,
+  showLunarNodes = true,
   showObserverCone = true,
   camera,
   onCameraChange,
@@ -389,6 +391,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           longitude={longitude}
           timeOfDay={timeOfDay}
           sunLambdaDeg={sun?.lambdaDeg ?? sun?.raDeg ?? 0}
+          showLunarNodes={showLunarNodes}
+          hoveredNode={hoveredNode}
           onHoverBead={setHoveredBead}
           onHoverMilestone={setHoveredMilestone}
           onHoverNode={setHoveredNode}
@@ -408,8 +412,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           }}
         />
 
-        {/* Center Origin Pivot Pin (Hidden when Earth is at center) */}
-        {projectionMode !== 'geocentric' && (
+        {/* Center Origin Pivot Pin (Alidade center pivot screw) */}
+        {showRule && !isOrbital && (
           <circle cx="0" cy="0" r="2.0" fill="#f59e0b" stroke="#78350f" strokeWidth="0.75" />
         )}
       </svg>

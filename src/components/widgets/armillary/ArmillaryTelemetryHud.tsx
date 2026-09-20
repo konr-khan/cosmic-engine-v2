@@ -31,7 +31,7 @@ export const ArmillaryTelemetryHud: React.FC<ArmillaryTelemetryHudProps> = ({
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const isOrbitalMode = projectionMode === 'heliocentric' || projectionMode === 'geocentric';
+  const isOrbitalMode = (projectionMode === 'heliocentric' && morphLambda <= 0.45) || (projectionMode === 'geocentric' && morphLambda <= 0.45);
   const is3D = morphLambda <= 0.05;
   const is2D = morphLambda >= 0.95;
 
