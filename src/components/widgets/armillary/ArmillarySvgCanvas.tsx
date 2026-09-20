@@ -123,6 +123,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
 
   const isOrbital = projectionMode === 'heliocentric';
   const is3D = projectionMode === 'geocentric' || projectionMode === 'heliocentric' || morphLambda <= 0.05;
+  const isZoomable = (isOrbital || projectionMode === 'geocentric') && morphLambda <= 0.05;
   const isTympanVisible = (projectionMode === 'stereographic' || projectionMode === 'horizon') && morphLambda >= 0.15;
 
   // Calculate live Alidade sighting telemetry
@@ -130,31 +131,31 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
     ? calculateAlidadeSighting(ruleAngleDeg, latitude, localSiderealTimeDeg, stars, sun, moon)
     : null;
 
-  // Normalized Sun-to-Earth camera-space vector for physical 3D terminator shading
+  // Normalized Sun-to-Earth camera-space vector for physical 3D terminator shading in Orbit and Apparent modes
   const subsolarCameraVector = useMemo<Vector3D | undefined>(() => {
-    if (projectionMode !== 'heliocentric' || !sun?.pCam || !earth?.pCam) return undefined;
+    if (!sun?.pCam || !earth?.pCam) return undefined;
     const dx = sun.pCam.x - earth.pCam.x;
     const dy = sun.pCam.y - earth.pCam.y;
     const dz = sun.pCam.z - earth.pCam.z;
     const len = Math.hypot(dx, dy, dz) || 1;
     return { x: dx / len, y: dy / len, z: dz / len };
-  }, [projectionMode, sun?.pCam, earth?.pCam]);
+  }, [sun?.pCam, earth?.pCam]);
 
-  // Dynamic zoom viewBox for 3D Heliocentric Orbit view
+  // Dynamic zoom viewBox for 3D Heliocentric Orbit view and 3D Geocentric Apparent view
   const viewBoxStr = useMemo(() => {
     if (zoom === 1.0) return "-150 -150 300 300";
     const half = parseFloat((150 / zoom).toFixed(2));
     return `${-half} ${-half} ${2 * half} ${2 * half}`;
   }, [zoom]);
 
-  // Native non-passive wheel zoom listener isolated to 3D Orbit view
+  // Native non-passive wheel zoom listener for 3D Orbit and Apparent views
   // (Prevents browser from falling back to page scroll due to passive React synthetic events)
   useEffect(() => {
     const svgEl = svgRef.current;
     if (!svgEl) return;
 
     const handleNativeWheel = (e: WheelEvent) => {
-      if (!isOrbital || morphLambda > 0.05) return;
+      if (!isZoomable) return;
       e.preventDefault();
       e.stopPropagation();
       const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
@@ -165,7 +166,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
     return () => {
       svgEl.removeEventListener('wheel', handleNativeWheel);
     };
-  }, [isOrbital, morphLambda]);
+  }, [isZoomable]);
 
   // --- Mouse / Pointer Drag for 3D Camera, Free Rete, and Alidade ---
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -453,8 +454,8 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         onCameraChange={onCameraChange}
       />
 
-      {/* Heliocentric Orbit View Zoom Controls */}
-      {isOrbital && morphLambda <= 0.05 && (
+      {/* 3D Orbit & Apparent View Zoom Controls */}
+      {isZoomable && (
         <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md border border-slate-800/90 rounded-lg p-1 shadow-xl font-mono text-[10px] select-none pointer-events-auto transition-opacity duration-200">
           <button
             type="button"
@@ -464,7 +465,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
               setZoom((z) => Math.max(0.75, parseFloat((z - 0.25).toFixed(2))));
             }}
             className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            title="Zoom Out (Orbit View)"
+            title="Zoom Out"
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -479,7 +480,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
               setZoom((z) => Math.min(3.5, parseFloat((z + 0.25).toFixed(2))));
             }}
             className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            title="Zoom In (Orbit View)"
+            title="Zoom In"
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>

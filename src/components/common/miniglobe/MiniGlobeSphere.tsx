@@ -156,45 +156,51 @@ export const MiniGlobeSphere: React.FC<MiniGlobeSphereProps> = ({
           )}
 
           {/* EULER3D Mode Equator Parallel & Great Meridian Ring (0° Greenwich & 180° Antimeridian) */}
-          {viewMode === 'euler3d' && (
-            <>
-              <ellipse 
-                cx="0" 
-                cy="0" 
-                rx={safeRadius} 
-                ry={Math.max(0.5, safeRadius * Math.sin(toRadians(Math.abs(Number(camera?.pitch) || 0))))} 
-                fill="none" 
-                stroke="#38bdf8" 
-                strokeWidth="0.65" 
-                strokeDasharray="2 1.5" 
-                opacity="0.75" 
-              />
-              {eulerGeometry?.primeMeridianPath && (
-                <path 
-                  d={eulerGeometry.primeMeridianPath} 
+          {viewMode === 'euler3d' && (() => {
+            const isSmallGlobe = safeRadius <= 6;
+            const strokeW = isSmallGlobe ? '0.22' : '0.65';
+            const dashArray = isSmallGlobe ? '0.8 1.0' : '2 1.5';
+            const lineOpacity = isSmallGlobe ? 0.35 : 0.75;
+            return (
+              <>
+                <ellipse 
+                  cx="0" 
+                  cy="0" 
+                  rx={safeRadius} 
+                  ry={Math.max(0.2, safeRadius * Math.sin(toRadians(Math.abs(Number(camera?.pitch) || 0))))} 
                   fill="none" 
                   stroke="#38bdf8" 
-                  strokeWidth="0.65" 
-                  strokeDasharray="2 1.5" 
-                  opacity="0.75" 
-                >
-                  <title>0° Prime Meridian (Greenwich)</title>
-                </path>
-              )}
-              {eulerGeometry?.antimeridianPath && (
-                <path 
-                  d={eulerGeometry.antimeridianPath} 
-                  fill="none" 
-                  stroke="#38bdf8" 
-                  strokeWidth="0.65" 
-                  strokeDasharray="2 1.5" 
-                  opacity="0.75" 
-                >
-                  <title>180° Antimeridian</title>
-                </path>
-              )}
-            </>
-          )}
+                  strokeWidth={strokeW} 
+                  strokeDasharray={dashArray} 
+                  opacity={lineOpacity} 
+                />
+                {eulerGeometry?.primeMeridianPath && (
+                  <path 
+                    d={eulerGeometry.primeMeridianPath} 
+                    fill="none" 
+                    stroke="#38bdf8" 
+                    strokeWidth={strokeW} 
+                    strokeDasharray={dashArray} 
+                    opacity={lineOpacity} 
+                  >
+                    <title>0° Prime Meridian (Greenwich)</title>
+                  </path>
+                )}
+                {eulerGeometry?.antimeridianPath && (
+                  <path 
+                    d={eulerGeometry.antimeridianPath} 
+                    fill="none" 
+                    stroke="#38bdf8" 
+                    strokeWidth={strokeW} 
+                    strokeDasharray={dashArray} 
+                    opacity={lineOpacity} 
+                  >
+                    <title>180° Antimeridian</title>
+                  </path>
+                )}
+              </>
+            );
+          })()}
         </g>
       )}
 

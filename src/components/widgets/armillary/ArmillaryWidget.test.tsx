@@ -660,8 +660,8 @@ describe('Gyro-Morph Armillary Subsystem', () => {
     );
 
     // Verify zoom controls rendered
-    expect(html).toContain('Zoom Out (Orbit View)');
-    expect(html).toContain('Zoom In (Orbit View)');
+    expect(html).toContain('title="Zoom Out"');
+    expect(html).toContain('title="Zoom In"');
     expect(html).toContain('1.0×');
 
     // Verify Terra Living Marble Inset rendered with 0° Greenwich Prime Meridian and 180° Antimeridian
@@ -748,7 +748,7 @@ describe('Gyro-Morph Armillary Subsystem', () => {
       expect(html).toMatch(/<path d="M[^"]+" fill="#f8fafc"/);
     });
 
-    it('renders apparent lunar phase crescent in Geocentric Apparent mode', () => {
+    it('renders 3D analytical lunar terminator in Geocentric Apparent mode', () => {
       const jd = getJulianDate(new Date(2026, 0, 3), 12);
       const model = generateArmillaryModel({
         julianDate: jd,
@@ -796,7 +796,60 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
       // Nightside dark base sphere
       expect(html).toContain('fill="#0f172a"');
-      // Apparent phase path
+      // 3D analytical illuminated terminator path
+      expect(html).toContain('fill="#f8fafc"');
+      expect(html).toMatch(/<path d="M[^"]+" fill="#f8fafc"/);
+    });
+
+    it('renders apparent lunar phase crescent in 2D astrolabe plate mode', () => {
+      const jd = getJulianDate(new Date(2026, 0, 3), 12);
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.25,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 90,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: model.earth,
+            sun: model.sun,
+            moon: model.moon,
+            milestones: model.milestones,
+            lunarNodes: model.lunarNodes,
+            projectionMode: 'stereographic',
+            modelType: 'rete',
+            morphLambda: 1.0,
+            isOrbital: false,
+            camera: { pitch: 90, yaw: 0, roll: 0 },
+            timeOfDay: 12.0,
+            orbitRingOpacity: 0,
+            milestonesOpacity: 1,
+            lunarOrbitOpacity: 1,
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      // Nightside dark base sphere
+      expect(html).toContain('fill="#0f172a"');
+      // 2D apparent phase path rotated toward Sun
       expect(html).toContain('fill="#f8fafc"');
       expect(html).toContain('rotate(');
     });
@@ -986,6 +1039,53 @@ describe('Gyro-Morph Armillary Subsystem', () => {
       expect(htmlFrontlit).toContain('fill="#0f172a"');
       expect(htmlFrontlit).toContain('fill="#f8fafc"');
       expect(htmlFrontlit).toContain('stroke="#475569"');
+    });
+
+    it('renders zoom controls and subsolar lighting in Geocentric Apparent mode', () => {
+      const jd = getJulianDate(new Date(2026, 9, 3), 10.217); // 10/03/2026 10:13 UTC
+      const model = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 10.217,
+        sunRaDeg: 190,
+        sunDecDeg: -4,
+        sunLambdaDeg: 190,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 25,
+        cameraYaw: 35,
+        r0: 100
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement(ArmillarySvgCanvas, {
+          model,
+          projectionMode: 'geocentric',
+          morphLambda: 0.0,
+          showRays: false,
+          showStars: true,
+          showTympan: false,
+          showRule: false,
+          camera: { pitch: 25, yaw: 35, roll: 0 },
+          onCameraChange: () => {},
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 10.217
+        })
+      );
+
+      // Zoom controls should be present in 3D Geocentric Apparent view
+      expect(html).toContain('title="Zoom In"');
+      expect(html).toContain('title="Zoom Out"');
+      expect(html).toContain('1.0×');
+
+      // Earth globe with 3D euler orientation and subsolar terminator
+      expect(html).toContain('miniglobe-root');
     });
   });
 });

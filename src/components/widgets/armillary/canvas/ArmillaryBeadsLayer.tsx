@@ -98,9 +98,12 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const lon = observerLon ?? longitude ?? -122.81;
   const sunLambda = sunLambdaDeg ?? (sun ? Number(sun.lambdaDeg ?? sun.raDeg ?? 0) : 0);
 
+  const is3DView = miniGlobeViewMode === 'euler3d';
+
   // 3D Subsolar unit illumination vector in camera coordinates pointing from Earth toward Sun
+  // Active in both 3D Orbit and 3D Apparent modes
   const subsolarCamVec = React.useMemo<Vector3D | undefined>(() => {
-    if (!isHeliocentric || !sun?.pCam || !earth?.pCam) return undefined;
+    if (!sun?.pCam || !earth?.pCam) return undefined;
     const dx = sun.pCam.x - earth.pCam.x;
     const dy = sun.pCam.y - earth.pCam.y;
     const dz = sun.pCam.z - earth.pCam.z;
@@ -110,7 +113,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       y: dy / len,
       z: dz / len
     };
-  }, [isHeliocentric, sun?.pCam, earth?.pCam]);
+  }, [sun?.pCam, earth?.pCam]);
 
   // Determine globe position and radius
   // In plate modes or center geocentric mode, Earth is centered at (0, 0)
@@ -133,8 +136,9 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const moonPhaseData = computeMoonPhasePath(moon.phase, moonRadius);
 
   // 3D Subsolar unit illumination vector in camera coordinates pointing from Moon toward Sun
+  // Active in both 3D Orbit and 3D Apparent modes
   const moonSunCamVec = React.useMemo<Vector3D | undefined>(() => {
-    if (!isHeliocentric || !sun?.pCam || !moon?.pCam) return undefined;
+    if (!is3DView || !sun?.pCam || !moon?.pCam) return undefined;
     const dx = sun.pCam.x - moon.pCam.x;
     const dy = sun.pCam.y - moon.pCam.y;
     const dz = sun.pCam.z - moon.pCam.z;
@@ -144,13 +148,13 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       y: dy / len,
       z: dz / len
     };
-  }, [isHeliocentric, sun?.pCam, moon?.pCam]);
+  }, [is3DView, sun?.pCam, moon?.pCam]);
 
-  // Dynamic 3D analytical limb path for Moon in Heliocentric Orbit mode
+  // Dynamic 3D analytical limb path for Moon in 3D Orbit & Apparent modes
   const moonLimbPath = React.useMemo(() => {
-    if (!isHeliocentric || !moonSunCamVec) return '';
+    if (!is3DView || !moonSunCamVec) return '';
     return generateAnalyticalLimbPath(moonRadius, moonSunCamVec.x, moonSunCamVec.y, moonSunCamVec.z, 0);
-  }, [isHeliocentric, moonSunCamVec, moonRadius]);
+  }, [is3DView, moonSunCamVec, moonRadius]);
 
   return (
     <>
@@ -385,8 +389,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           fill="#0f172a"
         />
         {/* Directional Illuminated Dayside Hemisphere / Apparent Phase Crescent */}
-        {isHeliocentric ? (
-          // In Heliocentric Orbit mode: True 3D analytical spherical terminator facing the central Sun in camera perspective
+        {is3DView ? (
+          // In 3D Orbit & Apparent modes: True 3D analytical spherical terminator facing the Sun in camera perspective
           moonLimbPath ? (
             <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y})`}>
               <path
@@ -396,7 +400,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
             </g>
           ) : null
         ) : (
-          // In Geocentric Apparent & Plate modes: Renders topocentric apparent phase disc oriented toward the Sun
+          // In 2D Plate modes: Renders topocentric apparent phase disc oriented toward the Sun
           <>
             {moonPhaseData.isFull && (
               <circle
