@@ -96,21 +96,34 @@ export function computeArmillaryLunarNodes(params: {
   nodeLonDeg?: number;
   obliquity?: number;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
+  morphLambda?: number;
 }): ArmillaryLunarNodes {
-  const { isHelioMode, isGeoApparent = false, blendedEarth3D, nodeLonDeg = 0, obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG), transformVertex } = params;
+  const {
+    isHelioMode,
+    isGeoApparent = false,
+    blendedEarth3D,
+    nodeLonDeg = 0,
+    obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG),
+    transformVertex,
+    morphLambda
+  } = params;
 
-  const nodeDist = isHelioMode ? 16 : 26;
+  const phaseAT = clamp((morphLambda ?? 0) / 0.45, 0, 1);
+  const nodeDist = isHelioMode ? 16 + 10 * phaseAT : 26;
   const nodeRad = toRadians(nodeLonDeg);
   const epsRad = toRadians(obliquity);
+  const rotFrameRad = isHelioMode ? phaseAT * epsRad : epsRad;
 
   // Ascending Node (u = 0, beta = 0 on the ecliptic)
   const xEclAsc = nodeDist * Math.cos(nodeRad);
   const yEclAsc = 0;
   const zEclAsc = nodeDist * Math.sin(nodeRad);
 
+  const cosFrame = Math.cos(rotFrameRad);
+  const sinFrame = Math.sin(rotFrameRad);
   const xRelAsc = xEclAsc;
-  const yRelAsc = isHelioMode ? yEclAsc : (yEclAsc * Math.cos(epsRad) + zEclAsc * Math.sin(epsRad));
-  const zRelAsc = isHelioMode ? zEclAsc : (-yEclAsc * Math.sin(epsRad) + zEclAsc * Math.cos(epsRad));
+  const yRelAsc = yEclAsc * cosFrame + zEclAsc * sinFrame;
+  const zRelAsc = -yEclAsc * sinFrame + zEclAsc * cosFrame;
 
   const zSigned = isGeoApparent ? -zRelAsc : zRelAsc;
 

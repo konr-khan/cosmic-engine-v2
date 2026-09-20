@@ -194,7 +194,12 @@ export function generateArmillaryModel(params: {
 
   const targetGeom = computeRawModeGeometry(projectionMode, geomParams);
   const sourceGeom = fromProjectionMode && fromProjectionMode !== projectionMode && transT < 1.0
-    ? computeRawModeGeometry(fromProjectionMode, geomParams)
+    ? computeRawModeGeometry(
+        fromProjectionMode,
+        fromProjectionMode === 'heliocentric'
+          ? { ...geomParams, lambdaClamp: 0.0 }
+          : geomParams
+      )
     : targetGeom;
 
   // Spherical SLERP blending across modes (preserving radius and geodesic trajectory)
@@ -222,7 +227,8 @@ export function generateArmillaryModel(params: {
     transT,
     blendedEarth3D,
     nodeLonDeg,
-    transformVertex
+    transformVertex,
+    morphLambda
   });
 
   // Navigational stars reside on the outer celestial sphere at radius r0 centered at the origin
@@ -256,7 +262,8 @@ export function generateArmillaryModel(params: {
     blendedEarth3D,
     nodeLonDeg,
     obliquity,
-    transformVertex
+    transformVertex,
+    morphLambda
   });
 
   // Observer FOV Sky Cone

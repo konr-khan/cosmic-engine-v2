@@ -805,6 +805,139 @@ describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
       expect(exagModel.sun.p3d.x).toBeLessThan(-20);
     });
 
+    describe('Phase 1: Copernican to Geocentric 3D Translation (Phase A: lambda <= 0.45)', () => {
+      const baseHelioParams = {
+        julianDate: 2451545.0,
+        latitude: 47.06 as Latitude,
+        longitude: -122.81 as Longitude,
+        timeOfDay: 12 as HoursDecimal,
+        sunRaDeg: 280 as Degrees,
+        sunDecDeg: -23 as Degrees,
+        sunLambdaDeg: 280 as Degrees,
+        moonRaDeg: 120 as Degrees,
+        moonDecDeg: 15 as Degrees,
+        moonLambdaDeg: 120 as Degrees,
+        moonPhase: 0.5,
+        projectionMode: 'heliocentric' as const,
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      };
+
+      it('validates Earth 3D distance > 100px at lambda = 0.0 and origin (0, 0, 0) within 1e-4 at lambda = 0.45', () => {
+        // At morphLambda = 0.0: Pure heliocentric Keplerian orbit (a = r0 * 1.1 = 110px)
+        const model0 = generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.0 });
+        const earthDist0 = Math.hypot(model0.earth.p3d.x, model0.earth.p3d.y, model0.earth.p3d.z);
+        expect(earthDist0).toBeGreaterThan(100);
+
+        // At morphLambda = 0.45: Full translation to geocentric celestial origin (0, 0, 0)
+        const model45 = generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.45 });
+        expect(Math.abs(model45.earth.p3d.x)).toBeLessThanOrEqual(1e-4);
+        expect(Math.abs(model45.earth.p3d.y)).toBeLessThanOrEqual(1e-4);
+        expect(Math.abs(model45.earth.p3d.z)).toBeLessThanOrEqual(1e-4);
+        const earthDist45 = Math.hypot(model45.earth.p3d.x, model45.earth.p3d.y, model45.earth.p3d.z);
+        expect(earthDist45).toBeCloseTo(0, 4);
+      });
+
+      it('strictly decreases Earth distance from origin across intermediate frames [0.10, 0.20, 0.35, 0.45] with finite bounds and no NaNs', () => {
+        const intermediateLambdas = [0.10, 0.20, 0.35, 0.45];
+        let prevDist = Math.hypot(
+          generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.0 }).earth.p3d.x,
+          generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.0 }).earth.p3d.y,
+          generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.0 }).earth.p3d.z
+        );
+
+        for (const lambda of intermediateLambdas) {
+          const model = generateArmillaryModel({ ...baseHelioParams, morphLambda: lambda });
+          const { x, y, z } = model.earth.p3d;
+
+          expect(Number.isFinite(x)).toBe(true);
+          expect(Number.isFinite(y)).toBe(true);
+          expect(Number.isFinite(z)).toBe(true);
+          expect(Number.isNaN(x)).toBe(false);
+          expect(Number.isNaN(y)).toBe(false);
+          expect(Number.isNaN(z)).toBe(false);
+
+          const dist = Math.hypot(x, y, z);
+          expect(dist).toBeLessThan(prevDist);
+          expect(dist).toBeGreaterThanOrEqual(0);
+          prevDist = dist;
+        }
+      });
+
+      it('guarantees observerCone is defined across all morphLambda in [0.0, 0.45] and observerScreenPos smoothly translates along with Earth', () => {
+        const lambdas = [0.0, 0.10, 0.20, 0.35, 0.45];
+        let prevEarthScreenDist = Infinity;
+        let prevObsScreenDist = Infinity;
+
+        for (const lambda of lambdas) {
+          const model = generateArmillaryModel({ ...baseHelioParams, morphLambda: lambda });
+
+          expect(model.observerCone).toBeDefined();
+          const obsCone = model.observerCone!;
+
+          expect(Number.isFinite(obsCone.observerScreenPos.x)).toBe(true);
+          expect(Number.isFinite(obsCone.observerScreenPos.y)).toBe(true);
+          expect(Number.isNaN(obsCone.observerScreenPos.x)).toBe(false);
+          expect(Number.isNaN(obsCone.observerScreenPos.y)).toBe(false);
+
+          // Observer screen position offset from Earth screen position is strictly bounded (radius ~ 4.8px)
+          const offsetFromEarth = Math.hypot(
+            obsCone.observerScreenPos.x - model.earth.screenPos.x,
+            obsCone.observerScreenPos.y - model.earth.screenPos.y
+          );
+          expect(offsetFromEarth).toBeLessThanOrEqual(5.0);
+
+          // Screen distance from center strictly decreases as Earth translates to origin
+          const earthScreenDist = Math.hypot(model.earth.screenPos.x, model.earth.screenPos.y);
+          const obsScreenDist = Math.hypot(obsCone.observerScreenPos.x, obsCone.observerScreenPos.y);
+
+          expect(earthScreenDist).toBeLessThan(prevEarthScreenDist);
+          expect(obsScreenDist).toBeLessThan(prevObsScreenDist);
+
+          prevEarthScreenDist = earthScreenDist;
+          prevObsScreenDist = obsScreenDist;
+        }
+      });
+
+      it('continuously blends layer opacities, Sun, Moon, and milestone coordinates across Phase A', () => {
+        // At lambda = 0.0
+        const m0 = generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.0 });
+        expect(m0.celestialRingsOpacity).toBeCloseTo(0.0, 4);
+        expect(m0.starsOpacity).toBeCloseTo(0.25, 4);
+        expect(m0.orbitRingOpacity).toBe(1.0);
+        expect(m0.lunarOrbitOpacity).toBe(1.0);
+        expect(m0.milestonesOpacity).toBe(1.0);
+
+        // At lambda = 0.225 (50% of Phase A)
+        const mHalf = generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.225 });
+        expect(mHalf.celestialRingsOpacity).toBeCloseTo(0.85 * 0.5, 4);
+        expect(mHalf.starsOpacity).toBeCloseTo(0.25 + 0.55 * 0.5, 4);
+        expect(mHalf.orbitRingOpacity).toBe(1.0);
+
+        // At lambda = 0.45 (100% of Phase A)
+        const m45 = generateArmillaryModel({ ...baseHelioParams, morphLambda: 0.45 });
+        expect(m45.celestialRingsOpacity).toBeCloseTo(0.85, 4);
+        expect(m45.starsOpacity).toBeCloseTo(0.80, 4);
+        expect(m45.orbitRingOpacity).toBe(1.0);
+
+        // Sun at lambda = 0.45 is at apparent Ecliptic radius a = 110px
+        const sunDist45 = Math.hypot(m45.sun.p3d.x, m45.sun.p3d.y, m45.sun.p3d.z);
+        expect(sunDist45).toBeCloseTo(110, 2);
+
+        // Moon at lambda = 0.45 is at physical geocentric radius 26px
+        const moonDist45 = Math.hypot(m45.moon.p3d.x, m45.moon.p3d.y, m45.moon.p3d.z);
+        expect(moonDist45).toBeCloseTo(26, 2);
+
+        // All milestones at lambda = 0.45 are at radius a = 110px
+        expect(m45.milestones.length).toBe(6);
+        for (const node of m45.milestones) {
+          const mDist = Math.hypot(node.p3d.x, node.p3d.y, node.p3d.z);
+          expect(mDist).toBeCloseTo(110, 2);
+        }
+      });
+    });
+
 
     describe('Stereographic Conformal Closed-Form & Invariant Verification (Milestone 1)', () => {
       const EPS_DEG = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
@@ -1479,6 +1612,189 @@ describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
       const projRojas = projectRojasOrthographic({ x: -0, y: -0, z: 0 }, 100);
       expect(Object.is(projRojas.x, -0)).toBe(false);
       expect(Object.is(projRojas.y, -0)).toBe(false);
+    });
+
+    // 7. Milestone Orbital Radius Preservation via slerp3D (No Chord-Cutting)
+    it('preserves milestone orbital radius via slerp3D without chord-cutting collapse across lambda in [0.0, 0.45]', () => {
+      const lambdas = [0.0, 0.05, 0.1, 0.15, 0.2, 0.225, 0.25, 0.3, 0.35, 0.4, 0.45];
+      for (const morphLambda of lambdas) {
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          timeOfDay: 12 as HoursDecimal,
+          sunRaDeg: 0 as Degrees,
+          sunDecDeg: 0 as Degrees,
+          sunLambdaDeg: 0 as Degrees,
+          moonRaDeg: 120 as Degrees,
+          moonDecDeg: 15 as Degrees,
+          moonLambdaDeg: 120 as Degrees,
+          moonPhase: 0.5,
+          morphLambda,
+          projectionMode: 'heliocentric',
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        expect(model.milestones.length).toBeGreaterThan(0);
+        for (const m of model.milestones) {
+          const dist = Math.hypot(m.p3d.x, m.p3d.y, m.p3d.z);
+          // Without slerp3D, milestones collapse to radius ~0 at lambda = 0.225.
+          // With slerp3D, the radius is strictly preserved along the geodesic arc > 100px.
+          expect(dist).toBeGreaterThan(100);
+          expect(dist).toBeLessThan(120);
+        }
+      }
+    });
+
+    // 8. Negative Zero Normalization at Phase A End (lambda = 0.45)
+    it('normalizes negative zeroes for celestial bodies in heliocentric mode at lambda = 0.45', () => {
+      // sunLambdaDeg = 0 results in helioEarth.x < 0, so (1 - phaseAT) * helioEarth.x could evaluate to -0
+      const model = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06 as Latitude,
+        longitude: -122.81 as Longitude,
+        timeOfDay: 12 as HoursDecimal,
+        sunRaDeg: 0 as Degrees,
+        sunDecDeg: 0 as Degrees,
+        sunLambdaDeg: 0 as Degrees,
+        moonRaDeg: 120 as Degrees,
+        moonDecDeg: 15 as Degrees,
+        moonLambdaDeg: 120 as Degrees,
+        moonPhase: 0.5,
+        morphLambda: 0.45,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(Object.is(model.earth.p3d.x, -0)).toBe(false);
+      expect(Object.is(model.earth.p3d.y, -0)).toBe(false);
+      expect(Object.is(model.earth.p3d.z, -0)).toBe(false);
+      expect(model.earth.p3d.x).toBe(0);
+      expect(model.earth.p3d.y).toBe(0);
+      expect(model.earth.p3d.z).toBe(0);
+
+      expect(Object.is(model.sun.p3d.x, -0)).toBe(false);
+      expect(Object.is(model.sun.p3d.y, -0)).toBe(false);
+      expect(Object.is(model.sun.p3d.z, -0)).toBe(false);
+
+      expect(Object.is(model.moon.p3d.x, -0)).toBe(false);
+      expect(Object.is(model.moon.p3d.y, -0)).toBe(false);
+      expect(Object.is(model.moon.p3d.z, -0)).toBe(false);
+    });
+
+    // 9. Lunar Orbit Ring Radius and Node Pins Lockstep Expansion
+    it('expands lunar orbit ring radius and node pins from 16px to 26px in lockstep with the Moon bead in heliocentric mode', () => {
+      const lambdas = [0.0, 0.15, 0.3, 0.45];
+
+      for (const morphLambda of lambdas) {
+        const phaseAT = morphLambda / 0.45;
+        const expectedDist = 16 + 10 * phaseAT;
+
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          timeOfDay: 12 as HoursDecimal,
+          sunRaDeg: 0 as Degrees,
+          sunDecDeg: 0 as Degrees,
+          sunLambdaDeg: 0 as Degrees,
+          moonRaDeg: 0 as Degrees,
+          moonDecDeg: 0 as Degrees,
+          moonLambdaDeg: 0 as Degrees,
+          moonPhase: 0.5,
+          moonNodeLonDeg: 0,
+          morphLambda,
+          projectionMode: 'heliocentric',
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        // 1. Lunar Orbit ring radius
+        const lunarOrbit = model.rings.find((r) => r.id === 'lunar_orbit');
+        expect(lunarOrbit).toBeDefined();
+        for (const v of lunarOrbit!.vertices) {
+          const rRing = Math.hypot(
+            v.p3d.x - model.earth.p3d.x,
+            v.p3d.y - model.earth.p3d.y,
+            v.p3d.z - model.earth.p3d.z
+          );
+          expect(rRing).toBeCloseTo(expectedDist, 3);
+        }
+
+        // 2. Lunar node pins distance from Earth
+        expect(model.lunarNodes).toBeDefined();
+        const ascDist = Math.hypot(
+          model.lunarNodes!.ascendingNode.screenPos.x - model.earth.screenPos.x,
+          model.lunarNodes!.ascendingNode.screenPos.y - model.earth.screenPos.y
+        );
+        expect(ascDist).toBeCloseTo(expectedDist, 3);
+
+        const descDist = Math.hypot(
+          model.lunarNodes!.descendingNode.screenPos.x - model.earth.screenPos.x,
+          model.lunarNodes!.descendingNode.screenPos.y - model.earth.screenPos.y
+        );
+        expect(descDist).toBeCloseTo(expectedDist, 3);
+
+        // 3. Moon bead distance relative to Earth in lockstep
+        const moonRelDist = Math.hypot(
+          model.moon.p3d.x - model.earth.p3d.x,
+          model.moon.p3d.y - model.earth.p3d.y,
+          model.moon.p3d.z - model.earth.p3d.z
+        );
+        expect(moonRelDist).toBeCloseTo(expectedDist, 3);
+      }
+    });
+
+    // 10. Celestial Ring Radius Blooming Expansion
+    it('blooms celestial ring radius rBloom from 14px to 100px as lambda transitions from 0.0 to 0.45', () => {
+      const lambdas = [0.0, 0.15, 0.225, 0.3, 0.45];
+
+      for (const morphLambda of lambdas) {
+        const phaseAT = morphLambda / 0.45;
+        const expectedRadius = (1 - phaseAT) * 14 + phaseAT * 100;
+
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          timeOfDay: 12 as HoursDecimal,
+          sunRaDeg: 0 as Degrees,
+          sunDecDeg: 0 as Degrees,
+          sunLambdaDeg: 0 as Degrees,
+          moonRaDeg: 120 as Degrees,
+          moonDecDeg: 15 as Degrees,
+          moonLambdaDeg: 120 as Degrees,
+          moonPhase: 0.5,
+          morphLambda,
+          projectionMode: 'heliocentric',
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        // Check Equator ring radius relative to bloom center
+        const equator = model.rings.find((r) => r.id === 'equator');
+        expect(equator).toBeDefined();
+
+        // cBloom is (1 - tGeo) * blendedEarth3D
+        const cBloomX = (1 - phaseAT) * model.earth.p3d.x;
+        const cBloomY = (1 - phaseAT) * model.earth.p3d.y;
+        const cBloomZ = (1 - phaseAT) * model.earth.p3d.z;
+
+        for (const v of equator!.vertices) {
+          const rRing = Math.hypot(
+            v.p3d.x - cBloomX,
+            v.p3d.y - cBloomY,
+            v.p3d.z - cBloomZ
+          );
+          expect(rRing).toBeCloseTo(expectedRadius, 3);
+        }
+      }
     });
   });
 });
