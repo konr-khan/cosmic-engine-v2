@@ -6,7 +6,7 @@
 
 import { Latitude } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
-import { toRadians } from '../core';
+import { toRadians, clamp } from '../core';
 import {
   EARTH_ECCENTRICITY_TRUE,
   EARTH_ECCENTRICITY_EXAGGERATED,
@@ -36,6 +36,7 @@ export interface GenerateArmillaryRingsParams {
   blendedEarth3D: Vector3D;
   nodeLonDeg: number;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
+  morphLambda?: number;
 }
 
 /**
@@ -61,7 +62,8 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
     transT,
     blendedEarth3D,
     nodeLonDeg,
-    transformVertex
+    transformVertex,
+    morphLambda
   } = params;
 
   const rings: ArmillaryRingPath[] = [];
@@ -70,11 +72,14 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
   // 0. Orbital Path Ring (Keplerian / Ecliptic orbit with rigid plane tilt)
   const isTargetHelio = projectionMode === 'heliocentric';
   const isSourceHelio = fromProjectionMode === 'heliocentric';
-  const isHelioT = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
+  const phaseAT = clamp((morphLambda ?? 0) / 0.45, 0, 1);
+  const isHelioBase = (1 - transT) * (isSourceHelio ? 1 : 0) + transT * (isTargetHelio ? 1 : 0);
+  const isHelioT = isHelioBase * (1.0 - phaseAT);
+  const tGeo = 1.0 - isHelioT;
   const aOrb = r0 * 1.1;
   const eOrb = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
   const bOrb = aOrb * Math.sqrt(Math.max(0, 1 - eOrb * eOrb));
-  const tiltRad = toRadians((1 - isHelioT) * obliquity);
+  const tiltRad = toRadians(tGeo * obliquity);
 
   rings.push(
     generateParametricRing3D(
@@ -102,11 +107,11 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
   );
 
   // 1. Lunar Orbit Ring (5.145° Inclined around Earth, precessing node Omega)
-  const isHelioMode = projectionMode === 'heliocentric';
-  const lunarOrbitRadius = isHelioMode ? 16 : 26;
+  const lunarOrbitRadius = 16 + 10 * tGeo;
   const incRad = toRadians(MOON_ORBIT_INCLINATION_DEG);
   const epsRad = toRadians(obliquity);
   const nodeRad = toRadians(nodeLonDeg);
+  const rotFrameRad = tGeo * epsRad;
 
   rings.push(
     generateParametricRing3D(
@@ -129,15 +134,12 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
           const yEcl = yOrb;
           const zEcl = xOrb * Math.sin(nodeRad) + zOrb * Math.cos(nodeRad);
 
-          // In Helio mode: already in ecliptic frame centered on Earth
-          // In Geocentric/Apparent mode: transform from Ecliptic to Equatorial frame via +obliquity
+          // Lunar orbit ring frame rotation: rotate by tGeo * epsRad
+          const cosFrame = Math.cos(rotFrameRad);
+          const sinFrame = Math.sin(rotFrameRad);
           const xRel = xEcl;
-          const yRel = isHelioMode
-            ? yEcl
-            : (yEcl * Math.cos(epsRad) + zEcl * Math.sin(epsRad));
-          const zRel = isHelioMode
-            ? zEcl
-            : (-yEcl * Math.sin(epsRad) + zEcl * Math.cos(epsRad));
+          const yRel = yEcl * cosFrame + zEcl * sinFrame;
+          const zRel = -yEcl * sinFrame + zEcl * cosFrame;
 
           const isGeoApparent = projectionMode === 'geocentric';
           return {
@@ -152,7 +154,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
   );
 
   // Blooming parameters for celestial sphere rings (expand from Earth globe r=14px to R0=100px)
-  const tGeo = 1.0 - isHelioT;
   const rGlobe = 14;
   const rBloom = (1.0 - tGeo) * rGlobe + tGeo * r0;
   const cBloom: Vector3D = {

@@ -36,14 +36,15 @@ import {
   computeArmillaryStars, 
   computeArmillaryMilestones, 
   computeArmillaryLunarNodes, 
-  computeArmillaryObserverCone, 
   computeArmillaryBodies 
 } from './generatorBeads';
+import { computeArmillaryObserverCone } from './generatorObserverCone';
 import { generateArmillaryRings } from './generatorRings';
 
 export * from './generatorGeometry';
 export * from './generatorBeads';
 export * from './generatorRings';
+export * from './generatorObserverCone';
 
 
 /**
@@ -193,7 +194,12 @@ export function generateArmillaryModel(params: {
 
   const targetGeom = computeRawModeGeometry(projectionMode, geomParams);
   const sourceGeom = fromProjectionMode && fromProjectionMode !== projectionMode && transT < 1.0
-    ? computeRawModeGeometry(fromProjectionMode, geomParams)
+    ? computeRawModeGeometry(
+        fromProjectionMode,
+        fromProjectionMode === 'heliocentric'
+          ? { ...geomParams, lambdaClamp: 0.0 }
+          : geomParams
+      )
     : targetGeom;
 
   // Spherical SLERP blending across modes (preserving radius and geodesic trajectory)
@@ -221,7 +227,8 @@ export function generateArmillaryModel(params: {
     transT,
     blendedEarth3D,
     nodeLonDeg,
-    transformVertex
+    transformVertex,
+    morphLambda
   });
 
   // Navigational stars reside on the outer celestial sphere at radius r0 centered at the origin
@@ -255,20 +262,34 @@ export function generateArmillaryModel(params: {
     blendedEarth3D,
     nodeLonDeg,
     obliquity,
-    transformVertex
+    transformVertex,
+    morphLambda
   });
 
-  // Observer FOV Sky Cone
+  // Observer FOV Sky Cone & Volumetric Laser Morph
   const observerCone = computeArmillaryObserverCone({
     orbitRingOpacity,
     latitude,
     longitude,
+    timeOfDay,
     gmstDeg,
     obliquity,
     blendedEarth3D,
     blendedSun3D,
-    transformVertex
+    transformVertex,
+    morphLambda: lambdaClamp,
+    projectionMode,
+    r0,
+    cameraPitch,
+    cameraYaw
   });
+
+  // Forward morphed apex, conePathD, and laserRays to focalBeacon across Phase B (morphLambda > 0.45)
+  if (observerCone && lambdaClamp > 0.45 && observerCone.laserRays) {
+    focalBeacon.focalScreenPos = observerCone.observerScreenPos;
+    focalBeacon.conePathD = observerCone.conePathD;
+    focalBeacon.laserRays = observerCone.laserRays;
+  }
 
   // Earth, Sun (clamped), and Moon beads
   const bodies = computeArmillaryBodies({

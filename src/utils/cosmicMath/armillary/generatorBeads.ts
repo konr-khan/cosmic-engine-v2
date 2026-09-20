@@ -15,7 +15,6 @@ import {
   ArmillaryRingVertex, 
   ArmillaryMilestoneNode, 
   ArmillaryLunarNodes, 
-  ArmillaryObserverCone,
   ArmillaryStarData,
   ArmillaryModelOutput
 } from './types';
@@ -97,21 +96,34 @@ export function computeArmillaryLunarNodes(params: {
   nodeLonDeg?: number;
   obliquity?: number;
   transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
+  morphLambda?: number;
 }): ArmillaryLunarNodes {
-  const { isHelioMode, isGeoApparent = false, blendedEarth3D, nodeLonDeg = 0, obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG), transformVertex } = params;
+  const {
+    isHelioMode,
+    isGeoApparent = false,
+    blendedEarth3D,
+    nodeLonDeg = 0,
+    obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG),
+    transformVertex,
+    morphLambda
+  } = params;
 
-  const nodeDist = isHelioMode ? 16 : 26;
+  const phaseAT = clamp((morphLambda ?? 0) / 0.45, 0, 1);
+  const nodeDist = isHelioMode ? 16 + 10 * phaseAT : 26;
   const nodeRad = toRadians(nodeLonDeg);
   const epsRad = toRadians(obliquity);
+  const rotFrameRad = isHelioMode ? phaseAT * epsRad : epsRad;
 
   // Ascending Node (u = 0, beta = 0 on the ecliptic)
   const xEclAsc = nodeDist * Math.cos(nodeRad);
   const yEclAsc = 0;
   const zEclAsc = nodeDist * Math.sin(nodeRad);
 
+  const cosFrame = Math.cos(rotFrameRad);
+  const sinFrame = Math.sin(rotFrameRad);
   const xRelAsc = xEclAsc;
-  const yRelAsc = isHelioMode ? yEclAsc : (yEclAsc * Math.cos(epsRad) + zEclAsc * Math.sin(epsRad));
-  const zRelAsc = isHelioMode ? zEclAsc : (-yEclAsc * Math.sin(epsRad) + zEclAsc * Math.cos(epsRad));
+  const yRelAsc = yEclAsc * cosFrame + zEclAsc * sinFrame;
+  const zRelAsc = -yEclAsc * sinFrame + zEclAsc * cosFrame;
 
   const zSigned = isGeoApparent ? -zRelAsc : zRelAsc;
 
@@ -137,149 +149,10 @@ export function computeArmillaryLunarNodes(params: {
   };
 }
 
-/**
- * Derives the topocentric observer sky cone, zenith ray, and tangent horizon disc.
- */
-export function computeArmillaryObserverCone(params: {
-  orbitRingOpacity: number;
-  latitude: Latitude;
-  longitude: Longitude;
-  gmstDeg: number;
-  obliquity: number;
-  blendedEarth3D: Vector3D;
-  blendedSun3D: Vector3D;
-  transformVertex: (p3d: Vector3D) => ArmillaryRingVertex;
-}): ArmillaryObserverCone | undefined {
-  const {
-    orbitRingOpacity,
-    latitude,
-    longitude,
-    gmstDeg,
-    obliquity,
-    blendedEarth3D,
-    blendedSun3D,
-    transformVertex
-  } = params;
-
-  if (orbitRingOpacity <= 0.05) return undefined;
-
-  const phi = toRadians(latitude);
-  const rotDeg = (((gmstDeg + longitude) % 360) + 360) % 360;
-  const rotRad = toRadians(rotDeg);
-  const epsRad = toRadians(obliquity);
-
-  // Observer body vector on Earth
-  const vx = Math.cos(phi) * Math.sin(rotRad);
-  const vy = Math.sin(phi);
-  const vz = Math.cos(phi) * Math.cos(rotRad);
-
-  // Tilted zenith direction in 3D space
-  const nzX = vx;
-  const nzY = vy * Math.cos(epsRad) - vz * Math.sin(epsRad);
-  const nzZ = vy * Math.sin(epsRad) + vz * Math.cos(epsRad);
-
-  // Observer pin on Earth surface
-  const pObs3D: Vector3D = {
-    x: blendedEarth3D.x + 3.5 * nzX,
-    y: blendedEarth3D.y + 3.5 * nzY,
-    z: blendedEarth3D.z + 3.5 * nzZ
-  };
-
-  // Zenith ray tip (30 px outward)
-  const pZenith3D: Vector3D = {
-    x: pObs3D.x + 30 * nzX,
-    y: pObs3D.y + 30 * nzY,
-    z: pObs3D.z + 30 * nzZ
-  };
-
-  const obsV = transformVertex(pObs3D);
-  const zenithV = transformVertex(pZenith3D);
-
-  // Coordinate frame perpendicular to zenith vector
-  const uRaw = Math.abs(nzY) < 0.99 ? { x: -nzZ, y: 0, z: nzX } : { x: 1, y: 0, z: 0 };
-  const uLen = Math.sqrt(uRaw.x * uRaw.x + uRaw.y * uRaw.y + uRaw.z * uRaw.z) || 1;
-  const u = { x: uRaw.x / uLen, y: uRaw.y / uLen, z: uRaw.z / uLen };
-  const w = { x: nzY * u.z - nzZ * u.y, y: nzZ * u.x - nzX * u.z, z: nzX * u.y - nzY * u.x };
-
-  // 1. Expanding celestial canopy base in outer space (radius 20 around zenith tip)
-  const canopyPoints: Vector2D[] = [];
-  const NUM_DISC_SAMPLES = 24;
-  const rCanopy = 20;
-  for (let i = 0; i <= NUM_DISC_SAMPLES; i++) {
-    const aRad = (i / NUM_DISC_SAMPLES) * 2 * Math.PI;
-    const pt3D: Vector3D = {
-      x: pZenith3D.x + rCanopy * (u.x * Math.cos(aRad) + w.x * Math.sin(aRad)),
-      y: pZenith3D.y + rCanopy * (u.y * Math.cos(aRad) + w.y * Math.sin(aRad)),
-      z: pZenith3D.z + rCanopy * (u.z * Math.cos(aRad) + w.z * Math.sin(aRad))
-    };
-    canopyPoints.push(transformVertex(pt3D).screenPos);
-  }
-
-  // Circular rim disc in the sky
-  let horizonDiscPathD = '';
-  if (canopyPoints.length > 0) {
-    horizonDiscPathD = `M ${canopyPoints[0].x.toFixed(1)} ${canopyPoints[0].y.toFixed(1)} `;
-    for (let i = 1; i < canopyPoints.length; i++) {
-      horizonDiscPathD += `L ${canopyPoints[i].x.toFixed(1)} ${canopyPoints[i].y.toFixed(1)} `;
-    }
-    horizonDiscPathD += 'Z';
-  }
-
-  // 2. Compute the two extreme silhouette tangent points on the celestial canopy as seen from the observer
-  const zDirX = zenithV.screenPos.x - obsV.screenPos.x;
-  const zDirY = zenithV.screenPos.y - obsV.screenPos.y;
-  let minCross = Infinity;
-  let maxCross = -Infinity;
-  let pLeft = canopyPoints[0] || obsV.screenPos;
-  let pRight = canopyPoints[0] || obsV.screenPos;
-
-  for (const pt of canopyPoints) {
-    const vx = pt.x - obsV.screenPos.x;
-    const vy = pt.y - obsV.screenPos.y;
-    const cross = zDirX * vy - zDirY * vx;
-    if (cross < minCross) {
-      minCross = cross;
-      pLeft = pt;
-    }
-    if (cross > maxCross) {
-      maxCross = cross;
-      pRight = pt;
-    }
-  }
-
-  // Symmetrical silhouette rays connecting observer to both outer edges of the sky canopy circle
-  const silhouetteLinesPathD = `M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} L ${pLeft.x.toFixed(1)} ${pLeft.y.toFixed(1)} M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} L ${pRight.x.toFixed(1)} ${pRight.y.toFixed(1)}`;
-
-  // 3. Volumetric conical fill envelope connecting observer to outer rim
-  let conePathD = `M ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} `;
-  for (const pt of canopyPoints) {
-    conePathD += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
-  }
-  conePathD += `L ${obsV.screenPos.x.toFixed(1)} ${obsV.screenPos.y.toFixed(1)} Z`;
-
-  // Solar elevation angle for observer
-  const sunDir = {
-    x: blendedSun3D.x - blendedEarth3D.x,
-    y: blendedSun3D.y - blendedEarth3D.y,
-    z: blendedSun3D.z - blendedEarth3D.z
-  };
-  const sunLen = Math.sqrt(sunDir.x * sunDir.x + sunDir.y * sunDir.y + sunDir.z * sunDir.z) || 1;
-  const sinAlt = (nzX * sunDir.x + nzY * sunDir.y + nzZ * sunDir.z) / sunLen;
-  const sunElevationDeg = toDegrees(Math.asin(clamp(sinAlt, -1, 1)));
-  const isDaytime = sunElevationDeg > -0.833;
-
-  return {
-    observerScreenPos: obsV.screenPos,
-    zenithScreenPos: zenithV.screenPos,
-    horizonDiscPathD,
-    conePathD,
-    silhouetteLinesPathD,
-    zenithRay: { start: obsV.screenPos, end: zenithV.screenPos },
-    isDaytime,
-    sunElevationDeg: parseFloat(sunElevationDeg.toFixed(1)),
-    label: isDaytime ? 'Observer Sky (Daylight)' : 'Observer Sky (Night Cosmos)'
-  };
-}
+export {
+  computeArmillaryObserverCone,
+  type ComputeArmillaryObserverConeParams
+} from './generatorObserverCone';
 
 /**
  * Projects Earth, Sun, and Moon celestial body beads with horizontal Alt/Az and screen positions.
@@ -325,13 +198,32 @@ export function computeArmillaryBodies(params: {
   const sunHoriz = equatorialToHorizontal(sunRaDeg, sunDecDeg, latitude, lstDeg);
   const moonHoriz = equatorialToHorizontal(moonRaDeg, moonDecDeg, latitude, lstDeg);
 
+  // Normalized Sun-to-Earth camera-space vector for physical 3D terminator shading
+  const edx = sunV.pCam.x - earthV.pCam.x;
+  const edy = sunV.pCam.y - earthV.pCam.y;
+  const edz = sunV.pCam.z - earthV.pCam.z;
+  const eLen = Math.hypot(edx, edy, edz);
+  const earthSubsolarCameraVector: Vector3D = eLen < 1e-6
+    ? { x: 0, y: 0, z: 1 }
+    : { x: edx / eLen, y: edy / eLen, z: edz / eLen };
+
+  // Normalized Sun-to-Moon camera-space vector for 3D analytical lunar terminator
+  const mdx = sunV.pCam.x - moonV.pCam.x;
+  const mdy = sunV.pCam.y - moonV.pCam.y;
+  const mdz = sunV.pCam.z - moonV.pCam.z;
+  const mLen = Math.hypot(mdx, mdy, mdz);
+  const moonSubsolarCameraVector: Vector3D = mLen < 1e-6
+    ? { x: 0, y: 0, z: 1 }
+    : { x: mdx / mLen, y: mdy / mLen, z: mdz / mLen };
+
   return {
     earth: {
       p3d: blendedEarth3D,
       pCam: earthV.pCam,
       pProj: earthV.pProj,
       screenPos: earthV.screenPos,
-      isFront: earthV.isFront
+      isFront: earthV.isFront,
+      subsolarCameraVector: earthSubsolarCameraVector
     },
     sun: {
       raDeg: asDegrees(sunRaDeg),
@@ -356,7 +248,48 @@ export function computeArmillaryBodies(params: {
       screenPos: moonV.screenPos,
       isFront: moonV.isFront,
       altDeg: moonHoriz.altDeg,
-      azDeg: moonHoriz.azDeg
+      azDeg: moonHoriz.azDeg,
+      subsolarCameraVector: moonSubsolarCameraVector
     }
   };
+}
+
+/**
+ * Analytical SVG path generator for a 2D lunar phase disc of radius r.
+ * In a local coordinate frame with origin (0, 0), the illuminated bright limb
+ * faces toward +X (0 degrees, pointing toward the Sun).
+ *
+ * @param phase - Normalized lunar phase in [0, 1) (0 = New Moon, 0.25 = First Quarter, 0.5 = Full Moon, 0.75 = Last Quarter)
+ * @param r - Disc radius in SVG user units (default: 2.6)
+ */
+export function computeMoonPhasePath(phase: number, r: number = 2.6): {
+  pathD: string;
+  isFull: boolean;
+  isNew: boolean;
+} {
+  const p = ((phase % 1) + 1) % 1;
+
+  // New Moon threshold (< 2% illuminated)
+  if (p < 0.02 || p > 0.98) {
+    return { pathD: '', isFull: false, isNew: true };
+  }
+
+  // Full Moon threshold (96% - 100% illuminated)
+  if (p >= 0.48 && p <= 0.52) {
+    return { pathD: '', isFull: true, isNew: false };
+  }
+
+  const cosTerm = Math.cos(p * 2 * Math.PI);
+  const rx = Math.abs(r * cosTerm);
+
+  // When cos(2*pi*p) > 0 (crescents near new moon), the terminator curves in the same
+  // direction as the outer limb (sweep 0), creating a thin illuminated crescent.
+  // When cos(2*pi*p) < 0 (gibbous near full moon), the terminator bulges outward (sweep 1).
+  const termSweep = cosTerm > 0 ? 0 : 1;
+
+  // Outer semicircle facing +X: from (0, -r) to (0, r)
+  // Terminator elliptical arc returning from (0, r) back to (0, -r)
+  const pathD = `M 0,${(-r).toFixed(2)} A ${r},${r} 0 0,1 0,${r.toFixed(2)} A ${rx.toFixed(2)},${r} 0 0,${termSweep} 0,${(-r).toFixed(2)} Z`;
+
+  return { pathD, isFull: false, isNew: false };
 }

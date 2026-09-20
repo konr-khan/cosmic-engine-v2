@@ -93,6 +93,8 @@ export interface ArmillaryObserverCone {
   isDaytime: boolean;
   sunElevationDeg: number;
   label: string;
+  morphProgress?: number; // Phase B progress u in [0, 1]
+  laserRays?: LaserRay[];
 }
 
 export interface ArmillaryLunarNodes {
@@ -149,6 +151,7 @@ export interface ArmillaryModelOutput {
     pProj: Vector2D;
     screenPos: Vector2D;
     isFront: boolean;
+    subsolarCameraVector?: Vector3D;
   };
   stars: (ArmillaryStarData & {
     pCam: Vector3D;
@@ -182,6 +185,7 @@ export interface ArmillaryModelOutput {
     isFront: boolean;
     altDeg: number;
     azDeg: number;
+    subsolarCameraVector?: Vector3D;
   };
   siderealTimeDeg: Degrees;
   localSiderealTimeDeg: Degrees;

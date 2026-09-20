@@ -4,7 +4,7 @@
  */
 
 import { Vector3D } from '../../../types/coordinates';
-import { toRadians, clamp } from '../core';
+import { toRadians, clamp, slerp3D } from '../core';
 import { EARTH_MILESTONES } from '../milestones';
 import { 
   EARTH_ECCENTRICITY_TRUE, 
@@ -71,11 +71,11 @@ export function computeRawModeGeometry(
     const e = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
     const b = a * Math.sqrt(Math.max(0, 1 - e * e));
     const c = a * e;
-    const sun3D = exaggerateEccentricity ? { x: -c, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
+    const helioSun: Vector3D = exaggerateEccentricity ? { x: -c, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
 
     // Earth's heliocentric longitude: lambda_earth = sunLambdaDeg + 180°
     const earthLonRad = toRadians(((sunLambdaDeg + 180) % 360 + 360) % 360);
-    const earth3D: Vector3D = {
+    const helioEarth: Vector3D = {
       x: a * Math.cos(earthLonRad),
       y: 0,
       z: -b * Math.sin(earthLonRad)
@@ -83,22 +83,114 @@ export function computeRawModeGeometry(
 
     // Moon relative to Earth (prograde counter-clockwise orbit)
     const moonAngleRad = toRadians(((moonLambdaDeg % 360) + 360) % 360);
-    const moon3D: Vector3D = {
-      x: earth3D.x + 16 * Math.cos(moonAngleRad),
-      y: earth3D.y + 16 * Math.sin(toRadians(MOON_ORBIT_INCLINATION_DEG)) * Math.sin(moonAngleRad),
-      z: earth3D.z - 16 * Math.sin(moonAngleRad)
+    const helioMoon: Vector3D = {
+      x: helioEarth.x + 16 * Math.cos(moonAngleRad),
+      y: helioEarth.y + 16 * Math.sin(toRadians(MOON_ORBIT_INCLINATION_DEG)) * Math.sin(moonAngleRad),
+      z: helioEarth.z - 16 * Math.sin(moonAngleRad)
     };
 
-    // Heliocentric milestones along Earth's orbit
+    const phaseAT = clamp(lambdaClamp / 0.45, 0, 1);
+
+    if (phaseAT === 0) {
+      // Heliocentric milestones along Earth's orbit
+      const milestones3D = EARTH_MILESTONES.map((m) => {
+        const lonRad = toRadians(m.helioEclipticLon);
+        return {
+          id: m.id,
+          p3d: {
+            x: a * Math.cos(lonRad),
+            y: 0,
+            z: -b * Math.sin(lonRad)
+          }
+        };
+      });
+
+      return {
+        sun3D: helioSun,
+        earth3D: helioEarth,
+        moon3D: helioMoon,
+        milestones3D,
+        celestialRingsOpacity: 0.0,
+        orbitRingOpacity: 1.0,
+        lunarOrbitOpacity: 1.0,
+        milestonesOpacity: 1.0,
+        starsOpacity: 0.25,
+        bezelOpacity: 0.0,
+        alidadeOpacity: 0.0
+      };
+    }
+
+    // Phase A translation (lambda in (0, 0.45]): Continuous translation to geocentric origin
+    const sunLonRad = toRadians(((sunLambdaDeg % 360) + 360) % 360);
+    const epsRad = toRadians(obliquity);
+
+    // Target Geocentric Sun revolving along apparent Ecliptic track
+    const geoSun3D: Vector3D = {
+      x: a * Math.cos(sunLonRad),
+      y: a * Math.sin(sunLonRad) * Math.sin(epsRad),
+      z: -a * Math.sin(sunLonRad) * Math.cos(epsRad)
+    };
+
+    // Target Geocentric Moon at physical orbit distance (26 px, counter-clockwise prograde orbit)
+    const moonRaw = equatorialToCartesian3D(moonRaDeg, moonDecDeg, 26);
+    const geoMoon3D: Vector3D = {
+      x: moonRaw.x,
+      y: moonRaw.y,
+      z: -moonRaw.z
+    };
+
+    const normalizeZero = (v: number): number => (Object.is(v, -0) ? 0 : v);
+    const normalizeVector3D = (v: Vector3D): Vector3D => ({
+      x: normalizeZero(v.x),
+      y: normalizeZero(v.y),
+      z: normalizeZero(v.z)
+    });
+
+    // Smoothly interpolate 3D coordinates
+    let earth3D: Vector3D = {
+      x: (1 - phaseAT) * helioEarth.x,
+      y: 0,
+      z: (1 - phaseAT) * helioEarth.z
+    };
+
+    let sun3D: Vector3D = {
+      x: (1 - phaseAT) * helioSun.x + phaseAT * geoSun3D.x,
+      y: (1 - phaseAT) * helioSun.y + phaseAT * geoSun3D.y,
+      z: (1 - phaseAT) * helioSun.z + phaseAT * geoSun3D.z
+    };
+
+    let moon3D: Vector3D = {
+      x: (1 - phaseAT) * helioMoon.x + phaseAT * geoMoon3D.x,
+      y: (1 - phaseAT) * helioMoon.y + phaseAT * geoMoon3D.y,
+      z: (1 - phaseAT) * helioMoon.z + phaseAT * geoMoon3D.z
+    };
+
+    if (phaseAT === 1) {
+      earth3D = normalizeVector3D(earth3D);
+      sun3D = normalizeVector3D(sun3D);
+      moon3D = normalizeVector3D(moon3D);
+    }
+
+    // Smoothly interpolate milestones from heliocentric orbit to apparent geocentric ecliptic path
+    // via slerp3D to preserve orbital radius on S^2 without chord-cutting collapse through the origin
     const milestones3D = EARTH_MILESTONES.map((m) => {
       const lonRad = toRadians(m.helioEclipticLon);
+      const helioM: Vector3D = {
+        x: a * Math.cos(lonRad),
+        y: 0,
+        z: -b * Math.sin(lonRad)
+      };
+
+      const apparentSunLonRad = toRadians(((m.helioEclipticLon + 180) % 360 + 360) % 360);
+      const geoM: Vector3D = {
+        x: a * Math.cos(apparentSunLonRad),
+        y: a * Math.sin(apparentSunLonRad) * Math.sin(epsRad),
+        z: -a * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
+      };
+
       return {
         id: m.id,
-        p3d: {
-          x: a * Math.cos(lonRad),
-          y: 0,
-          z: -b * Math.sin(lonRad)
-        }
+        p3d: slerp3D(helioM, geoM, phaseAT)
       };
     });
 
@@ -107,11 +199,11 @@ export function computeRawModeGeometry(
       earth3D,
       moon3D,
       milestones3D,
-      celestialRingsOpacity: 0.0,
+      celestialRingsOpacity: 0.85 * phaseAT,
       orbitRingOpacity: 1.0,
       lunarOrbitOpacity: 1.0,
       milestonesOpacity: 1.0,
-      starsOpacity: 0.25,
+      starsOpacity: 0.25 + 0.55 * phaseAT,
       bezelOpacity: 0.0,
       alidadeOpacity: 0.0
     };

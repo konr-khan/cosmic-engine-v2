@@ -164,7 +164,7 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
             </span>
           </div>
           <div className="space-y-0.5 text-[11px]">
-            <div>Coordinates: <strong className="text-white">{latitude.toFixed(2)}°N, {longitude.toFixed(2)}°E</strong></div>
+            <div>Coordinates: <strong className="text-white">{latitude >= 0 ? `${latitude.toFixed(2)}°N` : `${Math.abs(latitude).toFixed(2)}°S`}, {longitude >= 0 ? `${longitude.toFixed(2)}°E` : `${Math.abs(longitude).toFixed(2)}°W`}</strong></div>
             <div>Sun Elevation: <strong className={observerCone.sunElevationDeg >= 0 ? 'text-amber-300' : 'text-slate-400'}>{observerCone.sunElevationDeg >= 0 ? `+${observerCone.sunElevationDeg}°` : `${observerCone.sunElevationDeg}°`}</strong></div>
             <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
               Cone projects observer's visible sky hemisphere (Alt &gt; 0°) rotating with Earth's 24h diurnal cycle.

@@ -1607,26 +1607,125 @@ H_0 = (t - 12.0) \times 15.0^\circ
    \]
    Every point along both semicircles projects strictly inside the planetary disc radius. Omitting horizon-crossing depth clipping ($z_{\text{cam}} \ge 0$) allows both front and back segments to render continuously through the translucent marble sphere, maintaining exact visual parity with the Equator parallel ellipse.
 
-### B. Heliocentric Camera-Space Sunward Unit Vector (`ArmillaryBeadsLayer.tsx`)
+### B. Camera-Space Subsolar Illumination Vectors (`generatorBeads.ts`)
 
-In heliocentric Keplerian orbit mode, the Sun is centered at inertial origin $(0, 0, 0)$ and Earth moves along its elliptical track $\vec{P}_{\text{earth}}(t)$. Under camera transformation, their camera-space positions are $\vec{P}_{\text{sun, cam}}$ and $\vec{P}_{\text{earth, cam}}$.
+In both 3D Heliocentric Orbit (`'heliocentric'`) and 3D Geocentric Apparent (`'geocentric'`) modes, celestial body positions are transformed to camera space: $\vec{P}_{\odot, \text{cam}}$, $\vec{P}_{\oplus, \text{cam}}$, and $\vec{P}_{\text{moon}, \text{cam}}$.
 
-The physically exact subsolar unit vector in camera coordinates pointing from Earth toward the Sun is:
-\[
-\vec{S}_{\text{cam}} = \frac{\vec{P}_{\text{sun, cam}} - \vec{P}_{\text{earth, cam}}}{\|\vec{P}_{\text{sun, cam}} - \vec{P}_{\text{earth, cam}}\|}
-\]
-Passing $\vec{S}_{\text{cam}}$ directly into the 3D MiniGlobe shader (`subsolarCameraVector`) eliminates coordinate-system mismatch and ensures the day/night terminator hemisphere continuously faces the central Sun at all camera pitch and yaw orientations without angle-flipping.
+1. **Earth Subsolar Unit Vector**:
+   \[
+   \Delta\vec{P}_{\oplus} = \vec{P}_{\odot, \text{cam}} - \vec{P}_{\oplus, \text{cam}}, \quad L_\oplus = \|\Delta\vec{P}_{\oplus}\|
+   \]
+   \[
+   \vec{S}_{\oplus, \text{cam}} = \begin{cases}
+   \frac{\Delta\vec{P}_{\oplus}}{L_\oplus} & \text{if } L_\oplus \ge 10^{-6} \\
+   \begin{bmatrix} 0 & 0 & 1 \end{bmatrix}^T & \text{if } L_\oplus < 10^{-6} \text{ (axial alignment fallback)}
+   \end{cases}
+   \]
+   Passing $\vec{S}_{\oplus, \text{cam}}$ directly into the `<MiniGlobe />` shader (`subsolarCameraVector`) eliminates coordinate-system mismatch and ensures the day/night terminator hemisphere continuously faces the Sun across all camera orientations without artificial solstice drift or angle-flipping.
 
-### C. Dynamic ViewBox Scaling for Multi-Scale Orbit Zoom
+2. **Lunar Subsolar Unit Vector & 3D Analytical Terminator**:
+   \[
+   \Delta\vec{P}_{\text{moon}} = \vec{P}_{\odot, \text{cam}} - \vec{P}_{\text{moon}, \text{cam}}, \quad L_{\text{moon}} = \|\Delta\vec{P}_{\text{moon}}\|
+   \]
+   \[
+   \vec{S}_{\text{moon}, \text{cam}} = \begin{cases}
+   \frac{\Delta\vec{P}_{\text{moon}}}{L_{\text{moon}}} & \text{if } L_{\text{moon}} \ge 10^{-6} \\
+   \begin{bmatrix} 0 & 0 & 1 \end{bmatrix}^T & \text{if } L_{\text{moon}} < 10^{-6}
+   \end{cases}
+   \]
+   The Moon bead renders an analytical spherical terminator via `generateAnalyticalLimbPath(R_{\text{moon}}, S_{x}, S_{y}, S_{z}, 0)`:
+   - When $S_{\text{moon}, z} < 0$, the Sun illuminates the far side of the Moon relative to the observer camera, rendering a dark backlit silhouette.
+   - When $S_{\text{moon}, z} \ge 0$, the visible front face exhibits the illuminated dayside phase boundary facing the Sun in full 3D perspective.
 
-For canonical canvas dimensions $W_0, H_0$ and zoom factor $z \in [z_{\min}, z_{\max}]$:
+### C. Dynamic ViewBox Scaling for Multi-Scale Orbit and Apparent Zoom
+
+For canonical canvas dimensions $W_0, H_0$ and zoom factor $z \in [0.75, 3.5]$ (available in both 3D Orbit and 3D Apparent modes when $\lambda_{\text{morph}} \le 0.05$):
 \[
 W(z) = \frac{W_0}{z}, \quad H(z) = \frac{H_0}{z}
 \]
 \[
 \text{viewBox} = \left[ -\frac{W(z)}{2}, -\frac{H(z)}{2}, W(z), H(z) \right]
 \]
-This preserves the origin $(0, 0)$ at the canvas center while providing continuous zooming across 3D heliocentric orbits without altering SVG vertex coordinates or hit-target geometries.
+This preserves origin $(0, 0)$ at the canvas center while providing continuous zooming across 3D heliocentric orbits and geocentric apparent spheres without altering SVG vertex coordinates or hit-target geometries.
+
+### D. Observer Topocentric Sky Cone & Zenith Silhouette Non-Degeneracy
+
+In 3D modes, the observer's topocentric coordinate pin and the 3D Sky Cone canopy are co-located on the spinning Earth globe at latitude $\phi_{\text{obs}}$ and diurnal longitude $\theta = \text{GMST}(\text{JD}) + \lambda_{\text{obs}}$.
+
+The observer's zenith sightline vector in SVG screen coordinates is $\Delta\vec{Z} = \vec{P}_{\text{zenith}, \text{screen}} - \vec{P}_{\text{obs}, \text{screen}}$ with length $L_Z = \|\Delta\vec{Z}\|$.
+- When $L_Z \ge 10^{-4}\text{px}$, extreme silhouette tangent points on the celestial canopy are found via extremal 2D cross products $\Delta\vec{Z} \times (\vec{P}_{\text{canopy}, k} - \vec{P}_{\text{obs}})$.
+- When $L_Z < 10^{-4}\text{px}$ (camera sightline looks directly down the observer's zenith axis), cross products degenerate. The solver falls back to antipodal diameter vertices $[0, N/2]$ on the circular canopy rim, preventing ray collapse to a zero-area triangle.
+
+### E. Smooth 3D-to-2D Morph Continuity Threshold
+
+The transition continuum from 3D spheres to 2D astrolabe plates is partitioned at $\lambda_{\text{threshold}} = 0.45$:
+- **Phase A ($\lambda \in [0, 0.45]$)**: Camera rotates into pole alignment; Earth and Moon retain 3D Euler orientation (`viewMode="euler3d"`).
+- **Phase B ($\lambda \in (0.45, 1.0]$)**: Geometry flattens onto the planar stereographic / astrolabe plate; bodies lock to flat representations (`viewMode="flat"`).
+
+### F. Continuous Copernican-to-Geocentric 3D Translation & Observer-to-Laser Morphing Continuum
+
+#### 1. Phase A: Copernican ↔ Geocentric 3D Translation ($\lambda \in [0.0, 0.45]$)
+
+Let normalized Phase A translation progress be:
+\[
+t_{\text{geo}} = \operatorname{clamp}\left(\frac{\lambda}{0.45}, 0, 1\right)
+\]
+1. **Continuous Planetary Translation**:
+   - Earth translates continuously from its Keplerian orbit $\vec{P}_{\oplus, \text{helio}} = (a \cos\lambda_\oplus, 0, -b \sin\lambda_\oplus)$ to the coordinate origin $(0, 0, 0)$:
+     \[
+     \vec{P}_{\oplus}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \vec{P}_{\oplus, \text{helio}}
+     \]
+   - The Sun translates continuously from the origin $(0, 0, 0)$ to its apparent geocentric position on the inclined ecliptic track:
+     \[
+     \vec{P}_{\odot}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \vec{P}_{\odot, \text{helio}} + t_{\text{geo}} \vec{P}_{\odot, \text{geo}}
+     \]
+   - The Moon translates continuously with Earth in lockstep:
+     \[
+     \vec{P}_{\text{moon}}(t_{\text{geo}}) = (1 - t_{\text{geo}}) \vec{P}_{\text{moon}, \text{helio}} + t_{\text{geo}} \vec{P}_{\text{moon}, \text{geo}}
+     \]
+
+2. **Milestone Spherical Geodesic SLERP & Center Chord-Cutting Elimination**:
+   Linear Cartesian interpolation $(1 - t)\vec{P}_{\text{helio}} + t\vec{P}_{\text{geo}}$ causes seasonal milestone positions to collapse through the origin ($r \to 0$ at $t_{\text{geo}} = 0.5$) because $\vec{P}_{\text{geo}} \approx -\vec{P}_{\text{helio}}$. To preserve true orbital distance ($r \approx 110\text{px}$) across the continuum, milestone nodes are interpolated via 3D Spherical Linear Interpolation (`slerp3D`):
+   \[
+   \vec{P}_m(t_{\text{geo}}) = \operatorname{slerp3D}(\vec{P}_{m, \text{helio}}, \vec{P}_{m, \text{geo}}, t_{\text{geo}})
+   \]
+
+3. **Continuous Celestial Ring Blooming & Frame Tilt**:
+   - Celestial rings bloom dynamically from miniature planetary radius $R = 14\text{px}$ to macro celestial radius $R = 100\text{px}$:
+     \[
+     R(t_{\text{geo}}) = 14 + 86 \cdot t_{\text{geo}} \quad [\text{px}]
+     \]
+   - Ecliptic orbit tilt smoothly rotates from the ecliptic plane into true equatorial obliquity:
+     \[
+     \varepsilon(t_{\text{geo}}) = t_{\text{geo}} \cdot 23.439281^\circ
+     \]
+   - Lunar orbit radius expands continuously from $16\text{px}$ to $26\text{px}$, with the Ascending Node ($\Omega$) and Descending Node ($\mho$) pins tracking in lockstep.
+
+#### 2. Phase B: Observer Sky Cone ↔ Volumetric Laser Projection Morph ($\lambda \in (0.45, 1.0]$)
+
+Let normalized Phase B flattening progress be:
+\[
+u = \operatorname{clamp}\left(\frac{\lambda - 0.45}{0.55}, 0, 1\right)
+\]
+1. **Continuous Apex Glide**:
+   The apex $\vec{A}(u)$ smoothly glides from the geographic observer pin on Earth's surface $\vec{S}_{\text{obs}}$ to the astrolabe Center of Projection (Focal Pole) $\vec{F}_{\text{screen}}$:
+   \[
+   \vec{A}(u) = (1 - u)\vec{S}_{\text{obs}} + u\vec{F}_{\text{screen}}
+   \]
+   where $\vec{F}_{\text{screen}} = (0, 1.2 R_0)$ for Stereographic/Horizon and $(0, 0)$ for Rojas.
+
+2. **Topocentric Horizon Disc to Astrolabe Base Rim Expansion**:
+   The 72-point circumferential canopy rim $\vec{P}_k(u)$ continuously expands from the topocentric horizon disc ($r \approx 20\text{px}$) to the astrolabe projective base rim ($R_0 = 100\text{px}$):
+   \[
+   \vec{P}_k(u) = (1 - u)\vec{S}_{c, k} + u\vec{S}_{L, k}, \quad k \in \{0, 1, \dots, 71\}
+   \]
+   where $\vec{S}_{c, k}$ is the 3D projected topocentric horizon vertex and $\vec{S}_{L, k}$ is the projected equatorial base ring vertex.
+
+3. **1-to-1 Radial Compass Ray Morphing**:
+   8 cardinal and intercardinal topocentric compass rays ($0^\circ, 45^\circ, \dots, 315^\circ$) connect Apex $\vec{A}(u)$ to rim vertices $\vec{P}_{9j}(u)$ for $j \in \{0, \dots, 7\}$, morphing directly into the 8 stereographic projection laser rays.
+
+4. **Volumetric Conical Envelope**:
+   The closed SVG polygon $\mathcal{P}_{\text{cone}}(u) = [\vec{A}(u), \vec{P}_0(u), \vec{P}_1(u), \dots, \vec{P}_{71}(u), \vec{A}(u)]$ continuously washes from daylight sky blue (`#38bdf8`) / nocturnal indigo (`#818cf8`) into the volumetric laser projection gradient (`url(#laserConeGradient)`).
 
 ---
 
