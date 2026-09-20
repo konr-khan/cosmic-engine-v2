@@ -743,9 +743,9 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
       // Nightside dark base sphere
       expect(html).toContain('fill="#0f172a"');
-      // Dayside illuminated semicircle
+      // Dayside illuminated 3D analytical terminator path
       expect(html).toContain('fill="#f8fafc"');
-      expect(html).toContain('M 0,-2.6 A 2.6,2.6 0 0,1 0,2.6 Z');
+      expect(html).toMatch(/<path d="M[^"]+" fill="#f8fafc"/);
     });
 
     it('renders apparent lunar phase crescent in Geocentric Apparent mode', () => {
@@ -896,6 +896,96 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
       expect(obsScreen.x - earthScreen.x).toBeCloseTo(expectedDx, 2);
       expect(obsScreen.y - earthScreen.y).toBeCloseTo(expectedDy, 2);
+    });
+
+    it('renders 3D analytical moon terminator accurately under edge-on perspective', () => {
+      const baseModel = generateArmillaryModel({
+        julianDate: getJulianDate(new Date(2026, 0, 3), 12),
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      const mockMoon = {
+        ...baseModel.moon,
+        p3d: { x: 0, y: 0, z: 0 },
+        pCam: { x: 0, y: 0, z: 0 },
+        screenPos: { x: 50, y: 50 }
+      };
+
+      // 1. Backlit Moon (Moon between camera and Sun: sz < 0 -> dark / New Moon silhouette)
+      const mockSunBacklit = {
+        ...baseModel.sun,
+        p3d: { x: 0, y: 0, z: -100 },
+        pCam: { x: 0, y: 0, z: -100 }
+      };
+
+      const htmlBacklit = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: baseModel.earth,
+            sun: mockSunBacklit,
+            moon: mockMoon,
+            milestones: [],
+            projectionMode: 'heliocentric',
+            modelType: 'orbit',
+            isOrbital: true,
+            camera: { pitch: 0, yaw: 0, roll: 0 },
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      // Backlit Moon has dark base circle and rim stroke, but NO illuminated white path
+      expect(htmlBacklit).toContain('fill="#0f172a"');
+      expect(htmlBacklit).toContain('stroke="#475569"');
+      expect(htmlBacklit).not.toContain('fill="#f8fafc"');
+
+      // 2. Frontlit Moon (Sun illuminates front face: sz > 0 -> illuminated path rendered)
+      const mockSunFrontlit = {
+        ...baseModel.sun,
+        p3d: { x: 0, y: 0, z: 100 },
+        pCam: { x: 0, y: 0, z: 100 }
+      };
+
+      const htmlFrontlit = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryBeadsLayer, {
+            earth: baseModel.earth,
+            sun: mockSunFrontlit,
+            moon: mockMoon,
+            milestones: [],
+            projectionMode: 'heliocentric',
+            modelType: 'orbit',
+            isOrbital: true,
+            camera: { pitch: 0, yaw: 0, roll: 0 },
+            onHoverBead: () => {},
+            onHoverMilestone: () => {},
+            onHoverNode: () => {},
+            onTargetClick: () => {}
+          })
+        )
+      );
+
+      // Frontlit Moon contains illuminated path
+      expect(htmlFrontlit).toContain('fill="#0f172a"');
+      expect(htmlFrontlit).toContain('fill="#f8fafc"');
+      expect(htmlFrontlit).toContain('stroke="#475569"');
     });
   });
 });

@@ -9,6 +9,7 @@ import {
 import { MiniGlobe } from '../../../common/MiniGlobe';
 import { Vector3D } from '../../../../types/coordinates';
 import { computeMoonPhasePath } from '../../../../utils/cosmicMath/armillary';
+import { generateAnalyticalLimbPath } from '../../../../utils/cosmicMath/globe';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -130,6 +131,26 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const moonToSunAngleDeg = ((Math.atan2(sun.screenPos.y - moon.screenPos.y, sun.screenPos.x - moon.screenPos.x) * 180) / Math.PI + 360) % 360;
   const moonRadius = 2.6;
   const moonPhaseData = computeMoonPhasePath(moon.phase, moonRadius);
+
+  // 3D Subsolar unit illumination vector in camera coordinates pointing from Moon toward Sun
+  const moonSunCamVec = React.useMemo<Vector3D | undefined>(() => {
+    if (!isHeliocentric || !sun?.pCam || !moon?.pCam) return undefined;
+    const dx = sun.pCam.x - moon.pCam.x;
+    const dy = sun.pCam.y - moon.pCam.y;
+    const dz = sun.pCam.z - moon.pCam.z;
+    const len = Math.hypot(dx, dy, dz) || 1;
+    return {
+      x: dx / len,
+      y: dy / len,
+      z: dz / len
+    };
+  }, [isHeliocentric, sun?.pCam, moon?.pCam]);
+
+  // Dynamic 3D analytical limb path for Moon in Heliocentric Orbit mode
+  const moonLimbPath = React.useMemo(() => {
+    if (!isHeliocentric || !moonSunCamVec) return '';
+    return generateAnalyticalLimbPath(moonRadius, moonSunCamVec.x, moonSunCamVec.y, moonSunCamVec.z, 0);
+  }, [isHeliocentric, moonSunCamVec, moonRadius]);
 
   return (
     <>
@@ -362,18 +383,18 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           cy={moon.screenPos.y}
           r={moonRadius}
           fill="#0f172a"
-          stroke="#334155"
-          strokeWidth="0.75"
         />
         {/* Directional Illuminated Dayside Hemisphere / Apparent Phase Crescent */}
         {isHeliocentric ? (
-          // In Heliocentric Orbit mode: Dayside hemisphere strictly faces the central Sun
-          <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y}) rotate(${moonToSunAngleDeg})`}>
-            <path
-              d={`M 0,${-moonRadius} A ${moonRadius},${moonRadius} 0 0,1 0,${moonRadius} Z`}
-              fill="#f8fafc"
-            />
-          </g>
+          // In Heliocentric Orbit mode: True 3D analytical spherical terminator facing the central Sun in camera perspective
+          moonLimbPath ? (
+            <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y})`}>
+              <path
+                d={moonLimbPath}
+                fill="#f8fafc"
+              />
+            </g>
+          ) : null
         ) : (
           // In Geocentric Apparent & Plate modes: Renders topocentric apparent phase disc oriented toward the Sun
           <>
