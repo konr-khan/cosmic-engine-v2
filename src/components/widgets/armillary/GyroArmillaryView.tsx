@@ -42,13 +42,38 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
 
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState<boolean>(false);
   const [showObserverCone, setShowObserverCone] = useState<boolean>(true);
-  const [showRays, setShowRays] = useState<boolean>(false);
+  const [showRays, setShowRays] = useState<boolean>(true);
   const [showStars, setShowStars] = useState<boolean>(true);
   const [showTympan, setShowTympan] = useState<boolean>(true);
   const [showRule, setShowRule] = useState<boolean>(false);
   const [isFreeReteMode, setIsFreeReteMode] = useState<boolean>(false);
   const [freeReteOffsetDeg, setFreeReteOffsetDeg] = useState<number>(0);
   const [ruleAngleDeg, setRuleAngleDeg] = useState<number>(0);
+
+  const isTogglingVolumetricRef = useRef<boolean>(false);
+
+  const handleToggleObserverCone = useCallback((val: boolean) => {
+    if (isTogglingVolumetricRef.current) return;
+    isTogglingVolumetricRef.current = true;
+    setShowObserverCone(val);
+    setShowRays(val);
+    queueMicrotask(() => {
+      isTogglingVolumetricRef.current = false;
+    });
+  }, []);
+
+  const handleToggleRays = useCallback(() => {
+    if (isTogglingVolumetricRef.current) return;
+    isTogglingVolumetricRef.current = true;
+    setShowRays((prev) => {
+      const next = !prev;
+      setShowObserverCone(next);
+      return next;
+    });
+    queueMicrotask(() => {
+      isTogglingVolumetricRef.current = false;
+    });
+  }, []);
 
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
   const activeDate = currentDate;
@@ -194,7 +219,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         morphLambda={morphLambda}
         onMorphChange={handleMorphChange}
         showRays={showRays}
-        onToggleRays={() => setShowRays(!showRays)}
+        onToggleRays={handleToggleRays}
         showStars={showStars}
         onToggleStars={() => setShowStars(!showStars)}
         showTympan={showTympan}
@@ -202,7 +227,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         showRule={showRule}
         onToggleRule={() => setShowRule(!showRule)}
         showObserverCone={showObserverCone}
-        onToggleObserverCone={setShowObserverCone}
+        onToggleObserverCone={handleToggleObserverCone}
         onResetCamera={handleResetCamera}
         onSnapToPreset={handleSnapToPreset}
         isFreeReteMode={isFreeReteMode}

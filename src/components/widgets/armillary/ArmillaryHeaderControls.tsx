@@ -64,6 +64,7 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
 }) => {
   const isOrbital = projectionMode === 'heliocentric';
   const is3D = projectionMode === 'geocentric' || (morphLambda <= 0.05 && !isOrbital);
+  const isVolumetricActive = Boolean((isOrbital ? showObserverCone : showRays) || (showObserverCone && showRays));
 
   return (
     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-2 w-full select-none">
@@ -285,11 +286,14 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
         {/* Feature Toggles */}
         <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs">
           <button
-            onClick={isOrbital ? () => onToggleObserverCone?.(!showObserverCone) : onToggleRays}
+            onClick={() => {
+              onToggleObserverCone?.(!isVolumetricActive);
+              onToggleRays();
+            }}
             className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              (isOrbital ? showObserverCone : showRays) ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              isVolumetricActive ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
             }`}
-            title={isOrbital ? "Toggle Observer Sky Cone (FOV)" : "Toggle Volumetric Laser Projection Rays & Cones"}
+            title="Toggle Volumetric Observer Sky Cone & Laser Projection"
           >
             <Zap className="w-3.5 h-3.5" />
           </button>

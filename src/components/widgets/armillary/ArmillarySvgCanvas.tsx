@@ -327,6 +327,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           showRays={showRays} 
           focalBeacon={focalBeacon} 
           isOrbital={isOrbital} 
+          morphLambda={morphLambda}
         />
 
         {/* 2b. Topocentric Observer Field of View (FOV) Sky Cone & Observer Pin */}
@@ -334,6 +335,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           observerCone={observerCone}
           orbitRingOpacity={orbitRingOpacity}
           showObserverCone={showObserverCone}
+          morphLambda={morphLambda}
           onHoverBead={(b) => setHoveredBead(b)}
         />
 

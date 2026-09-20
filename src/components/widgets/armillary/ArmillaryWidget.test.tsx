@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   GyroArmillaryView, 
@@ -20,7 +20,9 @@ import {
   computeStagedCamera,
   type ArmillaryCameraState,
   type ArmillaryModelOutput,
-  type ArmillaryRingPath
+  type ArmillaryRingPath,
+  type ArmillaryObserverCone,
+  type ProjectionFocalBeaconOutput
 } from './index';
 import { getJulianDate, generateArmillaryModel, computeMoonPhasePath, computeArmillaryObserverCone } from '../../../utils/cosmicMath';
 
@@ -515,7 +517,7 @@ describe('Gyro-Morph Armillary Subsystem', () => {
     expect(html).toContain('1× True');
     expect(html).toContain('Exaggerated');
     // Verify POV Cone toggle folded into Zap button in Orbit view
-    expect(html).toContain('Toggle Observer Sky Cone (FOV)');
+    expect(html).toContain('Toggle Volumetric Observer Sky Cone &amp; Laser Projection');
     expect(html).not.toContain('POV Cone');
   });
 
@@ -1339,6 +1341,250 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
       // Moon's connection ray connects Earth (80, 50) to Moon (85, 52), NOT (0, 0)
       expect(html).toContain('x1="80" y1="50" x2="85" y2="52"');
+    });
+  });
+
+  describe('Phase 3: Presentation Layer Unification & Interactive Controls Alignment', () => {
+    it('toggles both onToggleObserverCone and onToggleRays in lockstep via Zap button in ArmillaryHeaderControls', () => {
+      const onToggleRays = vi.fn();
+      const onToggleObserverCone = vi.fn();
+
+      const element = React.createElement(ArmillaryHeaderControls, {
+        projectionMode: 'heliocentric',
+        onSelectMode: () => {},
+        morphLambda: 0.0,
+        onMorphChange: () => {},
+        showRays: true,
+        onToggleRays,
+        showStars: true,
+        onToggleStars: () => {},
+        showTympan: false,
+        onToggleTympan: () => {},
+        showRule: false,
+        onToggleRule: () => {},
+        showObserverCone: true,
+        onToggleObserverCone,
+        onResetCamera: () => {},
+        onSnapToPreset: () => {}
+      });
+
+      const tree = (ArmillaryHeaderControls as any)(element.props);
+      const findBtn = (node: any): any => {
+        if (!node) return null;
+        if (node.props?.title === 'Toggle Volumetric Observer Sky Cone & Laser Projection') return node;
+        if (Array.isArray(node)) {
+          for (const c of node) {
+            const found = findBtn(c);
+            if (found) return found;
+          }
+        }
+        if (node.props?.children) return findBtn(node.props.children);
+        return null;
+      };
+
+      const zapBtn = findBtn(tree);
+      expect(zapBtn).toBeDefined();
+      expect(zapBtn.props.className).toContain('bg-indigo-600');
+
+      // Click when active -> triggers both to false
+      zapBtn.props.onClick();
+      expect(onToggleObserverCone).toHaveBeenCalledWith(false);
+      expect(onToggleRays).toHaveBeenCalled();
+
+      // Test inactive state
+      const inactiveElement = React.createElement(ArmillaryHeaderControls, {
+        projectionMode: 'geocentric',
+        onSelectMode: () => {},
+        morphLambda: 0.0,
+        onMorphChange: () => {},
+        showRays: false,
+        onToggleRays,
+        showStars: true,
+        onToggleStars: () => {},
+        showTympan: false,
+        onToggleTympan: () => {},
+        showRule: false,
+        onToggleRule: () => {},
+        showObserverCone: false,
+        onToggleObserverCone,
+        onResetCamera: () => {},
+        onSnapToPreset: () => {}
+      });
+      const inactiveTree = (ArmillaryHeaderControls as any)(inactiveElement.props);
+      const inactiveZapBtn = findBtn(inactiveTree);
+      expect(inactiveZapBtn.props.className).toContain('text-slate-400');
+
+      // Click when inactive -> triggers both to true
+      inactiveZapBtn.props.onClick();
+      expect(onToggleObserverCone).toHaveBeenCalledWith(true);
+    });
+
+    it('renders ArmillaryObserverConeLayer when showObserverCone = true, and fades 3D elements as morphLambda increases past 0.45', () => {
+      const mockObserverCone: ArmillaryObserverCone = {
+        horizonDiscPathD: 'M 10 10 L 20 20 Z',
+        conePathD: 'M 0 0 L 10 20 L -10 20 Z',
+        silhouetteLinesPathD: 'M 0 0 L 10 20 M 0 0 L -10 20',
+        zenithRay: { start: { x: 0, y: 0 }, end: { x: 0, y: -50 } },
+        zenithScreenPos: { x: 0, y: -50 },
+        observerScreenPos: { x: 0, y: 0 },
+        isDaytime: true,
+        sunElevationDeg: 35,
+        label: 'Observer (47.06° N)'
+      };
+
+      // 1. Fully visible at morphLambda = 0.0
+      const html0 = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryObserverConeLayer, {
+            observerCone: mockObserverCone,
+            orbitRingOpacity: 1.0,
+            showObserverCone: true,
+            morphLambda: 0.0,
+            onHoverBead: () => {}
+          })
+        )
+      );
+      expect(html0).toContain('fill-opacity="0.16"');
+      expect(html0).toContain('ZENITH');
+      expect(html0).toContain('YOU');
+
+      // 2. Midway through Phase B at morphLambda = 0.725 (phaseBU = 0.5)
+      // YOU pin is hidden (phaseBU >= 0.5), fill opacity is halved (0.16 * 0.5 = 0.08)
+      const htmlMid = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryObserverConeLayer, {
+            observerCone: mockObserverCone,
+            orbitRingOpacity: 0.0,
+            showObserverCone: true,
+            morphLambda: 0.725,
+            onHoverBead: () => {}
+          })
+        )
+      );
+      expect(htmlMid).toContain('fill-opacity="0.08"');
+      expect(htmlMid).toContain('ZENITH');
+      expect(htmlMid).not.toContain('YOU');
+
+      // 3. Late Phase B at morphLambda = 0.95 (phaseBU >= 0.9)
+      // Zenith marker and ray are hidden (phaseBU >= 0.9)
+      const htmlLate = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryObserverConeLayer, {
+            observerCone: mockObserverCone,
+            orbitRingOpacity: 0.0,
+            showObserverCone: true,
+            morphLambda: 0.95,
+            onHoverBead: () => {}
+          })
+        )
+      );
+      expect(htmlLate).not.toContain('ZENITH');
+      expect(htmlLate).not.toContain('YOU');
+
+      // 4. Hidden when showObserverCone = false
+      const htmlHidden = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryObserverConeLayer, {
+            observerCone: mockObserverCone,
+            orbitRingOpacity: 1.0,
+            showObserverCone: false,
+            morphLambda: 0.0,
+            onHoverBead: () => {}
+          })
+        )
+      );
+      expect(htmlHidden).toBe('<svg></svg>');
+    });
+
+    it('renders ArmillaryLaserLayer and fades in as morphLambda increases past 0.45, even in heliocentric mode', () => {
+      const mockFocalBeacon: ProjectionFocalBeaconOutput = {
+        focalScreenPos: { x: 0, y: 0 },
+        focal3D: { x: 0, y: 0, z: -100 },
+        focalZCam: -100,
+        conePathD: 'M 0 0 L 50 100 L -50 100 Z',
+        laserRays: [
+          {
+            start: { x: 0, y: 0 },
+            end: { x: 50, y: 100 },
+            color: '#38bdf8',
+            opacity: 0.8
+          }
+        ]
+      };
+
+      // 1. In heliocentric mode with morphLambda <= 0.45 -> returns null (not yet morphed to plate)
+      const htmlHelio0 = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryLaserLayer, {
+            showRays: true,
+            focalBeacon: mockFocalBeacon,
+            isOrbital: true,
+            morphLambda: 0.45
+          })
+        )
+      );
+      expect(htmlHelio0).toBe('<svg></svg>');
+
+      // 2. In heliocentric mode with morphLambda = 0.5 (phaseBU ~ 0.091 <= 0.3)
+      // Laser layer renders, cone is faint, beacon circles and text are hidden
+      const htmlHelioEarly = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryLaserLayer, {
+            showRays: true,
+            focalBeacon: mockFocalBeacon,
+            isOrbital: true,
+            morphLambda: 0.5
+          })
+        )
+      );
+      expect(htmlHelioEarly).toContain('laserGlow');
+      expect(htmlHelioEarly).not.toContain('⌖ FOCAL BEACON');
+
+      // 3. In heliocentric mode with morphLambda = 0.75 (phaseBU ~ 0.545 > 0.3, < 0.6)
+      // Beacon circles are now rendered, but text is still hidden
+      const htmlHelioMid = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryLaserLayer, {
+            showRays: true,
+            focalBeacon: mockFocalBeacon,
+            isOrbital: true,
+            morphLambda: 0.75
+          })
+        )
+      );
+      expect(htmlHelioMid).toContain('r="5"');
+      expect(htmlHelioMid).toContain('r="2.5"');
+      expect(htmlHelioMid).not.toContain('⌖ FOCAL BEACON');
+
+      // 4. Fully morphed to 2D at morphLambda = 1.0 (phaseBU = 1.0)
+      // Everything is at 100% opacity including beacon circles and text
+      const htmlFull = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryLaserLayer, {
+            showRays: true,
+            focalBeacon: mockFocalBeacon,
+            isOrbital: true,
+            morphLambda: 1.0
+          })
+        )
+      );
+      expect(htmlFull).toContain('opacity="0.75"');
+      expect(htmlFull).toContain('opacity="0.8"');
+      expect(htmlFull).toContain('⌖ FOCAL BEACON');
+      expect(htmlFull).toContain('r="5"');
+
+      // 5. Hidden when showRays = false
+      const htmlOff = renderToStaticMarkup(
+        React.createElement('svg', null,
+          React.createElement(ArmillaryLaserLayer, {
+            showRays: false,
+            focalBeacon: mockFocalBeacon,
+            isOrbital: false,
+            morphLambda: 1.0
+          })
+        )
+      );
+      expect(htmlOff).toBe('<svg></svg>');
     });
   });
 });
