@@ -4,6 +4,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   GyroArmillaryView, 
   ArmillaryHeaderControls, 
+  ArmillaryModePills,
+  ArmillaryMorphRail,
+  ArmillaryLayerToggles,
   ArmillarySvgCanvas, 
   ArmillaryHoverHud, 
   ArmillaryTelemetryHud, 
@@ -30,6 +33,9 @@ describe('Gyro-Morph Armillary Subsystem', () => {
   it('exports all decomposed armillary sub-components cleanly', () => {
     expect(GyroArmillaryView).toBeDefined();
     expect(ArmillaryHeaderControls).toBeDefined();
+    expect(ArmillaryModePills).toBeDefined();
+    expect(ArmillaryMorphRail).toBeDefined();
+    expect(ArmillaryLayerToggles).toBeDefined();
     expect(ArmillarySvgCanvas).toBeDefined();
     expect(ArmillaryHoverHud).toBeDefined();
     expect(ArmillaryTelemetryHud).toBeDefined();
@@ -1372,6 +1378,9 @@ describe('Gyro-Morph Armillary Subsystem', () => {
       const findBtn = (node: any): any => {
         if (!node) return null;
         if (node.props?.title === 'Toggle Volumetric Observer Sky Cone & Laser Projection') return node;
+        if (typeof node.type === 'function') {
+          return findBtn(node.type(node.props));
+        }
         if (Array.isArray(node)) {
           for (const c of node) {
             const found = findBtn(c);
@@ -1595,6 +1604,9 @@ describe('Gyro-Morph Armillary Subsystem', () => {
       function findInTree(tree: any, predicate: (el: any) => boolean): any {
         if (!tree) return null;
         if (predicate(tree)) return tree;
+        if (typeof tree.type === 'function') {
+          return findInTree(tree.type(tree.props), predicate);
+        }
         if (Array.isArray(tree)) {
           for (const child of tree) {
             const found = findInTree(child, predicate);
@@ -2046,6 +2058,192 @@ describe('Gyro-Morph Armillary Subsystem', () => {
           })
         );
         expect(htmlWithRule).toContain('fill="#f59e0b" stroke="#78350f"');
+      });
+    });
+
+    describe('Phase 3 Header Controls Decomposition', () => {
+      describe('ArmillaryModePills', () => {
+        it('renders 5 mode buttons and invokes onSnapToPreset with canonical targets', () => {
+          const onSnapToPreset = vi.fn();
+          const html = renderToStaticMarkup(
+            React.createElement(ArmillaryModePills, {
+              projectionMode: 'heliocentric',
+              morphLambda: 0.0,
+              onSnapToPreset
+            })
+          );
+          expect(html).toContain('☉ Orbit');
+          expect(html).toContain('⊕ Apparent');
+          expect(html).toContain('🧭 Rete');
+          expect(html).toContain('📐 Rojas');
+          expect(html).toContain('🔭 Horizon');
+          expect(html).toContain('bg-amber-500 text-slate-950 font-bold');
+
+          // Check click handlers
+          const element = ArmillaryModePills({
+            projectionMode: 'heliocentric',
+            morphLambda: 0.0,
+            onSnapToPreset
+          }) as React.ReactElement<any>;
+          const buttons = element.props.children;
+          expect(buttons.length).toBe(5);
+
+          // Click Rete
+          buttons[2].props.onClick();
+          expect(onSnapToPreset).toHaveBeenCalledWith('stereographic', 1.0);
+
+          // Click Rojas
+          buttons[3].props.onClick();
+          expect(onSnapToPreset).toHaveBeenCalledWith('rojas', 1.0);
+
+          // Click Horizon
+          buttons[4].props.onClick();
+          expect(onSnapToPreset).toHaveBeenCalledWith('horizon', 1.0);
+
+          // Click Geocentric Apparent
+          buttons[1].props.onClick();
+          expect(onSnapToPreset).toHaveBeenCalledWith('geocentric', 0.0);
+
+          // Click Heliocentric Orbit
+          buttons[0].props.onClick();
+          expect(onSnapToPreset).toHaveBeenCalledWith('heliocentric', 0.0);
+        });
+
+        it('properly highlights active plate modes when 2D flattened (morphLambda > 0.05)', () => {
+          const htmlStereo = renderToStaticMarkup(
+            React.createElement(ArmillaryModePills, {
+              projectionMode: 'stereographic',
+              morphLambda: 1.0,
+              onSnapToPreset: vi.fn()
+            })
+          );
+          // Rete should have active highlight
+          expect(htmlStereo).toContain('bg-amber-500 text-slate-950 font-bold');
+        });
+      });
+
+      describe('ArmillaryMorphRail', () => {
+        it('renders eccentricity toggle only in heliocentric mode and handles clicks', () => {
+          const onToggleEccentricity = vi.fn();
+          const onMorphChange = vi.fn();
+
+          // In heliocentric mode
+          const htmlHelio = renderToStaticMarkup(
+            React.createElement(ArmillaryMorphRail, {
+              projectionMode: 'heliocentric',
+              morphLambda: 0.0,
+              onMorphChange,
+              exaggerateEccentricity: false,
+              onToggleEccentricity
+            })
+          );
+          expect(htmlHelio).toContain('1× True');
+          expect(htmlHelio).toContain('Exaggerated');
+
+          // In geocentric mode -> no eccentricity toggle
+          const htmlGeo = renderToStaticMarkup(
+            React.createElement(ArmillaryMorphRail, {
+              projectionMode: 'geocentric',
+              morphLambda: 0.0,
+              onMorphChange,
+              exaggerateEccentricity: false,
+              onToggleEccentricity
+            })
+          );
+          expect(htmlGeo).not.toContain('1× True');
+          expect(htmlGeo).not.toContain('Exaggerated');
+        });
+
+        it('renders continuous morph slider with percentage and handles input', () => {
+          const onMorphChange = vi.fn();
+          const html = renderToStaticMarkup(
+            React.createElement(ArmillaryMorphRail, {
+              projectionMode: 'geocentric',
+              morphLambda: 0.42,
+              onMorphChange
+            })
+          );
+          expect(html).toContain('Morph λ:');
+          expect(html).toContain('42%');
+          expect(html).toContain('value="0.42"');
+        });
+
+        it('handles free rete solver toggle, snap to now, and apparent solar hours badge', () => {
+          const onToggleFreeRete = vi.fn();
+          const onSnapToNow = vi.fn();
+
+          // Free solver active with apparent solar time 14.75 hours (14:45)
+          const element = ArmillaryMorphRail({
+            projectionMode: 'stereographic',
+            morphLambda: 1.0,
+            onMorphChange: vi.fn(),
+            isFreeReteMode: true,
+            onToggleFreeRete,
+            onSnapToNow,
+            apparentSolarHours: 14.75
+          });
+          const html = renderToStaticMarkup(element as React.ReactElement);
+          expect(html).toContain('Clock Sync');
+          expect(html).toContain('Free Solver');
+          expect(html).toContain('Snap Now');
+          expect(html).toContain('☉ 14:45');
+        });
+      });
+
+      describe('ArmillaryLayerToggles', () => {
+        it('renders all toggles and dispatches toggle callbacks', () => {
+          const onToggleRays = vi.fn();
+          const onToggleObserverCone = vi.fn();
+          const onToggleStars = vi.fn();
+          const onToggleTympan = vi.fn();
+          const onToggleRule = vi.fn();
+          const onToggleLunarNodes = vi.fn();
+          const onResetCamera = vi.fn();
+
+          const element = ArmillaryLayerToggles({
+            showRays: true,
+            onToggleRays,
+            showObserverCone: true,
+            onToggleObserverCone,
+            showStars: true,
+            onToggleStars,
+            showTympan: true,
+            onToggleTympan,
+            showLunarNodes: true,
+            onToggleLunarNodes,
+            showRule: true,
+            onToggleRule,
+            onResetCamera,
+            isOrbital: false
+          }) as React.ReactElement<any>;
+          const buttons = element.props.children.filter(Boolean);
+          expect(buttons.length).toBe(6);
+
+          // Zap button
+          buttons[0].props.onClick();
+          expect(onToggleObserverCone).toHaveBeenCalledWith(false);
+          expect(onToggleRays).toHaveBeenCalledTimes(1);
+
+          // Stars button
+          buttons[1].props.onClick();
+          expect(onToggleStars).toHaveBeenCalledTimes(1);
+
+          // Tympan button
+          buttons[2].props.onClick();
+          expect(onToggleTympan).toHaveBeenCalledTimes(1);
+
+          // Rule button
+          buttons[3].props.onClick();
+          expect(onToggleRule).toHaveBeenCalledTimes(1);
+
+          // Lunar nodes button
+          buttons[4].props.onClick();
+          expect(onToggleLunarNodes).toHaveBeenCalledTimes(1);
+
+          // Reset camera button
+          buttons[5].props.onClick();
+          expect(onResetCamera).toHaveBeenCalledTimes(1);
+        });
       });
     });
   });
