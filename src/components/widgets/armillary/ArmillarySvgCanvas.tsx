@@ -1,16 +1,13 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React from 'react';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { 
   ArmillaryModelOutput, 
   ArmillaryProjectionMode, 
-  HoveredStarInfo, 
   ArmillaryCameraState, 
-  AlidadeSightingInfo,
-  ArmillaryMilestoneNode
+  AlidadeSightingInfo
 } from './types';
 import { calculateAlidadeSighting } from '../../../utils/cosmicMath';
 import { ArmillaryHoverHud } from './ArmillaryHoverHud';
-
 import {
   ArmillaryDefs,
   ArmillaryBezelLayer,
@@ -23,6 +20,7 @@ import {
   ArmillaryAlidadeLayer
 } from './canvas';
 import { ArmillaryEarthPip } from './ArmillaryEarthPip';
+import { useArmillaryInteractions } from './useArmillaryInteractions';
 
 export interface ArmillarySvgCanvasProps {
   model: ArmillaryModelOutput;
@@ -69,37 +67,45 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   onRuleAngleChange,
   onSnapToTarget
 }) => {
-  const [hoveredStar, setHoveredStar] = useState<HoveredStarInfo | null>(null);
-  const [hoveredBead, setHoveredBead] = useState<'sun' | 'moon' | 'earth' | 'observer' | null>(null);
-  const [hoveredMilestone, setHoveredMilestone] = useState<ArmillaryMilestoneNode | null>(null);
-  const [hoveredNode, setHoveredNode] = useState<'asc' | 'desc' | null>(null);
-  const [localRuleAngle, setLocalRuleAngle] = useState<number>(0);
-  const [isDraggingRule, setIsDraggingRule] = useState<boolean>(false);
-  const [isDraggingCamera, setIsDraggingCamera] = useState<boolean>(false);
-  const [isDraggingRete, setIsDraggingRete] = useState<boolean>(false);
-  const [zoom, setZoom] = useState<number>(1.0);
-
-  // Reset zoom when leaving 3D Orbit view or morphing to 2D plates
-  useEffect(() => {
-    if (projectionMode !== 'heliocentric' || morphLambda > 0.05) {
-      setZoom(1.0);
-    }
-  }, [projectionMode, morphLambda]);
-
-  const ruleAngleDeg = controlledRuleAngle !== undefined ? controlledRuleAngle : localRuleAngle;
-  const updateRuleAngle = (angle: number) => {
-    setLocalRuleAngle(angle);
-    if (onRuleAngleChange) onRuleAngleChange(angle);
-  };
-
-  const dragStartRef = useRef<{ x: number; y: number; pitch: number; yaw: number; reteStartAngle: number }>({
-    x: 0,
-    y: 0,
-    pitch: 0,
-    yaw: 0,
-    reteStartAngle: 0
+  const {
+    svgRef,
+    viewBoxStr,
+    zoom,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    isOrbital,
+    is3D,
+    isZoomable,
+    isDraggingRule,
+    isDraggingCamera,
+    isDragging,
+    hoveredStar,
+    setHoveredStar,
+    hoveredBead,
+    setHoveredBead,
+    hoveredMilestone,
+    setHoveredMilestone,
+    hoveredNode,
+    setHoveredNode,
+    ruleAngleDeg,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerLeave,
+    handlePointerDownRule,
+    handleTargetClick
+  } = useArmillaryInteractions({
+    camera,
+    onCameraChange,
+    projectionMode,
+    morphLambda,
+    isFreeReteMode,
+    onFreeReteRotate,
+    controlledRuleAngle,
+    onRuleAngleChange,
+    onSnapToTarget
   });
-  const svgRef = useRef<SVGSVGElement | null>(null);
 
   const { 
     rings, 
@@ -123,156 +129,12 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
     alidadeOpacity
   } = model;
 
-  const isOrbital = projectionMode === 'heliocentric';
-  const is3D = projectionMode === 'geocentric' || projectionMode === 'heliocentric' || morphLambda <= 0.05;
-  const isZoomable = (isOrbital || projectionMode === 'geocentric') && morphLambda <= 0.05;
   const isTympanVisible = (projectionMode === 'stereographic' || projectionMode === 'horizon') && morphLambda >= 0.15;
 
   // Calculate live Alidade sighting telemetry
   const sightingInfo: AlidadeSightingInfo | null = showRule
     ? calculateAlidadeSighting(ruleAngleDeg, latitude, localSiderealTimeDeg, stars, sun, moon)
     : null;
-
-
-  // Dynamic zoom viewBox for 3D Heliocentric Orbit view and 3D Geocentric Apparent view
-  const viewBoxStr = useMemo(() => {
-    if (zoom === 1.0) return "-150 -150 300 300";
-    const half = parseFloat((150 / zoom).toFixed(2));
-    return `${-half} ${-half} ${2 * half} ${2 * half}`;
-  }, [zoom]);
-
-  // Native non-passive wheel zoom listener for 3D Orbit and Apparent views
-  // (Prevents browser from falling back to page scroll due to passive React synthetic events)
-  useEffect(() => {
-    const svgEl = svgRef.current;
-    if (!svgEl) return;
-
-    const handleNativeWheel = (e: WheelEvent) => {
-      if (!isZoomable) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-      setZoom((prev) => Math.min(3.5, Math.max(0.75, parseFloat((prev * zoomFactor).toFixed(2)))));
-    };
-
-    svgEl.addEventListener('wheel', handleNativeWheel, { passive: false });
-    return () => {
-      svgEl.removeEventListener('wheel', handleNativeWheel);
-    };
-  }, [isZoomable]);
-
-  // --- Mouse / Pointer Drag for 3D Camera, Free Rete, and Alidade ---
-  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (isDraggingRule) return;
-    e.preventDefault();
-    e.stopPropagation();
-    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-
-    if (svgRef.current) {
-      const rect = svgRef.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
-      const distFromCenter = Math.sqrt(dx * dx + dy * dy);
-      const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
-
-      // In Free Rete mode on 2D plate or 3D sphere, grab and spin the Rete
-      if (isFreeReteMode && distFromCenter > 15) {
-        setIsDraggingRete(true);
-        dragStartRef.current = {
-          x: e.clientX,
-          y: e.clientY,
-          pitch: camera.pitch,
-          yaw: camera.yaw,
-          reteStartAngle: angle
-        };
-        return;
-      }
-    }
-
-    if (is3D) {
-      setIsDraggingCamera(true);
-      setHoveredMilestone(null);
-      setHoveredStar(null);
-      setHoveredBead(null);
-      setHoveredNode(null);
-      dragStartRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-        pitch: camera.pitch,
-        yaw: camera.yaw,
-        reteStartAngle: 0
-      };
-    }
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (isDraggingRule && svgRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      const rect = svgRef.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
-      const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
-      updateRuleAngle(angle);
-      return;
-    }
-
-    if (isDraggingRete && svgRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      const rect = svgRef.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
-      const currAngle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
-      let deltaAngle = currAngle - dragStartRef.current.reteStartAngle;
-      if (deltaAngle > 180) deltaAngle -= 360;
-      if (deltaAngle < -180) deltaAngle += 360;
-
-      if (onFreeReteRotate) {
-        onFreeReteRotate(deltaAngle);
-      }
-      dragStartRef.current.reteStartAngle = currAngle;
-      return;
-    }
-
-    if (!isDraggingCamera) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-
-    const newYaw = (dragStartRef.current.yaw + dx * 0.6 + 360) % 360;
-    const newPitch = Math.max(-85, Math.min(85, dragStartRef.current.pitch + dy * 0.6));
-
-    onCameraChange({
-      pitch: newPitch,
-      yaw: newYaw,
-      roll: 0
-    });
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
-    setIsDraggingCamera(false);
-    setIsDraggingRule(false);
-    setIsDraggingRete(false);
-  };
-
-  const handleTargetClick = (name: string, screenPos: { x: number; y: number }) => {
-    const angle = (Math.atan2(screenPos.y, screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
-    updateRuleAngle(angle);
-    if (onSnapToTarget) {
-      onSnapToTarget(name, angle);
-    }
-  };
 
   return (
     <div 
@@ -311,12 +173,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        onPointerLeave={() => {
-          setIsDraggingCamera(false);
-          setIsDraggingRule(false);
-          setHoveredStar(null);
-          setHoveredBead(null);
-        }}
+        onPointerLeave={handlePointerLeave}
       >
         {/* 0. SVG Defs & Glow Filters */}
         <ArmillaryDefs />
@@ -378,7 +235,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           moon={moon}
           milestones={milestones}
           hoveredMilestone={isDraggingCamera ? null : hoveredMilestone}
-          isDragging={isDraggingCamera || isDraggingRete || isDraggingRule}
+          isDragging={isDragging}
           lunarNodes={lunarNodes}
           projectionMode={projectionMode}
           isOrbital={isOrbital}
@@ -404,12 +261,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           showRule={showRule}
           alidadeOpacity={alidadeOpacity}
           ruleAngleDeg={ruleAngleDeg}
-          onPointerDownRule={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-            setIsDraggingRule(true);
-          }}
+          onPointerDownRule={handlePointerDownRule}
         />
 
         {/* Center Origin Pivot Pin (Alidade center pivot screw) */}
@@ -459,7 +311,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setZoom((z) => Math.max(0.75, parseFloat((z - 0.25).toFixed(2))));
+              zoomOut();
             }}
             className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
             title="Zoom Out"
@@ -474,7 +326,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setZoom((z) => Math.min(3.5, parseFloat((z + 0.25).toFixed(2))));
+              zoomIn();
             }}
             className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
             title="Zoom In"
@@ -487,7 +339,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setZoom(1.0);
+                resetZoom();
               }}
               className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer ml-0.5 border-l border-slate-800/80 pl-1.5"
               title="Reset Zoom (1.0×)"

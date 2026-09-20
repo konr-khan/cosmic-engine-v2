@@ -5,5 +5,6 @@ export * from './ArmillaryHoverHud';
 export * from './ArmillaryTelemetryHud';
 export * from './GyroArmillaryView';
 export * from './useStagedCamera';
+export * from './useArmillaryInteractions';
 export * from './ArmillaryEarthPip';
 export * from './canvas';
