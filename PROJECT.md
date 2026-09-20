@@ -181,7 +181,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `frame.ts` — Centralized EphemerisFrame snapshot generator
       - `terminatorTracks.ts` — Diurnal celestial ground tracks & antimeridian seam interpolation (ADR-0027)
       - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
-      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade, `generatorRings.ts`, `generatorBeads.ts`, `generatorGeometry.ts`)
+      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade, `generatorRings.ts`, `generatorBeads.ts`, `generatorGeometry.ts`, `generatorObserverCone.ts`)
       - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
   - `constants/`
     - `dashboardPresets.ts` — Observatory dashboard window layouts & configuration presets

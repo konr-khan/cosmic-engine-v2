@@ -36,14 +36,15 @@ import {
   computeArmillaryStars, 
   computeArmillaryMilestones, 
   computeArmillaryLunarNodes, 
-  computeArmillaryObserverCone, 
   computeArmillaryBodies 
 } from './generatorBeads';
+import { computeArmillaryObserverCone } from './generatorObserverCone';
 import { generateArmillaryRings } from './generatorRings';
 
 export * from './generatorGeometry';
 export * from './generatorBeads';
 export * from './generatorRings';
+export * from './generatorObserverCone';
 
 
 /**

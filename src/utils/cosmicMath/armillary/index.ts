@@ -6,4 +6,5 @@ export * from './astrolabe';
 export * from './focalBeacon';
 export * from './alidade';
 export * from './paths';
+export * from './generatorObserverCone';
 export * from './generator';
