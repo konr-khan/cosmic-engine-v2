@@ -1,18 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { 
-  CONFIG, 
-  getTerminatorShadowPaths, 
-  clamp, 
-  calculateEarthOrbitalPhysics, 
-  getJulianDate,
-  WORLD_LANDMASSES,
-  generate24HourGroundTrack,
-  findActiveNodalCrossing,
-  getLunarNodeProximityTelemetry
-} from '../../../utils/cosmicMath';
+import React, { useState } from 'react';
+import { CONFIG } from '../../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
-import { useHoverTime } from '../../../store/hoverStore';
 import { TerminatorHoverHud } from './TerminatorHoverHud';
+import { TerminatorLandmasses } from './TerminatorLandmasses';
+import { TerminatorGroundTracks } from './TerminatorGroundTracks';
+import { useTerminatorMapMath } from './hooks/useTerminatorMapMath';
 
 export interface TerminatorMapProps {
   solarData?: SolarAlmanacData | null;
@@ -37,121 +29,52 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   initialShowSunTrack = false,
   initialShowMoonTrack = false
 }) => {
-  const storeHoverTime = useHoverTime();
-  const effectiveHoverTime = hoverTime !== undefined ? hoverTime : storeHoverTime;
   const [hoveredPoint, setHoveredPoint] = useState<'sun' | 'moon' | 'observer' | null>(null);
   const [showSunTrack, setShowSunTrack] = useState<boolean>(initialShowSunTrack);
   const [showMoonTrack, setShowMoonTrack] = useState<boolean>(initialShowMoonTrack);
 
-  const declination = (solarData?.declination ?? 0) as number;
-  const activeTime = effectiveHoverTime !== null ? effectiveHoverTime : timeOfDay;
-  const activeJD = useMemo(() => getJulianDate(currentDate, activeTime), [currentDate, activeTime]);
-
-  // --- 1. Earth-Sun Keplerian Distance & Dynamic Disc Scaling ---
-  const fallbackPhysics = useMemo(
-    () => calculateEarthOrbitalPhysics(activeJD),
-    [activeJD]
-  );
-  const sunDistanceAU = solarData?.distanceAU ?? fallbackPhysics.distanceAU;
-  const sunDistanceKm = solarData?.distanceKm ?? fallbackPhysics.distanceKm;
-  const sunAngularDiamArcmin = solarData?.sunAngularDiameterArcmin ?? fallbackPhysics.sunAngularDiameterArcmin;
-
-  // Dynamic Sun Disc Radius (Base 4.5px, dynamically scaled with orbital distance)
-  const sunScale = 1.0 + (1.0 / sunDistanceAU - 1.0) * 4.0;
-  const sunRadius = clamp(4.5 * sunScale, 3.5, 6.0);
-  const sunGlowRadius = sunRadius * 2.4;
-
-  const sunLong = (12 - activeTime) * 15;
-  const normalizedSunLong = ((sunLong + 180) % 360 + 360) % 360 - 180;
-  const sunCy = 90 - declination;
-  const userCy = 90 - latitude;
-
-  // --- 2. Sublunar Point (Moon) Coordinates, Distance & Ephemeris ---
-  const lunarDec = (orbitalData?.lunarEvents?.declination ?? orbitalData?.lunarPos?.declination ?? 0) as number;
-  const transit = orbitalData?.lunarEvents?.transit ?? 12;
-  const moonPhase = orbitalData?.phase?.name || 'Waxing Crescent';
-  const moonIllum = ((orbitalData?.phase?.value ?? 0.34) * 100).toFixed(0);
-  const moonDistKm = orbitalData?.lunarEvents?.distanceKm || orbitalData?.lunarPos?.distanceKm || 384400;
-  const moonAngularDiamArcmin = 31.13 * (384400 / moonDistKm);
-  const isSupermoon = moonDistKm < 365000;
-  const isMicromoon = moonDistKm > 400000;
-
-  // Dynamic Moon Disc Radius (Base 4.0px, dynamically scaled with geocentric distance)
-  const moonScale = 1.0 + (384400 / moonDistKm - 1.0) * 2.5;
-  const moonRadius = clamp(4.0 * moonScale, 3.0, 5.5);
-  const moonGlowRadius = moonRadius * 2.5;
-
-  // Map subsolar & sublunar positions relative to centered observer longitude
-  const relSunX = (normalizedSunLong - longitude + 180 + 360) % 360;
-  const moonHourAngle = (activeTime - transit) * 15;
-  const relMoonX = ((180 - moonHourAngle) % 360 + 360) % 360;
-  const moonCy = 90 - lunarDec;
-
-  // --- 3. 24-Hour Diurnal Subsolar & Sublunar Ground Tracks ---
-  const sunTrack = useMemo(() => {
-    if (!showSunTrack) return null;
-    return generate24HourGroundTrack('sun', activeJD, longitude, 30);
-  }, [showSunTrack, activeJD, longitude]);
-
-  const moonTrack = useMemo(() => {
-    if (!showMoonTrack) return null;
-    return generate24HourGroundTrack('moon', activeJD, longitude, 30);
-  }, [showMoonTrack, activeJD, longitude]);
-
-  const activeNodalMarker = useMemo(() => {
-    if (!showMoonTrack) return null;
-    return findActiveNodalCrossing(activeJD, longitude);
-  }, [showMoonTrack, activeJD, longitude]);
-
-  const lunarNodeTelemetry = useMemo(() => {
-    return getLunarNodeProximityTelemetry(activeJD);
-  }, [activeJD]);
-
-  // Render landmasses relative to the centered longitude with wrapping offsets (-360, 0, +360)
-  const landmassPaths = useMemo(() => {
-    return WORLD_LANDMASSES.map((poly, idx) => {
-      const offsets = [-360, 0, 360];
-      const pathD = offsets.map(offset => {
-        let d = "";
-        poly.forEach(([lon, lat], i) => {
-          const x = (lon - longitude + 180) + offset;
-          const y = 90 - lat;
-          d += i === 0 ? `M ${x.toFixed(1)} ${y.toFixed(1)}` : ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
-        });
-        d += " Z";
-        return d;
-      }).join(" ");
-
-      return (
-        <path 
-          key={idx} 
-          d={pathD} 
-          fill="#334155" 
-          stroke="#64748b" 
-          strokeWidth="0.75" 
-          opacity="0.85" 
-        />
-      );
-    });
-  }, [longitude]);
-
-  // Compute precise 3D spherical shadow paths for twilight layers
-  const astroShadow = useMemo(
-    () => getTerminatorShadowPaths(longitude, normalizedSunLong, declination, -18.0),
-    [longitude, normalizedSunLong, declination]
-  );
-  const nauticalShadow = useMemo(
-    () => getTerminatorShadowPaths(longitude, normalizedSunLong, declination, -12.0),
-    [longitude, normalizedSunLong, declination]
-  );
-  const civilShadow = useMemo(
-    () => getTerminatorShadowPaths(longitude, normalizedSunLong, declination, -6.0),
-    [longitude, normalizedSunLong, declination]
-  );
-  const dayShadow = useMemo(
-    () => getTerminatorShadowPaths(longitude, normalizedSunLong, declination, -0.833),
-    [longitude, normalizedSunLong, declination]
-  );
+  const {
+    effectiveHoverTime,
+    declination,
+    sunDistanceAU,
+    sunDistanceKm,
+    sunAngularDiamArcmin,
+    sunRadius,
+    sunGlowRadius,
+    normalizedSunLong,
+    sunCy,
+    userCy,
+    relSunX,
+    lunarDec,
+    moonPhase,
+    moonIllum,
+    moonDistKm,
+    moonAngularDiamArcmin,
+    isSupermoon,
+    isMicromoon,
+    moonRadius,
+    moonGlowRadius,
+    relMoonX,
+    moonCy,
+    sunTrack,
+    moonTrack,
+    activeNodalMarker,
+    lunarNodeTelemetry,
+    astroShadow,
+    nauticalShadow,
+    civilShadow,
+    dayShadow
+  } = useTerminatorMapMath({
+    solarData,
+    orbitalData,
+    latitude,
+    longitude,
+    timeOfDay,
+    hoverTime,
+    currentDate,
+    showSunTrack,
+    showMoonTrack
+  });
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
@@ -225,7 +148,6 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
           longitude={longitude}
         />
 
-
         <svg viewBox="0 0 360 180" style={{ touchAction: 'none' }} className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
           <defs>
             <clipPath id="terminatorBounds">
@@ -238,11 +160,11 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
             <rect width="360" height="180" fill="#0b0f19" />
 
             {/* Continent Landmasses */}
-            {landmassPaths}
+            <TerminatorLandmasses longitude={longitude} />
 
             {/* Longitude Grid Lines */}
             {[-180, -90, 0, 90, 180, 270].map(lon => {
-               let x = (lon - longitude + 180 + 360) % 360;
+               const x = (lon - longitude + 180 + 360) % 360;
                return <line key={lon} x1={x} y1="0" x2={x} y2="180" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.5" />;
             })}
 
@@ -270,94 +192,14 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               <path d={dayShadow.linePath} fill="none" stroke="#fbbf24" strokeWidth="1" strokeOpacity="0.8" strokeDasharray="3 2" />
             )}
 
-            {/* 24-Hour Diurnal Subsolar Ground Track */}
-            {showSunTrack && sunTrack && (
-              <g className="sun-ground-track pointer-events-none">
-                {/* Past 12h: subtle dotted amber (historical trail) */}
-                {sunTrack.pastD && (
-                  <path
-                    d={sunTrack.pastD}
-                    fill="none"
-                    stroke="#fbbf24"
-                    strokeWidth="1"
-                    strokeDasharray="1 3"
-                    strokeOpacity="0.30"
-                  />
-                )}
-                {/* Future 12h: prominent dashed amber (future trajectory) */}
-                {sunTrack.futureD && (
-                  <path
-                    d={sunTrack.futureD}
-                    fill="none"
-                    stroke="#fbbf24"
-                    strokeWidth="1"
-                    strokeDasharray="4 3"
-                    strokeOpacity="0.55"
-                  />
-                )}
-              </g>
-            )}
-
-            {/* 24-Hour Diurnal Sublunar Ground Track & Active Nodal Crossing */}
-            {showMoonTrack && moonTrack && (
-              <g className="moon-ground-track">
-                {/* Past 12h: subtle dotted cyan/slate (historical trail) */}
-                {moonTrack.pastD && (
-                  <path
-                    d={moonTrack.pastD}
-                    fill="none"
-                    stroke="#38bdf8"
-                    strokeWidth="1"
-                    strokeDasharray="1 3"
-                    strokeOpacity="0.30"
-                    className="pointer-events-none"
-                  />
-                )}
-                {/* Future 12h: prominent dashed cyan/slate (future trajectory) */}
-                {moonTrack.futureD && (
-                  <path
-                    d={moonTrack.futureD}
-                    fill="none"
-                    stroke="#818cf8"
-                    strokeWidth="1.1"
-                    strokeDasharray="3.5 2.5"
-                    strokeOpacity="0.55"
-                    className="pointer-events-none"
-                  />
-                )}
-                {/* Active Ecliptic Nodal Crossing Marker if within +-12h */}
-                {activeNodalMarker && (
-                  <g className="nodal-crossing-marker cursor-help pointer-events-auto">
-                    <circle
-                      cx={activeNodalMarker.x}
-                      cy={activeNodalMarker.y}
-                      r="7"
-                      fill={activeNodalMarker.type === 'ascending' ? '#06b6d4' : '#f43f5e'}
-                      fillOpacity="0.25"
-                      className="animate-pulse"
-                    />
-                    <circle
-                      cx={activeNodalMarker.x}
-                      cy={activeNodalMarker.y}
-                      r="3"
-                      fill={activeNodalMarker.type === 'ascending' ? '#22d3ee' : '#fb7185'}
-                      stroke="#ffffff"
-                      strokeWidth="0.75"
-                    />
-                    <text
-                      x={activeNodalMarker.x + 5}
-                      y={activeNodalMarker.y - 4}
-                      className={`text-[8px] font-mono font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] select-none ${
-                        activeNodalMarker.type === 'ascending' ? 'fill-cyan-300' : 'fill-rose-300'
-                      }`}
-                    >
-                      {activeNodalMarker.symbol} Node
-                    </text>
-                    <title>{activeNodalMarker.label}</title>
-                  </g>
-                )}
-              </g>
-            )}
+            {/* 24-Hour Diurnal Subsolar & Sublunar Ground Tracks */}
+            <TerminatorGroundTracks
+              showSunTrack={showSunTrack}
+              sunTrack={sunTrack}
+              showMoonTrack={showMoonTrack}
+              moonTrack={moonTrack}
+              activeNodalMarker={activeNodalMarker}
+            />
 
             {/* Subsolar Point Marker with Soft Dynamic Distance-Scaled Glow */}
             <g 
@@ -410,6 +252,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
         </svg>
       </div>
 
+      {/* Bottom Color Semantic Legend */}
       <div className="mt-2.5 p-2 bg-slate-950/80 rounded-xl border border-slate-800/80 flex justify-between items-center text-[10px] font-mono text-slate-400">
          <div className="flex items-center gap-3">
            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 border border-amber-300 inline-block" /> Subsolar</span>
