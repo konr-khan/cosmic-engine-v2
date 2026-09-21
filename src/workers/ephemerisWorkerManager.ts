@@ -90,32 +90,34 @@ export class EphemerisWorkerManager {
   public nextRequestId: number;
   public pendingRequests: Map<number, PendingRequestEntry>;
   public signatureToRequestId: Map<string, number>;
-  public annualSolarCache: Map<string, AnnualSolarMatrixItem[]>;
-  public annualLunarCache: Map<string, AnnualLunarMatrixItem[]>;
+  public annualSolarCache: LruCache<string, AnnualSolarMatrixItem[]>;
+  public annualLunarCache: LruCache<string, AnnualLunarMatrixItem[]>;
   public requestTimeouts: Map<number, ReturnType<typeof setTimeout>>;
   public _isAvailable: boolean;
   public latestProcessedEphemerisId: number;
   public lastEphemerisDispatchTime: number;
   public ephemerisThrottleTimer: ReturnType<typeof setTimeout> | null;
   public pendingThrottledEntry: PendingThrottledEphemerisEntry | null;
+  private readonly _boundOnUnload: () => void;
 
   constructor() {
     this.worker = null;
     this.nextRequestId = 0;
     this.pendingRequests = new Map();
     this.signatureToRequestId = new Map();
-    this.annualSolarCache = new Map();
-    this.annualLunarCache = new Map();
+    this.annualSolarCache = new LruCache<string, AnnualSolarMatrixItem[]>(EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE);
+    this.annualLunarCache = new LruCache<string, AnnualLunarMatrixItem[]>(EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE);
     this.requestTimeouts = new Map();
     this._isAvailable = typeof Worker !== 'undefined';
     this.latestProcessedEphemerisId = 0;
     this.lastEphemerisDispatchTime = 0;
     this.ephemerisThrottleTimer = null;
     this.pendingThrottledEntry = null;
+    this._boundOnUnload = () => this.terminate();
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => this.terminate());
-      window.addEventListener('pagehide', () => this.terminate());
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('beforeunload', this._boundOnUnload);
+      window.addEventListener('pagehide', this._boundOnUnload);
     }
   }
 
@@ -786,6 +788,10 @@ export class EphemerisWorkerManager {
    * Terminates the active singleton worker instance and resets pending requests and caches.
    */
   terminate(): void {
+    if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+      window.removeEventListener('beforeunload', this._boundOnUnload);
+      window.removeEventListener('pagehide', this._boundOnUnload);
+    }
     if (this.ephemerisThrottleTimer) {
       clearTimeout(this.ephemerisThrottleTimer);
       this.ephemerisThrottleTimer = null;

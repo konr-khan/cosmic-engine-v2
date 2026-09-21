@@ -578,7 +578,8 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       addEventListener: (event: string, handler: Function) => {
         listeners[event] = listeners[event] || [];
         listeners[event].push(handler);
-      }
+      },
+      removeEventListener: vi.fn()
     };
 
     const manager = new EphemerisWorkerManager();
@@ -592,6 +593,34 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     listeners['pagehide'][0]({} as any);
     expect(terminateSpy).toHaveBeenCalledTimes(2);
+
+    (globalThis as any).window = originalWindow;
+  });
+
+  it('unregisters beforeunload and pagehide listeners on terminate()', () => {
+    const originalWindow = globalThis.window;
+    const removed: Record<string, Function[]> = {};
+    const listeners: Record<string, Function[]> = {};
+    (globalThis as any).window = {
+      addEventListener: vi.fn((event: string, handler: Function) => {
+        listeners[event] = listeners[event] || [];
+        listeners[event].push(handler);
+      }),
+      removeEventListener: vi.fn((event: string, handler: Function) => {
+        removed[event] = removed[event] || [];
+        removed[event].push(handler);
+      })
+    };
+
+    const manager = new EphemerisWorkerManager();
+    expect(listeners['beforeunload']).toHaveLength(1);
+    expect(listeners['pagehide']).toHaveLength(1);
+
+    manager.terminate();
+    expect(removed['beforeunload']).toHaveLength(1);
+    expect(removed['pagehide']).toHaveLength(1);
+    expect(removed['beforeunload'][0]).toBe(listeners['beforeunload'][0]);
+    expect(removed['pagehide'][0]).toBe(listeners['pagehide'][0]);
 
     (globalThis as any).window = originalWindow;
   });
