@@ -143,14 +143,18 @@ describe('Eclipse Demonstrator Subsystem', () => {
     );
 
     const syzygyHtml = renderToStaticMarkup(
-      React.createElement(LiveSyzygyView, {
-        eclipse: eclipse2028,
-        latitude: 47.06,
-        longitude: -122.81,
-        timeOfDay: 13.67,
-        sunLambdaDeg: 295,
-        setHoveredEntity: () => {}
-      })
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(LiveSyzygyView, {
+          eclipse: eclipse2028,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 13.67,
+          sunLambdaDeg: 295,
+          setHoveredEntity: () => {}
+        })
+      )
     );
 
     // In Axial Sightline, near-side paths are rendered unmasked in front of Earth at 0.9 opacity
@@ -250,14 +254,18 @@ describe('Eclipse Demonstrator Subsystem', () => {
     };
 
     const syzygyHtml = renderToStaticMarkup(
-      React.createElement(LiveSyzygyView, {
-        eclipse: syzygyEclipse,
-        latitude: 47.06,
-        longitude: -122.81,
-        timeOfDay: 12,
-        sunLambdaDeg: 0,
-        setHoveredEntity: () => {}
-      })
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(LiveSyzygyView, {
+          eclipse: syzygyEclipse,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunLambdaDeg: 0,
+          setHoveredEntity: () => {}
+        })
+      )
     );
 
     // Ascending Node directly behind Earth in Syzygy view: muted styling
