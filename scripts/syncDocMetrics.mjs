@@ -237,6 +237,11 @@ const CANONICAL_SUITES = [
     focus: 'Dynamic observer meridian centering, wrapped landmass polygons, topocentric YOU pin crosshairs, distance-scaled Subsolar (AU) and Sublunar (km) disc markers, and 4-tier twilight shadow boundaries'
   },
   {
+    domain: 'Terminator Map Math Hook',
+    file: 'src/components/widgets/terminator/hooks/useTerminatorMapMath.test.ts',
+    focus: 'Astronomical coordinates, Keplerian disc scaling, hover overrides, ground-track toggles, and null-data fallbacks'
+  },
+  {
     domain: 'Macro Orbit Widget',
     file: 'src/components/widgets/macro/MacroOrbitWidget.test.tsx',
     focus: 'Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD'
