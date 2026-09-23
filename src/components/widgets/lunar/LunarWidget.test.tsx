@@ -158,4 +158,38 @@ describe('Lunar Almanac Subsystem', () => {
     expect(html).toContain('Maximum Spring Tide (Syzygy)');
     expect(html).toContain('High Tide');
   });
+
+  it('renders synchronized hoverTime horizontal guideline and time badge in 30-Day Synodic mode', () => {
+    const mockData: AnnualLunarMatrixItem[] = Array.from({ length: 30 }, (_, i) => ({
+      day: i + 1,
+      moonrise: 6.0,
+      transit: 12.0,
+      moonset: 18.0,
+      phaseValue: 0.5,
+      isPerigee: false,
+      isApogee: false,
+      distanceKm: 384400
+    }));
+
+    const html = renderToStaticMarkup(
+      React.createElement(LunarRibbonChart, {
+        annualLunarData: mockData,
+        activeDay: 15,
+        totalDays: 30,
+        year: 2026,
+        activeData: mockData[14],
+        getDayLabel: (d: number) => `Day ${d}`,
+        viewMode: 'synodic',
+        hoverTime: 14.5,
+        timeMode: 'utc',
+        onViewModeChange: () => {}
+      })
+    );
+
+    // Should render the horizontal dashed line and the 14:30Z badge in synodic mode
+    expect(html).toContain('14:30');
+    expect(html).toContain('14:30Z');
+    expect(html).toContain('stroke-dasharray="3 3"');
+  });
 });
+

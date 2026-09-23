@@ -107,8 +107,8 @@ export const LunarRibbonCurves: React.FC<LunarRibbonCurvesProps> = ({
         stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3"
       />
 
-      {/* Synced Hover Time Horizontal Guideline (only in 365-Day Annual Mode) */}
-      {!isSynodic && hoverTime !== null && hoverTime !== undefined && (() => {
+      {/* Synced Hover Time Horizontal Guideline (Synodic & Annual Modes) */}
+      {hoverTime !== null && hoverTime !== undefined && (() => {
         const chartHTime = timeMode === 'utc'
           ? hoverTime
           : ((hoverTime + lonOffsetHours) % 24 + 24) % 24;

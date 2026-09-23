@@ -96,28 +96,24 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = React.memo(({
     onScrub: ({ day, time }, e) => {
       if (onHoverDayChange) onHoverDayChange(day);
 
-      // In 30-Day Synodic View, mouseover strictly provides straight data readout
-      // without scrubbing through the year or horizontal time guidelines!
-      if (!isSynodic) {
-        if (onHoverDate) {
-          const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
-          onHoverDate(d);
-        }
+      if (onHoverDate) {
+        const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
+        onHoverDate(d);
+      }
 
-        if (onHoverTime) {
-          const utcTime = timeMode === 'utc' 
-            ? time 
-            : ((time - lonOffsetHours) % 24 + 24) % 24;
-          onHoverTime(parseFloat(utcTime.toFixed(3)));
-        }
+      if (onHoverTime) {
+        const utcTime = timeMode === 'utc' 
+          ? time 
+          : ((time - lonOffsetHours) % 24 + 24) % 24;
+        onHoverTime(parseFloat(utcTime.toFixed(3)));
+      }
 
-        if ((isDragging || e.type === 'pointerdown') && onDayChange) {
-          onDayChange(day);
-        }
+      if ((isDragging || e.type === 'pointerdown') && onDayChange) {
+        onDayChange(day);
       }
     },
     onScrubEnd: (endDayVal) => {
-      if (!isSynodic && endDayVal !== null && onDayChange) {
+      if (endDayVal !== null && onDayChange) {
         onDayChange(endDayVal);
       }
     }
