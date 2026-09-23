@@ -12,6 +12,41 @@ export interface ArmillaryRingsLayerProps {
   lunarOrbitOpacity?: number;
 }
 
+/**
+ * Evaluates the absolute Z-component of the ring's camera-space unit normal (|n_z|).
+ * - |n_z| = 0: Edge-on viewing (ring plane contains camera sightline, collapses to a 1D line)
+ * - |n_z| = 1: Face-on viewing (ring plane perpendicular to camera sightline, circular profile)
+ */
+function getRingNormalAbsZ(ring: ArmillaryRingPath): number | null {
+  const verts = ring.vertices;
+  if (!verts || verts.length < 4) return null;
+  const len = verts.length;
+  const idx0 = 0;
+  const idx1 = Math.floor(len / 4);
+  const idx2 = Math.floor(len / 2);
+
+  const p0 = verts[idx0].pCam;
+  const p1 = verts[idx1].pCam;
+  const p2 = verts[idx2].pCam;
+
+  const ax = p1.x - p0.x;
+  const ay = p1.y - p0.y;
+  const az = p1.z - p0.z;
+
+  const bx = p2.x - p0.x;
+  const by = p2.y - p0.y;
+  const bz = p2.z - p0.z;
+
+  const nx = ay * bz - az * by;
+  const ny = az * bx - ax * bz;
+  const nz = ax * by - ay * bx;
+
+  const lenSq = nx * nx + ny * ny + nz * nz;
+  if (lenSq < 1e-8) return null;
+
+  return Math.abs(nz) / Math.sqrt(lenSq);
+}
+
 export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
   rings,
   is3D = true,
@@ -30,6 +65,22 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
   const absPitch = Math.abs(cameraPitch ?? 0);
   const uPitch = Math.max(0, Math.min(1, (absPitch - 65) / 15));
 
+  // Helper to compute effective unification progress u in [0, 1] for a ring.
+  // Fuses back dashed segments into solid continuous strokes when:
+  // 1. Morphing to 2D astrolabe plate (uMorph)
+  // 2. Viewed face-on / top-down (uPitch or uFaceOn)
+  // 3. Viewed edge-on (|n_z| <= 0.08, e.g. equator or tropics at pitch ≈ 0°)
+  const getRingUnification = (ring: ArmillaryRingPath): number => {
+    const absNz = getRingNormalAbsZ(ring);
+    const uEdgeOn = absNz !== null ? Math.max(0, Math.min(1, (0.08 - absNz) / 0.06)) : 0;
+    const uFaceOn = absNz !== null ? Math.max(0, Math.min(1, (absNz - 0.88) / 0.10)) : 0;
+
+    const isOrbitPath = ring.id === 'orbit_path';
+    return isOrbitPath || ring.id === 'ecliptic'
+      ? Math.max(uMorph, uPitch, uFaceOn, uEdgeOn)
+      : Math.max(uMorph, uFaceOn, uEdgeOn);
+  };
+
   return (
     <>
       {/* Back Ring Segments (Depth Sorted: zCam < 0) */}
@@ -40,9 +91,9 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
           const ringOpacity = isOrbitPath ? orbitRingOpacity : (isLunarOrbit ? lunarOrbitOpacity : celestialRingsOpacity);
           if (ringOpacity <= 0.01 || !ring.backPathD) return null;
 
-          const u = isOrbitPath || ring.id === 'ecliptic' ? Math.max(uMorph, uPitch) : uMorph;
+          const u = getRingUnification(ring);
           if (u >= 0.99) {
-            // When fully unified (top-down pitch or 2D plate), fullPathD is rendered in the front group
+            // When fully unified (top-down pitch, edge-on view, or 2D plate), fullPathD is rendered in the front group
             return null;
           }
 
@@ -73,7 +124,7 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
           const ringOpacity = isOrbitPath ? orbitRingOpacity : (isLunarOrbit ? lunarOrbitOpacity : celestialRingsOpacity);
           if (ringOpacity <= 0.01) return null;
 
-          const u = isOrbitPath || ring.id === 'ecliptic' ? Math.max(uMorph, uPitch) : uMorph;
+          const u = getRingUnification(ring);
           const isUnified = u >= 0.99;
           const pathD = isUnified && ring.fullPathD ? ring.fullPathD : ring.frontPathD;
           if (!pathD) return null;

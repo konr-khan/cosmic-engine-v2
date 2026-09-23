@@ -584,6 +584,70 @@ describe('Gyro-Morph Armillary Subsystem', () => {
     expect(bottomUpHtml).toContain(ring.fullPathD);
   });
 
+  it('unifies celestial ring to fully solid path when viewed edge-on (|n_z| <= 0.02) in Apparent view', () => {
+    // Construct an edge-on celestial equator (XZ plane in camera space: n = (0, 1, 0), nz = 0)
+    const edgeOnRing: ArmillaryRingPath = {
+      id: 'equator',
+      label: 'Celestial Equator',
+      color: '#10b981',
+      frontStrokeWidth: 2.0,
+      backStrokeWidth: 1.0,
+      frontPathD: 'M 100 0 L -100 0',
+      backPathD: 'M -100 0 L 100 0',
+      fullPathD: 'M 100 0 L -100 0 L 100 0 Z',
+      vertices: [
+        { p3d: { x: 100, y: 0, z: 0 }, pCam: { x: 100, y: 0, z: 0 }, pProj: { x: 100, y: 0 }, screenPos: { x: 100, y: 0 }, isFront: true },
+        { p3d: { x: 0, y: 0, z: 100 }, pCam: { x: 0, y: 0, z: 100 }, pProj: { x: 0, y: 0 }, screenPos: { x: 0, y: 0 }, isFront: true },
+        { p3d: { x: -100, y: 0, z: 0 }, pCam: { x: -100, y: 0, z: 0 }, pProj: { x: -100, y: 0 }, screenPos: { x: -100, y: 0 }, isFront: false },
+        { p3d: { x: 0, y: 0, z: -100 }, pCam: { x: 0, y: 0, z: -100 }, pProj: { x: 0, y: 0 }, screenPos: { x: 0, y: 0 }, isFront: false },
+        { p3d: { x: 100, y: 0, z: 0 }, pCam: { x: 100, y: 0, z: 0 }, pProj: { x: 100, y: 0 }, screenPos: { x: 100, y: 0 }, isFront: true }
+      ]
+    };
+
+    const edgeOnHtml = renderToStaticMarkup(
+      React.createElement(ArmillaryRingsLayer, {
+        rings: [edgeOnRing],
+        is3D: true,
+        morphLambda: 0.0,
+        cameraPitch: 0,
+        orbitRingOpacity: 1.0,
+        celestialRingsOpacity: 1.0
+      })
+    );
+
+    // When edge-on, back dashed path is suppressed and fullPathD is rendered solid
+    expect(edgeOnHtml).not.toContain('stroke-dasharray');
+    expect(edgeOnHtml).not.toContain(edgeOnRing.backPathD);
+    expect(edgeOnHtml).toContain(edgeOnRing.fullPathD);
+
+    // Construct a tilted ring (pitch = 30°: nz ~ 0.5)
+    const tiltedRing: ArmillaryRingPath = {
+      ...edgeOnRing,
+      vertices: [
+        { p3d: { x: 100, y: 0, z: 0 }, pCam: { x: 100, y: 0, z: 0 }, pProj: { x: 100, y: 0 }, screenPos: { x: 100, y: 0 }, isFront: true },
+        { p3d: { x: 0, y: 86.6, z: 50 }, pCam: { x: 0, y: 86.6, z: 50 }, pProj: { x: 0, y: -86.6 }, screenPos: { x: 0, y: -86.6 }, isFront: true },
+        { p3d: { x: -100, y: 0, z: 0 }, pCam: { x: -100, y: 0, z: 0 }, pProj: { x: -100, y: 0 }, screenPos: { x: -100, y: 0 }, isFront: false },
+        { p3d: { x: 0, y: -86.6, z: -50 }, pCam: { x: 0, y: -86.6, z: -50 }, pProj: { x: 0, y: 86.6 }, screenPos: { x: 0, y: 86.6 }, isFront: false },
+        { p3d: { x: 100, y: 0, z: 0 }, pCam: { x: 100, y: 0, z: 0 }, pProj: { x: 100, y: 0 }, screenPos: { x: 100, y: 0 }, isFront: true }
+      ]
+    };
+
+    const tiltedHtml = renderToStaticMarkup(
+      React.createElement(ArmillaryRingsLayer, {
+        rings: [tiltedRing],
+        is3D: true,
+        morphLambda: 0.0,
+        cameraPitch: 30,
+        orbitRingOpacity: 1.0,
+        celestialRingsOpacity: 1.0
+      })
+    );
+
+    // When tilted, depth sorting preserves dashed back segments
+    expect(tiltedHtml).toContain('stroke-dasharray="3,2"');
+    expect(tiltedHtml).toContain(tiltedRing.backPathD);
+  });
+
   it('renders rich glassmorphic telemetry HUD popover for ascending and descending lunar nodes', () => {
     const mockLunarNodes = {
       ascendingNode: { screenPos: { x: 10, y: -20 }, isFront: true, lonDeg: 125.4 },
