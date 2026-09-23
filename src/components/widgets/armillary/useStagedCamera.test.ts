@@ -152,5 +152,75 @@ describe('useStagedCamera & computeStagedCamera', () => {
       expect(canonical.pitch).toBe(90);
       expect(canonical.yaw).toBe(0);
     });
+
+    it('animates camera to nodal plane orientation (pitch 0, yaw = (nodeLon + 90) % 360) on handleSnapToNodal', () => {
+      let rAFCallback: ((time: number) => void) | null = null;
+      vi.stubGlobal('requestAnimationFrame', (cb: (time: number) => void) => {
+        rAFCallback = cb;
+        return 123;
+      });
+      vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+      stateStore = {};
+      stateCounter = 0;
+      const initialCam: ArmillaryCameraState = { pitch: 25, yaw: 35, roll: 0 };
+      const hookResult = useStagedCamera({ initialCamera: initialCam, initialMode: 'heliocentric', initialLambda: 0.0 });
+
+      // Node longitude at 125 degrees -> target yaw should be (125 + 90) % 360 = 215 degrees
+      hookResult.handleSnapToNodal(125);
+
+      expect(hookResult.projectionMode).toBe('heliocentric');
+      expect(hookResult.morphLambda).toBe(0.0);
+
+      expect(rAFCallback).not.toBeNull();
+      const start = performance.now();
+      rAFCallback!(start);
+      rAFCallback!(start + 1000);
+
+      // Re-invoke hook to simulate React re-render from updated stateStore
+      stateCounter = 0;
+      const reRendered = useStagedCamera();
+      expect(reRendered.camera.pitch).toBe(0);
+      expect(reRendered.camera.yaw).toBe(215);
+
+      vi.unstubAllGlobals();
+    });
+
+    it('smoothly restores saved 3D camera orientation on handleResetFromNodal', () => {
+      let rAFCallback: ((time: number) => void) | null = null;
+      vi.stubGlobal('requestAnimationFrame', (cb: (time: number) => void) => {
+        rAFCallback = cb;
+        return 123;
+      });
+      vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+      stateStore = {};
+      stateCounter = 0;
+      const customAngle: ArmillaryCameraState = { pitch: 30, yaw: 60, roll: 0 };
+      const hookResult = useStagedCamera({ initialCamera: customAngle, initialMode: 'heliocentric', initialLambda: 0.0 });
+
+      // Trigger snap to nodal first
+      hookResult.handleSnapToNodal(90);
+      const start1 = performance.now();
+      rAFCallback!(start1 + 1000);
+
+      stateCounter = 0;
+      let reRendered = useStagedCamera();
+      expect(reRendered.camera.pitch).toBe(0);
+      expect(reRendered.camera.yaw).toBe(180);
+
+      // Now reset from nodal
+      hookResult.handleResetFromNodal();
+      const start2 = performance.now();
+      rAFCallback!(start2);
+      rAFCallback!(start2 + 1000);
+
+      stateCounter = 0;
+      reRendered = useStagedCamera();
+      expect(reRendered.camera.pitch).toBe(30);
+      expect(reRendered.camera.yaw).toBe(60);
+
+      vi.unstubAllGlobals();
+    });
   });
 });

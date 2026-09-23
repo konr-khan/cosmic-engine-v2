@@ -32,6 +32,8 @@ export interface ArmillaryHeaderControlsProps {
   onToggleEccentricity?: (val: boolean) => void;
   showObserverCone?: boolean;
   onToggleObserverCone?: (show: boolean) => void;
+  isNodalActive?: boolean;
+  onToggleNodal?: () => void;
 }
 
 export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = ({
@@ -57,7 +59,9 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
   onSnapToNow,
   apparentSolarHours,
   exaggerateEccentricity = false,
-  onToggleEccentricity
+  onToggleEccentricity,
+  isNodalActive = false,
+  onToggleNodal
 }) => {
   const isOrbital = projectionMode === 'heliocentric';
 
@@ -71,7 +75,9 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
             Gyro-Morph Armillary &amp; Astrolabe
           </span>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-500/30">
-            {projectionMode === 'heliocentric' 
+            {isNodalActive
+              ? '☊ Nodal Plane (5.145° Sightline)'
+              : projectionMode === 'heliocentric' 
               ? '☉ Heliocentric Orbit'
               : projectionMode === 'geocentric'
               ? '⊕ Geocentric Armillary Sphere'
@@ -89,6 +95,8 @@ export const ArmillaryHeaderControls: React.FC<ArmillaryHeaderControlsProps> = (
           projectionMode={projectionMode}
           morphLambda={morphLambda}
           onSnapToPreset={onSnapToPreset}
+          isNodalActive={isNodalActive}
+          onToggleNodal={onToggleNodal}
         />
         <ArmillaryMorphRail
           projectionMode={projectionMode}

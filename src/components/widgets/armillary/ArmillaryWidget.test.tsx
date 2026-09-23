@@ -2127,16 +2127,19 @@ describe('Gyro-Morph Armillary Subsystem', () => {
 
     describe('Phase 3 Header Controls Decomposition', () => {
       describe('ArmillaryModePills', () => {
-        it('renders 5 mode buttons and invokes onSnapToPreset with canonical targets', () => {
+        it('renders 6 mode buttons in heliocentric mode and invokes callbacks with canonical targets', () => {
           const onSnapToPreset = vi.fn();
+          const onToggleNodal = vi.fn();
           const html = renderToStaticMarkup(
             React.createElement(ArmillaryModePills, {
               projectionMode: 'heliocentric',
               morphLambda: 0.0,
-              onSnapToPreset
+              onSnapToPreset,
+              onToggleNodal
             })
           );
           expect(html).toContain('☉ Orbit');
+          expect(html).toContain('☊ Nodal');
           expect(html).toContain('⊕ Apparent');
           expect(html).toContain('🧭 Rete');
           expect(html).toContain('📐 Rojas');
@@ -2147,30 +2150,63 @@ describe('Gyro-Morph Armillary Subsystem', () => {
           const element = ArmillaryModePills({
             projectionMode: 'heliocentric',
             morphLambda: 0.0,
-            onSnapToPreset
+            onSnapToPreset,
+            onToggleNodal
           }) as React.ReactElement<any>;
-          const buttons = element.props.children;
-          expect(buttons.length).toBe(5);
+          const buttons = element.props.children.filter(Boolean);
+          expect(buttons.length).toBe(6);
+
+          // Click Nodal
+          buttons[1].props.onClick();
+          expect(onToggleNodal).toHaveBeenCalledTimes(1);
+
+          // Click Geocentric Apparent
+          buttons[2].props.onClick();
+          expect(onSnapToPreset).toHaveBeenCalledWith('geocentric', 0.0);
 
           // Click Rete
-          buttons[2].props.onClick();
+          buttons[3].props.onClick();
           expect(onSnapToPreset).toHaveBeenCalledWith('stereographic', 1.0);
 
           // Click Rojas
-          buttons[3].props.onClick();
+          buttons[4].props.onClick();
           expect(onSnapToPreset).toHaveBeenCalledWith('rojas', 1.0);
 
           // Click Horizon
-          buttons[4].props.onClick();
+          buttons[5].props.onClick();
           expect(onSnapToPreset).toHaveBeenCalledWith('horizon', 1.0);
-
-          // Click Geocentric Apparent
-          buttons[1].props.onClick();
-          expect(onSnapToPreset).toHaveBeenCalledWith('geocentric', 0.0);
 
           // Click Heliocentric Orbit
           buttons[0].props.onClick();
           expect(onSnapToPreset).toHaveBeenCalledWith('heliocentric', 0.0);
+        });
+
+        it('toggles nodal alignment and highlights pill with sky-blue styling when isNodalActive is true', () => {
+          const onToggleNodal = vi.fn();
+          const htmlActive = renderToStaticMarkup(
+            React.createElement(ArmillaryModePills, {
+              projectionMode: 'heliocentric',
+              morphLambda: 0.0,
+              onSnapToPreset: vi.fn(),
+              isNodalActive: true,
+              onToggleNodal
+            })
+          );
+          expect(htmlActive).toContain('bg-sky-500 text-slate-950 font-bold');
+          expect(htmlActive).toContain('ring-sky-300');
+
+          const element = ArmillaryModePills({
+            projectionMode: 'heliocentric',
+            morphLambda: 0.0,
+            onSnapToPreset: vi.fn(),
+            isNodalActive: true,
+            onToggleNodal
+          }) as React.ReactElement<any>;
+          const buttons = element.props.children.filter(Boolean);
+
+          // Clicking Orbit while nodal is active should toggle off nodal
+          buttons[0].props.onClick();
+          expect(onToggleNodal).toHaveBeenCalledTimes(1);
         });
 
         it('properly highlights active plate modes when 2D flattened (morphLambda > 0.05)', () => {

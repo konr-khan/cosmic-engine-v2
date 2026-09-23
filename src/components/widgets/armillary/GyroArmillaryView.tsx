@@ -4,7 +4,7 @@ import {
   getJulianDate, 
   calculateEphemerisFrame
 } from '../../../utils/cosmicMath';
-import { GyroArmillaryViewProps } from './types';
+import { GyroArmillaryViewProps, ArmillaryCameraState, ArmillaryProjectionMode } from './types';
 import { ArmillaryHeaderControls } from './ArmillaryHeaderControls';
 import { ArmillarySvgCanvas } from './ArmillarySvgCanvas';
 import { ArmillaryTelemetryHud } from './ArmillaryTelemetryHud';
@@ -37,8 +37,12 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     handleCameraChange,
     handleMorphChange,
     handleSnapToPreset,
+    handleSnapToNodal,
+    handleResetFromNodal,
     getCanonicalCameraForMode
   } = useStagedCamera();
+
+  const [isNodalActive, setIsNodalActive] = useState<boolean>(false);
 
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState<boolean>(false);
   const [showObserverCone, setShowObserverCone] = useState<boolean>(true);
@@ -52,6 +56,38 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   const [ruleAngleDeg, setRuleAngleDeg] = useState<number>(0);
 
   const isTogglingVolumetricRef = useRef<boolean>(false);
+
+  const onCameraChange = useCallback(
+    (newCam: ArmillaryCameraState) => {
+      setIsNodalActive(false);
+      handleCameraChange(newCam);
+    },
+    [handleCameraChange]
+  );
+
+  const onMorphChange = useCallback(
+    (newLambda: number) => {
+      setIsNodalActive(false);
+      handleMorphChange(newLambda);
+    },
+    [handleMorphChange]
+  );
+
+  const onSnapToPreset = useCallback(
+    (targetMode: ArmillaryProjectionMode, targetLambda: number) => {
+      setIsNodalActive(false);
+      handleSnapToPreset(targetMode, targetLambda);
+    },
+    [handleSnapToPreset]
+  );
+
+  const onSelectMode = useCallback(
+    (m: ArmillaryProjectionMode) => {
+      setIsNodalActive(false);
+      setProjectionMode(m);
+    },
+    [setProjectionMode]
+  );
 
   const handleToggleObserverCone = useCallback((val: boolean) => {
     if (isTogglingVolumetricRef.current) return;
@@ -95,6 +131,19 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   const moonLambdaDeg = fallbackFrame.lunarPos.lambda ?? 0;
   const moonPhase = orbitalData?.phase?.value ?? fallbackFrame.lunarPos.phase ?? 0.5;
   const moonNodeLonDeg = orbitalData?.lunarPos?.nodeLongitude ?? fallbackFrame.lunarPos.nodeLongitude;
+
+  const handleToggleNodal = useCallback(() => {
+    if (isNodalActive) {
+      setIsNodalActive(false);
+      handleResetFromNodal();
+    } else {
+      setIsNodalActive(true);
+      const T = (julianDate - 2451545.0) / 36525;
+      const defaultNodeLon = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
+      const nodeLon = Number(moonNodeLonDeg ?? defaultNodeLon);
+      handleSnapToNodal(nodeLon);
+    }
+  }, [isNodalActive, moonNodeLonDeg, julianDate, handleSnapToNodal, handleResetFromNodal]);
 
   const dayOfWeek = activeDate.getUTCDay();
   const sunrise = solarData?.sunrise ?? fallbackFrame.sunrise;
@@ -206,19 +255,20 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   }, []);
 
   const handleResetCamera = useCallback(() => {
+    setIsNodalActive(false);
     saved3DCameraRef.current = { pitch: 25, yaw: 35, roll: 0 };
     const targetCam = getCanonicalCameraForMode(projectionMode, morphLambda);
     setCamera(targetCam);
-  }, [getCanonicalCameraForMode, morphLambda, projectionMode]);
+  }, [getCanonicalCameraForMode, morphLambda, projectionMode, setCamera]);
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">
       {/* Top Header Controls */}
       <ArmillaryHeaderControls
         projectionMode={projectionMode}
-        onSelectMode={(m) => setProjectionMode(m)}
+        onSelectMode={onSelectMode}
         morphLambda={morphLambda}
-        onMorphChange={handleMorphChange}
+        onMorphChange={onMorphChange}
         showRays={showRays}
         onToggleRays={handleToggleRays}
         showStars={showStars}
@@ -232,13 +282,15 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         showObserverCone={showObserverCone}
         onToggleObserverCone={handleToggleObserverCone}
         onResetCamera={handleResetCamera}
-        onSnapToPreset={handleSnapToPreset}
+        onSnapToPreset={onSnapToPreset}
         isFreeReteMode={isFreeReteMode}
         onToggleFreeRete={handleToggleFreeRete}
         onSnapToNow={handleSnapToNow}
         apparentSolarHours={model.apparentSolarHours}
         exaggerateEccentricity={exaggerateEccentricity}
         onToggleEccentricity={setExaggerateEccentricity}
+        isNodalActive={isNodalActive}
+        onToggleNodal={handleToggleNodal}
       />
 
       {/* Main Armillary SVG Canvas */}
@@ -254,7 +306,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
           showLunarNodes={showLunarNodes}
           showObserverCone={showObserverCone}
           camera={camera}
-          onCameraChange={handleCameraChange}
+          onCameraChange={onCameraChange}
           r0={100}
           latitude={latitude}
           longitude={longitude}

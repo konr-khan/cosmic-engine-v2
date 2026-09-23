@@ -69,6 +69,8 @@ export interface UseStagedCameraResult {
   handleCameraChange: (newCam: ArmillaryCameraState) => void;
   handleMorphChange: (newLambda: number) => void;
   handleSnapToPreset: (targetMode: ArmillaryProjectionMode, targetLambda: number) => void;
+  handleSnapToNodal: (nodeLonDeg: number) => void;
+  handleResetFromNodal: () => void;
   getCanonicalCameraForMode: (mode: ArmillaryProjectionMode, lambda: number) => ArmillaryCameraState;
 }
 
@@ -192,6 +194,90 @@ export function useStagedCamera(options: UseStagedCameraOptions = {}): UseStaged
     [morphLambda, projectionMode]
   );
 
+  const handleSnapToNodal = useCallback(
+    (nodeLonDeg: number) => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+
+      setFromProjectionMode(projectionMode);
+      setProjectionMode('heliocentric');
+      setProjectionTransitionT(1.0);
+      setMorphLambda(0.0);
+
+      const targetPitch = 0;
+      const targetYaw = ((nodeLonDeg + 90) % 360 + 360) % 360;
+      const startCam = camera;
+
+      const deltaPitch = targetPitch - startCam.pitch;
+      const deltaYaw = (targetYaw - startCam.yaw + 540) % 360 - 180;
+
+      const startTime = performance.now();
+      const duration = 650; // ms ease-out cubic spring curve
+
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        const ease = 1 - Math.pow(1 - progress, 3);
+
+        const nextPitch = parseFloat((startCam.pitch + deltaPitch * ease).toFixed(1));
+        const nextYaw = parseFloat(((startCam.yaw + deltaYaw * ease + 360) % 360).toFixed(1));
+
+        setCamera({
+          pitch: Object.is(nextPitch, -0) ? 0 : nextPitch,
+          yaw: Object.is(nextYaw, -0) || nextYaw === 360 ? 0 : nextYaw,
+          roll: 0
+        });
+
+        if (progress < 1) {
+          animRef.current = requestAnimationFrame(step);
+        } else {
+          setCamera({ pitch: targetPitch, yaw: targetYaw, roll: 0 });
+          animRef.current = null;
+        }
+      };
+
+      animRef.current = requestAnimationFrame(step);
+    },
+    [camera, projectionMode]
+  );
+
+  const handleResetFromNodal = useCallback(() => {
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+
+    const target = saved3DCameraRef.current;
+    const targetCam = target.pitch === 0 ? DEFAULT_ARMILLARY_CAMERA : target;
+
+    const startCam = camera;
+    const deltaPitch = targetCam.pitch - startCam.pitch;
+    const deltaYaw = (targetCam.yaw - startCam.yaw + 540) % 360 - 180;
+
+    const startTime = performance.now();
+    const duration = 650;
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const ease = 1 - Math.pow(1 - progress, 3);
+
+      const nextPitch = parseFloat((startCam.pitch + deltaPitch * ease).toFixed(1));
+      const nextYaw = parseFloat(((startCam.yaw + deltaYaw * ease + 360) % 360).toFixed(1));
+
+      setCamera({
+        pitch: Object.is(nextPitch, -0) ? 0 : nextPitch,
+        yaw: Object.is(nextYaw, -0) || nextYaw === 360 ? 0 : nextYaw,
+        roll: 0
+      });
+
+      if (progress < 1) {
+        animRef.current = requestAnimationFrame(step);
+      } else {
+        setCamera(targetCam);
+        animRef.current = null;
+      }
+    };
+
+    animRef.current = requestAnimationFrame(step);
+  }, [camera]);
+
   return {
     camera,
     saved3DCameraRef,
@@ -207,6 +293,8 @@ export function useStagedCamera(options: UseStagedCameraOptions = {}): UseStaged
     handleCameraChange,
     handleMorphChange,
     handleSnapToPreset,
+    handleSnapToNodal,
+    handleResetFromNodal,
     getCanonicalCameraForMode
   };
 }
