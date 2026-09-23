@@ -7,8 +7,7 @@ import {
   ArmillaryCameraState
 } from '../types';
 import { MiniGlobe } from '../../../common/MiniGlobe';
-import { computeMoonPhasePath } from '../../../../utils/cosmicMath/armillary';
-import { generateAnalyticalLimbPath } from '../../../../utils/cosmicMath/globe';
+import { MiniMoon } from '../../../common/MiniMoon';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -122,13 +121,6 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   // Dynamic in-plane angle pointing from Moon to Sun in SVG screen coordinates
   const moonToSunAngleDeg = ((Math.atan2(sun.screenPos.y - moon.screenPos.y, sun.screenPos.x - moon.screenPos.x) * 180) / Math.PI + 360) % 360;
   const moonRadius = 2.6;
-  const moonPhaseData = computeMoonPhasePath(moon.phase, moonRadius);
-
-  // Dynamic 3D analytical limb path for Moon in 3D Orbit & Apparent modes
-  const moonLimbPath = React.useMemo(() => {
-    if (!is3DView || !moon.subsolarCameraVector) return '';
-    return generateAnalyticalLimbPath(moonRadius, moon.subsolarCameraVector.x, moon.subsolarCameraVector.y, moon.subsolarCameraVector.z, 0);
-  }, [is3DView, moon.subsolarCameraVector, moonRadius]);
 
   return (
     <>
@@ -474,59 +466,18 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               strokeWidth="0.6"
               opacity="0.4"
             />
-            {/* Moon Corona Glow */}
-            <circle
+            {/* Harmonized 3D MiniMoon Bead */}
+            <MiniMoon
               cx={moon.screenPos.x}
               cy={moon.screenPos.y}
-              r="4.8"
-              fill="#94a3b8"
-              fillOpacity="0.2"
-            />
-            {/* Moon Dark Nightside Base Sphere */}
-            <circle
-              cx={moon.screenPos.x}
-              cy={moon.screenPos.y}
-              r={moonRadius}
-              fill="#0f172a"
-            />
-            {/* Directional Illuminated Dayside Hemisphere / Apparent Phase Crescent */}
-            {is3DView ? (
-              // In 3D Orbit & Apparent modes: True 3D analytical spherical terminator facing the Sun in camera perspective
-              moonLimbPath ? (
-                <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y})`}>
-                  <path
-                    d={moonLimbPath}
-                    fill="#f8fafc"
-                  />
-                </g>
-              ) : null
-            ) : (
-              // In 2D Plate modes: Renders topocentric apparent phase disc oriented toward the Sun
-              <>
-                {moonPhaseData.isFull && (
-                  <circle
-                    cx={moon.screenPos.x}
-                    cy={moon.screenPos.y}
-                    r={moonRadius}
-                    fill="#f8fafc"
-                  />
-                )}
-                {!moonPhaseData.isFull && !moonPhaseData.isNew && moonPhaseData.pathD && (
-                  <g transform={`translate(${moon.screenPos.x}, ${moon.screenPos.y}) rotate(${moonToSunAngleDeg})`}>
-                    <path d={moonPhaseData.pathD} fill="#f8fafc" />
-                  </g>
-                )}
-              </>
-            )}
-            {/* Outer Rim Stroke */}
-            <circle
-              cx={moon.screenPos.x}
-              cy={moon.screenPos.y}
-              r={moonRadius}
-              fill="none"
+              radius={moonRadius}
+              subsolarCameraVector={is3DView ? moon.subsolarCameraVector : null}
+              phase={moon.phase}
+              sunAngleDeg={moonToSunAngleDeg}
               stroke="#475569"
-              strokeWidth="0.75"
-              className="pointer-events-none"
+              strokeWidth={0.75}
+              showCoronaGlow={true}
+              coronaColor="#94a3b8"
             />
             <text
               x={moon.screenPos.x}

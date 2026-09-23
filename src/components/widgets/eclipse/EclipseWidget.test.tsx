@@ -329,4 +329,97 @@ describe('Eclipse Demonstrator Subsystem', () => {
     // At elongation = 1, dLon = +1 deg, moonX = 120 - (1 * 75) = 45 (Left side, does NOT bounce back to 195!)
     expect(postHtml).toContain('cx="45"');
   });
+
+  it('harmonizes 3D Moon model across Syzygy and Axial views with directional dayside crescent, corona glow, and dashed/solid red/blue outlines', () => {
+    // 1. Waxing Ascending Eclipse in Syzygy View (phaseValue = 0.25 -> Waxing, beta = 2.0 -> Ascending)
+    const waxingAscEclipse: EclipseData = {
+      type: 'NONE',
+      category: 'NO_ECLIPSE',
+      label: 'First Quarter Waxing',
+      obscuration: 0,
+      beta: 2.0,
+      nodeProximityDeg: 10.0,
+      nodeAngleDeg: 45,
+      alignmentPercent: 40,
+      isEclipseActive: false,
+      distanceKm: 384400,
+      umbraRadiusKm: 18,
+      penumbraRadiusKm: 34,
+      raDiff: 90,
+      elongation: 90,
+      phaseValue: 0.25,
+      isAscendingHemisphere: true
+    };
+
+    const syzygyWaxingHtml = renderToStaticMarkup(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(LiveSyzygyView, {
+          eclipse: waxingAscEclipse,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunLambdaDeg: 0,
+          setHoveredEntity: () => {}
+        })
+      )
+    );
+
+    // Waxing ascending in Syzygy: Sky Blue outline (#38bdf8), solid stroke (no dasharray on Moon), corona glow, dark nightside, 3D limb path
+    expect(syzygyWaxingHtml).toContain('stroke="#38bdf8"');
+    expect(syzygyWaxingHtml).toContain('r="12"'); // Corona radius: 8 * 1.5
+    expect(syzygyWaxingHtml).toContain('fill="#0f172a"'); // Dark nightside base
+    expect(syzygyWaxingHtml).toContain('fill="#f8fafc"'); // 3D illuminated dayside limb
+
+    // 2. Waning Descending Eclipse in Syzygy View (phaseValue = 0.75 -> Waning, beta = -2.0 -> Descending)
+    const waningDescEclipse: EclipseData = {
+      ...waxingAscEclipse,
+      beta: -2.0,
+      phaseValue: 0.75,
+      isAscendingHemisphere: false
+    };
+
+    const syzygyWaningHtml = renderToStaticMarkup(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(LiveSyzygyView, {
+          eclipse: waningDescEclipse,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunLambdaDeg: 0,
+          setHoveredEntity: () => {}
+        })
+      )
+    );
+
+    // Waning descending in Syzygy: Rose Red outline (#f43f5e), dashed stroke ('3 2'), corona glow
+    expect(syzygyWaningHtml).toContain('stroke="#f43f5e"');
+    expect(syzygyWaningHtml).toContain('stroke-dasharray="3 2"');
+    expect(syzygyWaningHtml).toContain('fill="#f8fafc"');
+
+    // 3. Axial Sightline View with MiniMoon integration (Near-side: phaseValue = 0.45)
+    const nearSideEclipse: EclipseData = {
+      ...waxingAscEclipse,
+      phaseValue: 0.45
+    };
+
+    const axialHtml = renderToStaticMarkup(
+      React.createElement(NodalPlaneVisualizer, {
+        eclipse: nearSideEclipse,
+        currentDate: new Date('2026-03-20T12:00:00Z'),
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12
+      })
+    );
+
+    // In Axial view, near-side Moon renders with center pin dot, dark nightside, and solid Sky Blue stroke
+    expect(axialHtml).toContain('stroke="#38bdf8"');
+    expect(axialHtml).toContain('r="1.5"'); // Center sightline pin dot
+    expect(axialHtml).toContain('fill="#0f172a"');
+  });
 });
+

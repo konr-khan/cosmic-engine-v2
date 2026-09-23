@@ -9,6 +9,7 @@ import {
   calculateNodalOrbitalAngles
 } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
+import { MiniMoon } from '../../common/MiniMoon';
 
 export interface NodalPlaneVisualizerProps {
   eclipse?: EclipseData | null;
@@ -194,17 +195,18 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
           )}
         </g>
 
-        {/* 4. FAR-SIDE MOON DISC (Rendered behind Earth disc) */}
+        {/* 4. FAR-SIDE MOON DISC (Rendered behind Earth disc: observer views unilluminated back) */}
         {!isNearSide && (
           <g transform={`translate(${moonX}, ${moonY})`}>
-            <circle 
-              r={axialMoonRadius} 
-              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#475569'} 
-              fillOpacity={eclipse.isEclipseActive ? 1 : 0.85} 
-              stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
-              strokeWidth="2" 
-              strokeDasharray={isWaxing ? undefined : '3 2'}
-              className="drop-shadow"
+            <MiniMoon
+              radius={axialMoonRadius}
+              isDark={true}
+              isAscending={isAscending}
+              isWaxing={isWaxing}
+              isEclipseActive={eclipse.isEclipseActive}
+              isInsideUmbra={isInsideUmbra}
+              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#475569'}
+              fillOpacity={eclipse.isEclipseActive ? 1 : 0.85}
             />
           </g>
         )}
@@ -247,14 +249,17 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
         {isMoonOccludedByEarth && (
           <g clipPath="url(#axialEarthClip)" className="pointer-events-none">
             <g transform={`translate(${moonX}, ${moonY})`}>
-              <circle 
-                r={axialMoonRadius} 
-                fill="#0f172a" 
-                fillOpacity="0.45" 
-                stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
-                strokeWidth="2" 
-                strokeDasharray={isWaxing ? undefined : '3 2'}
-                opacity="0.75"
+              <MiniMoon
+                radius={axialMoonRadius}
+                isDark={true}
+                isAscending={isAscending}
+                isWaxing={isWaxing}
+                isEclipseActive={eclipse.isEclipseActive}
+                isInsideUmbra={isInsideUmbra}
+                fill="#0f172a"
+                fillOpacity={0.45}
+                opacity={0.75}
+                showCoronaGlow={false}
               />
             </g>
           </g>
@@ -335,19 +340,20 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
           )}
         </g>
 
-        {/* 9. NEAR-SIDE MOON DISC (When on Near Side: Z > 0, full foreground opacity) */}
+        {/* 9. NEAR-SIDE MOON DISC (When on Near Side: Z > 0, observer views unilluminated back) */}
         {isNearSide && (
           <g transform={`translate(${moonX}, ${moonY})`}>
-            <circle 
-              r={axialMoonRadius} 
-              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#0f172a'} 
-              fillOpacity={0.95} 
-              stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')} 
-              strokeWidth="2" 
-              strokeDasharray={isWaxing ? undefined : '3 2'}
-              className="drop-shadow"
+            <MiniMoon
+              radius={axialMoonRadius}
+              isDark={true}
+              isAscending={isAscending}
+              isWaxing={isWaxing}
+              isEclipseActive={eclipse.isEclipseActive}
+              isInsideUmbra={isInsideUmbra}
+              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#0f172a'}
+              fillOpacity={0.95}
+              showCenterPin={true}
             />
-            <circle r="1.5" fill={isAscending ? '#38bdf8' : '#f43f5e'} />
             <text 
               x={moonX > centerX ? 12 : -12} 
               y="-4" 

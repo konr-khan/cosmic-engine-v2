@@ -2,6 +2,7 @@ import React from 'react';
 import { EclipseData } from '../../../types';
 import { generateOrbitalSegments, toRadians, calculateNodalOrbitalAngles } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
+import { MiniMoon } from '../../common/MiniMoon';
 
 export interface LiveSyzygyViewProps {
   eclipse: EclipseData;
@@ -57,6 +58,20 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
   const descNodeDepth = Math.sin(tDesc) * liveOrbitalRx;
   const isAscBehindEarth = ascNodeDepth <= 0 && Math.abs(ascNodeX - liveEarthX) <= 18;
   const isDescBehindEarth = descNodeDepth <= 0 && Math.abs(descNodeX - liveEarthX) <= 18;
+
+  // Normalized Sun vector in camera space for 3D analytical lunar terminator
+  // Sun is at (50, 110, 0), Earth at (liveEarthX=310, liveEarthY=110, 0)
+  // Moon 3D coordinates: (liveMoonX, liveMoonY, Z_moon) where Z_moon = sin(phaseRad) * liveOrbitalRx
+  const moonSubsolarVector = React.useMemo(() => {
+    const dx = 50 - liveMoonX;
+    const dy = 110 - liveMoonY;
+    const dz = -(Math.sin(phaseRad) * liveOrbitalRx);
+    const vx = dx;
+    const vy = -dy;
+    const vz = -dz;
+    const len = Math.hypot(vx, vy, vz) || 1;
+    return { x: vx / len, y: vy / len, z: vz / len };
+  }, [liveMoonX, liveMoonY, phaseRad, liveOrbitalRx]);
 
   return (
     <g>
@@ -132,14 +147,15 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
           onPointerEnter={() => setHoveredEntity('moon')}
           onPointerLeave={() => setHoveredEntity(null)}
         >
-          <circle
-            r="8"
+          <MiniMoon
+            radius={8}
+            subsolarCameraVector={moonSubsolarVector}
+            phase={phaseVal}
+            isAscending={isAscending}
+            isWaxing={false}
+            isEclipseActive={eclipse.isEclipseActive}
             fill={eclipse.isEclipseActive ? '#f43f5e' : '#475569'}
             fillOpacity={eclipse.isEclipseActive ? 1 : 0.75}
-            stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')}
-            strokeWidth="2"
-            strokeDasharray="3 2"
-            className="drop-shadow"
           />
           <text
             x={liveMoonX > liveEarthX ? 12 : -12}
@@ -269,13 +285,15 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
           onPointerEnter={() => setHoveredEntity('moon')}
           onPointerLeave={() => setHoveredEntity(null)}
         >
-          <circle
-            r="8"
-            fill={eclipse.isEclipseActive ? '#f43f5e' : '#94a3b8'}
+          <MiniMoon
+            radius={8}
+            subsolarCameraVector={moonSubsolarVector}
+            phase={phaseVal}
+            isAscending={isAscending}
+            isWaxing={true}
+            isEclipseActive={eclipse.isEclipseActive}
+            fill={eclipse.isEclipseActive ? '#f43f5e' : '#0f172a'}
             fillOpacity={1}
-            stroke={eclipse.isEclipseActive ? '#fbbf24' : (isAscending ? '#38bdf8' : '#f43f5e')}
-            strokeWidth="2"
-            className="drop-shadow"
           />
           <text
             x={liveMoonX > liveEarthX ? 12 : -12}
