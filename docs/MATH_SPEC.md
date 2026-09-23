@@ -1083,11 +1083,18 @@ Pure spherical limb intersection and continent landmass projection math is codif
 Given geographic coordinates $(\lambda_{\text{geo}}, \phi_{\text{geo}})$ and local solar hour angle $h = 15^\circ(t_{\text{tod}} - 12) + \lambda_{\text{geo}}$:
 1. **Equatorial Body Frame**:
    \[
-   \vec{P}_{\text{eq}} = \begin{pmatrix} \cos\phi_{\text{geo}} \cos h \\ \cos\phi_{\text{geo}} \sin h \\ \sin\phi_{\text{geo}} \end{pmatrix}
+   \vec{P}_{\text{body}} = \begin{pmatrix} \cos\phi_{\text{geo}} \sin h \\ \sin\phi_{\text{geo}} \\ \cos\phi_{\text{geo}} \cos h \end{pmatrix}
    \]
 2. **Camera / Ecliptic Transformation**:
-   * **`euler3d`**: $\vec{P}_{\text{cam}} = \mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll}) \vec{P}_{\text{eq}}$.
-   * **`topdown`**: $\vec{P}_{\text{ecl}} = (x_b, y_b \cos\varepsilon - z_b \sin\varepsilon, y_b \sin\varepsilon + z_b \cos\varepsilon)$ where $(x_b, y_b, z_b) = (\cos\phi \sin h, \cos\phi \cos h, \sin\phi)$.
+   * **`euler3d`**: $\vec{P}_{\text{cam}} = \mathbf{R}_{\text{cam}}(\text{Pitch}, \text{Yaw}, \text{Roll}) \vec{P}_{\text{body}}$. The observer pin on Earth's surface and the Great Meridian Ring ($0^\circ$ Prime Meridian and $180^\circ$ Antimeridian) rotate in exact synchrony with the vector continents. Diurnal solar illumination is driven by the physical subsolar vector $\vec{S}_{\text{eq}} = (0, \sin\delta_\odot, \cos\delta_\odot)$ rotated into camera space $\vec{S}_{\text{cam}} = \mathbf{R}_{\text{cam}} \vec{S}_{\text{eq}}$.
+   * **`topdown`**: Diurnal rotation is aligned with the in-plane solar azimuth $\theta_{\text{sun}}$ via relative angle $\theta = \theta_{\text{sun}} - h$:
+     \[
+     x_{\text{eq}} = \cos\phi_{\text{geo}} \cos\theta, \quad y_{\text{eq}} = \cos\phi_{\text{geo}} \sin\theta, \quad z_{\text{eq}} = \sin\phi_{\text{geo}}
+     \]
+     \[
+     \vec{P}_{\text{ecl}} = \begin{pmatrix} x_{\text{eq}} \\ -y_{\text{eq}} \cos\varepsilon + z_{\text{eq}} \sin\varepsilon \\ y_{\text{eq}} \sin\varepsilon + z_{\text{eq}} \cos\varepsilon \end{pmatrix}
+     \]
+     with axial obliquity $\varepsilon = 23.439281^\circ$ tilted toward the Summer Solstice (screen $-Y$).
    * **`transverse`**: Transformed along syzygy frame matching `calculateEarthSideGeometry`, with solar hemisphere on screen left and night hemisphere on screen right.
    * **`axial`**: Anti-solar perspective looking at the background Sun through Earth matching `calculateEarthAxialGeometry`:
      \[
@@ -1103,11 +1110,14 @@ Given geographic coordinates $(\lambda_{\text{geo}}, \phi_{\text{geo}})$ and loc
      \[
      z_{\text{proj}} = y_{\text{body}} n_z + z_{\text{body}} \|\vec{n}_{\text{screen}}\|
      \]
-     Where $z_{\text{proj}} \ge 0$ defines the visible perpetual night hemisphere, and un-mirrored continents rotate prograde from West to East (screen left to right). Observer daylight status conforms to the exact solar elevation equation:
-     \[
-     \sin\phi_{\text{geo}} \sin\delta_\odot + \cos\phi_{\text{geo}} \cos\delta_\odot \cos h \ge 0
-     \]
-3. **Front-Hemisphere Edge Clipping ($z \ge 0$)**:
+     Where $z_{\text{proj}} \ge 0$ defines the visible perpetual night hemisphere, and un-mirrored continents rotate prograde from West to East (screen left to right).
+3. **Universal Observer Daylight Status (Jean Meeus Chapter 13)**:
+   Across all projection modes (`topdown`, `euler3d`, `transverse`, `axial`), observer daylight status conforms to the exact solar elevation equation:
+   \[
+   \sin a_\odot = \sin\phi_{\text{geo}} \sin\delta_\odot + \cos\phi_{\text{geo}} \cos\delta_\odot \cos h \ge 0
+   \]
+   evaluating to **Daylight** ($\sin a_\odot \ge 0$, solid Sky Blue pin with pulsing halo) and **Night** ($\sin a_\odot < 0$, hollow grey ring).
+4. **Front-Hemisphere Edge Clipping ($z \ge 0$)**:
    For each polygon edge $\vec{v}_1 \to \vec{v}_2$ crossing $z = 0$, the zero-crossing parameter $t_0 = \frac{-v_{1, z}}{v_{2, z} - v_{1, z}} \in [0, 1]$ yields horizon intersection point $\vec{v}_{\text{cross}} = (1 - t_0)\vec{v}_1 + t_0 \vec{v}_2$. Normalizing $\hat{v} = \vec{v}_{\text{cross}} / \|\vec{v}_{\text{cross}}\|$ guarantees exact limb boundary alignment $(R \hat{v}_x, -R \hat{v}_y)$ with zero polygon chord-cutting.
 
 ### H. Parametric Celestial Ring Blooming Across Continuum

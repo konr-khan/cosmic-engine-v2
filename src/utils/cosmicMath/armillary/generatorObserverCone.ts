@@ -24,6 +24,7 @@ export interface ComputeArmillaryObserverConeParams {
   r0?: number;
   cameraPitch?: number;
   cameraYaw?: number;
+  sunDecDeg?: number;
 }
 
 /**
@@ -42,7 +43,8 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
     transformVertex,
     morphLambda = 0.0,
     projectionMode = 'stereographic',
-    r0 = 100
+    r0 = 100,
+    sunDecDeg
   } = params;
 
   if (orbitRingOpacity <= 0.05 && morphLambda <= 0.05) return undefined;
@@ -54,10 +56,15 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
     : (((gmstDeg ?? 0) + longitude) % 360 + 360) % 360;
   const hRad = toRadians(hourAngleDeg);
 
-  // Observer normal vector on Earth in Armillary frame (where North Pole is +Y, matching MiniGlobe euler3d)
-  const nzX = Math.cos(phi) * Math.sin(hRad);
-  const nzY = Math.sin(phi);
-  const nzZ = Math.cos(phi) * Math.cos(hRad);
+  // Observer normal vector on Earth in body frame (matching MiniGlobe euler3d & ArmillaryWidget test)
+  const sinPhi = Math.sin(phi);
+  const cosPhi = Math.cos(phi);
+  const cosH = Math.cos(hRad);
+  const sinH = Math.sin(hRad);
+
+  const nzX = cosPhi * sinH;
+  const nzY = sinPhi;
+  const nzZ = cosPhi * cosH;
 
   // Observer pin on Earth surface (radius 4.8 matching MiniGlobe globeRadius)
   const rEarth = 4.8;
@@ -213,14 +220,9 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
 
   const silhouetteLinesPathD = `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} L ${pLeft.x.toFixed(1)} ${pLeft.y.toFixed(1)} M ${A.x.toFixed(1)} ${A.y.toFixed(1)} L ${pRight.x.toFixed(1)} ${pRight.y.toFixed(1)}`;
 
-  // 7. Solar elevation angle for observer
-  const sunDir = {
-    x: blendedSun3D.x - blendedEarth3D.x,
-    y: blendedSun3D.y - blendedEarth3D.y,
-    z: blendedSun3D.z - blendedEarth3D.z
-  };
-  const sunLen = Math.sqrt(sunDir.x * sunDir.x + sunDir.y * sunDir.y + sunDir.z * sunDir.z) || 1;
-  const sinAlt = (nzX * sunDir.x + nzY * sunDir.y + nzZ * sunDir.z) / sunLen;
+  // 7. Solar elevation angle for observer (Jean Meeus Chapter 13)
+  const decRad = toRadians(sunDecDeg ?? 0);
+  const sinAlt = sinPhi * Math.sin(decRad) + cosPhi * Math.cos(decRad) * cosH;
   const sunElevationDeg = toDegrees(Math.asin(clamp(sinAlt, -1, 1)));
   const isDaytime = sunElevationDeg > -0.833;
 

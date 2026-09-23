@@ -212,4 +212,102 @@ describe('<MiniGlobe /> Component', () => {
     expect(htmlMidnight).toContain('0° Prime Meridian (Greenwich)');
     expect(htmlMidnight).toContain('180° Antimeridian');
   });
+
+  describe('diurnal solar illumination & observer pin daylight status', () => {
+    it('accurately indicates DAYLIGHT at 23:30z on 9/23/2026 for N47.06 W122.81 in topdown and euler3d modes', () => {
+      // 23:30z on Autumnal Equinox afternoon (~3:30 PM PDT)
+      const lat = 47.06;
+      const lon = -122.81;
+      const timeOfDay = 23.5;
+      const sunLambdaDeg = 180.8;
+
+      // 1. Topdown mode (Macro Orbit & Micro Tide views)
+      const topdownHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="topdown"
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(topdownHtml).toContain('class="animate-pulse"');
+      expect(topdownHtml).toContain('fill="#38bdf8"');
+
+      // 2. Euler3D mode (Living Marble Inset, Orbit view, Apparent view)
+      const eulerHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="euler3d"
+            camera={{ pitch: 0, yaw: 0, roll: 0 }}
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            declination={-0.3}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(eulerHtml).toContain('class="animate-pulse"');
+      expect(eulerHtml).toContain('fill="#38bdf8"');
+    });
+
+    it('accurately indicates NIGHT at 08:20z on 9/24/2026 for N47.06 W122.81 in topdown and euler3d modes', () => {
+      // 08:20z (~1:20 AM PDT local midnight)
+      const lat = 47.06;
+      const lon = -122.81;
+      const timeOfDay = 8 + 20 / 60;
+      const sunLambdaDeg = 181.2;
+
+      // 1. Topdown mode (Macro Orbit & Micro Tide views)
+      const topdownHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="topdown"
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(topdownHtml).not.toContain('class="animate-pulse"');
+      expect(topdownHtml).toContain('stroke="#94a3b8"');
+
+      // 2. Euler3D mode (Living Marble Inset, Orbit view, Apparent view)
+      const eulerHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="euler3d"
+            camera={{ pitch: 0, yaw: 180, roll: 0 }}
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            declination={-0.6}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(eulerHtml).not.toContain('class="animate-pulse"');
+      expect(eulerHtml).toContain('stroke="#94a3b8"');
+    });
+  });
 });

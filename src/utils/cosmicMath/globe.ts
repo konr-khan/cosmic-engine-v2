@@ -32,6 +32,8 @@ export interface MiniGlobeCamera {
  * @param epsRad - Axial obliquity in radians
  * @param sunLambdaVal - Solar ecliptic longitude in degrees
  * @param camera - Optional 3D Euler camera angles
+ * @param sunAngleDeg - Optional in-plane Sun angle in degrees for topdown mode
+ * @param subsolarCameraVector - Optional 3D camera-space Sun vector for euler3d mode
  * @returns Array of SVG path `d` strings for visible polygon facets
  */
 export function projectContinentLandmasses(
@@ -41,9 +43,20 @@ export function projectContinentLandmasses(
   todVal: number,
   epsRad: number,
   sunLambdaVal: number,
-  camera?: MiniGlobeCamera
+  camera?: MiniGlobeCamera,
+  sunAngleDeg?: number,
+  subsolarCameraVector?: Vector3D
 ): string[] {
   if (radius <= 0 || viewMode === 'flat') return [];
+
+  // Precompute solar illumination azimuth for topdown mode
+  const topdownSunAngleRad = viewMode === 'topdown'
+    ? toRadians(
+        sunAngleDeg !== undefined && Number.isFinite(Number(sunAngleDeg))
+          ? Number(sunAngleDeg)
+          : ((180 - sunLambdaVal) % 360)
+      )
+    : 0;
 
   const paths: string[] = [];
 
@@ -69,13 +82,17 @@ export function projectContinentLandmasses(
       }
 
       if (viewMode === 'topdown') {
-        const xb = Math.cos(latRad) * Math.sin(hRad);
-        const yb = Math.cos(latRad) * Math.cos(hRad);
-        const zb = Math.sin(latRad);
+        const theta = topdownSunAngleRad - hRad;
+        const cosLat = Math.cos(latRad);
+        const sinLat = Math.sin(latRad);
 
-        const xecl = xb;
-        const yecl = yb * Math.cos(epsRad) - zb * Math.sin(epsRad);
-        const zecl = yb * Math.sin(epsRad) + zb * Math.cos(epsRad);
+        const xEq = cosLat * Math.cos(theta);
+        const yEq = cosLat * Math.sin(theta);
+        const zEq = sinLat;
+
+        const xecl = xEq;
+        const yecl = -yEq * Math.cos(epsRad) + zEq * Math.sin(epsRad);
+        const zecl = yEq * Math.sin(epsRad) + zEq * Math.cos(epsRad);
         return { x: xecl, y: yecl, z: zecl };
       }
 

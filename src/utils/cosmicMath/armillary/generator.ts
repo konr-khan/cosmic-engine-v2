@@ -281,7 +281,8 @@ export function generateArmillaryModel(params: {
     projectionMode,
     r0,
     cameraPitch,
-    cameraYaw
+    cameraYaw,
+    sunDecDeg
   });
 
   // Forward morphed apex, conePathD, and laserRays to focalBeacon across Phase B (morphLambda > 0.45)
