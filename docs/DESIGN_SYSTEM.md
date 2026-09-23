@@ -42,6 +42,8 @@ To maximize information density without adding text clutter, orbital loops and c
   - **Front Hemisphere ($z_{\text{cam}} \ge 0$)**: Solid stroke (`frontStrokeWidth = 2.0-2.2px`, `opacity = 0.9-1.0`).
   - **Back Hemisphere ($z_{\text{cam}} < 0$)**: Dashed stroke (`strokeDasharray = "3,2"`, `backStrokeWidth = 1.0px`, `opacity = 0.35`).
   - **Smooth Blending ($\lambda \in [0.85 \to 1.0]$)**: Back segments continuously interpolate opacity ($0.35 \to 1.0$), width ($1.0\text{px} \to 2.0\text{px}$), and dash gap closure ($2 \cdot (1 - u)$), unifying into seamless solid astrolabe plate lines without duplicate paths.
+  - **Edge-On Ring Solid Line Unification**: In 3D Apparent view ($\lambda \le 0.05$), when viewing a ring plane edge-on (camera-space normal $|n_z| \le 0.08$, within $\approx 4.6^\circ$ of edge-on), the engine smoothly unifies the path into an unbroken solid stroke (`fullPathD`), eliminating broken half-dashed line artifacts.
+* **Lunar Nodal Plane Alignment Pill (`[ ☊ Nodal ]`)**: Rendered conditionally beside `[ ☉ Orbit ]` in Heliocentric Orbit mode. Active state renders with Sky Blue accents (`bg-sky-500 text-slate-950 font-bold shadow-md shadow-sky-500/25 ring-1 ring-sky-300`) with header badge `'☊ Nodal Plane (5.145° Sightline)'`. Clicking returns smoothly to the saved 3D camera.
 * **Progressive Radial Expansion**:
   - **Outer Double-Grooved Brass Bezel**: Expands radially (`transform="scale(0.94 + 0.06 * opacity)"`, `#b45309`/`#78350f`, $0.75\text{px}$) with $0.5\text{px}-0.75\text{px}$ micro-ticks and delicate monospace Roman numeral micro-labels (`text-[8px] font-mono fill-amber-300/80`).
   - **Tympan Altitude Arcs (Almucantars)**: Smoothly glide from eccentric stereographic circles to concentric horizon stereonet rings (`transform="scale(0.94 + 0.06 * progress)"`, `#06b6d4` for horizon, `#64748b` dashed for altitudes).
@@ -145,7 +147,23 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 * **`euler3d` (Armillary 3D Apparent View)**: Renders 3D sphere rotating dynamically with user Euler camera dragging $(\text{Pitch}, \text{Yaw}, \text{Roll})$ in inertial space with analytical limb clipping.
 * **`flat` (Astrolabe 2D Plate Modes)**: Renders precision concentric brass pivot pin (`#b45309`/`#78350f`, $0.75\text{px}$) with dark core (`#0f172a`), pulsing Sky Blue center dot (`#38bdf8`), and fine crosshair reticle (`#78350f`, $0.5\text{px}$).
 
-### F. Today's Horizon Observatory Domes & Draconic Kinematics
+### F. Reusable High-Precision `<MiniMoon />` Visual Tokens & Multi-Window Harmonization
+
+The `<MiniMoon />` component (`src/components/common/MiniMoon.tsx`) standardizes lunar visual presentation across the **Gyro-Morph Armillary** (`ArmillaryBeadsLayer.tsx`), **Live Syzygy** (`LiveSyzygyView.tsx`), and **Axial Sightline** (`NodalPlaneVisualizer.tsx`) viewports:
+
+* **3D Analytical Spherical Limb**: When supplied with normalized camera-space subsolar vector $\vec{S}_{\text{cam}} = \text{normalize}(\vec{P}_\odot - \vec{P}_{\text{moon}})$, computes exact 3D spherical terminator geometry via `generateAnalyticalLimbPath()`, rendering a physically grounded illuminated dayside hemisphere oriented toward the Sun (`#f8fafc`).
+* **2D Topocentric Apparent Phase**: When $\vec{S}_{\text{cam}}$ is absent, derives true topocentric phase crescent geometry via `computeMoonPhasePath(phase, radius)`.
+* **Dark Backside Sightline Invariant (`isDark={true}`)**: In the Axial Sightline window, the observer on Earth looks toward the background Sun down the Sun-Earth axis, viewing the Moon from its dark unilluminated nightside. Setting `isDark={true}` suppresses the sunward white crescent, rendering a midnight dark disc (`#0f172a` / `#475569` or eclipse blood-red/copper) with soft corona radiance and sightline pin dot.
+* **Strict Vector Outline Grammar**:
+  - **Ascending Node Hemisphere ($\beta \ge 0$)**: Sky Blue outline (`stroke="#38bdf8"`).
+  - **Descending Node Hemisphere ($\beta < 0$)**: Rose Red outline (`stroke="#f43f5e"`).
+  - **Waxing / Viewer-Side Kinematics ($Z > 0$)**: Solid unbroken outline (`strokeWidth="2.0"`).
+  - **Waning / Far-Side Kinematics ($Z \le 0$)**: Dashed outline (`strokeWidth="2.0"`, `strokeDasharray="3 2"`).
+  - **Active Eclipse Highlights**: Amber Gold outline (`stroke="#fbbf24"`), blood-red umbra core (`#f43f5e`), and deep copper penumbra (`#fb923c`).
+  - **Corona Glow**: Soft outer halo circle ($r = 1.5 \times \text{radius}$, `fillOpacity="0.18"`), tinted to active node or eclipse status.
+  - **Center Sightline Pin**: Optional $r=1.5\text{px}$ center reticle pin for axial target alignment.
+
+### G. Today's Horizon Observatory Domes & Draconic Kinematics
 * **Canonical Symmetrical Viewport (`viewBox="0 0 260 138"`)**:
   - Shared geometric constants across `SunElevationDome` and `MoonElevationDome`: $CX = 130, CY = 104, R = 92$.
   - Horizon baseline at $Y = 104$, Zenith marker (+90°) at $Y = 12$, Cardinal Azimuth ticks: East ($X = 38$), Meridian ($X = 130$), West ($X = 222$).
@@ -181,7 +199,7 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
     - *Moon Dome*: `[Moonrise/Moonset | Lunar Transit | Declination | [Std | ☊ Nodes]]`
   - Preserves clean card headers, uniform card heights, and horizontal alignment across the dashboard grid.
 
-### G. Celestial Meridian Colure Profiles, Solstice Bifurcation & Sub-Horizon Twilight Kinematics
+### H. Celestial Meridian Colure Profiles, Solstice Bifurcation & Sub-Horizon Twilight Kinematics
 * **Dual Dashed Solstice Milestone Arcs (`SunMeridianDome.tsx`)**:
   - **June Solstice Arc (`solstice-swath-june`)**: Warm Gold (`stroke="#fbbf24"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the June Solstice Peak (`junePeakPoint.thetaDeg`).
   - **December Solstice Arc (`solstice-swath-december`)**: Rich Bronze (`stroke="#d97706"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the December Solstice Peak (`decPeakPoint.thetaDeg`).

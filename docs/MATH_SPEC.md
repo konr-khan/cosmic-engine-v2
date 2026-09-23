@@ -430,6 +430,14 @@ The **Axial Sightline** demonstrator (`NodalPlaneVisualizer.tsx` and `projectGeo
      \]
      When $\text{isBehindEarth}$ is true, the node renders with ghosted X-ray styling (`opacity = 0.35`, dark translucent fill `#0f172a`, dashed ring `strokeDasharray = "2 1.5"`, muted text `/60 font-medium`); otherwise it retains 100% full vibrancy.
 
+6. **Axial Sightline Moon Backside Illumination Invariant (`isDark = true`)**:
+   In the Axial Sightline window, the observer on Earth looks toward the background Sun along $-\mathbf{e}_X$. Because the Sun is directly in the background, the Moon's illuminated dayside hemisphere points away from the observer toward $-\mathbf{e}_X$, and the observer is **always viewing the Moon from its unilluminated nightside** facing Earth ($+\mathbf{e}_X$).
+   To preserve physical optical fidelity, the axial Moon model (`MiniMoon.tsx`) enforces `isDark={true}`:
+   - Suppresses the dayside white crescent (`#f8fafc`).
+   - Renders the midnight dark base disc (`#0f172a` / `#475569` or eclipse copper/blood-red).
+   - Renders the central sightline reticle pin dot ($r = 1.5\text{px}$) and soft corona radiance glow ($r = 1.5 \times \text{radius}$).
+   - Retains node-coded outline coloring (Sky Blue for Ascending $\beta \ge 0$, Rose Red for Descending $\beta < 0$, Amber Gold for active eclipse) and kinematic dash patterns (solid for waxing, dashed for waning).
+
 ### F. Sky View Simulator Prograde Invariants & Perspectival Kinematics
 
 The **Sky View Simulator** (`SkyViewSimulator.tsx`) simulates the sky perspective of an observer positioned along the central path of the lunar umbra (greatest eclipse track), looking South toward the Sun ($R_{\odot} = 42\text{px}$, $R_{\text{moon}} = 42\text{px}$):
@@ -638,6 +646,19 @@ w_{\text{back}}(\lambda) = w_{\text{back}, 0} + (w_{\text{front}} - w_{\text{bac
 \]
 At $\lambda \ge 0.85$, $z_{\text{cam}} < 0$ segments seamlessly blend to $100\%$ solid opacity and match front stroke width without duplicating path elements.
 
+#### 5. Edge-On Ring Plane Normal Condition & Unbroken Stroke Blending
+When viewing a ring in 3D apparent mode ($\lambda \le 0.05$), the ring plane can become nearly coplanar with the camera sightline. Let the unit normal to the ring plane in the graphics frame be $\hat{\mathbf{n}}_{\text{ring}}$ (e.g. $(0, 1, 0)$ for the Celestial Equator).
+Under camera Euler rotation $(\psi, \theta)$:
+\[
+\vec{n}_{\text{cam}} = \mathbf{R}_{\text{pitch}}(\psi) \mathbf{R}_{\text{yaw}}(\theta) \hat{\mathbf{n}}_{\text{ring}}, \quad n_z = \vec{n}_{\text{cam}} \cdot \hat{\mathbf{e}}_z
+\]
+The scalar $n_z$ evaluates the inclination of the ring plane relative to the camera screen plane. When $|n_z| \le 0.08$ (edge-on view within $\approx 4.6^\circ$), dividing the ring into front and back segments produces floating-point jitter across the $z_{\text{cam}} = 0$ clipping boundary, resulting in broken half-dashed ellipses.
+The rendering engine evaluates an edge-on weight:
+\[
+u_{\text{edge-on}} = 1 - \operatorname{clamp}\left(\frac{|n_z|}{0.08}, 0, 1\right)
+\]
+When $u_{\text{edge-on}} > 0$, the stroke seamlessly transitions into the unbroken solid path (`fullPathD`), eliminating line-splitting artifacts.
+
 ### G. Free Rete Spinning & Analog Solar Time Solver
 When the Rete is rotated by an interactive angular offset $\Delta\theta_{\text{free}}$:
 1. **Apparent Local Sidereal Time**:
@@ -736,6 +757,35 @@ Historical astrolabes partition local daylight and nighttime into 12 unequal (te
    \[
    \operatorname{normalizeZero}(x) = \operatorname{Object.is}(x, -0) \;?\; 0 : x
    \]
+
+### L. Lunar Nodal Plane Sightline Alignment Camera Kinematics
+
+In the Heliocentric Orbit view (`projectionMode = 'heliocentric'`), the Moon's inclined orbital plane ($i = 5.145^\circ$) intersects the Ecliptic plane along the Line of Nodes.
+In the armillary orbital coordinate basis (`generatorBeads.ts`), the ascending node is located at:
+\[
+x = \cos\Omega, \quad y = 0, \quad z = \sin\Omega
+\]
+where $\Omega = \text{nodeLonDeg}$.
+Under camera Euler rotation with pitch $\psi$ and yaw $\theta$:
+\[
+x_{\text{cam}} = \cos(\Omega - \theta), \quad z_{\text{cam}} = \sin(\Omega - \theta)
+\]
+Setting:
+\[
+\psi_{\text{nodal}} = 0^\circ, \quad \theta_{\text{nodal}} = ((\Omega + 90^\circ) \bmod 360^\circ)
+\]
+yields the relative angle:
+\[
+\Omega - \theta_{\text{nodal}} = -90^\circ \implies x_{\text{cam}} = 0, \quad z_{\text{cam}} = -1
+\]
+The entire line of nodes aligns directly down the camera's sightline axis ($Z_{\text{cam}}$). The inclined lunar orbital plane is therefore observed edge-on, projecting its complete $5.145^\circ$ inclination at maximum transverse deflection ($\pm 5.145^\circ$ to the left and right).
+
+Camera motion into the nodal alignment is driven by a 650 ms ease-out cubic spring curve:
+\[
+\text{ease}(t) = 1 - (1 - t)^3, \quad t = \operatorname{clamp}\left(\frac{t_{\text{elapsed}}}{650\text{ ms}}, 0, 1\right)
+\]
+using shortest angular geodesic delta $\Delta\theta = (\theta_{\text{nodal}} - \theta_{\text{cam}} + 540^\circ) \bmod 360^\circ - 180^\circ$.
+Exiting the nodal view restores the user's previously saved 3D camera angles $\vec{C}_{\text{saved}}$ with zero angular drift.
 
 ---
 

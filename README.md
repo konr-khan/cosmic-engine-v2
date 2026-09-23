@@ -6,15 +6,15 @@
 
 ## ✨ Features
 
-- 🪐 **Gyro-Morph Dynamic Armillary & Astrolabe**: Seamless 5-model continuum uniting Copernican planetary orbits (`☉ Orbit`), geocentric celestial spheres (`⊕ Apparent`), stereographic astrolabes (`🧭 Rete`), universal orthographic plates (`📐 Rojas`), and topocentric horizon nets (`🔭 Horizon`). Features 2-stage staged camera alignment with memory retention, circle-preserving conformal projections, free Rete spinning with real-time Apparent Solar Time solving, interactive Alidade sighting with star-locking, and volumetric projection cones.
+- 🪐 **Gyro-Morph Dynamic Armillary & Astrolabe**: Seamless 5-model continuum uniting Copernican planetary orbits (`☉ Orbit`), geocentric celestial spheres (`⊕ Apparent`), stereographic astrolabes (`🧭 Rete`), universal orthographic plates (`📐 Rojas`), and topocentric horizon nets (`🔭 Horizon`). Features 2-stage staged camera alignment with memory retention, nodal plane alignment toggle (`[ ☊ Nodal ]`) snapping view into the tilted lunar orbit plane, edge-on ring plane solid line blending, circle-preserving conformal projections, free Rete spinning with real-time Apparent Solar Time solving, interactive Alidade sighting with star-locking, and volumetric projection cones.
 - ☀️ **Solar Almanac & 24h Polar Sector Dial**: Solstice and equinox pathing, 3-tier twilight durations (civil, nautical, astronomical), analemma equation of time, solar noon tracking, and polar day/night handling, integrated side-by-side with an interactive 24-hour circular polar dial with Solar Noon vs. UTC modes.
-- 👁️ **Today's Sky Horizon Dome**: Real-time dual elevation domes for the Sun and Moon with live zenith tracking, dynamic hemisphere culmination detection (resolving tropical inversions), solar noon click-to-snap, 3-tier atmospheric twilight strata, lunar standstill and solstice swaths, and interactive Draconic nodal crossing countdown rails.
-- 🌙 **Lunar Almanac & Ephemeris**: 365-day braided moonrise/moonset ribbon chart with Zulu time indexing, Meeus true geocentric phase angle ($i$) and disc illumination ($k$), iterative high-latitude rise/set solver with circumpolar continuous visibility detection, perigee/apogee distance metrics, and parallactic angles.
+- 👁️ **Today's Sky Horizon Dome**: Real-time dual elevation domes for the Sun and Moon with live zenith tracking, dynamic hemisphere culmination detection (resolving tropical inversions), solar noon click-to-snap, 3-tier atmospheric twilight strata, lunar standstill and solstice swaths, unified `<MiniMoon />` rendering, and interactive Draconic nodal crossing countdown rails.
+- 🌙 **Lunar Almanac & Ephemeris**: 365-day braided moonrise/moonset ribbon chart with Zulu time indexing, 30-day synodic lunar almanac with single-click date navigation, unified high-precision `<MiniMoon />` disc rendering with libration tilt and terminator shading, Meeus true geocentric phase angle ($i$) and disc illumination ($k$), iterative high-latitude rise/set solver with circumpolar continuous visibility detection, perigee/apogee distance metrics, and parallactic angles.
 - 🌊 **Gravitational Tidal Force Micro-View**: 2D Earth-Moon gravitational tidal vector simulation featuring a 3D rotating `<MiniGlobe />`, prograde counter-clockwise orbital coordination, 4-quadrant color/stroke-coded nodal loops, and a dynamic ocean tidal wave oscillator tracking neap-to-spring deformation ratios.
-- 🌒 **Side-by-Side Dual-Perspective Eclipse Demonstrator**: Synchronized dual perspectives uniting an edge-on ecliptic transverse profile with ray-traced Umbra/Penumbra shadow cones, and an axial sightline down-the-barrel view displaying true prograde lunar transits, color-coded nodal crossings, and 5 historical/future peak UTC presets.
+- 🌒 **Side-by-Side Dual-Perspective Eclipse Demonstrator**: Synchronized dual perspectives uniting an edge-on ecliptic transverse profile with ray-traced Umbra/Penumbra shadow cones, and an axial sightline down-the-barrel view displaying true prograde lunar transits with physically accurate dark backside optics (`isDark={true}`), color-coded nodal crossings, unified `<MiniMoon />`, and 5 historical/future peak UTC presets.
 - 🧭 **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct manipulation of calendar date (with full year tooltip), time, longitude, and latitude, with astronomical turning point jumps and direct military time string parsing.
 - 🗺️ **Daylight Terminator Map**: Real-time cylindrical Earth projection with observer meridian centering, dynamic distance and apparent diameter scaling for Subsolar and Sublunar points, 4-tier twilight shadow boundaries, and 24-hour diurnal celestial ground tracks with antimeridian seam wrapping.
-- 🪐 **Solar System Macro Orbit**: Heliocentric Keplerian planetary orbit view with True Scale ($e=0.0167$) vs. Exaggerated ($e=0.25$) scale modes, persistent glowing milestone halo nodes (Perihelion, Aphelion, Solstices, Equinoxes), and live orbital physics telemetry (irradiance, velocity, AU).
+- 🪐 **Solar System Macro Orbit**: Heliocentric Keplerian planetary orbit view with True Scale ($e=0.0167$) vs. Exaggerated ($e=0.25$) scale modes, persistent glowing milestone halo nodes (Perihelion, Aphelion, Solstices, Equinoxes), interactive orbit dragging/scrubbing synchronized to the global chronometer, and live orbital physics telemetry (irradiance, velocity, AU).
 - 🧩 **Dynamic Code-Splitting & Lazy Loading**: Dynamic `React.lazy()` imports wrapped in dark glassmorphic `<Suspense>` skeletons across all observatory windows, cutting initial bundle size by 50% and eliminating chunk limit warnings.
 - 🌐 **Unified 3D Astronomical Scene Graph**: Single geometric source of truth (`src/utils/cosmicMath/scene/`) uniting Heliocentric orbits, Geocentric inclined lunar orbits with continuous nodal precession, Earth axial obliquity, and reusable modular `<MiniGlobe />` with physical day/night terminator clipping.
 - ⚡ **Web Worker Ephemeris Multiprocessing**: Offloads heavy Meeus ephemeris and syzygy shadow algorithms to dedicated Web Workers via a singleton manager with 100ms throttling, monotonic sequence stamping, and automatic synchronous fallback.
@@ -44,7 +44,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 49 modules, 793 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 50 modules, 808 tests)
 
 ---
 
@@ -90,13 +90,13 @@ Cosmic Engine V2.0/
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Master feature ledger (F1–F59) & milestone matrix (M1–M34)
+├── PROJECT.md                   # Master feature ledger (F1–F64) & milestone matrix (M1–M35)
 ├── README.md                    # Repository documentation & quick start
 ├── AGENTS.md                    # Agent protocols & full granular file navigation map
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001–0034)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001–0035)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
@@ -110,7 +110,7 @@ Cosmic Engine V2.0/
         ├── widgets/             # 8 core observatory subsystems (Armillary, Solar, Lunar, etc.)
         ├── controls/            # Interactive astrolabe dials, sliders & longitude selector
         ├── layout/              # Observatory navbar, window wrappers & chronometer dock
-        └── common/              # Shared error boundaries, mini globe & phase discs
+        └── common/              # Shared error boundaries, mini globe, mini moon & phase discs
 ```
 
 > [!TIP]
@@ -136,7 +136,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 49 specialized domain suites (**793 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 50 specialized domain suites (**808 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -170,14 +170,14 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Sky Dome Hooks & Primitives** | `src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx` (11 tests) | Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer |
 | **Today Horizon Widget** | `src/components/widgets/today/TodayWidget.test.tsx` (24 tests) | SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles |
 | **Solar Almanac Widget** | `src/components/widgets/solar/SolarWidget.test.tsx` (7 tests) | Keplerian solar metrics, perihelion orbital dynamics, interactive SolarRibbonChart hover hairline, and PolarSunlightDial 24h circular polar sector dial |
-| **Lunar Almanac Widget** | `src/components/widgets/lunar/LunarWidget.test.tsx` (5 tests) | 30-day synodic daily phase discs, 365-day annual braided ribbon, polar circumpolar statuses (24h moonlight / down all day), and TidalWaveOscillator ocean deformation wave |
-| **Eclipse Demonstrator Widget** | `src/components/widgets/eclipse/EclipseWidget.test.tsx` (9 tests) | Historic Great American Eclipse data, 520x220 viewBox parity, dual-zone masking, nodal depth muting behind Earth, and prograde right-to-left SkyViewSimulator transit without bounce |
+| **Lunar Almanac Widget** | `src/components/widgets/lunar/LunarWidget.test.tsx` (6 tests) | 30-day synodic daily phase discs, 365-day annual braided ribbon, polar circumpolar statuses (24h moonlight / down all day), and TidalWaveOscillator ocean deformation wave |
+| **Eclipse Demonstrator Widget** | `src/components/widgets/eclipse/EclipseWidget.test.tsx` (10 tests) | Historic Great American Eclipse data, 520x220 viewBox parity, dual-zone masking, nodal depth muting behind Earth, and prograde right-to-left SkyViewSimulator transit without bounce |
 | **Terminator Map Widget** | `src/components/widgets/terminator/TerminatorMap.test.tsx` (10 tests) | Dynamic observer meridian centering, wrapped landmass polygons, topocentric YOU pin crosshairs, distance-scaled Subsolar (AU) and Sublunar (km) disc markers, and 4-tier twilight shadow boundaries |
 | **Terminator Map Math Hook** | `src/components/widgets/terminator/hooks/useTerminatorMapMath.test.ts` (5 tests) | Astronomical coordinates, Keplerian disc scaling, hover overrides, ground-track toggles, and null-data fallbacks |
-| **Macro Orbit Widget** | `src/components/widgets/macro/MacroOrbitWidget.test.tsx` (4 tests) | Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD |
+| **Macro Orbit Widget** | `src/components/widgets/macro/MacroOrbitWidget.test.tsx` (6 tests) | Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD |
 | **Micro Tide Widget** | `src/components/widgets/tides/TidesWidget.test.tsx` (5 tests) | MicroTideView Earth tidal gravity, MiniGlobe 3D vector integration, segmented Nodal Loop and potential toggles, and counter-clockwise prograde Moon revolution |
-| **Armillary Visualizer Widget** | `src/components/widgets/armillary/ArmillaryWidget.test.tsx` (46 tests) | Continuum model generation, camera staging timing (pitch/yaw at $lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification |
-| **Staged Camera Hook** | `src/components/widgets/armillary/useStagedCamera.test.ts` (9 tests) | 2-phase Euler angle interpolation ($lambda le 0.45$), canonical pole locking ($lambda ge 0.45$), memory angle retention, and reverse transition unwinding |
+| **Armillary Visualizer Widget** | `src/components/widgets/armillary/ArmillaryWidget.test.tsx` (48 tests) | Continuum model generation, camera staging timing (pitch/yaw at $lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification |
+| **Staged Camera Hook** | `src/components/widgets/armillary/useStagedCamera.test.ts` (11 tests) | 2-phase Euler angle interpolation ($lambda le 0.45$), canonical pole locking ($lambda ge 0.45$), memory angle retention, and reverse transition unwinding |
 | **Camera Staging Adversarial** | `src/components/widgets/armillary/m2_adversarial.test.ts` (9 tests) | Camera alignment timing ($0 le lambda le 0.45$), canonical pole lock ($0.45 le lambda le 1.0$), geodesic wrapping, and custom user 3D angle restoration |
 | **Depth Stroke Unification** | `src/components/widgets/depthUnificationStress.test.ts` (11 tests) | Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $lambda in [0.85, 1.0]$ |
 | **Spherical Globe Projection & Clipping** | `src/utils/cosmicMath/globe.test.ts` (14 tests) | Spherical continent projection across 5 camera projections, analytical limb horizon clipping, polar edge cases, and twilight solar elevation limits |

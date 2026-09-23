@@ -111,6 +111,11 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F57 | Observer Co-Location & Dynamic 3D Celestial Continuum | Anchored topocentric sky cone to MiniGlobe observer pin with zenith singularity guards, 3D analytical lunar terminator with camera edge-on perspective, pure-engine subsolar vector centralization, λ ≤ 0.45 morph continuity threshold, and dynamic 3D camera depth sorting | M32 | ADR-0032 |
 | F58 | Copernican ↔ Geocentric 3D Translation, Observer-to-Laser Morph Continuum & Modular Architecture | Continuous 3D translation of Earth, Sun, Moon and milestones along spherical geodesic arcs (λ ≤ 0.45), continuous morph of topocentric Observer Sky Cone into astrolabe Volumetric Laser Projection Rays/Cones (λ > 0.45), interactive Draconic Lunar Node pins (☊/☋) with dedicated toggle switch, context-aware telemetry HUD switching, useArmillaryInteractions gesture hook extraction, and controls/ subcomponents decomposition | M33 | ADR-0033 |
 | F59 | Terminator Map Container/Presenter Decomposition & Worker Lifecycle Hardening | Decomposed 439-line `TerminatorMap.tsx` monolith into `useTerminatorMapMath` container hook, memoized `TerminatorLandmasses` polygon layer, and `TerminatorGroundTracks` diurnal/nodal SVG layer; bound window listener cleanup in `EphemerisWorkerManager.terminate()`; migrated annual matrix caches to generic `LruCache` | M34 | ADR-0034 |
+| F60 | Lunar Almanac Synodic Viewport Stability & Scrubber Precision | Gated drag scrubbing in 30-day synodic lunar almanac while preserving single-click snapping, hover time guideline tracking, and dual time badges | M35 | ADR-0035 |
+| F61 | Macro Orbit Chronometer Synchronization & Interactive Drag Scrubbing | Real-time intra-day chronometer ticking, rotating diurnal terminator, continuous MiniGlobe rotation, and elliptical orbit drag scrubbing on Earth | M35 | ADR-0035 |
+| F62 | Edge-On 3D Ring Solid Line Unification | Camera-space normal calculation $|n_z| \le 0.08$ smoothly unifying edge-on rings to solid paths (`fullPathD`), eliminating half-dashed line artifacts | M35 | ADR-0035 |
+| F63 | Universal `<MiniMoon />` Component Primitive & Axial Dark Backside Harmonization | Reusable SVG Moon primitive with 3D analytical limb, 2D apparent phase, dark backside viewing (`isDark={true}` down Sun-Earth sightline), corona glow, and node-coded dashed/solid red/blue outlines | M35 | ADR-0035 |
+| F64 | Gyro-Morph Nodal Plane Alignment Pill (`[ ☊ Nodal ]`) | Orbit view toggle pill snapping camera to pitch $0^\circ$ and yaw $(\Omega + 90^\circ) \bmod 360^\circ$ via 650 ms cubic ease-out spring, exposing $5.145^\circ$ lunar orbital inclination edge-on | M35 | ADR-0035 |
 
 ## Milestones
 
@@ -122,7 +127,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M34)
+### Recent Milestones (M21–M35)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -139,6 +144,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M32 | Observer Co-Location, 3D Analytical Illumination & Dynamic Depth Sorting | `src/utils/cosmicMath/armillary/`, `ArmillaryBeadsLayer.tsx`, ADR-0032 | M1–M31 | DONE |
 | M33 | Copernican ↔ Geocentric Translation, Observer-to-Laser Morph & Modular Controls | `src/utils/cosmicMath/armillary/`, `src/components/widgets/armillary/`, ADR-0033 | M1–M32 | DONE |
 | M34 | Terminator Map Modular Decomposition & Worker Concurrency Hardening | `useTerminatorMapMath.ts`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx`, `ephemerisWorkerManager.ts`, ADR-0034 | M1–M33 | DONE |
+| M35 | Visual Polish, Universal MiniMoon Harmonization & Gyro-Morph Nodal Sightline | `MiniMoon.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx`, `useStagedCamera.ts`, `ArmillaryModePills.tsx`, `ArmillaryRingsLayer.tsx`, `MacroOrbitView.tsx`, `LunarRibbonChart.tsx`, ADR-0035 | M1–M34 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -151,6 +157,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - **Observatory Store State & Window Layout**: [`src/types/store.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/store.ts) (`CosmicStoreState`, `WindowLayoutConfig`, `WindowLayoutDictionary`, `WindowLayoutPreset`)
 - **Shared Component Primitives**:
   - MiniGlobe: [`src/components/common/MiniGlobe.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/common/MiniGlobe.tsx) (`MiniGlobeProps`, `MiniGlobeViewMode`)
+  - MiniMoon: [`src/components/common/MiniMoon.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/common/MiniMoon.tsx) (`MiniMoonProps`)
   - Sky Dome Base: [`src/components/widgets/today/SkyDomeBase.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/SkyDomeBase.tsx) (`SkyDomeBaseProps`)
   - Meridian Dome Base: [`src/components/widgets/today/MeridianDomeBase.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/MeridianDomeBase.tsx) (`MeridianDomeBaseProps`)
 
@@ -215,12 +222,12 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `tides/` — Earth Gravitational Tidal Force (`MicroTideView`)
     - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
     - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/` (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`))
-    - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `WindowErrorBoundary`, `PhaseVisual`)
+    - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `MiniMoon`, `MiniMoon.test.tsx`, `WindowErrorBoundary`, `PhaseVisual`)
 - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0034`)
+  - `adr/` — Architecture Decision Records (`0001` through `0035`)
 
 ### Subsystem Task Routing Matrix
 
