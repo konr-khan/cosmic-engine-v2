@@ -37,8 +37,8 @@ export interface MemoizedWidgetContentProps {
 }
 
 const MacroOrbitWidgetContent = React.memo(function MacroOrbitWidgetContent() {
-  const date = useChronometerStore(s => s.date);
-  return <MacroOrbitView currentDate={date} />;
+  const { date, timeOfDay } = useChronometerStore(selectRealtimeParams);
+  return <MacroOrbitView currentDate={date} currentTime={timeOfDay} />;
 });
 
 const LunarAlmanacWidgetContent = React.memo(function LunarAlmanacWidgetContent() {

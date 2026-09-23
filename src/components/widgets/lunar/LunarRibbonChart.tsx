@@ -96,24 +96,30 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = React.memo(({
     onScrub: ({ day, time }, e) => {
       if (onHoverDayChange) onHoverDayChange(day);
 
-      if (onHoverDate) {
-        const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
-        onHoverDate(d);
+      // In 365-Day Annual Mode, broadcast hoverDate across the year and allow horizontal drag-scrubbing.
+      // In 30-Day Synodic Mode, date dragging is disabled to prevent dynamic window shifting.
+      // Single clicking on a day still jumps to that day via onClick on the SVG.
+      if (!isSynodic) {
+        if (onHoverDate) {
+          const d = new Date(Date.UTC(year, 0, day, 12, 0, 0));
+          onHoverDate(d);
+        }
+
+        if ((isDragging || e.type === 'pointerdown') && onDayChange) {
+          onDayChange(day);
+        }
       }
 
+      // Synchronized vertical hover time guideline operates across both Synodic and Annual modes
       if (onHoverTime) {
         const utcTime = timeMode === 'utc' 
           ? time 
           : ((time - lonOffsetHours) % 24 + 24) % 24;
         onHoverTime(parseFloat(utcTime.toFixed(3)));
       }
-
-      if ((isDragging || e.type === 'pointerdown') && onDayChange) {
-        onDayChange(day);
-      }
     },
     onScrubEnd: (endDayVal) => {
-      if (endDayVal !== null && onDayChange) {
+      if (!isSynodic && endDayVal !== null && onDayChange) {
         onDayChange(endDayVal);
       }
     }

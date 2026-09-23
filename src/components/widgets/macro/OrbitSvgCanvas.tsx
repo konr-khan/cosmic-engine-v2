@@ -37,10 +37,60 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   lunarOrbitRadius,
   lunarOrbitPath,
   zoom = 1.0,
-  onWheelZoom
+  onWheelZoom,
+  onDateScrub
 }) => {
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
+  const [isDraggingEarth, setIsDraggingEarth] = React.useState(false);
+
   // In-plane solar illumination angle pointing from Earth toward Sun
   const sunAngleDeg = Math.atan2(renderSunY - renderEarthY, renderSunX - renderEarthX) * (180 / Math.PI);
+
+  const handleEarthPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    if (!onDateScrub) return;
+    setIsDraggingEarth(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleEarthPointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingEarth || !onDateScrub || !svgRef.current) return;
+    const pt = svgRef.current.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const ctm = svgRef.current.getScreenCTM();
+    if (!ctm) return;
+    const svgP = pt.matrixTransform(ctm.inverse());
+
+    // In top-down heliocentric coordinates:
+    // Earth's position is: X = -dist * cos(sunLambda), Y = dist * bRatio * sin(sunLambda)
+    const effectiveBRatio = bRatio > 0 ? bRatio : 1;
+    const sunLambdaRad = Math.atan2(svgP.y / effectiveBRatio, -svgP.x);
+    const sunLambdaDegRaw = ((sunLambdaRad * 180) / Math.PI + 360) % 360;
+
+    // Map solar ecliptic longitude to day of year:
+    // Vernal Equinox (lambda = 0) occurs near March 20 (Day ~79.25)
+    const yearFrac = sunLambdaDegRaw / 360;
+    const totalDayOfYear = (((yearFrac * 365.25 + 79.25) % 365.25) + 365.25) % 365.25;
+    const dayInt = Math.max(1, Math.min(365, Math.floor(totalDayOfYear) + 1));
+    const dayFraction = totalDayOfYear - Math.floor(totalDayOfYear);
+    const scrubbedHour = parseFloat((dayFraction * 24).toFixed(3));
+
+    const currentYear = new Date().getFullYear();
+    const scrubbedDate = new Date(Date.UTC(currentYear, 0, dayInt, 12, 0, 0));
+    onDateScrub(scrubbedDate, scrubbedHour);
+  };
+
+  const handleEarthPointerUp = (e: React.PointerEvent) => {
+    if (isDraggingEarth) {
+      setIsDraggingEarth(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // pointer capture already released
+      }
+    }
+  };
 
   // Dynamic zoom viewBox
   const viewBoxStr = React.useMemo(() => {
@@ -52,6 +102,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
 
   return (
     <svg 
+      ref={svgRef}
       viewBox={viewBoxStr} 
       style={{ touchAction: 'none' }}
       onWheel={onWheelZoom}
@@ -216,6 +267,20 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
         showObserverPin={true}
         showAtmosphereGlow={true}
         showLabel={true}
+      />
+
+      {/* Interactive Drag & Hover Hitbox for Earth */}
+      <circle
+        cx={renderEarthX}
+        cy={renderEarthY}
+        r="16"
+        fill="transparent"
+        className={onDateScrub ? (isDraggingEarth ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-pointer'}
+        style={{ touchAction: 'none' }}
+        onPointerDown={handleEarthPointerDown}
+        onPointerMove={handleEarthPointerMove}
+        onPointerUp={handleEarthPointerUp}
+        onPointerCancel={handleEarthPointerUp}
         onPointerEnter={() => onHover('earth')}
         onPointerLeave={() => onHover(null)}
       />

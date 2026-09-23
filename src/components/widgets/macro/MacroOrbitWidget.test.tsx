@@ -65,4 +65,45 @@ describe('Macro Orbit Subsystem', () => {
     // When zoom is 2.0, 580/2 = 290, 560/2 = 280, viewBox="-145 -140 290 280"
     expect(htmlCanvas).toContain('viewBox="-145 -140 290 280"');
   });
+
+  it('renders MacroOrbitView with real-time currentTime and Earth drag hitbox', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MacroOrbitView, {
+        currentDate: new Date(2026, 5, 21),
+        currentTime: 18.5
+      })
+    );
+
+    // MiniGlobe with top-down viewMode and Earth label
+    expect(html).toContain('EARTH');
+    expect(html).toContain('SUN');
+    expect(html).toContain('Solstice');
+  });
+
+  it('renders OrbitSvgCanvas with interactive Earth drag hitbox when onDateScrub is provided', () => {
+    const onScrub = () => {};
+    const htmlCanvas = renderToStaticMarkup(
+      React.createElement(OrbitSvgCanvas, {
+        renderSunX: 0,
+        renderSunY: 0,
+        renderEarthX: 200,
+        renderEarthY: 0,
+        renderMoonX: 228,
+        renderMoonY: 0,
+        orbitalRadius: 200,
+        bRatio: 1,
+        focus2X: 0,
+        focus2Y: 0,
+        exaggerateEccentricity: false,
+        hoveredId: null,
+        onHover: () => {},
+        timeOfDay: 14.25,
+        onDateScrub: onScrub
+      })
+    );
+
+    expect(htmlCanvas).toContain('cursor-grab');
+    expect(htmlCanvas).toContain('r="16"');
+  });
 });
+

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { MILESTONES } from './milestones';
 import { OrbitHeaderControls } from './OrbitHeaderControls';
@@ -7,16 +7,18 @@ import { OrbitSvgCanvas } from './OrbitSvgCanvas';
 import { OrbitPhysicsHud } from './OrbitPhysicsHud';
 import { MacroOrbitViewProps, MacroOrbitHoverData } from './types';
 import { useHeliocentricScene } from '../../../hooks/useCosmicScene';
-import { useChronometerStore } from '../../../store/cosmicStore';
+import { useChronometerStore, cosmicActions } from '../../../store/cosmicStore';
 
-const selectMacroObserverParams = (s: { latitude: number; longitude: number }) => ({
+const selectMacroObserverParams = (s: { latitude: number; longitude: number; timeOfDay: number }) => ({
   latitude: s.latitude,
-  longitude: s.longitude
+  longitude: s.longitude,
+  timeOfDay: s.timeOfDay
 });
 
 export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({ 
   eclipse, 
-  currentDate = new Date() 
+  currentDate = new Date(),
+  currentTime
 }) => {
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -30,6 +32,11 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
 
   // Synchronize observer geographic coordinates and time from store
   const storeState = useChronometerStore(selectMacroObserverParams);
+  const effectiveTime = currentTime !== undefined ? currentTime : storeState.timeOfDay;
+
+  const handleDateScrub = useCallback((targetDate: Date, targetTime: number) => {
+    cosmicActions.setDateTime(targetDate, targetTime);
+  }, []);
 
   // Consume unified 3D heliocentric scene graph
   const helioScene = useHeliocentricScene(
@@ -39,7 +46,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
       orbitalRadius: 200,
       latitude: storeState.latitude,
       longitude: storeState.longitude,
-      timeOfDay: 12
+      timeOfDay: effectiveTime
     }
   );
 
@@ -120,10 +127,11 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           sunLambdaDeg={sunLambdaDeg}
           latitude={storeState.latitude}
           longitude={storeState.longitude}
-          timeOfDay={12}
+          timeOfDay={effectiveTime}
           lunarOrbitPath={helioScene.lunarOrbitPath}
           zoom={zoom}
           onWheelZoom={handleWheelZoom}
+          onDateScrub={handleDateScrub}
         />
 
         {/* Orbit View Zoom Controls */}

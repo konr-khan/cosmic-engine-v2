@@ -18,6 +18,7 @@ export interface MacroOrbitHoverData {
 export interface MacroOrbitViewProps {
   eclipse?: EclipseData | null;
   currentDate?: Date;
+  currentTime?: number;
 }
 
 export interface OrbitSvgCanvasProps {
@@ -35,6 +36,7 @@ export interface OrbitSvgCanvasProps {
   hoveredId: string | null;
   onHover: (id: string | null) => void;
   milestones?: OrbitMilestoneInput[];
+  onDateScrub?: (date: Date, timeOfDay: number) => void;
 }
 
 export interface OrbitHeaderControlsProps {
