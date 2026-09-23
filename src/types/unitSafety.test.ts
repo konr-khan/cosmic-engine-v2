@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 // @ts-expect-error - lintUnitSafety is a Node ESM module executed in Vitest runner
-import { runUnitSafetyCheck, getAgentsSizeBudget } from '../../scripts/lintUnitSafety.mjs';
+import { runUnitSafetyCheck, runMathPurityCheck, getAgentsSizeBudget } from '../../scripts/lintUnitSafety.mjs';
 import { parse } from '@babel/parser';
 
 interface UnitViolation {
@@ -85,6 +85,20 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
     expect(foundViolations).toContain('call:asRadians');
     expect(foundViolations).not.toContain('call:toRadians');
     expect(foundViolations).toHaveLength(4);
+  });
+
+  it('enforces mathematical domain purity (0 React or UI component imports in src/utils/cosmicMath)', () => {
+    const { totalFiles, violations } = runMathPurityCheck() as {
+      totalFiles: number;
+      violations: Array<{ filePath: string; line: number; column: number; source: string; snippet: string }>;
+    };
+
+    expect(totalFiles).toBeGreaterThan(20);
+    if (violations.length > 0) {
+      const summary = violations.map(v => `${v.filePath}:${v.line}:${v.column} imported '${v.source}'`).join('\n');
+      expect.fail(`Found ${violations.length} mathematical domain purity violations:\n${summary}`);
+    }
+    expect(violations).toHaveLength(0);
   });
 
   it('enforces AGENTS.md size budget strictly under 18 KB to prevent AI prompt truncation', () => {

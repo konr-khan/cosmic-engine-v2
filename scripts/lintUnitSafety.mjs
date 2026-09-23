@@ -17,6 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const componentsDir = path.resolve(rootDir, 'src', 'components');
+const cosmicMathDir = path.resolve(rootDir, 'src', 'utils', 'cosmicMath');
 
 const BANNED_IDENTIFIERS = new Set(['asDegrees', 'asRadians']);
 
@@ -152,6 +153,56 @@ export function runUnitSafetyCheck(targetDir = componentsDir) {
 }
 
 /**
+ * Scans pure astronomical math modules (src/utils/cosmicMath/**) to guarantee
+ * that they remain 100% deterministic and free from React or UI component imports.
+ */
+export function runMathPurityCheck(targetDir = cosmicMathDir) {
+  const files = getSourceFiles(targetDir);
+  const violations = [];
+
+  for (const filePath of files) {
+    const content = fs.readFileSync(filePath, 'utf8');
+    let ast;
+    try {
+      ast = parse(content, {
+        sourceType: 'module',
+        plugins: [
+          'typescript',
+          'jsx',
+          'decorators-legacy',
+          'classProperties'
+        ]
+      });
+    } catch (_) {
+      continue;
+    }
+
+    const lines = content.split('\n');
+    walkAst(ast, (node) => {
+      if (node.type === 'ImportDeclaration') {
+        const src = node.source?.value || '';
+        if (src === 'react' || src.startsWith('react/') || src.includes('/components/')) {
+          const line = node.loc?.start.line || 1;
+          const column = node.loc?.start.column || 0;
+          violations.push({
+            filePath,
+            line,
+            column: column + 1,
+            source: src,
+            snippet: lines[line - 1]?.trim() || ''
+          });
+        }
+      }
+    });
+  }
+
+  return {
+    totalFiles: files.length,
+    violations
+  };
+}
+
+/**
  * Verifies that AGENTS.md adheres to the strict 18 KB prompt kernel budget to prevent AI prompt truncation.
  */
 export function getAgentsSizeBudget() {
@@ -175,6 +226,7 @@ export function getAgentsSizeBudget() {
 // CLI execution
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { totalFiles, violations } = runUnitSafetyCheck();
+  const mathPurity = runMathPurityCheck();
   const agentsBudget = getAgentsSizeBudget();
 
   if (violations.length > 0) {
@@ -191,6 +243,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
 
+  if (mathPurity.violations.length > 0) {
+    console.error('\n❌ [math-purity] Mathematical Purity AST Violations Detected:');
+    console.error('Pure domain modules in src/utils/cosmicMath/** must remain pure and free of React or UI component imports.\n');
+
+    for (const v of mathPurity.violations) {
+      const relPath = path.relative(rootDir, v.filePath).replace(/\\/g, '/');
+      console.error(`  ${relPath}:${v.line}:${v.column} — imported '${v.source}'`);
+      console.error(`    > ${v.snippet}\n`);
+    }
+
+    process.exit(1);
+  }
+
   if (!agentsBudget.isUnderBudget) {
     console.error(`\n❌ [unit-safety] AGENTS.md size budget violated: ${agentsBudget.sizeKb} KB > ${agentsBudget.maxKb} KB.`);
     console.error('Please pare down or relocate non-kernel documentation to docs/ to prevent AI prompt truncation.\n');
@@ -199,6 +264,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   console.log(`\n✔ [unit-safety] All UI components (${totalFiles} files) conform to branded unit safety guardrails.`);
   console.log('  0 instances of asDegrees() or asRadians() found in src/components/**.');
+  console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports).`);
   console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).\n`);
   process.exit(0);
 }

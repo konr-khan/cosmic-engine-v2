@@ -221,3 +221,17 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
   - `adr/` — Architecture Decision Records (`0001` through `0034`)
+
+### Subsystem Task Routing Matrix
+
+| Observatory Subsystem | Domain Mathematical Core | Presenter / Math Hook | UI Container & Layers | Primary Targeted Vitest Suite |
+| :--- | :--- | :--- | :--- | :--- |
+| **Today's Horizon Dome** | `today/{elevation,meridian,draconic}.ts` | `use{Sun,Moon}ElevationMath.ts`, `use{Sun,Moon}MeridianMath.ts` | `TodayHorizonView.tsx`, `SkyDomeBase.tsx`, `MeridianDomeBase.tsx` | `npx vitest run TodayWidget.test.tsx` |
+| **Solar Almanac** | `solar.ts`, `astroConstants.ts` | `useCosmicEngine.ts` | `SolarAlmanacCard.tsx`, `SolarRibbonChart.tsx`, `PolarSunlightDial.tsx` | `npx vitest run SolarWidget.test.tsx` |
+| **Lunar Almanac** | `lunar.ts`, `astroConstants.ts` | `useCosmicEngine.ts` | `LunarAlmanacCard.tsx`, `LunarRibbonChart.tsx`, `TidalWaveOscillator.tsx` | `npx vitest run LunarWidget.test.tsx` |
+| **Eclipse Demonstrator** | `eclipse.ts`, `scene/cameras.ts` | `useEclipseScene()` | `EclipseDemonstrator.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | `npx vitest run EclipseWidget.test.tsx` |
+| **Terminator Map** | `terminatorTracks.ts`, `globe.ts` | `useTerminatorMapMath.ts` | `TerminatorMap.tsx`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx` | `npx vitest run TerminatorMap.test.tsx` |
+| **Macro Orbit** | `scene/generator.ts`, `milestones.ts` | `useHeliocentricScene()` | `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `OrbitPhysicsHud.tsx` | `npx vitest run MacroOrbitWidget.test.tsx` |
+| **Gyro-Morph Armillary** | `armillary/{generator,projections}.ts` | `useArmillaryInteractions.ts`, `useStagedCamera.ts` | `GyroArmillaryView.tsx`, `ArmillarySvgCanvas.tsx`, `ArmillaryBeadsLayer.tsx` | `npx vitest run ArmillaryWidget.test.tsx` |
+| **Gravitational Tides** | `lunar.ts`, `projection.ts` | `useCosmicEngine.ts` | `MicroTideView.tsx`, `MiniGlobe.tsx` | `npx vitest run TidesWidget.test.tsx` |
+

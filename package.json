@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "lint:units": "node scripts/lintUnitSafety.mjs",
     "sync:docs": "node scripts/syncDocMetrics.mjs",
-    "sync:dossier": "node scripts/syncDocMetrics.mjs --dossier"
+    "sync:dossier": "node scripts/syncDocMetrics.mjs --dossier",
+    "verify": "npm run typecheck && npm run lint:units && npm test && npm run build"
   },
   "keywords": [],
   "author": "",

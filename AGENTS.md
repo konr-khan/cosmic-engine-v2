@@ -26,7 +26,7 @@ To eliminate documentation drift and adhere to **Smallest Effective Difference (
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 49 modules, 792 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 49 modules, 793 tests)
 
 ### Essential Commands
 
@@ -35,11 +35,11 @@ To eliminate documentation drift and adhere to **Smallest Effective Difference (
 | `npm run dev` | Starts Vite local development server |
 | `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
 | `npm test` | Runs Vitest unit test suite in native single-run mode (`vitest run`) |
-| `npm test -- --run` | Runs full Vitest suite in single-run CI mode (equivalent/redundant with `npm test`) |
 | `npm run test:coverage` | Runs Vitest with v8 code coverage reporting |
 | `npm run lint:units` | Runs Babel AST branded unit-safety linter across all UI components |
 | `npm run sync:docs` | Runs automated Vitest test metric synchronizer |
 | `npm run sync:dossier` | Compiles master documentation dossier on demand (`--dossier`) |
+| `npm run verify` | Runs full verification suite (`typecheck`, `lint:units`, `vitest`, and `build`) |
 | `npm run build` | Builds production distribution to `dist/` (`tsc --noEmit && vite build`) |
 | `npm run preview` | Previews built production bundle locally |
 
@@ -82,7 +82,7 @@ src/
 ### A. Manager-Worker Pattern
 - **Orchestrator Role**: The primary agent acts as the **Lead Architect / Orchestrator**. Implementation, noisy terminal runs, diagnostics, and multi-file modifications should be delegated to specialized worker subagents.
 - **Context Hygiene**: Never execute broad file rewrites or heavy terminal commands directly in the parent context. Isolate diagnostic scans, lint runs, and test executions within dedicated subagent sandboxes.
-- **Verification Before Completion**: No task is marked complete without passing automated type checking (`npm run typecheck`), unit testing (`npm test -- --run`), and production build (`npm run build`) verification.
+- **Verification Before Completion**: No task is marked complete without passing the unified verification pipeline: `npm run verify` (which runs `npm run typecheck`, `npm run lint:units`, `npm test`, and `npm run build` in serial).
 - **No Automatic Commits Rule**: Do not commit changes to git automatically after completing a phase. Always present the changes and verification steps first, and only commit when the user explicitly says 'commit'.
 
 ### B. Subagent Delegation & Invariants
@@ -111,7 +111,7 @@ All complex architectural changes and feature additions must follow the structur
    - Execute one phase at a time using an isolated subagent sandbox.
    - Verify each phase before advancing to dependent phases.
 3. **Verification & Review Phase**:
-   - Run the complete project test suite (`npm test -- --run`), typecheck (`npm run typecheck`), and production build (`npm run build`).
+   - Run the unified verification pipeline (`npm run verify`).
    - Produce a **Verification Walkthrough Artifact** demonstrating test passes and diffs.
    - **HUMAN GATE**: Prompt the user for review and approval with interactive verification steps.
    - **Git Commit Protocol**: Never commit changes to git automatically. Only execute `git commit` when the user explicitly gives the command (e.g. `'commit'`).
@@ -151,6 +151,14 @@ All complex architectural changes and feature additions must follow the structur
   - Mock `localStorage` when testing window layout persistence.
 - **Floating-Point Precision Tolerance**:
   - Use `expect(val).toBeCloseTo(expected, 4)` for general astronomical calculations (or 2 decimal places for empirical angles/distances) to avoid fragile assertions caused by floating-point differences across JavaScript engines.
+
+### C. AI Pair-Programming Invariants & Cognitive Guardrails
+When pair-programming with AI agents, adhere strictly to these machine-cognitive guardrails:
+1. **Zero Ad-Hoc Math Re-implementation**: Never write duplicate trigonometric approximations inline; import canonical IAU/Meeus algorithms and physical constants from `src/utils/cosmicMath/` and `astroConstants.ts`.
+2. **Zero Lossy Constant Rounding**: Never hardcode approximate magic numbers (e.g. `23.44`, `5.14`) in calculation logic; use exact nominal branded constants (`EARTH_AXIAL_OBLIQUITY_J2000_DEG`, `MOON_ORBIT_INCLINATION_DEG`).
+3. **Zero High-Frequency React State**: Never introduce `useState` or local component effects on 60 FPS animation ticker hot paths; route high-frequency animation and ribbon scrubbing through `cosmicStore` or atomic `hoverStore`.
+4. **Direct Execution Over Brittle Mocking**: Never write complex manual mocks for pure mathematical utilities in Vitest; invoke pure deterministic domain algorithms directly.
+5. **Targeted Subsystem Routing**: For fast feedback, consult the Subsystem Task Routing Matrix in [`PROJECT.md`](PROJECT.md#subsystem-task-routing-matrix) to run targeted test suites (`npx vitest run <file>`) during development loops before executing `npm run verify`.
 
 ---
 
