@@ -148,7 +148,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - **Branded Nominal Units & Coordinates**: [`src/types/units.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/units.ts) (`Degrees`, `Radians`, `JulianDate`, `JulianCenturies`, `Latitude`, `Longitude`) and [`src/types/coordinates.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/coordinates.ts) (`Vector2D`, `Vector3D`, `AltAzimuthCoordinates`, `EquatorialCoordinates`)
 - **Astronomical Data Models**: [`src/types/astronomy.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/astronomy.ts) (`EphemerisFrame`, `SolarPositionFull`, `LunarPositionFull`, `EclipseData`)
 - **Web Worker Concurrency Contracts**: [`src/types/worker.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/worker.ts) (`EphemerisWorkerRequest`, `EphemerisWorkerResponse`, monotonic sequence stamps)
-- **Observatory Store State & Window Layout**: [`src/types/store.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/store.ts) (`CosmicStoreState`, `DashboardLayoutState`, `WindowPositionState`)
+- **Observatory Store State & Window Layout**: [`src/types/store.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/store.ts) (`CosmicStoreState`, `WindowLayoutConfig`, `WindowLayoutDictionary`, `WindowLayoutPreset`)
 - **Shared Component Primitives**:
   - MiniGlobe: [`src/components/common/MiniGlobe.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/common/MiniGlobe.tsx) (`MiniGlobeProps`, `MiniGlobeViewMode`)
   - Sky Dome Base: [`src/components/widgets/today/SkyDomeBase.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/SkyDomeBase.tsx) (`SkyDomeBaseProps`)
@@ -187,8 +187,6 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
       - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade, `generatorRings.ts`, `generatorBeads.ts`, `generatorGeometry.ts`, `generatorObserverCone.ts`)
       - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
-  - `constants/`
-    - `dashboardPresets.ts` — Observatory dashboard window layouts & configuration presets
   - `store/`
     - `cosmicStore.ts` — External state store & animation frame ticker
     - `hoverStore.ts` — Atomic external store for 60 FPS ribbon scrubber isolation
@@ -216,10 +214,10 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView`, `OrbitSvgCanvas`, `OrbitPhysicsHud.tsx`)
       - `tides/` — Earth Gravitational Tidal Force (`MicroTideView`)
     - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
-    - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/`, `AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`)
+    - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/` (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`))
     - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `WindowErrorBoundary`, `PhaseVisual`)
 - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0033`)
+  - `adr/` — Architecture Decision Records (`0001` through `0034`)

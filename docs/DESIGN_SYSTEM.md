@@ -392,7 +392,7 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
 
 ---
 
-## 8. Terminator Map Diurnal Ground Tracks & Nodal Encodings
+## 9. Terminator Map Diurnal Ground Tracks & Nodal Encodings
 
 The **Terminator Map** (`TerminatorMap.tsx`) features dynamic 24-hour diurnal ground tracks ($[-12\text{h}, +12\text{h}]$) for the Subsolar and Sublunar points with forward-weighted temporal stroke encodings and proximity-gated nodal beacons:
 

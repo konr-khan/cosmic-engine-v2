@@ -295,6 +295,26 @@ const CANONICAL_SUITES = [
     domain: 'Astrolabe Dial Component',
     file: 'src/components/layout/chronometer/AstrolabeDial.test.tsx',
     focus: 'Concentric SVG control rings (Date, Time, Lon, Lat), observer-locked camera yaw calculations, latitude rail positioning, pointer event callbacks, and rollover boundaries'
+  },
+  {
+    domain: 'Atomic Hover Store',
+    file: 'src/store/hoverStore.test.ts',
+    focus: 'High-frequency ribbon scrubber state isolation (`hoveredDate`, `hoveredTime`, `hoverPosition`), shallow equality memoization, and zero-cascade subscriber notifications'
+  },
+  {
+    domain: 'Terminator Ground Tracks Math',
+    file: 'src/utils/cosmicMath/terminatorTracks.test.ts',
+    focus: '24-hour diurnal ground tracks ($[-12\\text{h}, +12\\text{h}]$) for Subsolar and Sublunar points, antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons, and temporal vector dashes'
+  },
+  {
+    domain: 'Armillary Interactions Hook',
+    file: 'src/components/widgets/armillary/useArmillaryInteractions.test.ts',
+    focus: 'Astrolabe touch and pointer interactions, camera dragging state isolation, model click-to-snap target dispatch, Free Rete angle calculation, and pointer capture lifecycles'
+  },
+  {
+    domain: 'Terminator Hover HUD Component',
+    file: 'src/components/widgets/terminator/TerminatorHoverHud.test.tsx',
+    focus: 'Interactive Subsolar and Sublunar point hover cards, distance and apparent diameter telemetry, $\\pm 24\\text{h}$ proximity-gated nodal status badges, and astronomical coordinate formatting'
   }
 ];
 
@@ -348,6 +368,12 @@ if (fs.existsSync(readmePath)) {
     `across ${totalFiles} specialized domain suites (**${totalTests} tests**):`
   );
 
+  // Tech Stack line
+  readmeContent = readmeContent.replace(
+    /(- \*\*Testing\*\*: `vitest` \(`npm test` — comprehensive domain test suite across )\d+ modules, \d+ tests\)/g,
+    `$1${totalFiles} modules, ${totalTests} tests)`
+  );
+
   // B. Build canonical test table rows
   const tableHeader = [
     '| Domain Module | File | Focus Areas |',
@@ -383,8 +409,8 @@ if (shouldCompileDossier) {
   const adrs = adrFiles.map(file => {
     const filePath = path.join(adrDir, file);
     const c = fs.readFileSync(filePath, 'utf8');
-    const match = c.match(/^#\s+(ADR\s+\d+:\s*.+)/m);
-    const title = match ? match[1].trim() : file;
+    const match = c.match(/^#\s+(?:ADR\s+)?(\d+)[:.]\s*(.+)/m);
+    const title = match ? `ADR ${match[1].padStart(4, '0')}: ${match[2].trim()}` : file;
     return { file, title, content: c, filePath };
   });
 

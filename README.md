@@ -44,7 +44,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 47 modules, 720 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 49 modules, 792 tests)
 
 ---
 
@@ -90,13 +90,13 @@ Cosmic Engine V2.0/
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Master feature ledger (F1–F56) & milestone matrix (M1–M31)
+├── PROJECT.md                   # Master feature ledger (F1–F59) & milestone matrix (M1–M34)
 ├── README.md                    # Repository documentation & quick start
 ├── AGENTS.md                    # Agent protocols & full granular file navigation map
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001–0031)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001–0034)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
@@ -114,7 +114,7 @@ Cosmic Engine V2.0/
 ```
 
 > [!TIP]
-> For the complete, granular submodule file tree with all individual SVG canvas layers and decomposed modules, see [`AGENTS.md`](./AGENTS.md#3-repository-architecture).
+> For the complete, granular submodule file tree with all individual SVG canvas layers and decomposed modules, see [`PROJECT.md`](./PROJECT.md#code-layout).
 
 ---
 
@@ -185,6 +185,10 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **LRU Cache Utility** | `src/utils/lruCache.test.ts` (14 tests) | Generic LRU cache eviction order, capacity limits, promotion on get/set, and Map iterator ordering |
 | **Solstice Jump Controls** | `src/components/layout/chronometer/SolsticeJumpControls.test.tsx` (9 tests) | Astronomical turning point buttons (Mar/Sep Equinox, Jun/Dec Solstice), UTC date dispatch, and twilight badge styles |
 | **Astrolabe Dial Component** | `src/components/layout/chronometer/AstrolabeDial.test.tsx` (21 tests) | Concentric SVG control rings (Date, Time, Lon, Lat), observer-locked camera yaw calculations, latitude rail positioning, pointer event callbacks, and rollover boundaries |
+| **Atomic Hover Store** | `src/store/hoverStore.test.ts` (4 tests) | High-frequency ribbon scrubber state isolation (`hoveredDate`, `hoveredTime`, `hoverPosition`), shallow equality memoization, and zero-cascade subscriber notifications |
+| **Terminator Ground Tracks Math** | `src/utils/cosmicMath/terminatorTracks.test.ts` (15 tests) | 24-hour diurnal ground tracks ($[-12\text{h}, +12\text{h}]$) for Subsolar and Sublunar points, antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons, and temporal vector dashes |
+| **Armillary Interactions Hook** | `src/components/widgets/armillary/useArmillaryInteractions.test.ts` (24 tests) | Astrolabe touch and pointer interactions, camera dragging state isolation, model click-to-snap target dispatch, Free Rete angle calculation, and pointer capture lifecycles |
+| **Terminator Hover HUD Component** | `src/components/widgets/terminator/TerminatorHoverHud.test.tsx` (4 tests) | Interactive Subsolar and Sublunar point hover cards, distance and apparent diameter telemetry, $\pm 24\text{h}$ proximity-gated nodal status badges, and astronomical coordinate formatting |
 
 Run the full suite with:
 ```bash

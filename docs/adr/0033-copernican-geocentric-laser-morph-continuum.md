@@ -1,4 +1,4 @@
-# 0033. Continuous Copernican ↔ Geocentric 3D Translation, Observer-to-Laser Morph Continuum & Modular Architecture
+# ADR 0033: Continuous Copernican ↔ Geocentric 3D Translation, Observer-to-Laser Morph Continuum & Modular Architecture
 
 Date: 2026-09-20  
 Status: Accepted  
