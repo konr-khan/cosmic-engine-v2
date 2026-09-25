@@ -101,6 +101,11 @@ export function calculateEarthObliquity(julianDate: JulianDate | number = J2000_
 export const MOON_ORBIT_INCLINATION_DEG: Degrees = asDegrees(5.145);
 
 /**
+ * Major lunar standstill maximum declination in degrees (23.439° + 5.145° = 28.584°).
+ */
+export const LUNAR_MAJOR_STANDSTILL_DEG: Degrees = asDegrees(28.584);
+
+/**
  * Lunar perigee distance threshold in kilometers.
  */
 export const LUNAR_PERIGEE_THRESHOLD_KM = 365000;

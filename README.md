@@ -44,7 +44,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 50 modules, 810 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 50 modules, 814 tests)
 
 ---
 
@@ -136,14 +136,14 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 50 specialized domain suites (**810 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 50 specialized domain suites (**814 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
 | **Core Astronomy & Time** | `src/utils/cosmicMath/core.test.ts` (41 tests) | Julian date engines, UTC date invariance & `createUTCDate`, time parsing & formatting, spherical linear interpolation (`slerp3D`), physical constants (`astroConstants`), and floating-point degeneracy protection |
 | **Solar Ephemeris & Twilight** | `src/utils/cosmicMath/solar.test.ts` (16 tests) | Solar declination, equation of time, daily solar events (rise/set), civil/nautical/astronomical twilight bands, polar boundaries (midnight sun, polar night), and annual solar matrix |
 | **Lunar Ephemeris & Illumination** | `src/utils/cosmicMath/lunar.test.ts` (16 tests) | Meeus lunar series, true geocentric phase angle ($i$), disc illumination ($k$), 2-step iterative rise/set solver, parallactic angle, nodal precession, and annual lunar matrix |
-| **Today Sky & Diurnal Kinematics** | `src/utils/cosmicMath/todaySky.test.ts` (66 tests) | Sky dome coordinate projection ($X, Y$), diurnal path generation, celestial meridian coordinate projection and swaths (`calculateMeridianPoint`, `generateMeridianSwathD`), radial tick pins, monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification |
+| **Today Sky & Diurnal Kinematics** | `src/utils/cosmicMath/todaySky.test.ts` (70 tests) | Sky dome coordinate projection ($X, Y$), diurnal path generation, celestial meridian coordinate projection and swaths (`calculateMeridianPoint`, `generateMeridianSwathD`), radial tick pins, monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification |
 | **Eclipse Geometry & Presets** | `src/utils/cosmicMath/eclipse.test.ts` (25 tests) | Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`) |
 | **3D Obliquity & Earth Projections** | `src/utils/cosmicMath/projection.test.ts` (11 tests) | Earth axial obliquity ($23.439^circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping |
 | **Armillary Continuum & Projections** | `src/utils/cosmicMath/armillary/armillary.test.ts` (54 tests) | Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0secepsilon$) |

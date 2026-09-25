@@ -18,7 +18,8 @@ import {
   calculateCulminationBearing,
   calculateRiseSetAzimuth,
   calculateLunarExtremaCulminations,
-  calculateParallacticAngle
+  calculateParallacticAngle,
+  LUNAR_MAJOR_STANDSTILL_DEG,
 } from '../../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../../types';
 import { EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from '../SkyDomeBase';
@@ -33,7 +34,7 @@ export interface UseMoonElevationMathParams {
   isNodalModeActive: boolean;
 }
 
-export const LUNAR_MAX_DEC = 28.584;
+export const LUNAR_MAX_DEC = Number(LUNAR_MAJOR_STANDSTILL_DEG);
 
 export const useMoonElevationMath = ({
   orbitalData,

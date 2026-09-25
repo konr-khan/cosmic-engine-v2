@@ -21,6 +21,9 @@ import {
   MeridianDiurnalChord,
   PolarMeridianCounterpart,
   MeridianPoint,
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG,
+  getPolarColureInfo,
+  PolarColureInfo,
 } from '../../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../../types';
 import {
@@ -42,7 +45,7 @@ export interface UseSunMeridianMathParams {
   isTwilightModeActive: boolean;
 }
 
-export const OBLIQUITY = 23.439281;
+export const OBLIQUITY = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
 
 export const getTwilightTier = (alt: number): string => {
   if (alt >= 0) return 'Daylight';
@@ -103,7 +106,11 @@ export const useSunMeridianMath = ({
 
   const absLat = Math.abs(latitude);
   const isTropical = absLat <= OBLIQUITY;
-  const isPolar = absLat >= 89.9;
+  const polarColureInfo: PolarColureInfo = useMemo(
+    () => getPolarColureInfo(latitude),
+    [latitude]
+  );
+  const { isPolar, isNorth } = polarColureInfo;
 
   const juneSolstice: CulminationInfo = useMemo(
     () => calculateCulminationBearing(latitude, OBLIQUITY),
@@ -165,7 +172,6 @@ export const useSunMeridianMath = ({
     return dayOfYear < 172 || dayOfYear >= 355;
   }, [sunLambda, currentDate]);
 
-  const isNorth = latitude >= 0;
   const summerSolsticeColor = isNorth ? '#fbbf24' : '#d97706';
   const winterSolsticeColor = isNorth ? '#d97706' : '#fbbf24';
   const isApproachingSummer = isNorth ? isApproachingJune : !isApproachingJune;
@@ -458,6 +464,7 @@ export const useSunMeridianMath = ({
     equinoxCulmination,
     absLat,
     isTropical,
+    polarColureInfo,
     isPolar,
     isNorth,
     juneSolstice,

@@ -39,6 +39,7 @@ import {
   SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
   EARTH_AXIAL_OBLIQUITY_J2000_DEG,
   calculateEarthObliquity,
+  LUNAR_MAJOR_STANDSTILL_DEG,
   LUNAR_PERIGEE_THRESHOLD_KM,
   LUNAR_APOGEE_THRESHOLD_KM,
   calculateGMST,
@@ -439,6 +440,7 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
       expect(SOLAR_IRRADIANCE_1AU_WM2).toBe(1361.0);
       expect(SUN_ANGULAR_DIAMETER_1AU_ARCMIN).toBeCloseTo(31.986, 3);
       expect(EARTH_AXIAL_OBLIQUITY_J2000_DEG).toBeCloseTo(23.439281, 6);
+      expect(LUNAR_MAJOR_STANDSTILL_DEG).toBeCloseTo(28.584, 3);
       expect(LUNAR_PERIGEE_THRESHOLD_KM).toBe(365000);
       expect(LUNAR_APOGEE_THRESHOLD_KM).toBe(400000);
     });

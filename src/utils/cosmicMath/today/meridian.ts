@@ -467,3 +467,37 @@ export const calculateLunarDeclinationVelocity = (
   };
 };
 
+export interface PolarColureInfo {
+  isPolar: boolean;
+  isNorth: boolean;
+  baselineColure: string;
+  zenithLabel: string;
+  noonColure: string;
+  midnightColure: string;
+  perspectiveLabel: string;
+}
+
+/**
+ * Derives canonical polar colure baseline, zenith, and culmination labels
+ * for observers at geographic poles (|latitude| >= 89.9°).
+ * Rectifies the polar directional singularity where all horizontal bearings converge.
+ *
+ * @param latitude - Observer geographic latitude in decimal degrees
+ * @returns PolarColureInfo structure with colure and perspective strings
+ */
+export function getPolarColureInfo(latitude: number): PolarColureInfo {
+  const isPolar = Math.abs(latitude) >= 89.9;
+  const isNorth = latitude >= 0;
+  return {
+    isPolar,
+    isNorth,
+    baselineColure: isNorth ? 'S (0°) — Z (+90°) — S (180°)' : 'N (0°) — Z (-90°) — N (180°)',
+    zenithLabel: isNorth ? 'Z (+90°)' : 'Z (-90°)',
+    noonColure: isNorth ? 'S (0° Prime)' : 'N (0° Prime)',
+    midnightColure: isNorth ? 'S (180° Anti)' : 'N (180° Anti)',
+    perspectiveLabel: isNorth
+      ? 'Looking South · 0° Meridian Front · Transits Continuous'
+      : 'Looking North · 0° Meridian Front · Transits Continuous'
+  };
+}
+

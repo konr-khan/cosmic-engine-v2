@@ -25,6 +25,7 @@ import {
   calculateMeridianDiurnalChord,
   calculatePolarMeridianCounterpart,
   calculateLunarDeclinationVelocity,
+  getPolarColureInfo,
   EL_R, 
   EL_CX, 
   EL_CY 
@@ -983,6 +984,62 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       expect(typeof vel.isApproachingMax).toBe('boolean');
       // Lunar declination speed is bounded by ~0.8°/hour
       expect(Math.abs(vel.velocityDegPerHour)).toBeLessThan(1.0);
+    });
+  });
+
+  describe('Polar Colure Helper (getPolarColureInfo)', () => {
+    it('returns canonical North Pole colure configuration for latitude 90°', () => {
+      const info = getPolarColureInfo(90);
+      expect(info.isPolar).toBe(true);
+      expect(info.isNorth).toBe(true);
+      expect(info.baselineColure).toBe('S (0°) — Z (+90°) — S (180°)');
+      expect(info.zenithLabel).toBe('Z (+90°)');
+      expect(info.noonColure).toBe('S (0° Prime)');
+      expect(info.midnightColure).toBe('S (180° Anti)');
+      expect(info.perspectiveLabel).toBe('Looking South · 0° Meridian Front · Transits Continuous');
+    });
+
+    it('returns canonical South Pole colure configuration for latitude -90°', () => {
+      const info = getPolarColureInfo(-90);
+      expect(info.isPolar).toBe(true);
+      expect(info.isNorth).toBe(false);
+      expect(info.baselineColure).toBe('N (0°) — Z (-90°) — N (180°)');
+      expect(info.zenithLabel).toBe('Z (-90°)');
+      expect(info.noonColure).toBe('N (0° Prime)');
+      expect(info.midnightColure).toBe('N (180° Anti)');
+      expect(info.perspectiveLabel).toBe('Looking North · 0° Meridian Front · Transits Continuous');
+    });
+
+    it('identifies exact 89.9° boundary threshold correctly', () => {
+      const northEdge = getPolarColureInfo(89.9);
+      expect(northEdge.isPolar).toBe(true);
+      expect(northEdge.isNorth).toBe(true);
+
+      const southEdge = getPolarColureInfo(-89.9);
+      expect(southEdge.isPolar).toBe(true);
+      expect(southEdge.isNorth).toBe(false);
+
+      const subNorth = getPolarColureInfo(89.89);
+      expect(subNorth.isPolar).toBe(false);
+      expect(subNorth.isNorth).toBe(true);
+
+      const subSouth = getPolarColureInfo(-89.89);
+      expect(subSouth.isPolar).toBe(false);
+      expect(subSouth.isNorth).toBe(false);
+    });
+
+    it('handles temperate and equatorial latitudes with non-polar flag', () => {
+      const temperate = getPolarColureInfo(47.06);
+      expect(temperate.isPolar).toBe(false);
+      expect(temperate.isNorth).toBe(true);
+
+      const equator = getPolarColureInfo(0);
+      expect(equator.isPolar).toBe(false);
+      expect(equator.isNorth).toBe(true);
+
+      const southern = getPolarColureInfo(-33.86);
+      expect(southern.isPolar).toBe(false);
+      expect(southern.isNorth).toBe(false);
     });
   });
 });

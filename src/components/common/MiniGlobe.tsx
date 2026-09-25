@@ -16,6 +16,7 @@ import { Vector3D } from '../../types/coordinates';
 import { calculateEarthSideGeometry, calculateEarthAxialGeometry } from '../../utils/cosmicMath/projection';
 import { rotateEuler3D } from '../../utils/cosmicMath/armillary/coordinates';
 import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
+import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../../utils/cosmicMath';
 import { 
   MiniGlobeViewMode, 
   MiniGlobeCamera, 
@@ -110,7 +111,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   latitude = 47.06,
   longitude = -122.81,
   timeOfDay = 12.0,
-  obliquityDeg = 23.439281,
+  obliquityDeg = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG),
   showTerminator = true,
   showTwilightBands = true,
   showContinents = true,
@@ -137,7 +138,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   const dayGradId = `${uid}-day-grad`;
 
   const safeRadius = Math.max(0, Number(radius) || 0);
-  const safeObliquity = Number.isFinite(Number(obliquityDeg)) ? Number(obliquityDeg) : 23.439281;
+  const safeObliquity = Number.isFinite(Number(obliquityDeg)) ? Number(obliquityDeg) : Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
   const epsRad = toRadians(safeObliquity);
   const sunLambdaVal = Number.isFinite(Number(sunLambdaDeg)) ? Number(sunLambdaDeg) : 0;
   const latVal = Number.isFinite(Number(latitude)) ? Number(latitude) : 0;
@@ -244,7 +245,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
     // Subsolar vector in camera coordinates
     const decVal = Number.isFinite(Number(declination))
       ? Number(declination)
-      : (sunLambdaVal ? toDegrees(Math.asin(Math.sin(toRadians(23.439281)) * Math.sin(toRadians(sunLambdaVal)))) : 0);
+      : (sunLambdaVal ? toDegrees(Math.asin(Math.sin(toRadians(Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG))) * Math.sin(toRadians(sunLambdaVal)))) : 0);
     const decRad = toRadians(decVal);
     const sEq: Vector3D = {
       x: 0,

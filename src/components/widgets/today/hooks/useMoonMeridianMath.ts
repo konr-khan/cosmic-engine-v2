@@ -26,6 +26,9 @@ import {
   MeridianDiurnalChord,
   PolarMeridianCounterpart,
   MeridianPoint,
+  LUNAR_MAJOR_STANDSTILL_DEG,
+  getPolarColureInfo,
+  PolarColureInfo,
 } from '../../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../../types';
 import {
@@ -49,7 +52,7 @@ export interface UseMoonMeridianMathParams {
 }
 
 // Major lunar standstill: 23.439° + 5.145° = 28.584°
-export const LUNAR_MAX_DEC = 28.584;
+export const LUNAR_MAX_DEC = Number(LUNAR_MAJOR_STANDSTILL_DEG);
 
 export const useMoonMeridianMath = ({
   orbitalData,
@@ -93,7 +96,11 @@ export const useMoonMeridianMath = ({
 
   // --- Culminations & Bearings ---
   const absLat = Math.abs(latitude);
-  const isPolar = absLat >= 89.9;
+  const polarColureInfo: PolarColureInfo = useMemo(
+    () => getPolarColureInfo(latitude),
+    [latitude]
+  );
+  const { isPolar } = polarColureInfo;
 
   const todayCulmination: CulminationInfo = useMemo(
     () => calculateCulminationBearing(latitude, Number(moonDeclination)),
@@ -482,6 +489,7 @@ export const useMoonMeridianMath = ({
     monthMax,
     monthMin,
     monthlyBounds,
+    polarColureInfo,
     isPolar,
     isStandstillActive,
     isStandstillEpoch,

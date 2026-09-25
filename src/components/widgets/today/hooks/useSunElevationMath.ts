@@ -15,7 +15,8 @@ import {
   getSolarTwilightStatus,
   calculateCulminationBearing,
   calculateRiseSetAzimuth,
-  calculateSolsticeCulminations
+  calculateSolsticeCulminations,
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG
 } from '../../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../../types';
 import { EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from '../SkyDomeBase';
@@ -28,7 +29,7 @@ export interface UseSunElevationMathParams {
   isTwilightModeActive: boolean;
 }
 
-export const OBLIQUITY = 23.439281;
+export const OBLIQUITY = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
 
 export const useSunElevationMath = ({
   solarData,
