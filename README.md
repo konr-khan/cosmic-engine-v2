@@ -44,7 +44,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 50 modules, 814 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 51 modules, 840 tests)
 
 ---
 
@@ -136,7 +136,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 50 specialized domain suites (**814 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 51 specialized domain suites (**840 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |

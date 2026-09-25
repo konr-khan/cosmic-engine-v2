@@ -1,10 +1,4 @@
 import { 
-  calculateLunarEvents, 
-  calculateEclipseData,
-  calculateAnnualSolarMatrix,
-  calculateAnnualLunarMatrix
-} from '../utils/cosmicMath';
-import { 
   EphemerisCalculationParams, 
   EphemerisWorkerPayload,
   EphemerisWorkerRequest,
@@ -18,12 +12,10 @@ import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy
 import { Latitude, Longitude } from '../types/units';
 import { LruCache } from '../utils/lruCache';
 import {
-  sanitizeYear,
-  sanitizeLatitude,
-  sanitizeLongitude,
-  sanitizeJulianDate,
-  sanitizeTimeOfDay
-} from './workerSanitizers';
+  executeSyncFallbackForEntry,
+  executeSyncAnnualSolarFallback,
+  executeSyncAnnualLunarFallback
+} from './workerFallback';
 
 export interface PendingThrottledEphemerisEntry {
   signature: string;
@@ -132,104 +124,12 @@ export class EphemerisWorkerManager {
    * Computes synchronous fallback ephemeris calculations and dispatches to registered callbacks.
    */
   public _executeSyncFallbackForEntry(entry: PendingRequestEntry): void {
-    if (!entry || entry.callbacks.size === 0) return;
-    try {
-      if (entry.type === 'ANNUAL_SOLAR') {
-        const safeYear = sanitizeYear(entry.params.year);
-        const safeLat = sanitizeLatitude(entry.params.latitude);
-        let annualSolar: AnnualSolarMatrixItem[] = [];
-        try {
-          annualSolar = calculateAnnualSolarMatrix(safeYear, safeLat);
-          this._setInAnnualCache(this.annualSolarCache, entry.signature, annualSolar);
-        } catch (calcError) {
-          console.error('[EphemerisWorkerManager] Annual solar sync calculation failed:', calcError);
-        }
-        const payload = { annualSolar };
-        entry.callbacks.forEach((cb) => {
-          try {
-            cb(payload);
-          } catch (e) {
-            console.error('Annual solar fallback callback error:', e);
-          }
-        });
-      } else if (entry.type === 'ANNUAL_LUNAR') {
-        const safeYear = sanitizeYear(entry.params.year);
-        const safeLat = sanitizeLatitude(entry.params.latitude);
-        const safeLon = sanitizeLongitude(entry.params.longitude);
-        let annualLunar: AnnualLunarMatrixItem[] = [];
-        try {
-          annualLunar = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
-          this._setInAnnualCache(this.annualLunarCache, entry.signature, annualLunar);
-        } catch (calcError) {
-          console.error('[EphemerisWorkerManager] Annual lunar sync calculation failed:', calcError);
-        }
-        const payload = { annualLunar };
-        entry.callbacks.forEach((cb) => {
-          try {
-            cb(payload);
-          } catch (e) {
-            console.error('Annual lunar fallback callback error:', e);
-          }
-        });
-      } else {
-        const safeLat = sanitizeLatitude(entry.params.latitude);
-        const safeLon = sanitizeLongitude(entry.params.longitude);
-        const safeJD = sanitizeJulianDate(entry.params.julianDate);
-        const safeTime = sanitizeTimeOfDay(entry.params.timeOfDay);
-        const { calculateLunar, calculateEclipse } = entry.params;
-
-        let lunarEvents = null;
-        let eclipse = null;
-
-        if (calculateLunar) {
-          try {
-            const JD_midnight = Number(safeJD) - (safeTime / 24);
-            lunarEvents = calculateLunarEvents(safeLat, safeLon, JD_midnight, safeTime);
-          } catch (lunarError) {
-            console.error('[EphemerisWorkerManager] Lunar events fallback calculation failed:', lunarError);
-          }
-        }
-
-        if (calculateEclipse) {
-          try {
-            eclipse = calculateEclipseData(safeJD);
-          } catch (eclipseError) {
-            console.error('[EphemerisWorkerManager] Eclipse fallback calculation failed:', eclipseError);
-          }
-        }
-
-        const payload: EphemerisWorkerPayload = {
-          lunarEvents,
-          eclipse,
-          timestamp: Date.now()
-        };
-        entry.callbacks.forEach((cb) => {
-          try {
-            cb(payload);
-          } catch (e) {
-            console.error('Ephemeris fallback callback error:', e);
-          }
-        });
-      }
-    } catch (e) {
-      console.error('[EphemerisWorkerManager] Ephemeris synchronous fallback calculation failed:', e);
-      // Failsafe callback dispatch: never leave callers hung in a zombie state
-      try {
-        if (entry.type === 'ANNUAL_SOLAR') {
-          entry.callbacks.forEach((cb) => {
-            try { cb({ annualSolar: [] }); } catch {}
-          });
-        } else if (entry.type === 'ANNUAL_LUNAR') {
-          entry.callbacks.forEach((cb) => {
-            try { cb({ annualLunar: [] }); } catch {}
-          });
-        } else {
-          entry.callbacks.forEach((cb) => {
-            try { cb({ lunarEvents: null, eclipse: null, timestamp: Date.now() }); } catch {}
-          });
-        }
-      } catch {}
-    }
+    executeSyncFallbackForEntry(
+      entry,
+      this.annualSolarCache,
+      this.annualLunarCache,
+      (c, k, v) => this._setInAnnualCache(c, k, v)
+    );
   }
 
   /**
@@ -628,16 +528,14 @@ export class EphemerisWorkerManager {
 
     // Synchronous fallback if worker unavailable
     if (!this.isAvailable()) {
-      const safeYear = sanitizeYear(year);
-      const safeLat = sanitizeLatitude(latitude);
-      let annualSolar: AnnualSolarMatrixItem[] = [];
-      try {
-        annualSolar = calculateAnnualSolarMatrix(safeYear, safeLat);
-        this._setInAnnualCache(this.annualSolarCache, signature, annualSolar);
-      } catch (e) {
-        console.error('Annual solar sync execution failed:', e);
-      }
-      onResult({ annualSolar });
+      const result = executeSyncAnnualSolarFallback(
+        year,
+        latitude,
+        signature,
+        this.annualSolarCache,
+        (c, k, v) => this._setInAnnualCache(c, k, v)
+      );
+      onResult(result);
       return () => {};
     }
 
@@ -655,16 +553,14 @@ export class EphemerisWorkerManager {
 
     const worker = this._getWorker();
     if (!worker) {
-      const safeYear = sanitizeYear(year);
-      const safeLat = sanitizeLatitude(latitude);
-      let annualSolar: AnnualSolarMatrixItem[] = [];
-      try {
-        annualSolar = calculateAnnualSolarMatrix(safeYear, safeLat);
-        this._setInAnnualCache(this.annualSolarCache, signature, annualSolar);
-      } catch (e) {
-        console.error('Annual solar sync execution failed:', e);
-      }
-      onResult({ annualSolar });
+      const result = executeSyncAnnualSolarFallback(
+        year,
+        latitude,
+        signature,
+        this.annualSolarCache,
+        (c, k, v) => this._setInAnnualCache(c, k, v)
+      );
+      onResult(result);
       return () => {};
     }
 
@@ -714,17 +610,15 @@ export class EphemerisWorkerManager {
 
     // Synchronous fallback if worker unavailable
     if (!this.isAvailable()) {
-      const safeYear = sanitizeYear(year);
-      const safeLat = sanitizeLatitude(latitude);
-      const safeLon = sanitizeLongitude(longitude);
-      let annualLunar: AnnualLunarMatrixItem[] = [];
-      try {
-        annualLunar = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
-        this._setInAnnualCache(this.annualLunarCache, signature, annualLunar);
-      } catch (e) {
-        console.error('Annual lunar sync execution failed:', e);
-      }
-      onResult({ annualLunar });
+      const result = executeSyncAnnualLunarFallback(
+        year,
+        latitude,
+        longitude,
+        signature,
+        this.annualLunarCache,
+        (c, k, v) => this._setInAnnualCache(c, k, v)
+      );
+      onResult(result);
       return () => {};
     }
 
@@ -742,17 +636,15 @@ export class EphemerisWorkerManager {
 
     const worker = this._getWorker();
     if (!worker) {
-      const safeYear = sanitizeYear(year);
-      const safeLat = sanitizeLatitude(latitude);
-      const safeLon = sanitizeLongitude(longitude);
-      let annualLunar: AnnualLunarMatrixItem[] = [];
-      try {
-        annualLunar = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
-        this._setInAnnualCache(this.annualLunarCache, signature, annualLunar);
-      } catch (e) {
-        console.error('Annual lunar sync execution failed:', e);
-      }
-      onResult({ annualLunar });
+      const result = executeSyncAnnualLunarFallback(
+        year,
+        latitude,
+        longitude,
+        signature,
+        this.annualLunarCache,
+        (c, k, v) => this._setInAnnualCache(c, k, v)
+      );
+      onResult(result);
       return () => {};
     }
 
