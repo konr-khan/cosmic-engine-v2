@@ -18,15 +18,8 @@ export interface ArmillaryBeadsLayerProps {
   isDragging?: boolean;
   lunarNodes?: ArmillaryLunarNodes;
   projectionMode?: ArmillaryProjectionMode;
-  modelType?: 'orbit' | 'apparent' | 'rete' | 'rojas' | 'horizon' | 'heliocentric' | 'geocentric' | 'stereographic';
   morphLambda?: number;
-  lambda?: number;
   camera?: ArmillaryCameraState | { pitch?: number; yaw?: number; roll?: number };
-  pitch?: number;
-  yaw?: number;
-  roll?: number;
-  observerLat?: number;
-  observerLon?: number;
   latitude?: number;
   longitude?: number;
   timeOfDay?: number;
@@ -51,15 +44,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   hoveredMilestone,
   lunarNodes,
   projectionMode,
-  modelType,
   morphLambda,
-  lambda,
   camera,
-  pitch,
-  yaw,
-  roll,
-  observerLat,
-  observerLon,
   latitude,
   longitude,
   timeOfDay = 12.0,
@@ -77,11 +63,9 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   onTargetClick
 }) => {
   // Derive effective mode, morph progress lambda, and camera angles
-  const effectiveLambda = morphLambda !== undefined ? morphLambda : (lambda !== undefined ? lambda : 0);
-  const rawMode = modelType ?? projectionMode ?? 'apparent';
-
-  const isHeliocentric = rawMode === 'heliocentric' || rawMode === 'orbit' || !!isOrbital;
-  const isGeocentric = rawMode === 'geocentric' || rawMode === 'apparent';
+  const effectiveLambda = morphLambda ?? 0;
+  const isHeliocentric = projectionMode === 'heliocentric' || !!isOrbital;
+  const isGeocentric = projectionMode === 'geocentric';
 
   // In 3D Apparent mode & 3D Heliocentric Orbit mode during 3D phase (effectiveLambda <= 0.45),
   // retain 3D Euler orientation for Earth and Moon.
@@ -93,12 +77,12 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
     miniGlobeViewMode = 'flat';
   }
 
-  const cameraPitch = camera?.pitch ?? pitch ?? 0;
-  const cameraYaw = camera?.yaw ?? yaw ?? 0;
-  const cameraRoll = camera?.roll ?? roll ?? 0;
+  const cameraPitch = camera?.pitch ?? 0;
+  const cameraYaw = camera?.yaw ?? 0;
+  const cameraRoll = camera?.roll ?? 0;
 
-  const lat = observerLat ?? latitude ?? 47.06;
-  const lon = observerLon ?? longitude ?? -122.81;
+  const lat = latitude ?? 47.06;
+  const lon = longitude ?? -122.81;
   const sunLambda = sunLambdaDeg ?? (sun ? Number(sun.lambdaDeg ?? sun.raDeg ?? 0) : 0);
 
   const is3DView = miniGlobeViewMode === 'euler3d';
