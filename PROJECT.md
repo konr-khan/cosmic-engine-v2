@@ -116,6 +116,10 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F62 | Edge-On 3D Ring Solid Line Unification | Camera-space normal calculation $|n_z| \le 0.08$ smoothly unifying edge-on rings to solid paths (`fullPathD`), eliminating half-dashed line artifacts | M35 | ADR-0035 |
 | F63 | Universal `<MiniMoon />` Component Primitive & Axial Dark Backside Harmonization | Reusable SVG Moon primitive with 3D analytical limb, 2D apparent phase, dark backside viewing (`isDark={true}` down Sun-Earth sightline), corona glow, and node-coded dashed/solid red/blue outlines | M35 | ADR-0035 |
 | F64 | Gyro-Morph Nodal Plane Alignment Pill (`[ ☊ Nodal ]`) | Orbit view toggle pill snapping camera to pitch $0^\circ$ and yaw $(\Omega + 90^\circ) \bmod 360^\circ$ via 650 ms cubic ease-out spring, exposing $5.145^\circ$ lunar orbital inclination edge-on | M35 | ADR-0035 |
+| F65 | SSoT Astronomical Constants & Polar Colure Helper | Unified `OBLIQUITY` and `LUNAR_MAX_DEC` with `astroConstants.ts`; extracted pure `getPolarColureInfo()` helper in `meridian.ts` with 4 new boundary unit tests | M36 | ADR-0036 |
+| F66 | Modular Worker Synchronous Fallback Decomposition | Extracted `workerFallback.ts` module with 26 unit tests, cutting 104 net lines from `ephemerisWorkerManager.ts` while preserving public method contracts for test spies | M36 | ADR-0036 |
+| F67 | `ArmillaryBeadsLayer` Prop Contract Normalization | Purged legacy prop aliases (`modelType`, `lambda`, `pitch`/`yaw`, `observerLat`) and migrated all 14 test call sites to canonical structured props | M36 | ADR-0036 |
+| F68 | High-LOC Test Suite Partitioning & Vitest Parallelization | Partitioned `ArmillaryWidget.test.tsx` and `armillary.test.ts` into 5 focused sub-suites with 0 lost assertions, cutting peak file size by 55.3% to $\le 1,050$ lines across the entire codebase | M36 | ADR-0036 |
 
 ## Milestones
 
@@ -127,7 +131,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M35)
+### Recent Milestones (M21–M36)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -145,6 +149,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M33 | Copernican ↔ Geocentric Translation, Observer-to-Laser Morph & Modular Controls | `src/utils/cosmicMath/armillary/`, `src/components/widgets/armillary/`, ADR-0033 | M1–M32 | DONE |
 | M34 | Terminator Map Modular Decomposition & Worker Concurrency Hardening | `useTerminatorMapMath.ts`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx`, `ephemerisWorkerManager.ts`, ADR-0034 | M1–M33 | DONE |
 | M35 | Visual Polish, Universal MiniMoon Harmonization & Gyro-Morph Nodal Sightline | `MiniMoon.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx`, `useStagedCamera.ts`, `ArmillaryModePills.tsx`, `ArmillaryRingsLayer.tsx`, `MacroOrbitView.tsx`, `LunarRibbonChart.tsx`, ADR-0035 | M1–M34 | DONE |
+| M36 | Codebase Health, SSoT Centralization, Worker Fallbacks & Test Partitioning | `astroConstants.ts`, `workerFallback.ts`, `ephemerisWorkerManager.ts`, `ArmillaryBeadsLayer.tsx`, `ArmillaryWidget.test.tsx`, `armillary.test.ts`, ADR-0036 | M1–M35 | DONE |
 
 ## Interface Contracts & Domain Models
 
