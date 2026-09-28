@@ -120,6 +120,8 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F66 | Modular Worker Synchronous Fallback Decomposition | Extracted `workerFallback.ts` module with 26 unit tests, cutting 104 net lines from `ephemerisWorkerManager.ts` while preserving public method contracts for test spies | M36 | ADR-0036 |
 | F67 | `ArmillaryBeadsLayer` Prop Contract Normalization | Purged legacy prop aliases (`modelType`, `lambda`, `pitch`/`yaw`, `observerLat`) and migrated all 14 test call sites to canonical structured props | M36 | ADR-0036 |
 | F68 | High-LOC Test Suite Partitioning & Vitest Parallelization | Partitioned `ArmillaryWidget.test.tsx` and `armillary.test.ts` into 5 focused sub-suites with 0 lost assertions, cutting peak file size by 55.3% to $\le 1,050$ lines across the entire codebase | M36 | ADR-0036 |
+| F69 | Circular Dependency Elimination & Sub-Barrel Symmetry | Severed `formatters.ts` dependency on `core.ts` via local clamp, removed formatter re-exports from `core.ts`, and restored sub-barrel test symmetry in `TerminatorMap.test.tsx` | M37 | ADR-0037 |
+| F70 | Core Astro Math & Formatter Domain Decomposition | Consolidated `formatTime` into `formatters.ts`, extracted `getSectorPath` into `polarDialGeometry.ts`, establishing 100% pure Meeus domain math in `core.ts` | M37 | ADR-0037 |
 
 ## Milestones
 
@@ -131,7 +133,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M36)
+### Recent Milestones (M21–M37)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -150,6 +152,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M34 | Terminator Map Modular Decomposition & Worker Concurrency Hardening | `useTerminatorMapMath.ts`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx`, `ephemerisWorkerManager.ts`, ADR-0034 | M1–M33 | DONE |
 | M35 | Visual Polish, Universal MiniMoon Harmonization & Gyro-Morph Nodal Sightline | `MiniMoon.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx`, `useStagedCamera.ts`, `ArmillaryModePills.tsx`, `ArmillaryRingsLayer.tsx`, `MacroOrbitView.tsx`, `LunarRibbonChart.tsx`, ADR-0035 | M1–M34 | DONE |
 | M36 | Codebase Health, SSoT Centralization, Worker Fallbacks & Test Partitioning | `astroConstants.ts`, `workerFallback.ts`, `ephemerisWorkerManager.ts`, `ArmillaryBeadsLayer.tsx`, `ArmillaryWidget.test.tsx`, `armillary.test.ts`, ADR-0036 | M1–M35 | DONE |
+| M37 | Circular Dependency Elimination & Astro-Math Core Decomposition | `src/utils/formatters.ts`, `src/utils/cosmicMath/core.ts`, `polarDialGeometry.ts`, `DEAD_ENDS.md`, ADR-0037 | M1–M36 | DONE |
 
 ## Interface Contracts & Domain Models
 
