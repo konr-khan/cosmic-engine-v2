@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { TerminatorMap } from './TerminatorMap';
+import TerminatorMap from '.';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
 import { julianDateToDate, calculateTrueLunarNodeEvents, J2000_JD } from '../../../utils/cosmicMath';
 

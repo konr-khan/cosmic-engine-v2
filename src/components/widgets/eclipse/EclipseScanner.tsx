@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { ECLIPSE_PRESETS, formatYMD } from '../../../utils/cosmicMath';
+import { ECLIPSE_PRESETS } from '../../../utils/cosmicMath';
+import { formatYMD } from '../../../utils/formatters';
 
 export interface EclipseDiscoveryItem {
   date: Date;

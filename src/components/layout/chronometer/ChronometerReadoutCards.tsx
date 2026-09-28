@@ -1,7 +1,8 @@
 import React from 'react';
 import { Globe, Compass, Clock } from 'lucide-react';
 import { BufferedInput } from '../../controls/BufferedInput';
-import { formatYMD, parseTimeString, formatTimeHHMM, getDayOfYear } from '../../../utils/cosmicMath';
+import { getDayOfYear } from '../../../utils/cosmicMath';
+import { formatYMD, parseTimeString, formatTimeHHMM } from '../../../utils/formatters';
 
 export { parseTimeString, formatTimeHHMM };
 

@@ -3,8 +3,9 @@
  * Date, time, and numerical formatting and string parsing utilities.
  */
 
-import { clamp } from './cosmicMath/core';
 import { HoursDecimal } from '../types/units';
+
+const clamp = (val: number, min: number, max: number): number => Math.max(min, Math.min(max, val));
 
 /**
  * Formats a Date object as a YYYY-MM-DD string using UTC calendar components.
