@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { Sun } from 'lucide-react';
-import { formatTime } from '../../../utils/cosmicMath';
+import { formatTime } from '../../../utils/formatters';
 import { SolarAlmanacData } from '../../../types';
 import { SkyDomeBase } from './SkyDomeBase';
 import { SOLAR_TWILIGHT_BADGE_CLASSES } from './todayTokens';

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { formatYMD, parseTimeString, formatTimeHHMM } from './formatters';
+import { formatYMD, parseTimeString, formatTimeHHMM, formatTime } from './formatters';
 
 describe('formatters unit test suite', () => {
   describe('formatYMD', () => {
@@ -94,6 +94,21 @@ describe('formatters unit test suite', () => {
       expect(formatTimeHHMM(NaN)).toBe('00:00');
       expect(formatTimeHHMM(null)).toBe('00:00');
       expect(formatTimeHHMM(undefined)).toBe('00:00');
+    });
+  });
+
+  describe('formatTime', () => {
+    it('formats decimal hours to HH:MM:SS format', () => {
+      expect(formatTime(12.5)).toBe('12:30:00');
+      expect(formatTime(0)).toBe('00:00:00');
+      expect(formatTime(23.5)).toBe('23:30:00');
+      expect(formatTime(-1)).toBe('23:00:00');
+      expect(formatTime(25)).toBe('01:00:00');
+      expect(formatTime(NaN)).toBe('--:--:--');
+      expect(formatTime(null)).toBe('--:--:--');
+      expect(formatTime(undefined)).toBe('--:--:--');
+      expect(formatTime(12.99999)).toBe('13:00:00');
+      expect(formatTime(23.99999)).toBe('00:00:00');
     });
   });
 });

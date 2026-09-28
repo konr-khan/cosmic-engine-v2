@@ -1,5 +1,6 @@
 import React from 'react';
-import { formatTime, getDayOfYear } from '../../../../utils/cosmicMath';
+import { getDayOfYear } from '../../../../utils/cosmicMath';
+import { formatTime } from '../../../../utils/formatters';
 import { AnnualSolarMatrixItem } from '../../../../types';
 
 export interface SolarRibbonOverlayProps {

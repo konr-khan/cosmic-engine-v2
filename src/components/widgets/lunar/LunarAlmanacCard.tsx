@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Compass, Calendar } from 'lucide-react';
 import { 
-  formatTime, 
   getDaysInYear, 
   getDayOfYear 
 } from '../../../utils/cosmicMath';
+import { formatTime } from '../../../utils/formatters';
 import { useAnnualLunarWorker } from '../../../hooks/useEphemerisWorker';
 import { OrbitalData, AnnualLunarMatrixItem, LunarEvents } from '../../../types';
 import { LunarShortcutsRail, LunarShortcutItem } from './LunarShortcutsRail';

@@ -9,8 +9,6 @@ import {
   toDegrees,
   clamp,
   slerp3D,
-  formatTime,
-  getSectorPath,
   getJulianDate,
   dateToJulianDate,
   julianDateToDate,
@@ -91,36 +89,6 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
       expect(clamp(15, 0, 10)).toBe(10);
       expect(clamp(0, 0, 10)).toBe(0);
       expect(clamp(10, 0, 10)).toBe(10);
-    });
-
-    it('formats decimal hours to HH:MM:SS format', () => {
-      expect(formatTime(12.5)).toBe('12:30:00');
-      expect(formatTime(0)).toBe('00:00:00');
-      expect(formatTime(23.5)).toBe('23:30:00');
-      expect(formatTime(-1)).toBe('23:00:00');
-      expect(formatTime(25)).toBe('01:00:00');
-      expect(formatTime(NaN)).toBe('--:--:--');
-      expect(formatTime(null)).toBe('--:--:--');
-      expect(formatTime(undefined)).toBe('--:--:--');
-      expect(formatTime(12.99999)).toBe('13:00:00');
-      expect(formatTime(23.99999)).toBe('00:00:00');
-    });
-
-    it('generates SVG sector path wedges with getSectorPath', () => {
-      expect(getSectorPath(0, 100, 50)).toBe('');
-      const fullPath = getSectorPath(24, 100, 50);
-      expect(fullPath).toContain('M 100,50');
-      expect(fullPath).toContain('A 50,50');
-
-      const standardPath = getSectorPath(12, 100, 50);
-      expect(standardPath).toContain('M 100 100 L');
-      expect(standardPath).toContain('Z');
-
-      const longPath = getSectorPath(16, 100, 50);
-      expect(longPath).toContain('A 50 50 0 1 1'); // largeArcFlag = 1
-
-      // Symmetrical 12h daylight sector spans 180° centered around 12 o'clock (-90° in SVG)
-      expect(standardPath).toContain('A 50 50 0 0 1');
     });
   });
 

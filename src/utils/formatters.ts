@@ -107,3 +107,21 @@ export const formatTimeHHMM = (t: number | null | undefined): string => {
   const m = Math.floor((norm - h) * 60);
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
+
+/**
+ * Formats a decimal hour value (0..24) into a standard HH:MM:SS string.
+ * @param decimalHours - Decimal hour value
+ * @returns Formatted HH:MM:SS string
+ */
+export const formatTime = (decimalHours: number | null | undefined): string => {
+  if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) return "--:--:--";
+  let normalized = decimalHours % 24;
+  if (normalized < 0) normalized += 24;
+  
+  const totalSeconds = Math.round(normalized * 3600) % 86400;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+

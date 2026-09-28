@@ -1,5 +1,6 @@
 import React from 'react';
-import { formatTime, getPhaseName } from '../../../../utils/cosmicMath';
+import { getPhaseName } from '../../../../utils/cosmicMath';
+import { formatTime } from '../../../../utils/formatters';
 import { AnnualLunarMatrixItem } from '../../../../types';
 
 export interface LunarRibbonCurvesProps {

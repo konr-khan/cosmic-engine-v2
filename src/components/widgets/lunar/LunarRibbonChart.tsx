@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
-import { formatTime, getDayOfYear, getPhaseName } from '../../../utils/cosmicMath';
+import { getDayOfYear, getPhaseName } from '../../../utils/cosmicMath';
+import { formatTime } from '../../../utils/formatters';
 import { AnnualLunarMatrixItem } from '../../../types';
 import { useRibbonScrubber } from '../common/useRibbonScrubber';
 import { LunarRibbonHud, LunarRibbonAxes, LunarRibbonCurves } from './ribbon';

@@ -1,11 +1,11 @@
 import React from 'react';
 import { Sun } from 'lucide-react';
 import { 
-  formatTime, 
   toDegrees,
-  toRadians,
-  getSectorPath 
+  toRadians 
 } from '../../../utils/cosmicMath';
+import { formatTime } from '../../../utils/formatters';
+import { getSectorPath } from './polarDialGeometry';
 import { AnnualSolarMatrixItem, SolarAlmanacData } from '../../../types';
 import { useChronometerStore, selectTimeOfDay } from '../../../store/cosmicStore';
 

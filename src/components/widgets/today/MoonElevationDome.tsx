@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { Moon } from 'lucide-react';
-import { formatTime } from '../../../utils/cosmicMath';
+import { formatTime } from '../../../utils/formatters';
 import { PhaseVisual } from '../../common/PhaseVisual';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
 import { SkyDomeBase } from './SkyDomeBase';

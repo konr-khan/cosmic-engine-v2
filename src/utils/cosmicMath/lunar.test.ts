@@ -8,7 +8,6 @@ import {
   toRadians,
   toDegrees,
   clamp,
-  formatTime,
   getJulianDate,
   calculateLunarPosition,
   calculateLunarEvents,

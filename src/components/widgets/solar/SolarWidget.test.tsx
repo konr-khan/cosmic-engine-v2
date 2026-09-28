@@ -8,7 +8,8 @@ import {
   SolarRibbonChart,
   SolarRibbonAxes,
   SolarRibbonBands,
-  SolarRibbonOverlay
+  SolarRibbonOverlay,
+  getSectorPath
 } from './index';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem } from '../../../types';
@@ -246,4 +247,22 @@ describe('Solar Almanac Subsystem', () => {
     expect(html).toContain('15h 54m');
     expect(html).toContain('Noon');
   });
+
+  it('generates SVG sector path wedges with getSectorPath (0h, 24h, 12h, 16h)', () => {
+    expect(getSectorPath(0, 100, 50)).toBe('');
+    const fullPath = getSectorPath(24, 100, 50);
+    expect(fullPath).toContain('M 100,50');
+    expect(fullPath).toContain('A 50,50');
+
+    const standardPath = getSectorPath(12, 100, 50);
+    expect(standardPath).toContain('M 100 100 L');
+    expect(standardPath).toContain('Z');
+
+    const longPath = getSectorPath(16, 100, 50);
+    expect(longPath).toContain('A 50 50 0 1 1'); // largeArcFlag = 1
+
+    // Symmetrical 12h daylight sector spans 180° centered around 12 o'clock (-90° in SVG)
+    expect(standardPath).toContain('A 50 50 0 0 1');
+  });
 });
+
