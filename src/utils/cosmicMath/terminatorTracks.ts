@@ -12,7 +12,7 @@
  * - Standard Greenwich Mean Sidereal Time (GMST) and hour angle projections
  */
 
-import { JulianDate, asJulianDate } from '../../types/units';
+import { JulianDate, asJulianDate, Longitude, Degrees, toRadians, toDegrees } from '../../types/units';
 import { J2000_JD } from './astroConstants';
 import { calculateGMST, clamp } from './core';
 import { calculateSolarPosition } from './solar';
@@ -401,4 +401,127 @@ export const getLunarNodeProximityTelemetry = (
     isApproaching,
     badgeText
   };
+};
+
+export interface TerminatorShadowPaths {
+  southPath: string;
+  northPath: string;
+  combinedPath: string;
+  linePath: string;
+}
+
+/**
+ * Computes SVG polygon paths for Earth's daylight terminator shadow overlay.
+ * @param longitude - Observer center longitude (-180 to 180)
+ * @param sunLong - Solar sub-point longitude (-180 to 180)
+ * @param declination - Solar declination in degrees
+ * @param altThreshold - Solar altitude threshold in degrees (-0.833 default)
+ * @returns SVG path d attributes
+ */
+export const getTerminatorShadowPaths = (
+  longitude: Longitude, 
+  sunLong: Longitude, 
+  declination: Degrees | number, 
+  altThreshold: number = -0.833
+): TerminatorShadowPaths => {
+  const step = 2;
+  const decRad = toRadians(declination);
+  const altRad = toRadians(altThreshold);
+  const sinAlt = Math.sin(altRad);
+  const sinDec = Math.sin(decRad);
+  const cosDec = Math.cos(decRad);
+
+  const southPoints: string[] = [];
+  const northPoints: string[] = [];
+
+  for (let x = 0; x <= 360; x += step) {
+    const geoLon = longitude - 180 + x;
+    const H = toRadians(geoLon - sunLong);
+    const A = sinDec;
+    const B = cosDec * Math.cos(H);
+    const R = Math.sqrt(A * A + B * B);
+
+    let latSouth = -90;
+    let latNorth = 90;
+
+    if (R < 1e-7) {
+      if (sinAlt > 0) {
+        latSouth = 90;
+        latNorth = -90;
+      }
+    } else {
+      const ratio = sinAlt / R;
+      if (ratio > 1) {
+        latSouth = 90;
+        latNorth = -90;
+      } else if (ratio < -1) {
+        latSouth = -90;
+        latNorth = 90;
+      } else {
+        const alpha = Math.acos(clamp(ratio, -1, 1));
+        const gamma = Math.atan2(A, B);
+        latSouth = clamp(toDegrees(gamma - alpha), -90, 90);
+        latNorth = clamp(toDegrees(gamma + alpha), -90, 90);
+      }
+    }
+
+    const ySouth = 90 - latSouth;
+    const yNorth = 90 - latNorth;
+
+    southPoints.push(`${x},${ySouth.toFixed(2)}`);
+    northPoints.push(`${x},${yNorth.toFixed(2)}`);
+  }
+
+  let southPath = `M 0,180`;
+  for (let i = 0; i < southPoints.length; i++) {
+    southPath += ` L ${southPoints[i]}`;
+  }
+  southPath += ` L 360,180 Z`;
+
+  let northPath = `M 0,0`;
+  for (let i = 0; i < northPoints.length; i++) {
+    northPath += ` L ${northPoints[i]}`;
+  }
+  northPath += ` L 360,0 Z`;
+
+  // Line segments that only trace actual boundary curve inside the map (excluding artificial outer borders)
+  const lineSegments: string[] = [];
+  
+  let inSouthSegment = false;
+  for (let i = 0; i < southPoints.length; i++) {
+    const pt = southPoints[i].split(',');
+    const x = pt[0];
+    const y = parseFloat(pt[1]);
+    if (y < 179.95 && y > 0.05) {
+      if (!inSouthSegment) {
+        lineSegments.push(`M ${x},${y}`);
+        inSouthSegment = true;
+      } else {
+        lineSegments.push(`L ${x},${y}`);
+      }
+    } else {
+      inSouthSegment = false;
+    }
+  }
+
+  let inNorthSegment = false;
+  for (let i = 0; i < northPoints.length; i++) {
+    const pt = northPoints[i].split(',');
+    const x = pt[0];
+    const y = parseFloat(pt[1]);
+    if (y > 0.05 && y < 179.95) {
+      if (!inNorthSegment) {
+        lineSegments.push(`M ${x},${y}`);
+        inNorthSegment = true;
+      } else {
+        lineSegments.push(`L ${x},${y}`);
+      }
+    } else {
+      inNorthSegment = false;
+    }
+  }
+
+  const linePath = lineSegments.join(' ');
+
+  return { southPath, northPath, combinedPath: `${southPath} ${northPath}`, linePath };
 };

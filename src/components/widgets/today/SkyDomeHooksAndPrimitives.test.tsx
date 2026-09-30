@@ -6,7 +6,8 @@ import {
   useMoonElevationMath, 
   useSunMeridianMath,
   useMoonMeridianMath,
-  SkyDomeFooter, 
+  SkyDomeFooter,
+  MeridianDomeFooter, 
   DraconicTimelineRail, 
   LunarPhaseDisc,
   OBLIQUITY,
@@ -378,6 +379,48 @@ describe('Sky Dome Refactored Hooks & Primitives', () => {
       );
       expect(quarterHtml).toContain('transform="rotate(45)"');
       expect(quarterHtml).toContain('<path d="M 0,-5.5');
+    });
+  });
+  describe('MeridianDomeFooter', () => {
+    it('renders 3 metrics badges and segmented mode toggle cleanly', () => {
+      let toggled = false;
+      const html = renderToStaticMarkup(
+        <MeridianDomeFooter
+          badge1={{
+            label: 'Solstice Span',
+            value: 'Δδ 46.9°',
+            subText: 'Min ↔ Max'
+          }}
+          badge2={{
+            label: 'Summer Peak',
+            value: '66.4° S',
+            valueColorClass: 'text-amber-300',
+            subText: 'Highest Noon'
+          }}
+          badge3={{
+            label: 'Winter Peak',
+            value: '19.5° S',
+            valueColorClass: 'text-amber-500',
+            subText: 'Lowest Noon'
+          }}
+          secondaryModeText="Twilight"
+          isSecondaryActive={false}
+          onToggleSecondary={(val) => { toggled = val; }}
+          primaryAriaLabel="Standard Solar Meridian View"
+          secondaryAriaLabel="Twilight Strata Meridian View"
+          secondaryTheme="amber"
+          primaryActiveTextClass="text-amber-400"
+        />
+      );
+
+      expect(html).toContain('Solstice Span');
+      expect(html).toContain('Δδ 46.9°');
+      expect(html).toContain('Summer Peak');
+      expect(html).toContain('66.4° S');
+      expect(html).toContain('Winter Peak');
+      expect(html).toContain('19.5° S');
+      expect(html).toContain('Std');
+      expect(html).toContain('Twilight');
     });
   });
 });

@@ -11,7 +11,8 @@ import {
   getLunarNodeProximityTelemetry,
   sanitizeTrackJD,
   sanitizeTrackLon,
-  sanitizeTrackLat
+  sanitizeTrackLat,
+  getTerminatorShadowPaths
 } from './terminatorTracks';
 import { J2000_JD } from './astroConstants';
 import { calculateTrueLunarNodeEvents } from './lunar';
@@ -240,5 +241,17 @@ describe('terminatorTracks - Adversarial Hardening & Singularity Protection Suit
     expect(() => getLunarNodeProximityTelemetry(NaN as any)).not.toThrow();
     const nanTelemetry = getLunarNodeProximityTelemetry(NaN as any);
     expect(nanTelemetry.isNear).toBe(false);
+  });
+
+  it('computes valid SVG paths for daylight terminator overlay without NaN', () => {
+    const normalTerminator = getTerminatorShadowPaths(0, 0, 10);
+    expect(normalTerminator.southPath).toContain('M 0,180');
+    expect(normalTerminator.southPath).toContain('L 360,180 Z');
+    expect(normalTerminator.northPath).toContain('M 0,0');
+    expect(normalTerminator.combinedPath).not.toContain('NaN');
+
+    const polarTerminator = getTerminatorShadowPaths(0, 0, 23.44);
+    expect(polarTerminator.southPath).not.toContain('NaN');
+    expect(polarTerminator.northPath).not.toContain('NaN');
   });
 });

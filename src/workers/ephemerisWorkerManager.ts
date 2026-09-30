@@ -511,30 +511,29 @@ export class EphemerisWorkerManager {
   }
 
   /**
-   * Requests an annual solar ephemeris matrix calculation with caching, deduplication, and fallback.
+   * Private generic dispatcher for annual matrix calculations (Solar or Lunar),
+   * encapsulating cache checking, synchronous fallbacks, request coalescing, and postMessage.
    */
-  requestAnnualSolarCalculation(
-    { year, latitude }: { year: number; latitude: Latitude },
-    onResult: (payload: { annualSolar: AnnualSolarMatrixItem[] }) => void
+  private _requestAnnualCalculation<TResult>(
+    signature: string,
+    cache: LruCache<string, any>,
+    entryType: 'ANNUAL_SOLAR' | 'ANNUAL_LUNAR',
+    requestType: 'CALCULATE_ANNUAL_SOLAR' | 'CALCULATE_ANNUAL_LUNAR',
+    params: Record<string, unknown>,
+    fallbackFn: () => TResult,
+    wrapCached: (item: any) => TResult,
+    onResult: (result: TResult) => void
   ): () => void {
-    const signature = `SOLAR_${year}_${latitude}`;
-
     // Cache hit
-    if (this.annualSolarCache.has(signature)) {
-      const annualSolar = this._getFromAnnualCache(this.annualSolarCache, signature)!;
-      onResult({ annualSolar });
+    if (cache.has(signature)) {
+      const item = this._getFromAnnualCache(cache, signature)!;
+      onResult(wrapCached(item));
       return () => {};
     }
 
     // Synchronous fallback if worker unavailable
     if (!this.isAvailable()) {
-      const result = executeSyncAnnualSolarFallback(
-        year,
-        latitude,
-        signature,
-        this.annualSolarCache,
-        (c, k, v) => this._setInAnnualCache(c, k, v)
-      );
+      const result = fallbackFn();
       onResult(result);
       return () => {};
     }
@@ -543,53 +542,73 @@ export class EphemerisWorkerManager {
     if (this.signatureToRequestId.has(signature)) {
       const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
-      if (existingEntry && existingEntry.type === 'ANNUAL_SOLAR') {
-        existingEntry.callbacks.add(onResult);
+      if (existingEntry && existingEntry.type === entryType) {
+        existingEntry.callbacks.add(onResult as any);
         return () => {
-          existingEntry.callbacks.delete(onResult);
+          existingEntry.callbacks.delete(onResult as any);
         };
       }
     }
 
     const worker = this._getWorker();
     if (!worker) {
-      const result = executeSyncAnnualSolarFallback(
-        year,
-        latitude,
-        signature,
-        this.annualSolarCache,
-        (c, k, v) => this._setInAnnualCache(c, k, v)
-      );
+      const result = fallbackFn();
       onResult(result);
       return () => {};
     }
 
     const requestId = ++this.nextRequestId;
-    const requestEntry: PendingAnnualSolarEntry = {
-      type: 'ANNUAL_SOLAR',
+    const requestEntry = {
+      type: entryType,
       signature,
-      callbacks: new Set([onResult]),
-      params: { year, latitude }
-    };
+      callbacks: new Set([onResult as any]),
+      params
+    } as unknown as PendingRequestEntry;
 
     this.pendingRequests.set(requestId, requestEntry);
     this.signatureToRequestId.set(signature, requestId);
     this._setRequestTimeout(requestId, requestEntry);
 
     try {
-      const message: EphemerisWorkerRequest = {
-        type: 'CALCULATE_ANNUAL_SOLAR',
+      const message = {
+        type: requestType,
         id: requestId,
-        payload: { year, latitude }
-      };
+        payload: params
+      } as EphemerisWorkerRequest;
       worker.postMessage(message);
     } catch (error) {
       this._handleWorkerFailure(error);
     }
 
     return () => {
-      requestEntry.callbacks.delete(onResult);
+      requestEntry.callbacks.delete(onResult as any);
     };
+  }
+
+  /**
+   * Requests an annual solar ephemeris matrix calculation with caching, deduplication, and fallback.
+   */
+  requestAnnualSolarCalculation(
+    { year, latitude }: { year: number; latitude: Latitude },
+    onResult: (payload: { annualSolar: AnnualSolarMatrixItem[] }) => void
+  ): () => void {
+    const signature = `SOLAR_${year}_${latitude}`;
+    return this._requestAnnualCalculation(
+      signature,
+      this.annualSolarCache,
+      'ANNUAL_SOLAR',
+      'CALCULATE_ANNUAL_SOLAR',
+      { year, latitude },
+      () => executeSyncAnnualSolarFallback(
+        year,
+        latitude,
+        signature,
+        this.annualSolarCache,
+        (c, k, v) => this._setInAnnualCache(c, k, v)
+      ),
+      (annualSolar) => ({ annualSolar }),
+      onResult
+    );
   }
 
   /**
@@ -600,80 +619,23 @@ export class EphemerisWorkerManager {
     onResult: (payload: { annualLunar: AnnualLunarMatrixItem[] }) => void
   ): () => void {
     const signature = `LUNAR_${year}_${latitude}_${longitude}`;
-
-    // Cache hit
-    if (this.annualLunarCache.has(signature)) {
-      const annualLunar = this._getFromAnnualCache(this.annualLunarCache, signature)!;
-      onResult({ annualLunar });
-      return () => {};
-    }
-
-    // Synchronous fallback if worker unavailable
-    if (!this.isAvailable()) {
-      const result = executeSyncAnnualLunarFallback(
-        year,
-        latitude,
-        longitude,
-        signature,
-        this.annualLunarCache,
-        (c, k, v) => this._setInAnnualCache(c, k, v)
-      );
-      onResult(result);
-      return () => {};
-    }
-
-    // In-flight request deduplication / coalescing
-    if (this.signatureToRequestId.has(signature)) {
-      const existingId = this.signatureToRequestId.get(signature)!;
-      const existingEntry = this.pendingRequests.get(existingId);
-      if (existingEntry && existingEntry.type === 'ANNUAL_LUNAR') {
-        existingEntry.callbacks.add(onResult);
-        return () => {
-          existingEntry.callbacks.delete(onResult);
-        };
-      }
-    }
-
-    const worker = this._getWorker();
-    if (!worker) {
-      const result = executeSyncAnnualLunarFallback(
-        year,
-        latitude,
-        longitude,
-        signature,
-        this.annualLunarCache,
-        (c, k, v) => this._setInAnnualCache(c, k, v)
-      );
-      onResult(result);
-      return () => {};
-    }
-
-    const requestId = ++this.nextRequestId;
-    const requestEntry: PendingAnnualLunarEntry = {
-      type: 'ANNUAL_LUNAR',
+    return this._requestAnnualCalculation(
       signature,
-      callbacks: new Set([onResult]),
-      params: { year, latitude, longitude }
-    };
-
-    this.pendingRequests.set(requestId, requestEntry);
-    this.signatureToRequestId.set(signature, requestId);
-    this._setRequestTimeout(requestId, requestEntry);
-
-    try {
-      const message: EphemerisWorkerRequest = {
-        type: 'CALCULATE_ANNUAL_LUNAR',
-        id: requestId,
-        payload: { year, latitude, longitude }
-      };
-      worker.postMessage(message);
-    } catch (error) {
-      this._handleWorkerFailure(error);
-    }
-
-    return () => {
-      requestEntry.callbacks.delete(onResult);
-    };
+      this.annualLunarCache,
+      'ANNUAL_LUNAR',
+      'CALCULATE_ANNUAL_LUNAR',
+      { year, latitude, longitude },
+      () => executeSyncAnnualLunarFallback(
+        year,
+        latitude,
+        longitude,
+        signature,
+        this.annualLunarCache,
+        (c, k, v) => this._setInAnnualCache(c, k, v)
+      ),
+      (annualLunar) => ({ annualLunar }),
+      onResult
+    );
   }
 
   /**

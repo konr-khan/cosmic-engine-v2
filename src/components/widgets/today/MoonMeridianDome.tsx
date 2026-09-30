@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { Moon } from 'lucide-react';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
 import { MeridianDomeBase, EL_CX } from './MeridianDomeBase';
-import { LunarPhaseDisc } from './common/LunarPhaseDisc';
+import { LunarPhaseDisc, MeridianDomeFooter } from './common';
 import { useMoonMeridianMath, LUNAR_MAX_DEC } from './hooks/useMoonMeridianMath';
 
 export interface MoonMeridianDomeProps {
@@ -233,69 +233,35 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
           )}
 
           {/* Mirrored 4-Badge Summary Footer with Mode View Toggle (Std vs ☊ Nodes) */}
-          <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-            <div 
-              className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-              title={`18.6-Year Standstill Range: Δδ = ${standstillSpanDeg.toFixed(1)}° between ±${LUNAR_MAX_DEC.toFixed(1)}°${isStandstillActive ? ' (Standstill Migration Track Active)' : ''}`}
-            >
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">
-                Standstill Span
-              </span>
-              <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${isStandstillActive ? 'text-indigo-300' : 'text-slate-200'}`}>
-                Δδ {standstillSpanDeg.toFixed(1)}°
-              </span>
-              <span className={`text-[8px] font-mono block whitespace-nowrap truncate leading-none mt-0.5 ${isStandstillActive ? 'text-indigo-400 font-medium' : 'text-slate-400'}`}>
-                {isStandstillActive ? '18.6y Track Active' : '18.6y Cycle'}
-              </span>
-            </div>
-            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Monthly Range</span>
-              <span className="text-indigo-300 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-                {(monthMax.altitude - Math.max(0, monthMin.altitude)).toFixed(1)}°
-              </span>
-              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-                30d Envelope
-              </span>
-            </div>
-            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Nodal State</span>
-              <span className={`text-[10px] sm:text-xs font-semibold font-mono whitespace-nowrap ${isNodalModeActive ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-300'}`}>
-                {isNodalModeActive ? (isAscendingBranch ? '☊ Ascending' : '☋ Descending') : 'Mean Orbit'}
-              </span>
-              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-                {isNodalModeActive ? (isAscendingBranch ? 'North (+β)' : 'South (−β)') : '18.6y Precession'}
-              </span>
-            </div>
-            <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
-              <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
-                <button
-                  type="button"
-                  onClick={() => handleToggleNodal(false)}
-                  aria-label="Standard Lunar Meridian View"
-                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                    !isNodalModeActive
-                      ? 'bg-slate-800 text-slate-200 font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Std
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleNodal(true)}
-                  aria-label="Lunar Nodes Meridian View"
-                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                    isNodalModeActive
-                      ? 'bg-sky-950/80 text-sky-300 border border-sky-500/40 font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  ☊ Nodes
-                </button>
-              </div>
-            </div>
-          </div>
+          <MeridianDomeFooter
+            badge1={{
+              label: 'Standstill Span',
+              value: `Δδ ${standstillSpanDeg.toFixed(1)}°`,
+              valueColorClass: isStandstillActive ? 'text-indigo-300' : 'text-slate-200',
+              subText: isStandstillActive ? '18.6y Track Active' : '18.6y Cycle',
+              subTextColorClass: isStandstillActive ? 'text-indigo-400 font-medium' : 'text-slate-400',
+              tooltip: `18.6-Year Standstill Range: Δδ = ${standstillSpanDeg.toFixed(1)}° between ±${LUNAR_MAX_DEC.toFixed(1)}°${isStandstillActive ? ' (Standstill Migration Track Active)' : ''}`
+            }}
+            badge2={{
+              label: 'Monthly Range',
+              value: `${(monthMax.altitude - Math.max(0, monthMin.altitude)).toFixed(1)}°`,
+              valueColorClass: 'text-indigo-300',
+              subText: '30d Envelope'
+            }}
+            badge3={{
+              label: 'Nodal State',
+              value: isNodalModeActive ? (isAscendingBranch ? '☊ Ascending' : '☋ Descending') : 'Mean Orbit',
+              valueColorClass: isNodalModeActive ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-300',
+              subText: isNodalModeActive ? (isAscendingBranch ? 'North (+β)' : 'South (−β)') : '18.6y Precession'
+            }}
+            secondaryModeText="☊ Nodes"
+            isSecondaryActive={isNodalModeActive}
+            onToggleSecondary={handleToggleNodal}
+            primaryAriaLabel="Standard Lunar Meridian View"
+            secondaryAriaLabel="Lunar Nodes Meridian View"
+            secondaryTheme="sky"
+            primaryActiveTextClass="text-slate-200"
+          />
         </>
       )}
     </MeridianDomeBase>

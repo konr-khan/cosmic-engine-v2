@@ -4,3 +4,5 @@ export { DraconicTimelineRail } from './DraconicTimelineRail';
 export type { DraconicTimelineRailProps } from './DraconicTimelineRail';
 export { LunarPhaseDisc } from './LunarPhaseDisc';
 export type { LunarPhaseDiscProps } from './LunarPhaseDisc';
+export { MeridianDomeFooter } from './MeridianDomeFooter';
+export type { MeridianDomeFooterProps, MeridianBadgeMetric } from './MeridianDomeFooter';

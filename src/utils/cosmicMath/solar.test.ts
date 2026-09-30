@@ -11,7 +11,6 @@ import {
   calculateDailySolarEvents,
   calculateDaylightDurationPrecise,
   calculatePolarState,
-  getTerminatorShadowPaths,
   POLAR_STATES,
   CONFIG,
   calculateAnnualSolarMatrix
@@ -67,18 +66,6 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
       expect(alias.distanceAU).toBe(direct.distanceAU);
     });
 
-    it('computes valid SVG paths for daylight terminator overlay without NaN', () => {
-      const normalTerminator = getTerminatorShadowPaths(0, 0, 10);
-      expect(normalTerminator.southPath).toContain('M 0,180');
-      expect(normalTerminator.southPath).toContain('L 360,180 Z');
-      expect(normalTerminator.northPath).toContain('M 0,0');
-      expect(normalTerminator.combinedPath).not.toContain('NaN');
-
-      const polarTerminator = getTerminatorShadowPaths(0, 0, 23.44);
-      expect(polarTerminator.southPath).not.toContain('NaN');
-      expect(polarTerminator.northPath).not.toContain('NaN');
-    });
-
     it('ensures calculateSolarPosition never produces NaN across various Julian dates', () => {
       const dates = [
         2451545.0, // J2000
@@ -101,7 +88,6 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
     });
   });
 
-
   describe('Daily Solar Events & Twilight Calculator', () => {
     it('calculates symmetrical daylight hours around solar noon at equator', () => {
       const events = calculateDailySolarEvents(0, 0, 12);
@@ -113,7 +99,6 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
       expect(events.solarMidnightEnd).toBe(24);
     });
   });
-
 
   describe('Polar Boundary & Extreme Latitude Hardening', () => {
     it('never outputs NaN or null across all latitudes [-90, +90]', () => {
@@ -240,7 +225,6 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
       expect(svalbardNovEvents.polarState).toBe(POLAR_STATES.PERPETUAL_TWILIGHT);
     });
   });
-
 
     describe('calculateAnnualSolarMatrix', () => {
       it('calculates exactly 365 daily entries for a standard year (2026)', () => {

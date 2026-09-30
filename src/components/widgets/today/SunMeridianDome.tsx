@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import { Sun } from 'lucide-react';
 import { SolarAlmanacData } from '../../../types';
 import { MeridianDomeBase } from './MeridianDomeBase';
+import { MeridianDomeFooter } from './common';
 import { useSunMeridianMath, OBLIQUITY } from './hooks/useSunMeridianMath';
 
 export interface SunMeridianDomeProps {
@@ -200,67 +201,33 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
           </div>
 
           {/* Mirrored 4-Badge Summary Footer with Mode View Toggle (Std vs Twilight) */}
-          <div className="grid grid-cols-4 gap-1.5 w-full bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/50 text-xs font-mono mt-1">
-            <div 
-              className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0"
-              title={`Annual Solstice Range: Δδ = ${solsticeSpanDeg.toFixed(1)}° between ±${OBLIQUITY.toFixed(1)}°`}
-            >
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Solstice Span</span>
-              <span className="text-slate-200 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-                Δδ {solsticeSpanDeg.toFixed(1)}°
-              </span>
-              <span className="text-[8px] text-slate-400 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-                Min ↔ Max
-              </span>
-            </div>
-            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Summer Peak</span>
-              <span className="text-amber-300 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-                {summerNoon.toFixed(1)}° {summerSolstice.shortTag}
-              </span>
-              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-                Highest Noon
-              </span>
-            </div>
-            <div className="text-center bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate">Winter Peak</span>
-              <span className="text-amber-500 font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate">
-                {winterNoon > 0 ? `${winterNoon.toFixed(1)}° ${winterSolstice.shortTag}` : 'Below 0°'}
-              </span>
-              <span className="text-[8px] text-slate-500 font-mono block whitespace-nowrap truncate leading-none mt-0.5">
-                Lowest Noon
-              </span>
-            </div>
-            <div className="text-center bg-slate-900/40 p-1 rounded-lg border border-slate-800/40 flex flex-col justify-center min-w-0">
-              <span className="text-[7.5px] sm:text-[8px] text-slate-400 block uppercase font-sans font-medium tracking-tight whitespace-nowrap truncate mb-0.5">Mode View</span>
-              <div className="flex items-center justify-center gap-0.5 bg-slate-950/80 p-0.5 rounded border border-slate-800/60">
-                <button
-                  type="button"
-                  onClick={() => handleToggleTwilight(false)}
-                  aria-label="Standard Solar Meridian View"
-                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                    !isTwilightModeActive
-                      ? 'bg-slate-800 text-amber-400 font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Std
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleTwilight(true)}
-                  aria-label="Twilight Strata Meridian View"
-                  className={`flex-1 py-0.5 px-1 rounded text-[8.5px] sm:text-[9px] font-mono transition-colors ${
-                    isTwilightModeActive
-                      ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Twilight
-                </button>
-              </div>
-            </div>
-          </div>
+          <MeridianDomeFooter
+            badge1={{
+              label: 'Solstice Span',
+              value: `Δδ ${solsticeSpanDeg.toFixed(1)}°`,
+              subText: 'Min ↔ Max',
+              tooltip: `Annual Solstice Range: Δδ = ${solsticeSpanDeg.toFixed(1)}° between ±${OBLIQUITY.toFixed(1)}°`
+            }}
+            badge2={{
+              label: 'Summer Peak',
+              value: `${summerNoon.toFixed(1)}° ${summerSolstice.shortTag}`,
+              valueColorClass: 'text-amber-300',
+              subText: 'Highest Noon'
+            }}
+            badge3={{
+              label: 'Winter Peak',
+              value: winterNoon > 0 ? `${winterNoon.toFixed(1)}° ${winterSolstice.shortTag}` : 'Below 0°',
+              valueColorClass: 'text-amber-500',
+              subText: 'Lowest Noon'
+            }}
+            secondaryModeText="Twilight"
+            isSecondaryActive={isTwilightModeActive}
+            onToggleSecondary={handleToggleTwilight}
+            primaryAriaLabel="Standard Solar Meridian View"
+            secondaryAriaLabel="Twilight Strata Meridian View"
+            secondaryTheme="amber"
+            primaryActiveTextClass="text-amber-400"
+          />
         </>
       )}
     </MeridianDomeBase>
