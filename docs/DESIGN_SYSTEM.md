@@ -54,6 +54,7 @@ To maximize information density without adding text clutter, orbital loops and c
     - *Macro Orbit View ($580\times 560$ canvas, $R_{\text{orbit}} \approx 220$)*:
       - Resting State: Translucent outer halo (`fill={color}`, `opacity="0.20"`, `r="11px"`), inner core node (`r="5.5px"`, `fill={color}`, `stroke="#ffffff"`, `strokeWidth="1.5"`, `className="drop-shadow-md"`).
       - Hover State: Expanded glowing halo (`opacity="0.45"`, `r="18px"`, `className="animate-pulse"`), expanded core node (`r="8px"`).
+      - Token Architecture: Macro Orbit presentation styling tokens (Tailwind classes, hover state classes, and badge styling) are codified in [`src/components/widgets/macro/macroTokens.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/macro/macroTokens.ts) to maintain strict separation from pure Meeus domain math (`milestones.ts`).
     - *Gyro-Morph Armillary ($300\times 300$ canvas, $R_{\text{orbit}} = 110$)*:
       - Resting State: Translucent outer halo (`opacity="0.25"`, `r="4.5px"`), inner core node (`r="2.0px"`, `strokeWidth="1.0"`).
       - Hover State: Direct SVG circle radius expansion to halo `r="7.0px"` (`opacity="0.45"`), core node `r="2.8px"` (`strokeWidth="1.2"`), paired with the glassmorphic milestone telemetry card (`ArmillaryHoverHud`). SVG group CSS scale transforms are strictly avoided to eliminate transform-origin off-orbit jumps. Bead pointer interactions are isolated during 3D camera rotation (`isDraggingCamera`).
