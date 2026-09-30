@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { MILESTONES } from './milestones';
+import { EARTH_MILESTONES } from './milestones';
 import { OrbitHeaderControls } from './OrbitHeaderControls';
 import { OrbitHoverHud } from './OrbitHoverHud';
 import { OrbitSvgCanvas } from './OrbitSvgCanvas';
@@ -85,7 +85,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
         description: `Live Keplerian orbital position. Distance: ${distanceAU.toFixed(3)} AU (${(distanceKm / 1e6).toFixed(1)}M km), Speed: ${orbitalSpeedKms.toFixed(2)} km/s, Irradiance: ${solarIrradiancePercent.toFixed(1)}% of mean.`
       };
     }
-    const found = MILESTONES.find(m => m.id === hoveredId);
+    const found = EARTH_MILESTONES.find(m => m.id === hoveredId);
     if (!found) return null;
     return {
       label: found.label,

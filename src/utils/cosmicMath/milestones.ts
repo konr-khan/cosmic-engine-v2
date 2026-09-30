@@ -147,5 +147,3 @@ export const EARTH_MILESTONES: MilestoneItem[] = [
     subDy: -34
   }
 ];
-
-export const MILESTONES = EARTH_MILESTONES;

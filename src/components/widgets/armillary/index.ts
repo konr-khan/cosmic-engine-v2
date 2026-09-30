@@ -9,3 +9,4 @@ export * from './useStagedCamera';
 export * from './useArmillaryInteractions';
 export * from './ArmillaryEarthPip';
 export * from './canvas';
+export { default } from './GyroArmillaryView';

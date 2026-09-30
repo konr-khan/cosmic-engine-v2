@@ -7,7 +7,6 @@ import {
   OrbitHoverHud, 
   OrbitSvgCanvas, 
   OrbitPhysicsHud, 
-  MILESTONES, 
   EARTH_MILESTONES 
 } from './index';
 import { calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
@@ -19,13 +18,12 @@ describe('Macro Orbit Subsystem', () => {
     expect(OrbitHoverHud).toBeDefined();
     expect(OrbitSvgCanvas).toBeDefined();
     expect(OrbitPhysicsHud).toBeDefined();
-    expect(MILESTONES).toBeDefined();
     expect(EARTH_MILESTONES).toBeDefined();
-    expect(MILESTONES.length).toBe(6);
+    expect(EARTH_MILESTONES.length).toBe(6);
   });
 
   it('contains all 6 key orbital milestones with accurate astronomical properties', () => {
-    const ids = MILESTONES.map(m => m.id);
+    const ids = EARTH_MILESTONES.map(m => m.id);
     expect(ids).toContain('perihelion');
     expect(ids).toContain('mar_equinox');
     expect(ids).toContain('jun_solstice');

@@ -29,7 +29,7 @@ import {
   EL_R, 
   EL_CX, 
   EL_CY 
-} from './todaySky';
+} from './today';
 
 describe('Sky Dome Coordinate Projection (projectSkyDomePoint)', () => {
   it('projects meridian transit (H = 0) exactly onto the central meridian X = EL_CX', () => {

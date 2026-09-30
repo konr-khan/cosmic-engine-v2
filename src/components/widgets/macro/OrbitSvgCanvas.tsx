@@ -1,6 +1,6 @@
 import React from 'react';
 import { CONFIG } from '../../../utils/cosmicMath';
-import { MILESTONES } from './milestones';
+import { EARTH_MILESTONES } from './milestones';
 import { OrbitSvgCanvasProps } from './types';
 import { MiniGlobe } from '../../common/MiniGlobe';
 
@@ -29,7 +29,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   exaggerateEccentricity,
   hoveredId,
   onHover,
-  milestones = MILESTONES,
+  milestones = EARTH_MILESTONES,
   sunLambdaDeg = 0,
   latitude = 47.06,
   longitude = -122.81,

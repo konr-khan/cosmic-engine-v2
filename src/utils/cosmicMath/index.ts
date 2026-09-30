@@ -11,5 +11,5 @@ export * from './armillary/index';
 export * from './milestones';
 export * from './frame';
 export * from './scene';
-export * from './todaySky';
+export * from './today';
 export * from './terminatorTracks';

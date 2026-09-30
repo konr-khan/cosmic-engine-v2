@@ -235,7 +235,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0035`)
+  - `adr/` — Architecture Decision Records (`0001` through `0037`)
 
 ### Subsystem Task Routing Matrix
 
