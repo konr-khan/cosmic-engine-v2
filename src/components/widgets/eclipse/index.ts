@@ -6,3 +6,4 @@ export { LiveSyzygyView, type LiveSyzygyViewProps } from './LiveSyzygyView';
 export { NodalPlaneVisualizer, type NodalPlaneVisualizerProps } from './NodalPlaneVisualizer';
 export { SkyViewSimulator, type SkyViewSimulatorProps } from './SkyViewSimulator';
 export { EclipseScanner, type EclipseScannerProps, type EclipseDiscoveryItem } from './EclipseScanner';
+export * from './hooks';
