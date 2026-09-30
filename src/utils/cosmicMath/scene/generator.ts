@@ -142,18 +142,19 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
 
   // 6. 3D Seasonal Milestone Nodes (Heliocentric Longitudes of Earth)
   const milestones: MilestoneNode3D[] = EARTH_MILESTONES.map(m => {
+    const lonRad = toRadians(m.helioEclipticLon);
     let pos: Vector3D;
     if (isExag) {
       pos = {
-        x: m.rawX,
-        y: m.rawY * bRatio,
+        x: a * Math.cos(lonRad),
+        y: -b * Math.sin(lonRad),
         z: 0
       };
     } else {
       // True scale position in AU
       pos = {
-        x: m.distanceAU * (m.rawX / 200),
-        y: m.distanceAU * (m.rawY / 200),
+        x: m.distanceAU * Math.cos(lonRad),
+        y: -m.distanceAU * Math.sin(lonRad),
         z: 0
       };
     }
@@ -167,14 +168,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       distanceAU: m.distanceAU,
       distanceKm: m.distanceKm,
       speedKms: m.speedKms,
-      color: m.color,
-      textColor: m.textColor,
-      fillColor: m.fillColor,
-      description: m.description,
-      textAnchor: m.textAnchor,
-      textDx: m.textDx,
-      textDy: m.textDy,
-      subDy: m.subDy
+      description: m.description
     };
   });
 

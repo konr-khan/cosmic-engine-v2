@@ -107,14 +107,14 @@ export interface MilestoneNode3D {
   distanceAU: number;
   distanceKm: number;
   speedKms: number;
-  color: string;
-  textColor: string;
-  fillColor: string;
+  color?: string;
+  textColor?: string;
+  fillColor?: string;
   description: string;
-  textAnchor: 'start' | 'middle' | 'end';
-  textDx: number;
-  textDy: number;
-  subDy: number;
+  textAnchor?: 'start' | 'middle' | 'end';
+  textDx?: number;
+  textDy?: number;
+  subDy?: number;
   isSolsticeOrEquinox?: boolean;
 }
 

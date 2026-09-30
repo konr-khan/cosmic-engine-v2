@@ -4,7 +4,7 @@
  * and observer coordinate ephemeris in a single immutable pass.
  */
 
-import { CONFIG } from './constants';
+import { SOLAR_TWILIGHT_THRESHOLDS } from './astroConstants';
 import { JulianDate, Latitude, Longitude, asJulianDate, asDegrees } from '../../types/units';
 import { EphemerisFrame } from '../../types/astronomy';
 import { calculateSolarPosition, calculateDaylightDurationPrecise } from './solar';
@@ -63,7 +63,7 @@ export const calculateEphemerisFrame = (
 
   const eotCorrection = solarPos.equationOfTime;
   const solarNoon = 12 - (longitude / 15) - (eotCorrection / 60);
-  const dayLength = calculateDaylightDurationPrecise(latitude as Latitude, solarPos.declination, CONFIG.SOLAR.TWILIGHT.OFFICIAL);
+  const dayLength = calculateDaylightDurationPrecise(latitude as Latitude, solarPos.declination, SOLAR_TWILIGHT_THRESHOLDS.OFFICIAL);
 
   const subsolarLon = calculateSubPointLon(solarPos.rightAscension, gmst);
   const sublunarLon = calculateSubPointLon(lunarPos.rightAscension, gmst);

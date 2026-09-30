@@ -1,5 +1,15 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { CONFIG, toRadians } from '../../utils/cosmicMath';
+import { toRadians } from '../../utils/cosmicMath';
+
+export const LAT_PRESETS = [
+  { lat: 90, label: "N. Pole" },
+  { lat: 66.5, label: "Arctic Circle" },
+  { lat: 23.5, label: "Tropic of Cancer" },
+  { lat: 0, label: "Equator" },
+  { lat: -23.5, label: "Tropic of Capricorn" },
+  { lat: -66.5, label: "Antarctic Circle" },
+  { lat: -90, label: "S. Pole" },
+] as const;
 
 export interface LatitudeSliderProps {
   latitude: number;
@@ -48,7 +58,7 @@ export const LatitudeSlider: React.FC<LatitudeSliderProps> = ({
           e.currentTarget.releasePointerCapture(e.pointerId); 
         }}
       >
-        {CONFIG.LAT_PRESETS.map((preset) => {
+        {LAT_PRESETS.map((preset) => {
           const internalY = centerY + (-radius * (preset.lat / 90));
           const customTop = `${(internalY / size) * 100}%`;
           const isSelected = Math.abs(latitude - preset.lat) < 2;

@@ -150,3 +150,9 @@ export const SOLAR_TWILIGHT_THRESHOLDS = {
   NAUTICAL: TWILIGHT_NAUTICAL_DEG,
   ASTRONOMICAL: TWILIGHT_ASTRONOMICAL_DEG
 } as const;
+
+/**
+ * Base pixel radius for the top-down Earth element in orbital diagrams.
+ */
+export const TOPDOWN_EARTH_BASE_RADIUS = 12;
+

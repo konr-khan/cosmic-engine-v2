@@ -1,5 +1,5 @@
 import React from 'react';
-import { CONFIG } from '../../../utils/cosmicMath';
+import { MILESTONE_VISUAL_TOKENS, MACRO_THEME } from './macroTokens';
 import { EARTH_MILESTONES } from './milestones';
 import { OrbitSvgCanvasProps } from './types';
 import { MiniGlobe } from '../../common/MiniGlobe';
@@ -155,9 +155,16 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
 
       {/* Key Astronomical Orbital Milestones */}
       {milestones.map((m) => {
-        const mx = 'x' in m ? m.x : m.rawX;
-        const my = 'y' in m ? m.y : m.rawY * bRatio;
+        const token = MILESTONE_VISUAL_TOKENS[m.id];
+        const mx = 'x' in m && typeof m.x === 'number' ? m.x : (token?.rawX ?? ('rawX' in m ? (m as any).rawX : 0));
+        const my = 'y' in m && typeof m.y === 'number' ? m.y : ((token?.rawY ?? ('rawY' in m ? (m as any).rawY : 0)) * bRatio);
         const isHovered = hoveredId === m.id;
+        const color = token?.color ?? ('color' in m && m.color ? m.color : '#38bdf8');
+        const fillColor = token?.fillColor ?? ('fillColor' in m && m.fillColor ? m.fillColor : 'fill-sky-400');
+        const textAnchor = token?.textAnchor ?? ('textAnchor' in m && m.textAnchor ? m.textAnchor : 'middle');
+        const textDx = token?.textDx ?? ('textDx' in m && typeof m.textDx === 'number' ? m.textDx : 0);
+        const textDy = token?.textDy ?? ('textDy' in m && typeof m.textDy === 'number' ? m.textDy : 0);
+        const subDy = token?.subDy ?? ('subDy' in m && typeof m.subDy === 'number' ? m.subDy : 0);
         return (
           <g key={m.id}>
             {/* Persistent Translucent Glowing Halo Node (Expands on Hover) */}
@@ -165,7 +172,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
               cx={mx} 
               cy={my} 
               r={isHovered ? 18 : 11} 
-              fill={m.color} 
+              fill={color} 
               opacity={isHovered ? 0.45 : 0.20} 
               className={`pointer-events-none transition-all duration-200 ${isHovered ? 'animate-pulse' : ''}`} 
             />
@@ -173,7 +180,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
               cx={mx} 
               cy={my} 
               r={isHovered ? 8 : 5.5} 
-              fill={m.color} 
+              fill={color} 
               stroke="#ffffff" 
               strokeWidth="1.5" 
               className="pointer-events-none transition-all duration-150 drop-shadow-md"
@@ -181,17 +188,17 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
             
             {/* Labels & Dates */}
             <text 
-              x={mx + m.textDx} 
-              y={my + m.textDy} 
-              textAnchor={m.textAnchor} 
-              className={`text-xs font-mono font-bold ${m.fillColor} select-none pointer-events-none drop-shadow-sm`}
+              x={mx + textDx} 
+              y={my + textDy} 
+              textAnchor={textAnchor} 
+              className={`text-xs font-mono font-bold ${fillColor} select-none pointer-events-none drop-shadow-sm`}
             >
               {m.label}
             </text>
             <text 
-              x={mx + m.textDx} 
-              y={my + m.subDy} 
-              textAnchor={m.textAnchor} 
+              x={mx + textDx} 
+              y={my + subDy} 
+              textAnchor={textAnchor} 
               className="text-[10px] font-mono fill-slate-400 font-bold select-none pointer-events-none"
             >
               {m.date}
@@ -214,8 +221,8 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
       {/* Center Sun at Focus F1 */}
       <g transform={`translate(${renderSunX}, ${renderSunY})`} className="pointer-events-none">
         {/* Sun Corona Rays */}
-        <circle r="22" fill={CONFIG.THEME.SUN_FILL} opacity="0.2" />
-        <circle r="15" fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow-lg" />
+        <circle r="22" fill={MACRO_THEME.SUN_FILL} opacity="0.2" />
+        <circle r="15" fill={MACRO_THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow-lg" />
         <text x="0" y="3" textAnchor="middle" className="text-[8px] font-black fill-amber-950 font-mono select-none">
           SUN
         </text>

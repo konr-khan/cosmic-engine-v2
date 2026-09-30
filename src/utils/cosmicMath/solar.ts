@@ -1,10 +1,10 @@
-import { CONFIG } from './constants';
 import { 
   J2000_JD, 
   ASTRONOMICAL_UNIT_KM, 
   EARTH_ORBITAL_SPEED_MEAN_KMS, 
   SOLAR_IRRADIANCE_1AU_WM2, 
   SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
+  SOLAR_TWILIGHT_THRESHOLDS,
   calculateEarthObliquity
 } from './astroConstants';
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
@@ -170,7 +170,7 @@ export const calculateDaylightDurationPrecise = (
  * @returns Polar state enum (NORMAL, PERPETUAL_DAY, PERPETUAL_NIGHT, PERPETUAL_TWILIGHT)
  */
 export const calculatePolarState = (lat: Latitude, declination: Degrees | number): PolarState => {
-  const { OFFICIAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
+  const { OFFICIAL, ASTRONOMICAL } = SOLAR_TWILIGHT_THRESHOLDS;
   const dayDuration = calculateDaylightDurationPrecise(lat, declination, OFFICIAL);
   const astroDuration = calculateDaylightDurationPrecise(lat, declination, ASTRONOMICAL);
 
@@ -221,7 +221,7 @@ export const calculateDailySolarEvents = (
   declination: Degrees | number, 
   solarNoon: number
 ): DailySolarEvents => {
-  const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
+  const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = SOLAR_TWILIGHT_THRESHOLDS;
   const overallPolarState = calculatePolarState(lat, declination);
   
   const getTimesForAngle = (angle: number): TwilightBandTimes => {

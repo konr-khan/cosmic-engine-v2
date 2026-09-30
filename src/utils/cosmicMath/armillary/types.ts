@@ -10,9 +10,9 @@ export interface ArmillaryMilestoneNode {
   id: string;
   label: string;
   date: string;
-  color: string;
-  textColor: string;
-  fillColor: string;
+  color?: string;
+  textColor?: string;
+  fillColor?: string;
   p3d: Vector3D;
   pCam: Vector3D;
   screenPos: Vector2D;

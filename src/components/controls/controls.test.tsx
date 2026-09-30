@@ -12,11 +12,11 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ControlRing } from './ControlRing';
-import { LatitudeSlider } from './LatitudeSlider';
+import { LatitudeSlider, LAT_PRESETS } from './LatitudeSlider';
 import { PolarLongitudeSelector } from './PolarLongitudeSelector';
 import { BufferedInput } from './BufferedInput';
 import { ArmillaryRail } from './ArmillaryRail';
-import { CONFIG, toRadians } from '../../utils/cosmicMath';
+import { toRadians } from '../../utils/cosmicMath';
 
 describe('Observatory Interactive Controls Test Suite', () => {
 
@@ -179,12 +179,12 @@ describe('Observatory Interactive Controls Test Suite', () => {
       expect(southHtml).toContain('cy="165"');
     });
 
-    it('renders all CONFIG.LAT_PRESETS with active selection styling', () => {
+    it('renders all LAT_PRESETS with active selection styling', () => {
       const html = renderToStaticMarkup(
         <LatitudeSlider latitude={0} onChange={vi.fn()} />
       );
 
-      for (const preset of CONFIG.LAT_PRESETS) {
+      for (const preset of LAT_PRESETS) {
         expect(html).toContain(preset.label);
       }
 

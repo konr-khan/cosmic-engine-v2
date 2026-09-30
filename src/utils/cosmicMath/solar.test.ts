@@ -12,7 +12,7 @@ import {
   calculateDaylightDurationPrecise,
   calculatePolarState,
   POLAR_STATES,
-  CONFIG,
+  SOLAR_TWILIGHT_THRESHOLDS,
   calculateAnnualSolarMatrix
 } from './index';
 
@@ -102,7 +102,7 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
 
   describe('Polar Boundary & Extreme Latitude Hardening', () => {
     it('never outputs NaN or null across all latitudes [-90, +90]', () => {
-      const angles = Object.values(CONFIG.SOLAR.TWILIGHT);
+      const angles = Object.values(SOLAR_TWILIGHT_THRESHOLDS);
       const declinations = [-23.44, -15, 0, 15, 23.44];
 
       for (let lat = -90; lat <= 90; lat += 1) {
@@ -123,7 +123,7 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
       const latitudes = [-90, -78, -65, -45, 0, 45, 65, 78, 90];
       const declinations = [-23.44, -10, 0, 10, 23.44];
 
-      const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
+      const { OFFICIAL, CIVIL, NAUTICAL, ASTRONOMICAL } = SOLAR_TWILIGHT_THRESHOLDS;
 
       latitudes.forEach(lat => {
         declinations.forEach(dec => {
@@ -143,7 +143,7 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
       const summerDec = 23.44;
       const winterDec = -23.44;
       const equinoxDec = 0.0;
-      const official = CONFIG.SOLAR.TWILIGHT.OFFICIAL;
+      const official = SOLAR_TWILIGHT_THRESHOLDS.OFFICIAL;
 
       // North Pole (+90°)
       expect(calculateDaylightDurationPrecise(90, summerDec, official)).toBe(24.0);

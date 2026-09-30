@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { CONFIG } from '../../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
 import { TerminatorHoverHud } from './TerminatorHoverHud';
 import { TerminatorLandmasses } from './TerminatorLandmasses';
@@ -209,8 +208,8 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
               onPointerLeave={() => setHoveredPoint(null)}
             >
               <circle cx={relSunX} cy={sunCy} r="12" fill="transparent" />
-              <circle cx={relSunX} cy={sunCy} r={sunGlowRadius} fill={CONFIG.THEME.SUN_FILL} opacity="0.25" />
-              <circle cx={relSunX} cy={sunCy} r={sunRadius} fill={CONFIG.THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
+              <circle cx={relSunX} cy={sunCy} r={sunGlowRadius} fill="#fbbf24" opacity="0.25" />
+              <circle cx={relSunX} cy={sunCy} r={sunRadius} fill="#fbbf24" stroke="#ffffff" strokeWidth="1.5" className="drop-shadow" />
               <text x={relSunX + sunRadius + 3} y={sunCy + 3} className="text-[7.5px] fill-amber-300 font-bold font-mono select-none pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]">
                 SUN
               </text>

@@ -177,6 +177,8 @@ export function runMathPurityCheck(targetDir = cosmicMathDir) {
       continue;
     }
 
+const BANNED_MATH_PRESENTATION_REGEX = /^(text|bg|fill|stroke)-[a-z]+-\d{2,3}$/;
+
     const lines = content.split('\n');
     walkAst(ast, (node) => {
       if (node.type === 'ImportDeclaration') {
@@ -188,7 +190,22 @@ export function runMathPurityCheck(targetDir = cosmicMathDir) {
             filePath,
             line,
             column: column + 1,
-            source: src,
+            source: `imported '${src}'`,
+            snippet: lines[line - 1]?.trim() || ''
+          });
+        }
+      }
+
+      if (node.type === 'StringLiteral') {
+        const val = node.value || '';
+        if (BANNED_MATH_PRESENTATION_REGEX.test(val)) {
+          const line = node.loc?.start.line || 1;
+          const column = node.loc?.start.column || 0;
+          violations.push({
+            filePath,
+            line,
+            column: column + 1,
+            source: `Tailwind presentation token '${val}'`,
             snippet: lines[line - 1]?.trim() || ''
           });
         }
@@ -245,11 +262,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   if (mathPurity.violations.length > 0) {
     console.error('\n❌ [math-purity] Mathematical Purity AST Violations Detected:');
-    console.error('Pure domain modules in src/utils/cosmicMath/** must remain pure and free of React or UI component imports.\n');
+    console.error('Pure domain modules in src/utils/cosmicMath/** must remain pure and free of React, UI component imports, or presentation tokens.\n');
 
     for (const v of mathPurity.violations) {
       const relPath = path.relative(rootDir, v.filePath).replace(/\\/g, '/');
-      console.error(`  ${relPath}:${v.line}:${v.column} — imported '${v.source}'`);
+      console.error(`  ${relPath}:${v.line}:${v.column} — ${v.source}`);
       console.error(`    > ${v.snippet}\n`);
     }
 
@@ -264,7 +281,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   console.log(`\n✔ [unit-safety] All UI components (${totalFiles} files) conform to branded unit safety guardrails.`);
   console.log('  0 instances of asDegrees() or asRadians() found in src/components/**.');
-  console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports).`);
+  console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports or presentation tokens).`);
   console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).\n`);
   process.exit(0);
 }

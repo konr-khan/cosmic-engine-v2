@@ -87,7 +87,7 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
     expect(foundViolations).toHaveLength(4);
   });
 
-  it('enforces mathematical domain purity (0 React or UI component imports in src/utils/cosmicMath)', () => {
+  it('enforces mathematical domain purity (0 React or UI component imports or presentation tokens in src/utils/cosmicMath)', () => {
     const { totalFiles, violations } = runMathPurityCheck() as {
       totalFiles: number;
       violations: Array<{ filePath: string; line: number; column: number; source: string; snippet: string }>;
@@ -95,7 +95,7 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
 
     expect(totalFiles).toBeGreaterThan(20);
     if (violations.length > 0) {
-      const summary = violations.map(v => `${v.filePath}:${v.line}:${v.column} imported '${v.source}'`).join('\n');
+      const summary = violations.map(v => `${v.filePath}:${v.line}:${v.column} ${v.source}`).join('\n');
       expect.fail(`Found ${violations.length} mathematical domain purity violations:\n${summary}`);
     }
     expect(violations).toHaveLength(0);

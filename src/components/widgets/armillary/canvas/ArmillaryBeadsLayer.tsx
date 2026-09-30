@@ -126,6 +126,12 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       {/* 2. Seasonal Milestone Nodes (Heliocentric / Geocentric) */}
       {milestonesOpacity > 0.05 && milestones.map((m) => {
         const isHovered = !isDragging && hoveredMilestone?.id === m.id;
+        const mColor = m.color || (
+          m.id === 'perihelion' ? '#ef4444' :
+          m.id === 'mar_equinox' || m.id === 'sep_equinox' ? '#c084fc' :
+          m.id === 'jun_solstice' || m.id === 'dec_solstice' ? '#f59e0b' :
+          m.id === 'aphelion' ? '#38bdf8' : '#38bdf8'
+        );
         return (
           <g
             key={m.id}
@@ -149,7 +155,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               cx={m.screenPos.x}
               cy={m.screenPos.y}
               r={isHovered ? 7.0 : 4.5}
-              fill={m.color}
+              fill={mColor}
               opacity={isHovered ? 0.45 : 0.20}
               className={`pointer-events-none transition-[r,opacity] duration-200 ${isHovered ? 'animate-pulse' : ''}`}
             />
@@ -158,7 +164,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               cx={m.screenPos.x}
               cy={m.screenPos.y}
               r={isHovered ? 2.8 : 2.0}
-              fill={m.color}
+              fill={mColor}
               stroke="#ffffff"
               strokeWidth={isHovered ? 1.2 : 0.75}
               className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
@@ -168,7 +174,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
               x={m.screenPos.x}
               y={m.screenPos.y - (isHovered ? 6.5 : 5.0)}
               fontSize="3.0"
-              fill={m.color}
+              fill={mColor}
               fontFamily="monospace"
               fontWeight="bold"
               textAnchor="middle"

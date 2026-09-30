@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react';
 import { 
-  CONFIG, 
+  SOLAR_TWILIGHT_THRESHOLDS,
+  TOPDOWN_EARTH_BASE_RADIUS,
   getJulianDate, 
   calculateEphemerisFrame,
   calculateDaylightDurationPrecise,
@@ -75,7 +76,7 @@ export const useCosmicEngine = (
     const frame = calculateEphemerisFrame(JD, latitude, longitude);
     const { solarPos } = frame;
     const { declination, n, lambda: solarLambda } = solarPos;
-    const { CIVIL, NAUTICAL, ASTRONOMICAL } = CONFIG.SOLAR.TWILIGHT;
+    const { CIVIL, NAUTICAL, ASTRONOMICAL } = SOLAR_TWILIGHT_THRESHOLDS;
     
     const solarData: SolarAlmanacData = {
       dayLength: frame.dayLength,
@@ -115,7 +116,7 @@ export const useCosmicEngine = (
       const elongationRad = toRadians(lunarPos.elongation ?? (((moonDegrees - sunDegrees) % 360 + 360) % 360));
       const alignmentFactor = Math.cos(2 * elongationRad);
 
-      const baseOceanSize = CONFIG.ORBIT.earthRadius + 4;
+      const baseOceanSize = TOPDOWN_EARTH_BASE_RADIUS + 4;
       const tideRx = baseOceanSize + 6 + (3 * alignmentFactor);
       const tideType: TideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
 
