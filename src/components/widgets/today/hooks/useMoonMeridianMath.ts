@@ -42,6 +42,12 @@ import {
   MeridianPeakTargetConfig,
   MeridianDiurnalChordConfig,
 } from '../MeridianDomeBase';
+import {
+  createMeridianRadialTickConfig,
+  createMeridianSwathConfig,
+  createMeridianGateAnchorConfig,
+  createMeridianPeakTargetConfig,
+} from './meridianConfigHelpers';
 
 export interface UseMoonMeridianMathParams {
   orbitalData?: OrbitalData | null;
@@ -285,76 +291,86 @@ export const useMoonMeridianMath = ({
     ...(isStandstillActive
       ? (monthlySwathD
           ? [
-              {
-                id: 'monthly-lunar-swath-guide',
-                d: monthlySwathD,
-                stroke: '#94a3b8',
-                strokeWidth: 0.85,
-                strokeDasharray: '2 3',
-                strokeOpacity: 0.30,
-                title: `Monthly Lunar Transit Range: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'} to ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}`,
-              },
+              createMeridianSwathConfig(
+                'monthly-lunar-swath-guide',
+                monthlySwathD,
+                '#94a3b8',
+                `Monthly Lunar Transit Range: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'} to ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}`,
+                {
+                  strokeWidth: 0.85,
+                  strokeDasharray: '2 3',
+                  strokeOpacity: 0.30,
+                }
+              ),
             ]
           : [])
       : (standstillSwathD
           ? [
-              {
-                id: 'standstill-swath-guide',
-                d: standstillSwathD,
-                stroke: '#818cf8',
-                strokeWidth: 0.85,
-                strokeDasharray: '2 3',
-                strokeOpacity: 0.25,
-                title: `18.6-Year Major Standstill Range: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'} to ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}`,
-              },
+              createMeridianSwathConfig(
+                'standstill-swath-guide',
+                standstillSwathD,
+                '#818cf8',
+                `18.6-Year Major Standstill Range: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'} to ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}`,
+                {
+                  strokeWidth: 0.85,
+                  strokeDasharray: '2 3',
+                  strokeOpacity: 0.25,
+                }
+              ),
             ]
           : [])),
     ...(maxSwathD
       ? [
-          {
-            id: 'lunar-migration-swath-max',
-            d: maxSwathD,
-            stroke: isNodalModeActive ? nodalThemeColor : isStandstillActive ? '#818cf8' : '#e0e7ff',
-            strokeWidth: isApproachingMax ? 1.4 : 0.9,
-            strokeDasharray: '3 2',
-            strokeOpacity: isApproachingMax ? 0.90 : 0.40,
-            glow: true,
-            glowWidth: 4,
-            glowOpacity: isApproachingMax ? 0.25 : 0.10,
-            title: `${targetTierLabel} Max Arc: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${targetMaxAlt.toFixed(1)}° ${targetMaxTag}${isApproachingMax ? ' (Approaching Peak)' : ''}`,
-          },
+          createMeridianSwathConfig(
+            'lunar-migration-swath-max',
+            maxSwathD,
+            isNodalModeActive ? nodalThemeColor : isStandstillActive ? '#818cf8' : '#e0e7ff',
+            `${targetTierLabel} Max Arc: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${targetMaxAlt.toFixed(1)}° ${targetMaxTag}${isApproachingMax ? ' (Approaching Peak)' : ''}`,
+            {
+              strokeWidth: isApproachingMax ? 1.4 : 0.9,
+              strokeDasharray: '3 2',
+              strokeOpacity: isApproachingMax ? 0.90 : 0.40,
+              glow: true,
+              glowWidth: 4,
+              glowOpacity: isApproachingMax ? 0.25 : 0.10,
+            }
+          ),
         ]
       : []),
     ...(minSwathD
       ? [
-          {
-            id: 'lunar-migration-swath-min',
-            d: minSwathD,
-            stroke: isNodalModeActive ? (isAscendingBranch ? '#f43f5e' : '#38bdf8') : isStandstillActive ? '#6366f1' : '#94a3b8',
-            strokeWidth: !isApproachingMax ? 1.4 : 0.9,
-            strokeDasharray: '3 2',
-            strokeOpacity: !isApproachingMax ? 0.90 : 0.40,
-            glow: true,
-            glowWidth: 4,
-            glowOpacity: !isApproachingMax ? 0.25 : 0.10,
-            title: `${targetTierLabel} Min Arc: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${targetMinAlt > 0 ? targetMinAlt.toFixed(1) + '° ' + targetMinTag : 'Below 0°'}${!isApproachingMax ? ' (Approaching Trough)' : ''}`,
-          },
+          createMeridianSwathConfig(
+            'lunar-migration-swath-min',
+            minSwathD,
+            isNodalModeActive ? (isAscendingBranch ? '#f43f5e' : '#38bdf8') : isStandstillActive ? '#6366f1' : '#94a3b8',
+            `${targetTierLabel} Min Arc: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${targetMinAlt > 0 ? targetMinAlt.toFixed(1) + '° ' + targetMinTag : 'Below 0°'}${!isApproachingMax ? ' (Approaching Trough)' : ''}`,
+            {
+              strokeWidth: !isApproachingMax ? 1.4 : 0.9,
+              strokeDasharray: '3 2',
+              strokeOpacity: !isApproachingMax ? 0.90 : 0.40,
+              glow: true,
+              glowWidth: 4,
+              glowOpacity: !isApproachingMax ? 0.25 : 0.10,
+            }
+          ),
         ]
       : []),
     ...(isPolar && polarLunarMaxCounterpartSwathD && targetMaxAlt >= 0
       ? [
-          {
-            id: 'polar-counterpart-lunar-max-swath',
-            d: polarLunarMaxCounterpartSwathD,
-            stroke: isStandstillActive ? '#818cf8' : '#e0e7ff',
-            strokeWidth: isApproachingMax ? 1.4 : 0.9,
-            strokeDasharray: '3 2',
-            strokeOpacity: isApproachingMax ? 0.85 : 0.35,
-            glow: true,
-            glowWidth: 4,
-            glowOpacity: isApproachingMax ? 0.25 : 0.10,
-            title: `Polar Lunar Max Antimeridian Arc (180°): ${targetMaxAlt.toFixed(1)}° (${isApproachingMax ? 'Approaching Peak' : 'Receding'})`,
-          },
+          createMeridianSwathConfig(
+            'polar-counterpart-lunar-max-swath',
+            polarLunarMaxCounterpartSwathD,
+            isStandstillActive ? '#818cf8' : '#e0e7ff',
+            `Polar Lunar Max Antimeridian Arc (180°): ${targetMaxAlt.toFixed(1)}° (${isApproachingMax ? 'Approaching Peak' : 'Receding'})`,
+            {
+              strokeWidth: isApproachingMax ? 1.4 : 0.9,
+              strokeDasharray: '3 2',
+              strokeOpacity: isApproachingMax ? 0.85 : 0.35,
+              glow: true,
+              glowWidth: 4,
+              glowOpacity: isApproachingMax ? 0.25 : 0.10,
+            }
+          ),
         ]
       : []),
   ], [
@@ -384,45 +400,45 @@ export const useMoonMeridianMath = ({
 
   // --- Radial ticks configuration model ---
   const radialTicks = useMemo<MeridianRadialTickConfig[]>(() => [
-    {
-      id: 'standstill-max-tick',
-      tick: standstillMaxTick,
-      stroke: '#818cf8',
-      strokeWidth: isStandstillActive ? 1.4 : 1.1,
-      strokeDasharray: isStandstillActive ? undefined : '2 1',
-      title: `Major Standstill Max: ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}${isStandstillActive ? ' (Active Standstill Target)' : ''}`,
-    },
-    {
-      id: 'standstill-min-tick',
-      tick: standstillMinTick,
-      stroke: '#6366f1',
-      strokeWidth: isStandstillActive ? 1.4 : 1.1,
-      strokeDasharray: isStandstillActive ? undefined : '2 1',
-      title: `Major Standstill Min: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'}${isStandstillActive ? ' (Active Standstill Target)' : ''}`,
-    },
-    {
-      id: 'monthly-max-tick',
-      tick: monthMaxTick,
-      stroke: '#e2e8f0',
-      strokeWidth: !isStandstillActive ? 1.4 : 1.1,
-      title: `Monthly Max Transit Peak: ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}${!isStandstillActive ? ' (Active Monthly Target)' : ''}`,
-    },
-    {
-      id: 'monthly-min-tick',
-      tick: monthMinTick,
-      stroke: '#94a3b8',
-      strokeWidth: !isStandstillActive ? 1.4 : 1.1,
-      title: `Monthly Min Transit Peak: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'}${!isStandstillActive ? ' (Active Monthly Target)' : ''}`,
-    },
+    createMeridianRadialTickConfig(
+      'standstill-max-tick',
+      standstillMaxTick,
+      '#818cf8',
+      `Major Standstill Max: ${standstillMax.altitude.toFixed(1)}° ${standstillMax.shortTag}${isStandstillActive ? ' (Active Standstill Target)' : ''}`,
+      isStandstillActive ? 1.4 : 1.1,
+      isStandstillActive ? undefined : '2 1'
+    ),
+    createMeridianRadialTickConfig(
+      'standstill-min-tick',
+      standstillMinTick,
+      '#6366f1',
+      `Major Standstill Min: ${standstillMin.altitude > 0 ? standstillMin.altitude.toFixed(1) + '° ' + standstillMin.shortTag : 'Below 0°'}${isStandstillActive ? ' (Active Standstill Target)' : ''}`,
+      isStandstillActive ? 1.4 : 1.1,
+      isStandstillActive ? undefined : '2 1'
+    ),
+    createMeridianRadialTickConfig(
+      'monthly-max-tick',
+      monthMaxTick,
+      '#e2e8f0',
+      `Monthly Max Transit Peak: ${monthMax.altitude.toFixed(1)}° ${monthMax.shortTag}${!isStandstillActive ? ' (Active Monthly Target)' : ''}`,
+      !isStandstillActive ? 1.4 : 1.1
+    ),
+    createMeridianRadialTickConfig(
+      'monthly-min-tick',
+      monthMinTick,
+      '#94a3b8',
+      `Monthly Min Transit Peak: ${monthMin.altitude > 0 ? monthMin.altitude.toFixed(1) + '° ' + monthMin.shortTag : 'Below 0°'}${!isStandstillActive ? ' (Active Monthly Target)' : ''}`,
+      !isStandstillActive ? 1.4 : 1.1
+    ),
     ...(isPolar && polarMaxCounterpart && targetMaxAlt >= 0
       ? [
-          {
-            id: 'polar-counterpart-lunar-max-tick',
-            tick: polarMaxCounterpart.oppositeTick,
-            stroke: isStandstillActive ? '#818cf8' : '#e2e8f0',
-            strokeWidth: 1.4,
-            title: `Polar Lunar Max 24h Antimeridian (180°) Culmination: ${targetMaxAlt.toFixed(1)}° (${targetTierLabel})`,
-          },
+          createMeridianRadialTickConfig(
+            'polar-counterpart-lunar-max-tick',
+            polarMaxCounterpart.oppositeTick,
+            isStandstillActive ? '#818cf8' : '#e2e8f0',
+            `Polar Lunar Max 24h Antimeridian (180°) Culmination: ${targetMaxAlt.toFixed(1)}° (${targetTierLabel})`,
+            1.4
+          ),
         ]
       : []),
   ], [
@@ -456,22 +472,25 @@ export const useMoonMeridianMath = ({
   }), [todayChord, nodalThemeColor, moonTrackDash, peakAlt, todayCulmination.shortTag]);
 
   // --- Gate Anchor Configuration Model ---
-  const gateAnchor = useMemo<MeridianGateAnchorConfig>(() => ({
-    id: 'moon-horizon-gate-anchor',
-    x: todayChord.anchorPoint.x,
-    y: todayChord.anchorPoint.y,
-    r: 3.5,
-    stroke: '#64748b',
-    title: 'Lunar Horizon Gate (0°): Setting & Rising Station',
-  }), [todayChord.anchorPoint.x, todayChord.anchorPoint.y]);
+  const gateAnchor = useMemo<MeridianGateAnchorConfig>(() => (
+    createMeridianGateAnchorConfig(
+      'moon-horizon-gate-anchor',
+      todayChord.anchorPoint,
+      '#64748b',
+      'Lunar Horizon Gate (0°): Setting & Rising Station',
+      3.5
+    )
+  ), [todayChord.anchorPoint.x, todayChord.anchorPoint.y]);
 
   // --- Peak Target Configuration Model ---
-  const peakTarget = useMemo<MeridianPeakTargetConfig>(() => ({
-    id: 'meridian-transit-peak-target',
-    peakPoint: todayPeakPoint,
-    stroke: nodalThemeColor,
-    title: `Today's Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`,
-  }), [todayPeakPoint, nodalThemeColor, peakAlt, todayCulmination.shortTag]);
+  const peakTarget = useMemo<MeridianPeakTargetConfig>(() => (
+    createMeridianPeakTargetConfig(
+      'meridian-transit-peak-target',
+      todayPeakPoint,
+      nodalThemeColor,
+      `Today's Transit Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`
+    )
+  ), [todayPeakPoint, nodalThemeColor, peakAlt, todayCulmination.shortTag]);
 
   const showPolarMaxChord = Boolean(isPolar && polarMaxCounterpart && targetMaxAlt >= 0);
 

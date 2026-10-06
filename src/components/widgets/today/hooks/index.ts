@@ -6,3 +6,9 @@ export { useSunElevationMath } from './useSunElevationMath';
 export type { UseSunElevationMathParams, SunElevationMathResult } from './useSunElevationMath';
 export { useSunMeridianMath, OBLIQUITY, getTwilightTier } from './useSunMeridianMath';
 export type { UseSunMeridianMathParams, SunMeridianMathResult } from './useSunMeridianMath';
+export {
+  createMeridianRadialTickConfig,
+  createMeridianSwathConfig,
+  createMeridianGateAnchorConfig,
+  createMeridianPeakTargetConfig,
+} from './meridianConfigHelpers';

@@ -38,6 +38,12 @@ import {
   MeridianPeakTargetConfig,
   MeridianDiurnalChordConfig,
 } from '../MeridianDomeBase';
+import {
+  createMeridianRadialTickConfig,
+  createMeridianSwathConfig,
+  createMeridianGateAnchorConfig,
+  createMeridianPeakTargetConfig,
+} from './meridianConfigHelpers';
 
 export interface UseSunMeridianMathParams {
   solarData?: SolarAlmanacData | null;
@@ -261,66 +267,74 @@ export const useSunMeridianMath = ({
   const swaths = useMemo<MeridianSwathConfig[]>(() => [
     ...(juneSwathD
       ? [
-          {
-            id: 'solstice-swath-june',
-            d: juneSwathD,
-            stroke: '#fbbf24',
-            strokeWidth: isApproachingJune ? 1.25 : 0.9,
-            strokeDasharray: '3 2',
-            strokeOpacity: isApproachingJune ? 0.85 : 0.40,
-            glow: true,
-            glowWidth: 4,
-            glowOpacity: isApproachingJune ? 0.25 : 0.10,
-            title: juneSwathTitle,
-          },
+          createMeridianSwathConfig(
+            'solstice-swath-june',
+            juneSwathD,
+            '#fbbf24',
+            juneSwathTitle,
+            {
+              strokeWidth: isApproachingJune ? 1.25 : 0.9,
+              strokeDasharray: '3 2',
+              strokeOpacity: isApproachingJune ? 0.85 : 0.40,
+              glow: true,
+              glowWidth: 4,
+              glowOpacity: isApproachingJune ? 0.25 : 0.10,
+            }
+          ),
         ]
       : []),
     ...(decemberSwathD
       ? [
-          {
-            id: 'solstice-swath-december',
-            d: decemberSwathD,
-            stroke: '#d97706',
-            strokeWidth: !isApproachingJune ? 1.25 : 0.9,
-            strokeDasharray: '3 2',
-            strokeOpacity: !isApproachingJune ? 0.85 : 0.40,
-            glow: true,
-            glowWidth: 4,
-            glowOpacity: !isApproachingJune ? 0.25 : 0.10,
-            title: decemberSwathTitle,
-          },
+          createMeridianSwathConfig(
+            'solstice-swath-december',
+            decemberSwathD,
+            '#d97706',
+            decemberSwathTitle,
+            {
+              strokeWidth: !isApproachingJune ? 1.25 : 0.9,
+              strokeDasharray: '3 2',
+              strokeOpacity: !isApproachingJune ? 0.85 : 0.40,
+              glow: true,
+              glowWidth: 4,
+              glowOpacity: !isApproachingJune ? 0.25 : 0.10,
+            }
+          ),
         ]
       : []),
     ...(isPolar && polarSummerCounterpartSwathD && (isNorth ? showJuneTick : showDecemberTick)
       ? [
-          {
-            id: 'polar-counterpart-summer-swath',
-            d: polarSummerCounterpartSwathD,
-            stroke: summerSolsticeColor,
-            strokeWidth: isApproachingSummer ? 1.25 : 0.9,
-            strokeDasharray: '3 2',
-            strokeOpacity: isApproachingSummer ? 0.85 : 0.40,
-            glow: true,
-            glowWidth: 4,
-            glowOpacity: isApproachingSummer ? 0.25 : 0.10,
-            title: `Polar Summer Solstice Antimeridian Arc (180°): ${summerNoon.toFixed(1)}° (${isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
-          },
+          createMeridianSwathConfig(
+            'polar-counterpart-summer-swath',
+            polarSummerCounterpartSwathD,
+            summerSolsticeColor,
+            `Polar Summer Solstice Antimeridian Arc (180°): ${summerNoon.toFixed(1)}° (${isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
+            {
+              strokeWidth: isApproachingSummer ? 1.25 : 0.9,
+              strokeDasharray: '3 2',
+              strokeOpacity: isApproachingSummer ? 0.85 : 0.40,
+              glow: true,
+              glowWidth: 4,
+              glowOpacity: isApproachingSummer ? 0.25 : 0.10,
+            }
+          ),
         ]
       : []),
     ...(isPolar && polarWinterCounterpartSwathD && (isNorth ? showDecemberTick : showJuneTick)
       ? [
-          {
-            id: 'polar-counterpart-winter-swath',
-            d: polarWinterCounterpartSwathD,
-            stroke: winterSolsticeColor,
-            strokeWidth: !isApproachingSummer ? 1.25 : 0.9,
-            strokeDasharray: '3 2',
-            strokeOpacity: !isApproachingSummer ? 0.85 : 0.40,
-            glow: true,
-            glowWidth: 4,
-            glowOpacity: !isApproachingSummer ? 0.25 : 0.10,
-            title: `Polar Winter Solstice Antimeridian Arc (180°): ${winterNoon.toFixed(1)}° (${!isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
-          },
+          createMeridianSwathConfig(
+            'polar-counterpart-winter-swath',
+            polarWinterCounterpartSwathD,
+            winterSolsticeColor,
+            `Polar Winter Solstice Antimeridian Arc (180°): ${winterNoon.toFixed(1)}° (${!isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
+            {
+              strokeWidth: !isApproachingSummer ? 1.25 : 0.9,
+              strokeDasharray: '3 2',
+              strokeOpacity: !isApproachingSummer ? 0.85 : 0.40,
+              glow: true,
+              glowWidth: 4,
+              glowOpacity: !isApproachingSummer ? 0.25 : 0.10,
+            }
+          ),
         ]
       : []),
   ], [
@@ -346,53 +360,53 @@ export const useSunMeridianMath = ({
   const radialTicks = useMemo<MeridianRadialTickConfig[]>(() => [
     ...(showJuneTick
       ? [
-          {
-            id: 'summer-solstice-tick',
-            tick: juneTick,
-            stroke: '#fbbf24',
-            strokeWidth: 1.4,
-            title: juneTickTitle,
-          },
+          createMeridianRadialTickConfig(
+            'summer-solstice-tick',
+            juneTick,
+            '#fbbf24',
+            juneTickTitle,
+            1.4
+          ),
         ]
       : []),
     ...(showDecemberTick
       ? [
-          {
-            id: 'winter-solstice-tick',
-            tick: decemberTick,
-            stroke: '#d97706',
-            strokeWidth: 1.4,
-            title: decemberTickTitle,
-          },
+          createMeridianRadialTickConfig(
+            'winter-solstice-tick',
+            decemberTick,
+            '#d97706',
+            decemberTickTitle,
+            1.4
+          ),
         ]
       : []),
-    {
-      id: 'equinox-tick',
-      tick: equinoxTick,
-      stroke: '#64748b',
-      strokeWidth: 1.0,
-      title: `Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`,
-    },
+    createMeridianRadialTickConfig(
+      'equinox-tick',
+      equinoxTick,
+      '#64748b',
+      `Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`,
+      1.0
+    ),
     ...(isPolar && polarSummerCounterpart && (isNorth ? showJuneTick : showDecemberTick)
       ? [
-          {
-            id: 'polar-counterpart-summer-tick',
-            tick: polarSummerCounterpart.oppositeTick,
-            stroke: summerSolsticeColor,
-            strokeWidth: 1.4,
-            title: `Summer Solstice 24h Antimeridian (180°) Culmination: ${summerNoon.toFixed(1)}° (Midnight Sun)`,
-          },
+          createMeridianRadialTickConfig(
+            'polar-counterpart-summer-tick',
+            polarSummerCounterpart.oppositeTick,
+            summerSolsticeColor,
+            `Summer Solstice 24h Antimeridian (180°) Culmination: ${summerNoon.toFixed(1)}° (Midnight Sun)`,
+            1.4
+          ),
         ]
       : []),
     ...(isPolar && polarWinterCounterpart && (isNorth ? showDecemberTick : showJuneTick)
       ? [
-          {
-            id: 'polar-counterpart-winter-tick',
-            tick: polarWinterCounterpart.oppositeTick,
-            stroke: winterSolsticeColor,
-            strokeWidth: 1.4,
-            title: `Winter Solstice 24h Antimeridian (180°) Culmination: ${winterNoon.toFixed(1)}° (${getTwilightTier(winterNoon)})`,
-          },
+          createMeridianRadialTickConfig(
+            'polar-counterpart-winter-tick',
+            polarWinterCounterpart.oppositeTick,
+            winterSolsticeColor,
+            `Winter Solstice 24h Antimeridian (180°) Culmination: ${winterNoon.toFixed(1)}° (${getTwilightTier(winterNoon)})`,
+            1.4
+          ),
         ]
       : []),
   ], [
@@ -435,24 +449,25 @@ export const useSunMeridianMath = ({
   // --- Gate Anchor Configuration Model ---
   const gateAnchor = useMemo<MeridianGateAnchorConfig | undefined>(() => (
     isTwilightModeActive
-      ? {
-          id: 'sun-twilight-gate-anchor',
-          x: todayChord.anchorPoint.x,
-          y: todayChord.anchorPoint.y,
-          r: 3.5,
-          stroke: '#64748b',
-          title: 'Astronomical Twilight Gate (−18°): Deep Night Station',
-        }
+      ? createMeridianGateAnchorConfig(
+          'sun-twilight-gate-anchor',
+          todayChord.anchorPoint,
+          '#64748b',
+          'Astronomical Twilight Gate (−18°): Deep Night Station',
+          3.5
+        )
       : undefined
   ), [isTwilightModeActive, todayChord.anchorPoint.x, todayChord.anchorPoint.y]);
 
   // --- Peak Target Configuration Model ---
-  const peakTarget = useMemo<MeridianPeakTargetConfig>(() => ({
-    id: 'meridian-noon-peak-target',
-    peakPoint: todayPeakPoint,
-    stroke: '#f59e0b',
-    title: `Today's Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`,
-  }), [todayPeakPoint, peakAlt, todayCulmination.shortTag]);
+  const peakTarget = useMemo<MeridianPeakTargetConfig>(() => (
+    createMeridianPeakTargetConfig(
+      'meridian-noon-peak-target',
+      todayPeakPoint,
+      '#f59e0b',
+      `Today's Noon Peak: ${peakAlt.toFixed(1)}° ${todayCulmination.shortTag}`
+    )
+  ), [todayPeakPoint, peakAlt, todayCulmination.shortTag]);
 
   return {
     currentSunElevation,
