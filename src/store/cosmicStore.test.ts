@@ -154,5 +154,64 @@ describe('Cosmic Store & State Isolation Suite', () => {
     expect(selectIsPlaying(state)).toBe(false);
     expect(selectSpeed(state)).toBe(10);
   });
+
+  it('accumulates small delta increments accurately at 60 FPS over 600 frames without quantization loss', () => {
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setSpeed(1);
+
+    const frameDeltaSeconds = 1 / 60; // 16.66667 ms per frame
+    const totalFrames = 600; // 10 seconds of simulated 60 FPS playback
+
+    for (let i = 0; i < totalFrames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const expectedTime = 12 + 10 / 3600; // ~12.002778 hours
+    const actualTime = cosmicStore.getState().timeOfDay;
+
+    expect(actualTime).toBeCloseTo(expectedTime, 4);
+    expect(Math.abs(actualTime - expectedTime)).toBeLessThan(0.0001);
+  });
+
+  it('handles fractional speed and negative speed over multiple small frames accurately', () => {
+    // 1. Fractional speed (0.25x)
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setSpeed(0.25);
+    const frameDeltaSeconds = 1 / 60;
+    const frames = 300; // 5 seconds of real time => 1.25 simulated seconds
+
+    for (let i = 0; i < frames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const expectedFractionalTime = 12 + (5 * 0.25) / 3600;
+    expect(cosmicStore.getState().timeOfDay).toBeCloseTo(expectedFractionalTime, 5);
+
+    // 2. Negative speed (-1x)
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setSpeed(-1);
+
+    for (let i = 0; i < frames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const expectedNegativeTime = 12 - 5 / 3600;
+    expect(cosmicStore.getState().timeOfDay).toBeCloseTo(expectedNegativeTime, 5);
+
+    // 3. Negative speed crossing midnight boundary over small frames
+    cosmicActions.setTimeOfDay(0.001); // 3.6 seconds after midnight
+    cosmicActions.setDate(new Date(Date.UTC(2026, 5, 21)));
+    cosmicActions.setSpeed(-1);
+
+    // Tick backward 300 frames (5 seconds = 5 / 3600 hours)
+    for (let i = 0; i < frames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const state = cosmicStore.getState();
+    const expectedWrappedTime = 24 + 0.001 - 5 / 3600;
+    expect(state.timeOfDay).toBeCloseTo(expectedWrappedTime, 5);
+    expect(state.date.getUTCDate()).toBe(20); // Decremented from 21 to 20
+  });
 });
 

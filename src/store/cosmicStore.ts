@@ -127,7 +127,7 @@ export class CosmicStore {
     }
 
     this.setState({
-      timeOfDay: parseFloat(newTime.toFixed(4)),
+      timeOfDay: newTime,
       date: newDate,
     });
   };
