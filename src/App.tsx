@@ -16,7 +16,6 @@ const MacroOrbitView = React.lazy(() => import('./components/widgets/macro/Macro
 const GyroArmillaryView = React.lazy(() => import('./components/widgets/armillary/GyroArmillaryView'));
 const MicroTideView = React.lazy(() => import('./components/widgets/tides/MicroTideView'));
 import { getDayOfYear } from './utils/cosmicMath';
-import { HoursDecimal } from './types/units';
 import { CosmicStoreState } from './types/store';
 
 const selectCalendarParams = (state: CosmicStoreState) => ({
@@ -45,7 +44,7 @@ const LunarAlmanacWidgetContent = React.memo(function LunarAlmanacWidgetContent(
   const { date, latitude, longitude } = useChronometerStore(selectCalendarParams);
   const { orbitalData } = useCosmicEngine(
     date,
-    12 as HoursDecimal,
+    12,
     latitude,
     longitude,
     { lunarAlmanac: true }
@@ -73,7 +72,7 @@ const SolarAlmanacWidgetContent = React.memo(function SolarAlmanacWidgetContent(
   const { date, latitude, longitude } = useChronometerStore(selectCalendarParams);
   const { solarData } = useCosmicEngine(
     date,
-    12 as HoursDecimal,
+    12,
     latitude,
     longitude,
     { almanac: true }
@@ -254,7 +253,7 @@ const MemoizedChronometerDock = React.memo<MemoizedChronometerDockProps>(functio
 
   const { solarData } = useCosmicEngine(
     date,
-    12 as HoursDecimal,
+    12,
     latitude,
     longitude,
     { almanac: true }

@@ -121,7 +121,7 @@ All complex architectural changes and feature additions must follow the structur
 ## 6. Subsystem Architecture & Key Contracts
 
 - **Pure Mathematical Engine (`src/utils/cosmicMath/`)**: Deterministic, pure domain functions free of React state or UI side-effects. All algorithms, coordinate systems (Alt-Az, Equatorial, Ecliptic), and polar singularity clamping criteria conform strictly to [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
-- **External Chronometer Store (`src/store/cosmicStore.ts`)**: Decouples 60 FPS animation ticking from React render trees using `useSyncExternalStore` with granular subscriptions (e.g. `useCosmicStore(s => s.julianDate)`).
+- **External Chronometer Store (`src/store/cosmicStore.ts`)**: Decouples 60 FPS animation ticking from React render trees using `useSyncExternalStore` with granular subscriptions (e.g. `useChronometerStore(s => s.timeOfDay)`).
 - **Atomic Hover Store (`src/store/hoverStore.ts`)**: Isolates high-frequency ribbon scrubber state (`hoveredDate`, `hoveredTime`, `hoverPosition`), eliminating 60 FPS cascades across unhovered widgets.
 - **Web Worker Ephemeris Processing (`src/workers/`)**: Multiplexes calculation requests through `ephemerisWorkerManager.ts` with 100ms throttling and monotonic integer sequence stamping (`requestId`) to prevent stale frame overwrites.
 - **Fault-Tolerant Window Grid (`DashboardWindow.tsx`)**: Every visualizer is wrapped in a React Error Boundary with dynamic chunk retry mechanisms, isolating rendering exceptions to individual widgets.
