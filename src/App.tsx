@@ -90,7 +90,7 @@ const SolarAlmanacWidgetContent = React.memo(function SolarAlmanacWidgetContent(
       longitude={longitude} 
       currentDay={dayOfYear} 
       onDayChange={handleDateSlider} 
-      year={date.getFullYear()} 
+      year={date.getUTCFullYear()} 
       solarData={solarData}
     />
   );

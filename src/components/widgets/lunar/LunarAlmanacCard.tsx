@@ -53,7 +53,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
     moonrise = 6, transit = 12, moonset = 18
   } = lunarEvents;
 
-  const year = currentDate ? currentDate.getFullYear() : 2026;
+  const year = currentDate ? currentDate.getUTCFullYear() : 2026;
   const totalDays = getDaysInYear(year);
   const activeDay = Math.min(
     totalDays, 

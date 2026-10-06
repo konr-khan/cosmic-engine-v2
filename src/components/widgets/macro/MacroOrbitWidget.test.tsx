@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   MacroOrbitView, 
@@ -102,6 +102,133 @@ describe('Macro Orbit Subsystem', () => {
 
     expect(htmlCanvas).toContain('cursor-grab');
     expect(htmlCanvas).toContain('r="16"');
+  });
+
+  it('preserves the passed simulation year during orbital date scrubbing without snapping to wall-clock year', () => {
+    const onScrub = vi.fn();
+    const simulationYear = 2038;
+
+    const mockSvg = {
+      createSVGPoint: () => ({
+        x: 0,
+        y: 0,
+        matrixTransform: () => ({ x: -200, y: 0 })
+      }),
+      getScreenCTM: () => ({
+        inverse: () => ({})
+      })
+    };
+
+    let capturedVdom: any = null;
+    function Harness() {
+      const origState = React.useState;
+      const origRef = React.useRef;
+      (React as any).useState = () => [true, vi.fn()];
+      (React as any).useRef = () => ({ current: mockSvg });
+      try {
+        capturedVdom = OrbitSvgCanvas({
+          renderSunX: 0,
+          renderSunY: 0,
+          renderEarthX: 200,
+          renderEarthY: 0,
+          renderMoonX: 228,
+          renderMoonY: 0,
+          orbitalRadius: 200,
+          bRatio: 1,
+          focus2X: 0,
+          focus2Y: 0,
+          exaggerateEccentricity: false,
+          hoveredId: null,
+          onHover: () => {},
+          timeOfDay: 12.0,
+          year: simulationYear,
+          onDateScrub: onScrub
+        });
+      } finally {
+        (React as any).useState = origState;
+        (React as any).useRef = origRef;
+      }
+      return React.createElement('div', null, capturedVdom);
+    }
+
+    renderToStaticMarkup(React.createElement(Harness));
+
+    expect(capturedVdom).toBeDefined();
+    const children = React.Children.toArray(capturedVdom.props.children);
+    const earthHitbox = children.find((child: any) => child?.type === 'circle' && child?.props?.r === '16') as any;
+    expect(earthHitbox).toBeDefined();
+
+    earthHitbox.props.onPointerMove({
+      clientX: 200,
+      clientY: 100
+    });
+
+    expect(onScrub).toHaveBeenCalledTimes(1);
+    const [scrubbedDate] = onScrub.mock.calls[0];
+    expect(scrubbedDate).toBeInstanceOf(Date);
+    expect(scrubbedDate.getUTCFullYear()).toBe(simulationYear);
+  });
+
+  it('falls back to 2026 when year prop is omitted without snapping to wall-clock year', () => {
+    const onScrub = vi.fn();
+
+    const mockSvg = {
+      createSVGPoint: () => ({
+        x: 0,
+        y: 0,
+        matrixTransform: () => ({ x: -200, y: 0 })
+      }),
+      getScreenCTM: () => ({
+        inverse: () => ({})
+      })
+    };
+
+    let capturedVdom: any = null;
+    function Harness() {
+      const origState = React.useState;
+      const origRef = React.useRef;
+      (React as any).useState = () => [true, vi.fn()];
+      (React as any).useRef = () => ({ current: mockSvg });
+      try {
+        capturedVdom = OrbitSvgCanvas({
+          renderSunX: 0,
+          renderSunY: 0,
+          renderEarthX: 200,
+          renderEarthY: 0,
+          renderMoonX: 228,
+          renderMoonY: 0,
+          orbitalRadius: 200,
+          bRatio: 1,
+          focus2X: 0,
+          focus2Y: 0,
+          exaggerateEccentricity: false,
+          hoveredId: null,
+          onHover: () => {},
+          timeOfDay: 12.0,
+          onDateScrub: onScrub
+        });
+      } finally {
+        (React as any).useState = origState;
+        (React as any).useRef = origRef;
+      }
+      return React.createElement('div', null, capturedVdom);
+    }
+
+    renderToStaticMarkup(React.createElement(Harness));
+
+    const children = React.Children.toArray(capturedVdom.props.children);
+    const earthHitbox = children.find((child: any) => child?.type === 'circle' && child?.props?.r === '16') as any;
+    expect(earthHitbox).toBeDefined();
+
+    earthHitbox.props.onPointerMove({
+      clientX: 200,
+      clientY: 100
+    });
+
+    expect(onScrub).toHaveBeenCalledTimes(1);
+    const [scrubbedDate] = onScrub.mock.calls[0];
+    expect(scrubbedDate).toBeInstanceOf(Date);
+    expect(scrubbedDate.getUTCFullYear()).toBe(2026);
   });
 });
 

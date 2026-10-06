@@ -306,6 +306,21 @@ describe('Cosmic Math: Eclipse Presets & Syzygy Geometry', () => {
       expect(events2026.length).toBeGreaterThanOrEqual(1);
     });
 
+    it('formats event titles with strict UTC timeZone invariance across upcoming eclipses', () => {
+      const start2026 = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
+      const events2026 = findUpcomingEclipses(start2026, 4);
+      expect(events2026.length).toBeGreaterThanOrEqual(1);
+      for (const ev of events2026) {
+        const expectedUtcTitle = ev.date.toLocaleDateString('en-US', {
+          timeZone: 'UTC',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+        expect(ev.title).toBe(expectedUtcTitle);
+      }
+    });
+
     it('synchronizes isAscendingHemisphere with true ecliptic latitude beta >= 0', () => {
       // 9/23/2026 15:17 UTC: Mean F = 0, but beta = -0.631° (still South of ecliptic)
       const jd23 = getJulianDate(new Date('2026-09-23T00:00:00Z'), 15 + 17 / 60);

@@ -38,7 +38,8 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   lunarOrbitPath,
   zoom = 1.0,
   onWheelZoom,
-  onDateScrub
+  onDateScrub,
+  year
 }) => {
   const svgRef = React.useRef<SVGSVGElement | null>(null);
   const [isDraggingEarth, setIsDraggingEarth] = React.useState(false);
@@ -76,8 +77,8 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
     const dayFraction = totalDayOfYear - Math.floor(totalDayOfYear);
     const scrubbedHour = parseFloat((dayFraction * 24).toFixed(3));
 
-    const currentYear = new Date().getFullYear();
-    const scrubbedDate = new Date(Date.UTC(currentYear, 0, dayInt, 12, 0, 0));
+    const effectiveYear = year ?? 2026;
+    const scrubbedDate = new Date(Date.UTC(effectiveYear, 0, dayInt, 12, 0, 0));
     onDateScrub(scrubbedDate, scrubbedHour);
   };
 

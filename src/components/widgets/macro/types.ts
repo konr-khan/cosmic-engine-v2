@@ -37,6 +37,7 @@ export interface OrbitSvgCanvasProps {
   onHover: (id: string | null) => void;
   milestones?: OrbitMilestoneInput[];
   onDateScrub?: (date: Date, timeOfDay: number) => void;
+  year?: number;
 }
 
 export interface OrbitHeaderControlsProps {

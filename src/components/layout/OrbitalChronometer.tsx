@@ -62,8 +62,8 @@ export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
   }
 
   const formatDate = (d: number): string => {
-    const tempDate = new Date(date.getFullYear(), 0, d);
-    return tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const tempDate = new Date(Date.UTC(date.getUTCFullYear(), 0, d));
+    return tempDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
   };
   const formatLat = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
   const formatLon = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;

@@ -24,6 +24,7 @@ import {
   EARTH_AXIAL_OBLIQUITY_J2000_DEG,
   getPolarColureInfo,
   PolarColureInfo,
+  getDayOfYear,
 } from '../../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../../types';
 import {
@@ -167,8 +168,7 @@ export const useSunMeridianMath = ({
       const normLambda = ((sunLambda % 360) + 360) % 360;
       return normLambda >= 270 || normLambda < 90;
     }
-    const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
-    const dayOfYear = Math.floor((currentDate.getTime() - startOfYear.getTime()) / 86400000);
+    const dayOfYear = getDayOfYear(currentDate);
     return dayOfYear < 172 || dayOfYear >= 355;
   }, [sunLambda, currentDate]);
 

@@ -336,7 +336,7 @@ export const findUpcomingEclipses = (
             date: eventDate,
             timeOfDay: parseFloat(peakHour.toFixed(3)),
             dayOffset: Math.round(peakOffset),
-            title: `${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+            title: eventDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }),
             ...eclipse
           });
         }

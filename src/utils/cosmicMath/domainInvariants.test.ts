@@ -28,6 +28,7 @@ import {
   calculateLunarPosition,
   calculateLunarEvents,
   calculateEclipseData,
+  findUpcomingEclipses,
   calculateGMST,
   calculateLST,
   equatorialToHorizontal,
@@ -524,6 +525,20 @@ describe('Domain Invariants & Physics Conservation Suite (Wave 5 & 19)', () => {
       expect(jd2400_feb29 - jd2400_feb28).toBeCloseTo(1.0, 6);
       expect(jd2400_mar01 - jd2400_feb29).toBeCloseTo(1.0, 6);
       expect(julianDateToDate(jd2400_feb29).toISOString().slice(0, 10)).toBe('2400-02-29');
+    });
+
+    it('guarantees UTC temporal invariance on eclipse recurrence titles', () => {
+      const start = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
+      const candidates = findUpcomingEclipses(start, 4);
+      expect(candidates.length).toBeGreaterThanOrEqual(1);
+      for (const ev of candidates) {
+        expect(ev.title).toBe(ev.date.toLocaleDateString('en-US', {
+          timeZone: 'UTC',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }));
+      }
     });
   });
 

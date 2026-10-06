@@ -78,7 +78,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
     if (hoveredId === 'earth') {
       return {
         label: 'Current Earth Position',
-        date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: currentDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }),
         distanceAU,
         distanceKm,
         speedKms: orbitalSpeedKms,
@@ -132,6 +132,7 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           zoom={zoom}
           onWheelZoom={handleWheelZoom}
           onDateScrub={handleDateScrub}
+          year={currentDate.getUTCFullYear()}
         />
 
         {/* Orbit View Zoom Controls */}
