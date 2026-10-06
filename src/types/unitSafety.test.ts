@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 // @ts-expect-error - lintUnitSafety is a Node ESM module executed in Vitest runner
-import { runUnitSafetyCheck, runMathPurityCheck, getAgentsSizeBudget } from '../../scripts/lintUnitSafety.mjs';
+import { runUnitSafetyCheck, runMathPurityCheck, getAgentsSizeBudget, runDefaultDateCheck } from '../../scripts/lintUnitSafety.mjs';
 import { parse } from '@babel/parser';
 
 interface UnitViolation {
@@ -113,5 +113,19 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
     expect(budget.isUnderBudget).toBe(true);
     expect(budget.sizeKb).toBeLessThanOrEqual(18.0);
     expect(budget.sizeKb).toBeGreaterThan(5.0);
+  });
+
+  it('enforces prop identity stability (0 instances of "= new Date()" default parameter fallback across src/components and src/hooks)', () => {
+    const { totalFiles, violations } = runDefaultDateCheck() as {
+      totalFiles: number;
+      violations: Array<{ filePath: string; line: number; column: number; snippet: string }>;
+    };
+
+    expect(totalFiles).toBeGreaterThan(50);
+    if (violations.length > 0) {
+      const summary = violations.map(v => `${v.filePath}:${v.line}:${v.column} [default new Date()]: ${v.snippet}`).join('\n');
+      expect.fail(`Found ${violations.length} default new Date() violations in components/hooks:\n${summary}`);
+    }
+    expect(violations).toHaveLength(0);
   });
 });

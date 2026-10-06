@@ -8,6 +8,7 @@ import { OrbitPhysicsHud } from './OrbitPhysicsHud';
 import { MacroOrbitViewProps, MacroOrbitHoverData } from './types';
 import { useHeliocentricScene } from '../../../hooks/useCosmicScene';
 import { useChronometerStore, cosmicActions } from '../../../store/cosmicStore';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 
 const selectMacroObserverParams = (s: { latitude: number; longitude: number; timeOfDay: number }) => ({
   latitude: s.latitude,
@@ -17,7 +18,7 @@ const selectMacroObserverParams = (s: { latitude: number; longitude: number; tim
 
 export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({ 
   eclipse, 
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   currentTime
 }) => {
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState(false);

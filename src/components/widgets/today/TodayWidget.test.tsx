@@ -625,6 +625,7 @@ describe('Today Horizon Subsystem', () => {
       React.createElement(MoonMeridianDome, {
         displayTime: 12,
         latitude: 47.06,
+        currentDate: new Date('2026-09-08T12:00:00Z'),
         orbitalData: {
           phase: { value: 0.5, name: 'Full Moon' },
           lunarEvents: {

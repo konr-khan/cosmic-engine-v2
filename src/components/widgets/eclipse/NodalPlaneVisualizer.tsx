@@ -1,5 +1,6 @@
 import React from 'react';
 import { EclipseData } from '../../../types';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { MiniMoon } from '../../common/MiniMoon';
 import { useNodalPlaneMath } from './hooks';
@@ -14,7 +15,7 @@ export interface NodalPlaneVisualizerProps {
 
 export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({ 
   eclipse,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   latitude = 47.06,
   longitude = -122.81,
   timeOfDay = 12

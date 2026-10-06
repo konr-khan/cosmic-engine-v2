@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { Sun } from 'lucide-react';
 import { formatTime } from '../../../utils/formatters';
 import { SolarAlmanacData } from '../../../types';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 import { SkyDomeBase } from './SkyDomeBase';
 import { SOLAR_TWILIGHT_BADGE_CLASSES } from './todayTokens';
 import { useSunElevationMath, OBLIQUITY } from './hooks/useSunElevationMath';
@@ -31,7 +32,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
   solarData,
   displayTime,
   latitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   onSetTime,
   initialTwilightMode = false,
   isTwilightMode,

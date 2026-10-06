@@ -10,6 +10,7 @@ import { Moon } from 'lucide-react';
 import { formatTime } from '../../../utils/formatters';
 import { PhaseVisual } from '../../common/PhaseVisual';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 import { SkyDomeBase } from './SkyDomeBase';
 import { LUNAR_ELEVATION_BADGE_CLASSES } from './todayTokens';
 import { useMoonElevationMath, LUNAR_MAX_DEC } from './hooks/useMoonElevationMath';
@@ -38,7 +39,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   displayTime,
   latitude,
   longitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   onSetTime,
   initialNodalMode = false,
   isNodalMode,

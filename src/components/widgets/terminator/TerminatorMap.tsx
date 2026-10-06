@@ -4,6 +4,7 @@ import { TerminatorHoverHud } from './TerminatorHoverHud';
 import { TerminatorLandmasses } from './TerminatorLandmasses';
 import { TerminatorGroundTracks } from './TerminatorGroundTracks';
 import { useTerminatorMapMath } from './hooks/useTerminatorMapMath';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 
 export interface TerminatorMapProps {
   solarData?: SolarAlmanacData | null;
@@ -24,7 +25,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   longitude = -122.81, 
   timeOfDay = 12, 
   hoverTime,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   initialShowSunTrack = false,
   initialShowMoonTrack = false
 }) => {

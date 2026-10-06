@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SolarAlmanacData, OrbitalData } from '../../../types';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 import { useHoverTime } from '../../../store/hoverStore';
 import { SunElevationDome } from './SunElevationDome';
 import { MoonElevationDome } from './MoonElevationDome';
@@ -24,7 +25,7 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
   currentTime = 12,
   latitude = 47.06,
   longitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   hoverTime,
   onSetTime,
   initialDomeMode = '2-dome',

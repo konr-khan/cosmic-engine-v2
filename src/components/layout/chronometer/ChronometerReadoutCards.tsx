@@ -44,7 +44,7 @@ export const ChronometerReadoutCards: React.FC<ChronometerReadoutCardsProps> = (
   };
 
   const handleNowTime = () => {
-    const now = new Date();
+    const now = new Date(Date.now());
     const utcHours = now.getUTCHours() + (now.getUTCMinutes() / 60) + (now.getUTCSeconds() / 3600);
     if (onTimeChange) onTimeChange(parseFloat(utcHours.toFixed(3)));
     if (onDateChange) onDateChange(now);

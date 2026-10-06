@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Compass, Calendar } from 'lucide-react';
 import { 
   getDaysInYear, 
-  getDayOfYear 
+  getDayOfYear,
+  J2000_DATE
 } from '../../../utils/cosmicMath';
 import { formatTime } from '../../../utils/formatters';
 import { useAnnualLunarWorker } from '../../../hooks/useEphemerisWorker';
@@ -32,7 +33,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   longitude = -122.81, 
   currentDay = 1, 
   onDayChange, 
-  currentDate = new Date(), 
+  currentDate = J2000_DATE, 
   hoverDate, 
   onHoverDate,
   hoverTime, 

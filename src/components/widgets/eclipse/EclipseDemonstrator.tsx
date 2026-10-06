@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Layers, Eye, Calendar } from 'lucide-react';
-import { findUpcomingEclipses, calculateEclipseData, getJulianDate } from '../../../utils/cosmicMath';
+import { findUpcomingEclipses, calculateEclipseData, getJulianDate, J2000_DATE } from '../../../utils/cosmicMath';
 import { EclipseStatusBadge } from './EclipseStatusBadge';
 import { ShadowRayDiagram } from './ShadowRayDiagram';
 import { NodalPlaneVisualizer } from './NodalPlaneVisualizer';
@@ -19,7 +19,7 @@ export interface EclipseDemonstratorProps {
 }
 
 export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({ 
-  currentDate = new Date(), 
+  currentDate = J2000_DATE, 
   onDateChange, 
   onTimeChange, 
   orbitalData,

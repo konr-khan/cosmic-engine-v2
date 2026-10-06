@@ -12,6 +12,12 @@ import { Degrees, JulianDate, asDegrees, asJulianDate } from '../../types/units'
 export const J2000_JD: JulianDate = asJulianDate(2451545.0);
 
 /**
+ * Standard J2000.0 astronomical epoch Date (2000 January 1 12:00:00 UTC).
+ * Immutable module-level constant for fallback temporal defaults without allocation churn.
+ */
+export const J2000_DATE: Date = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
+
+/**
  * Days per standard Julian century (36,525 ephemeris days).
  */
 export const JULIAN_CENTURY_DAYS = 36525.0;

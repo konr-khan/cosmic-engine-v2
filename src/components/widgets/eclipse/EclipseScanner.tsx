@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { ECLIPSE_PRESETS } from '../../../utils/cosmicMath';
+import { ECLIPSE_PRESETS, J2000_DATE } from '../../../utils/cosmicMath';
 import { formatYMD } from '../../../utils/formatters';
 
 export interface EclipseDiscoveryItem {
@@ -18,7 +18,7 @@ export interface EclipseScannerProps {
 }
 
 export const EclipseScanner: React.FC<EclipseScannerProps> = ({
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   upcomingEclipses = [],
   onSelectPreset
 }) => {

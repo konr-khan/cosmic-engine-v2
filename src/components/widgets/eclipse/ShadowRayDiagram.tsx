@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { EclipseData } from '../../../types';
-import { getPhaseName, calculateLunarIllumination, calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
+import { getPhaseName, calculateLunarIllumination, calculateEarthOrbitalPhysics, getJulianDate, J2000_DATE } from '../../../utils/cosmicMath';
 import { ShadowRayHoverHud } from './ShadowRayHoverHud';
 import { LiveSyzygyView } from './LiveSyzygyView';
 
@@ -14,7 +14,7 @@ export interface ShadowRayDiagramProps {
 
 export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   eclipse,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   latitude = 47.06,
   longitude = -122.81,
   timeOfDay = 12

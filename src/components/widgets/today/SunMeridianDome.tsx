@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { Sun } from 'lucide-react';
 import { SolarAlmanacData } from '../../../types';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 import { MeridianDomeBase } from './MeridianDomeBase';
 import { MeridianDomeFooter } from './common';
 import { useSunMeridianMath, OBLIQUITY } from './hooks/useSunMeridianMath';
@@ -29,7 +30,7 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
   solarData,
   displayTime,
   latitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   initialTwilightMode = false,
   isTwilightMode,
   onToggleTwilight,

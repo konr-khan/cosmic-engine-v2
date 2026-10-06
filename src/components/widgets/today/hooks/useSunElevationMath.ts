@@ -16,7 +16,8 @@ import {
   calculateCulminationBearing,
   calculateRiseSetAzimuth,
   calculateSolsticeCulminations,
-  EARTH_AXIAL_OBLIQUITY_J2000_DEG
+  EARTH_AXIAL_OBLIQUITY_J2000_DEG,
+  J2000_DATE
 } from '../../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../../types';
 import { EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from '../SkyDomeBase';
@@ -35,7 +36,7 @@ export const useSunElevationMath = ({
   solarData,
   displayTime,
   latitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   isTwilightModeActive,
 }: UseSunElevationMathParams) => {
   // Earth-Sun Distance & Orbital Physics from Canonical Solver

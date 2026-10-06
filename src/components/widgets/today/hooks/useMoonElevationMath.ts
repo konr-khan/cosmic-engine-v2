@@ -20,6 +20,7 @@ import {
   calculateLunarExtremaCulminations,
   calculateParallacticAngle,
   LUNAR_MAJOR_STANDSTILL_DEG,
+  J2000_DATE,
 } from '../../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../../types';
 import { EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from '../SkyDomeBase';
@@ -42,7 +43,7 @@ export const useMoonElevationMath = ({
   displayTime,
   latitude,
   longitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   isNodalModeActive,
 }: UseMoonElevationMathParams) => {
   // --- Moon Elevation & Phase Math ---

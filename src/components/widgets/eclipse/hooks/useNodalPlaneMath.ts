@@ -7,6 +7,7 @@ import {
   generateOrbitalSegments,
   toRadians,
   calculateNodalOrbitalAngles,
+  J2000_DATE,
   type OrbitalSegments
 } from '../../../../utils/cosmicMath';
 
@@ -72,7 +73,7 @@ const EMPTY_ORBITAL_SEGMENTS: OrbitalSegments = {
 };
 
 export function useNodalPlaneMath(params: UseNodalPlaneMathParams): UseNodalPlaneMathResult | null {
-  const { eclipse, currentDate = new Date() } = params;
+  const { eclipse, currentDate = J2000_DATE } = params;
 
   const solarPhysics = useMemo(
     () => calculateEarthOrbitalPhysics(getJulianDate(currentDate, 12)),

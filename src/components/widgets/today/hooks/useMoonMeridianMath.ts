@@ -29,6 +29,7 @@ import {
   LUNAR_MAJOR_STANDSTILL_DEG,
   getPolarColureInfo,
   PolarColureInfo,
+  J2000_DATE,
 } from '../../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../../types';
 import {
@@ -59,7 +60,7 @@ export const useMoonMeridianMath = ({
   solarData,
   displayTime,
   latitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   isNodalModeActive,
 }: UseMoonMeridianMathParams) => {
   const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);

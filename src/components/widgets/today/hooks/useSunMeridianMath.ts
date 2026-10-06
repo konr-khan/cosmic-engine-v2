@@ -25,6 +25,7 @@ import {
   getPolarColureInfo,
   PolarColureInfo,
   getDayOfYear,
+  J2000_DATE,
 } from '../../../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../../../types';
 import {
@@ -60,7 +61,7 @@ export const useSunMeridianMath = ({
   solarData,
   displayTime,
   latitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   isTwilightModeActive,
 }: UseSunMeridianMathParams) => {
   const {

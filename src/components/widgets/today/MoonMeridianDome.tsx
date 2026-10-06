@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { Moon } from 'lucide-react';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
+import { J2000_DATE } from '../../../utils/cosmicMath';
 import { MeridianDomeBase, EL_CX } from './MeridianDomeBase';
 import { LunarPhaseDisc, MeridianDomeFooter } from './common';
 import { useMoonMeridianMath, LUNAR_MAX_DEC } from './hooks/useMoonMeridianMath';
@@ -31,7 +32,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
   solarData,
   displayTime,
   latitude,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   initialNodalMode = false,
   isNodalMode,
   onToggleNodal,

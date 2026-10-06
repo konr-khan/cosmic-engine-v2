@@ -2,7 +2,8 @@ import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { 
   generateArmillaryModel, 
   getJulianDate, 
-  calculateEphemerisFrame
+  calculateEphemerisFrame,
+  J2000_DATE
 } from '../../../utils/cosmicMath';
 import { GyroArmillaryViewProps, ArmillaryCameraState, ArmillaryProjectionMode } from './types';
 import { ArmillaryHeaderControls } from './ArmillaryHeaderControls';
@@ -19,7 +20,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   latitude = 47.06,
   longitude = -122.81,
   timeOfDay = 12,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   onSetTime,
   onSetDate,
   hoverTime,

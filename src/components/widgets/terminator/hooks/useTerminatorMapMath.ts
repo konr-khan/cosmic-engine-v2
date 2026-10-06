@@ -10,7 +10,8 @@ import {
   GroundTrackResult,
   ActiveNodalMarker,
   LunarNodeProximityTelemetry,
-  TerminatorShadowPaths
+  TerminatorShadowPaths,
+  J2000_DATE
 } from '../../../../utils/cosmicMath';
 import { SolarAlmanacData, OrbitalData, JulianDate } from '../../../../types';
 import { useHoverTime } from '../../../../store/hoverStore';
@@ -81,7 +82,7 @@ export const useTerminatorMapMath = ({
   longitude = -122.81,
   timeOfDay = 12,
   hoverTime,
-  currentDate = new Date(),
+  currentDate = J2000_DATE,
   showSunTrack = false,
   showMoonTrack = false
 }: UseTerminatorMapMathParams): UseTerminatorMapMathReturn => {
