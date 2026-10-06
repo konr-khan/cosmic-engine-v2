@@ -32,6 +32,28 @@ export interface AnnualMatrixParams {
   longitude: Longitude;
 }
 
+export type AnnualCalculationType = 'ANNUAL_SOLAR' | 'ANNUAL_LUNAR';
+
+export interface AnnualCalculationPayloadMap {
+  ANNUAL_SOLAR: { annualSolar: AnnualSolarMatrixItem[] };
+  ANNUAL_LUNAR: { annualLunar: AnnualLunarMatrixItem[] };
+}
+
+export interface AnnualCalculationParamsMap {
+  ANNUAL_SOLAR: { year: number; latitude: Latitude };
+  ANNUAL_LUNAR: { year: number; latitude: Latitude; longitude: Longitude };
+}
+
+export interface AnnualCalculationRequestTypeMap {
+  ANNUAL_SOLAR: 'CALCULATE_ANNUAL_SOLAR';
+  ANNUAL_LUNAR: 'CALCULATE_ANNUAL_LUNAR';
+}
+
+export interface AnnualCalculationCacheItemMap {
+  ANNUAL_SOLAR: AnnualSolarMatrixItem[];
+  ANNUAL_LUNAR: AnnualLunarMatrixItem[];
+}
+
 /** Worker request message discriminators */
 export type EphemerisWorkerRequest =
   | {
@@ -99,17 +121,20 @@ export interface PendingEphemerisEntry {
 export interface PendingAnnualSolarEntry {
   type: 'ANNUAL_SOLAR';
   signature: string;
-  callbacks: Set<(payload: { annualSolar: AnnualSolarMatrixItem[] }) => void>;
-  params: { year: number; latitude: Latitude };
+  callbacks: Set<(payload: AnnualCalculationPayloadMap['ANNUAL_SOLAR']) => void>;
+  params: AnnualCalculationParamsMap['ANNUAL_SOLAR'];
 }
 
 /** Discriminated pending entry for 365-day annual lunar matrix calculation */
 export interface PendingAnnualLunarEntry {
   type: 'ANNUAL_LUNAR';
   signature: string;
-  callbacks: Set<(payload: { annualLunar: AnnualLunarMatrixItem[] }) => void>;
-  params: { year: number; latitude: Latitude; longitude: Longitude };
+  callbacks: Set<(payload: AnnualCalculationPayloadMap['ANNUAL_LUNAR']) => void>;
+  params: AnnualCalculationParamsMap['ANNUAL_LUNAR'];
 }
+
+export type PendingAnnualCalculationEntry<K extends AnnualCalculationType> =
+  K extends 'ANNUAL_SOLAR' ? PendingAnnualSolarEntry : PendingAnnualLunarEntry;
 
 /** Discriminated union of all pending worker manager requests */
 export type PendingRequestEntry =

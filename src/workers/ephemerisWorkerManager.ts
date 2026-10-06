@@ -6,7 +6,13 @@ import {
   PendingRequestEntry,
   PendingEphemerisEntry,
   PendingAnnualSolarEntry,
-  PendingAnnualLunarEntry
+  PendingAnnualLunarEntry,
+  AnnualCalculationType,
+  AnnualCalculationPayloadMap,
+  AnnualCalculationParamsMap,
+  AnnualCalculationRequestTypeMap,
+  AnnualCalculationCacheItemMap,
+  PendingAnnualCalculationEntry
 } from '../types/worker';
 import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude } from '../types/units';
@@ -30,7 +36,9 @@ export type {
   PendingRequestEntry, 
   PendingEphemerisEntry, 
   PendingAnnualSolarEntry, 
-  PendingAnnualLunarEntry 
+  PendingAnnualLunarEntry,
+  AnnualCalculationType,
+  PendingAnnualCalculationEntry
 };
 
 /**
@@ -514,15 +522,15 @@ export class EphemerisWorkerManager {
    * Private generic dispatcher for annual matrix calculations (Solar or Lunar),
    * encapsulating cache checking, synchronous fallbacks, request coalescing, and postMessage.
    */
-  private _requestAnnualCalculation<TResult>(
+  private _requestAnnualCalculation<K extends AnnualCalculationType>(
     signature: string,
-    cache: LruCache<string, any>,
-    entryType: 'ANNUAL_SOLAR' | 'ANNUAL_LUNAR',
-    requestType: 'CALCULATE_ANNUAL_SOLAR' | 'CALCULATE_ANNUAL_LUNAR',
-    params: Record<string, unknown>,
-    fallbackFn: () => TResult,
-    wrapCached: (item: any) => TResult,
-    onResult: (result: TResult) => void
+    cache: LruCache<string, AnnualCalculationCacheItemMap[K]>,
+    entryType: K,
+    requestType: AnnualCalculationRequestTypeMap[K],
+    params: AnnualCalculationParamsMap[K],
+    fallbackFn: () => AnnualCalculationPayloadMap[K],
+    wrapCached: (item: AnnualCalculationCacheItemMap[K]) => AnnualCalculationPayloadMap[K],
+    onResult: (result: AnnualCalculationPayloadMap[K]) => void
   ): () => void {
     // Cache hit
     if (cache.has(signature)) {
@@ -543,9 +551,11 @@ export class EphemerisWorkerManager {
       const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
       if (existingEntry && existingEntry.type === entryType) {
-        existingEntry.callbacks.add(onResult as any);
+        const entry = existingEntry as PendingAnnualCalculationEntry<K>;
+        const callbacks = entry.callbacks as Set<(result: AnnualCalculationPayloadMap[K]) => void>;
+        callbacks.add(onResult);
         return () => {
-          existingEntry.callbacks.delete(onResult as any);
+          callbacks.delete(onResult);
         };
       }
     }
@@ -558,12 +568,13 @@ export class EphemerisWorkerManager {
     }
 
     const requestId = ++this.nextRequestId;
+    const callbacks = new Set<(result: AnnualCalculationPayloadMap[K]) => void>([onResult]);
     const requestEntry = {
       type: entryType,
       signature,
-      callbacks: new Set([onResult as any]),
+      callbacks,
       params
-    } as unknown as PendingRequestEntry;
+    } as PendingAnnualCalculationEntry<K>;
 
     this.pendingRequests.set(requestId, requestEntry);
     this.signatureToRequestId.set(signature, requestId);
@@ -581,7 +592,7 @@ export class EphemerisWorkerManager {
     }
 
     return () => {
-      requestEntry.callbacks.delete(onResult as any);
+      callbacks.delete(onResult);
     };
   }
 
