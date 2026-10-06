@@ -90,13 +90,13 @@ Cosmic Engine V2.0/
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Master feature ledger (F1–F72) & milestone matrix (M1–M38)
+├── PROJECT.md                   # Master feature ledger (F1–F77) & milestone matrix (M1–M39)
 ├── README.md                    # Repository documentation & quick start
 ├── AGENTS.md                    # Agent protocols & full granular file navigation map
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001–0038)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001–0039)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
@@ -169,6 +169,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **SkyDomeBase Primitive** | `src/components/widgets/today/SkyDomeBase.test.tsx` (18 tests) | Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors |
 | **Sky Dome Hooks & Primitives** | `src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx` (12 tests) | Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer |
 | **Today Horizon Widget** | `src/components/widgets/today/TodayWidget.test.tsx` (24 tests) | SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles |
+| **Meridian View-Model Config Helpers** | `src/components/widgets/today/hooks/meridianConfigHelpers.test.ts` (9 tests) | Strongly typed view-model builders for radial ticks, swaths, gate anchors, and peak targets deduplicating Sun and Moon meridian views |
 | **Solar Almanac Widget** | `src/components/widgets/solar/SolarWidget.test.tsx` (8 tests) | Keplerian solar metrics, perihelion orbital dynamics, interactive SolarRibbonChart hover hairline, and PolarSunlightDial 24h circular polar sector dial |
 | **Lunar Almanac Widget** | `src/components/widgets/lunar/LunarWidget.test.tsx` (6 tests) | 30-day synodic daily phase discs, 365-day annual braided ribbon, polar circumpolar statuses (24h moonlight / down all day), and TidalWaveOscillator ocean deformation wave |
 | **Eclipse Demonstrator Widget** | `src/components/widgets/eclipse/EclipseWidget.test.tsx` (10 tests) | Historic Great American Eclipse data, 520x220 viewBox parity, dual-zone masking, nodal depth muting behind Earth, and prograde right-to-left SkyViewSimulator transit without bounce |

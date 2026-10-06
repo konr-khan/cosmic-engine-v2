@@ -217,6 +217,11 @@ const CANONICAL_SUITES = [
     focus: 'SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles'
   },
   {
+    domain: 'Meridian View-Model Config Helpers',
+    file: 'src/components/widgets/today/hooks/meridianConfigHelpers.test.ts',
+    focus: 'Strongly typed view-model builders for radial ticks, swaths, gate anchors, and peak targets deduplicating Sun and Moon meridian views'
+  },
+  {
     domain: 'Solar Almanac Widget',
     file: 'src/components/widgets/solar/SolarWidget.test.tsx',
     focus: 'Keplerian solar metrics, perihelion orbital dynamics, interactive SolarRibbonChart hover hairline, and PolarSunlightDial 24h circular polar sector dial'

@@ -124,6 +124,11 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F70 | Core Astro Math & Formatter Domain Decomposition | Consolidated `formatTime` into `formatters.ts`, extracted `getSectorPath` into `polarDialGeometry.ts`, establishing 100% pure Meeus domain math in `core.ts` | M37 | ADR-0037 |
 | F71 | Mathematical Domain Purity & AST Presentation Token Guardrail | Purged Tailwind classes/pixel offsets from `milestones.ts`, created `macroTokens.ts`, retired redundant `constants.ts`, derived 3D seasonal milestone coordinates analytically in `scene/generator.ts`, extended AST linter to protect domain math from presentation tokens | M38 | ADR-0038 |
 | F72 | Widget Sub-View Decoupling & Hook Standardization | Extracted `useTideMath` and `useNodalPlaneMath` hooks with dedicated barrel exports, decoupling math from `MicroTideView` and `NodalPlaneVisualizer` while strictly preserving Dead Ends #16 and #33 | M38 | ADR-0038 |
+| F73 | Ticker Double-Precision Accumulator & 60 FPS Small-Delta Invariants | Removed `toFixed(4)` string quantization from `cosmicStore.tickTime()`; retained full IEEE-754 double precision for `timeOfDay`; verified continuous clock advancement over 600 frames at 60 FPS | M39 | ADR-0039 |
+| F74 | Deterministic UTC Temporal Invariance & Recurrence Titles | Standardized on `getUTCFullYear()` and canonical `getDayOfYear()`; added explicit UTC `timeZone` to eclipse recurrence titles and hover tooltips; preserved simulated year during orbital drag scrubbing | M39 | ADR-0039 |
+| F75 | Immutable `J2000_DATE` Prop Identity Stability & AST Guardrail | Replaced dynamic `= new Date()` default parameters across 19 components and hooks with immutable `J2000_DATE` constant; added automated AST linter gatekeeper in `lintUnitSafety.mjs` | M39 | ADR-0039 |
+| F76 | Discriminated Ephemeris Worker RPC Maps & Type-Safety | Introduced typed request/payload maps in `worker.ts` and refactored `_requestAnnualCalculation` in `ephemerisWorkerManager.ts`, eliminating all 5 loose `as any` casts | M39 | ADR-0039 |
+| F77 | Meridian View-Model Helper Extraction (`meridianConfigHelpers.ts`) | Extracted strongly typed view-model builders (`createMeridianRadialTickConfig`, `createMeridianSwathConfig`, `createMeridianGateAnchorConfig`, `createMeridianPeakTargetConfig`) deduplicating Sun and Moon dome config boilerplate | M39 | ADR-0039 |
 
 ## Milestones
 
@@ -135,7 +140,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M38)
+### Recent Milestones (M21–M39)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -156,6 +161,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M36 | Codebase Health, SSoT Centralization, Worker Fallbacks & Test Partitioning | `astroConstants.ts`, `workerFallback.ts`, `ephemerisWorkerManager.ts`, `ArmillaryBeadsLayer.tsx`, `ArmillaryWidget.test.tsx`, `armillary.test.ts`, ADR-0036 | M1–M35 | DONE |
 | M37 | Circular Dependency Elimination & Astro-Math Core Decomposition | `src/utils/formatters.ts`, `src/utils/cosmicMath/core.ts`, `polarDialGeometry.ts`, `DEAD_ENDS.md`, ADR-0037 | M1–M36 | DONE |
 | M38 | Codebase Health Refactoring, Domain Purity & Widget Decoupling | `src/utils/cosmicMath/`, `macroTokens.ts`, `MeridianDomeFooter.tsx`, `useTideMath.ts`, `useNodalPlaneMath.ts`, `DEAD_ENDS.md`, ADR-0038 | M1–M37 | DONE |
+| M39 | Codebase Hardening, UTC Invariance & Type-Safe Worker RPC | `src/store/`, `src/workers/`, `src/types/`, `src/components/`, `DEAD_ENDS.md`, ADR-0039 | M1–M38 | DONE |
 
 ## Interface Contracts & Domain Models
 
@@ -220,7 +226,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
     - `widgets/` — Lazy-loaded observatory visualizers (`React.lazy()`)
       - `common/useRibbonScrubber.ts` — Bidirectional timeline coordinate & pointer dragging hook
       - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`, `todayTokens.ts`)
-        - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`)
+        - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`, `meridianConfigHelpers.ts`)
         - `common/` — Shared today visual primitives (`SkyDomeFooter.tsx`, `MeridianDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`)
       - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, `useArmillaryInteractions`, `controls/`, `canvas/`)
       - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`, `ribbon/`)
@@ -232,11 +238,12 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
     - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
     - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/` (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`))
     - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `MiniMoon`, `MiniMoon.test.tsx`, `WindowErrorBoundary`, `PhaseVisual`)
+- `.gitattributes` — Standard line-ending normalization (`eol=lf`) and binary asset flags
 - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0038`)
+  - `adr/` — Architecture Decision Records (`0001` through `0039`)
 
 ### Subsystem Task Routing Matrix
 
