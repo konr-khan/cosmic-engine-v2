@@ -1,55 +1,11 @@
-# Project: Cosmic Engine V2.0 — Architecture Roadmap, Feature Inventory & Milestone Matrix
+# Project: Cosmic Engine V2.0 — Feature Inventory & Milestone Matrix
 
-## Architecture
-A unified, hierarchical 3D astronomical scene graph engine establishing a single geometric source of truth across Macro Orbit, Eclipse Demonstrator, and Gyro-Morph Armillary.
+> [!NOTE]
+> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F87`)** and **Milestone & Phase Matrix (`M1–M42`)**.
 
-```
-                  ┌──────────────────────────────────────────────┐
-                  │          Meeus Ephemeris Core                │
-                  │   (Solar / Lunar / Planetary Algorithms)     │
-                  └──────────────────────┬───────────────────────┘
-                                         │
-                                         ▼
-                  ┌──────────────────────────────────────────────┐
-                  │         generateCosmicScene(params)          │
-                  │   • Heliocentric Ecliptic Frame (J2000)      │
-                  │   • Geocentric Ecliptic Frame                │
-                  │   • Geocentric Equatorial & Inertial Tilt    │
-                  │   • Terrestrial Topocentric Frame            │
-                  │   • Scale Modes: 'true' (e=0.0167) vs        │
-                  │                  'exaggerated' (e=0.25)      │
-                  │   • 6 Seasonal Milestones & Lunar Orbit 5.14°│
-                  │   • Umbra / Penumbra Syzygy Shadow Cones     │
-                  └──────────────────────┬───────────────────────┘
-                                         │
-                   ┌─────────────────────┼─────────────────────┐
-                   ▼                     ▼                     ▼
-        ┌─────────────────────┐┌───────────────────┐┌───────────────────┐
-        │projectHeliocentric  ││projectGeocentric  ││projectGeocentric  │
-        │      TopDown        ││    Transverse     ││      Axial        │
-        │(Top-down Helioc.)   ││(Side-on Syzygy)   ││(Sightline Miss)   │
-        └──────────┬──────────┘└─────────┬─────────┘└─────────┬─────────┘
-                   │                     │                    │
-                   ▼                     ▼                    ▼
-        ┌──────────────────────────────────────────────────────────────┐
-        │             Reactive Scene Hook: useCosmicScene()            │
-        │   • useHeliocentricScene()                                   │
-        │   • useEclipseScene()                                        │
-        │   • useArmillaryScene()                                      │
-        └──────────────────────────────┬───────────────────────────────┘
-                                       │
-        ┌──────────────────────────────┼──────────────────────────────┐
-        ▼                              ▼                              ▼
-┌───────────────┐              ┌───────────────┐              ┌───────────────┐
-│Macro Orbit    │              │Eclipse        │              │Gyro-Morph     │
-│Widget         │              │Demonstrator   │              │Armillary      │
-│• OrbitSvg     │              │• LiveSyzygy   │              │• Armillary-   │
-│• MiniGlobe    │              │• NodalPlane   │              │  BeadsLayer   │
-│• Physics HUD  │              │• ShadowRays   │              │• MiniGlobe    │
-└───────────────┘              └───────────────┘              └───────────────┘
-```
+---
 
-## Feature Inventory
+## 1. Feature Inventory
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
 | F1 | `CosmicScene3D` Types & Interfaces | Comprehensive type definitions for 3D bodies, orbits, frames, shadow cones, and projected 2D elements | M1 | ORIGINAL_REQUEST §R1 |
@@ -138,8 +94,9 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F84 | Shared Almanac Shortcuts Rail & Non-Passive Wheel Zoom | Extracted `<AlmanacShortcutsRail />` primitive; replaced synthetic passive wheel zoom in `MacroOrbitView` with native `{ passive: false }` listener preventing scroll latching | M41 | ADR-0041 |
 | F85 | Accessible Custom Controls, Keyboard Navigation & Modal Dialog Semantics | Added ARIA slider semantics (`role="slider"`) and arrow/page-key stepping to `LatitudeSlider`, `PolarLongitudeSelector`, `AstrolabeDial`; added `Escape` and outside-click dismissal to dialogs/menus; converted transit jump to semantic `<button>` | M41 | ADR-0041 |
 | F86 | AST Linter Temporal Purity Gatekeeper & Dead Props Cleanup | Enforced temporal purity (`new Date()` ban in math modules) and reported parse errors in `lintUnitSafety.mjs`; purged dead props across `MiniGlobe`, `MicroTideView`, `ControlRing`, `SkyDomeBase`, `GyroArmillaryView` | M41 | ADR-0041 |
+| F87 | `ARCHITECTURE.md` SSoT Split, Prompt Kernel Slimming & Documentation Sweep | Extracted live system topology, runtime contracts, code layout, and task routing into `ARCHITECTURE.md`; slimmed `AGENTS.md` prompt kernel by 35.6% (`17.69 KB` $\to$ `11.40 KB`); synchronized `DESIGN_SYSTEM.md`, `README.md`, `PROJECT.md`, and `syncDocMetrics.mjs` | M42 | ADR-0042 |
 
-## Milestones
+## 2. Milestones
 
 ### Completed Foundation Milestones (M1–M20)
 | Milestones | Focus Areas | Key Deliverables & ADRs |
@@ -149,7 +106,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M41)
+### Recent Milestones (M21–M42)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -173,99 +130,10 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M39 | Codebase Hardening, UTC Invariance & Type-Safe Worker RPC | `src/store/`, `src/workers/`, `src/types/`, `src/components/`, `DEAD_ENDS.md`, ADR-0039 | M1–M38 | DONE |
 | M40 | Priorities 1–3 Codebase Hardening, Nominal Type Guardrails & 60 FPS Ribbon Memoization | `src/types/`, `src/store/`, `src/workers/`, `src/hooks/`, `src/utils/cosmicMath/`, `src/components/`, ADR-0040 | M1–M39 | DONE |
 | M41 | Priorities 4 & 5 UI Consolidation, Accessible Controls & AST Linter Hardening | `src/components/`, `src/hooks/`, `scripts/`, ADR-0041 | M1–M40 | DONE |
+| M42 | Documentation Sweep & `ARCHITECTURE.md` Token-Preservation SSoT Split | `ARCHITECTURE.md`, `AGENTS.md`, `PROJECT.md`, `README.md`, `docs/DESIGN_SYSTEM.md`, `scripts/syncDocMetrics.mjs`, ADR-0042 | M1–M41 | DONE |
 
-## Interface Contracts & Domain Models
+---
 
-All canonical mathematical models, branded nominal units, 3D scene-graph structures, and worker RPC protocols are maintained as single sources of truth in their respective compiler-checked TypeScript modules:
-
-- **3D Astronomical Scene Graph & Camera Pipelines**: [`src/utils/cosmicMath/scene/types.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/utils/cosmicMath/scene/types.ts) (`CosmicScene3D`, `SceneBody3D`, `ShadowCones3D`, `ProjectedScene2D`, `ScaleMode`)
-- **Branded Nominal Units & Coordinates**: [`src/types/units.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/units.ts) (`Degrees`, `Radians`, `JulianDate`, `JulianCenturies`, `Latitude`, `Longitude`) and [`src/types/coordinates.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/coordinates.ts) (`Vector2D`, `Vector3D`, `AltAzimuthCoordinates`, `EquatorialCoordinates`)
-- **Astronomical Data Models**: [`src/types/astronomy.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/astronomy.ts) (`EphemerisFrame`, `SolarPositionFull`, `LunarPositionFull`, `EclipseData`)
-- **Web Worker Concurrency Contracts**: [`src/types/worker.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/worker.ts) (`EphemerisWorkerRequest`, `EphemerisWorkerResponse`, monotonic sequence stamps)
-- **Observatory Store State & Window Layout**: [`src/types/store.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/types/store.ts) (`CosmicStoreState`, `WindowLayoutConfig`, `WindowLayoutDictionary`, `WindowLayoutPreset`)
-- **Shared Component Primitives**:
-  - MiniGlobe: [`src/components/common/MiniGlobe.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/common/MiniGlobe.tsx) (`MiniGlobeProps`, `MiniGlobeViewMode`)
-  - MiniMoon: [`src/components/common/MiniMoon.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/common/MiniMoon.tsx) (`MiniMoonProps`)
-  - Sky Dome Base: [`src/components/widgets/today/SkyDomeBase.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/SkyDomeBase.tsx) (`SkyDomeBaseProps`)
-  - Meridian Dome Base: [`src/components/widgets/today/MeridianDomeBase.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/MeridianDomeBase.tsx) (`MeridianDomeBaseProps`)
-
-## Code Layout
-- `src/`
-  - `main.tsx` — React root renderer
-  - `App.tsx` — Master Observatory dashboard container
-  - `App.test.tsx` — Root dashboard mounting, layout grid & dock integration tests
-  - `constants/`
-    - `dashboardPresets.ts` — Observatory window arrangement layout presets
-  - `types/` — Foundational branded units, coordinates, astronomy, worker RPC & store contracts
-  - `utils/`
-    - `formatters.ts` — Human-readable coordinate and temporal formatting
-    - `lruCache.ts` — Generic bounded LRU cache utility
-    - `lruCache.test.ts` — LRU cache eviction order and capacity tests
-    - `cosmicMath/`
-      - `astroConstants.ts` — Centralized IAU/WGS-84/Meeus physical constants & J2000 epoch
-      - `core.ts` — Julian dates, UTC invariance, spherical linear interpolation (`slerp3D`), GMST & LST
-      - `solar.ts` — Solar declination, EoT, twilight algorithms & annual solar matrix
-      - `lunar.ts` — Lunar ephemeris, phase angle, disc illumination, Newton-Raphson crossing solver
-      - `eclipse.ts` — Syzygy shadow geometry & eclipse recurrence scanner
-      - `today/` — Decomposed Topocentric Horizon & Meridian submodules
-        - `elevation.ts` — Prime vertical dome projection, diurnal paths & rise/set azimuth octants
-        - `meridian.ts` — S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
-        - `draconic.ts` — True lunar node crossings, 18.6y standstills & micro-rail
-      - `globe.ts` — Spherical continent projection & analytical limb horizon clipping
-      - `projection.ts` — Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
-      - `geoData.ts` — World landmass continent outline polygons
-      - `milestones.ts` — Canonical Earth orbital milestones (single source of truth)
-      - `frame.ts` — Centralized EphemerisFrame snapshot generator
-      - `terminatorTracks.ts` — Diurnal celestial ground tracks & antimeridian seam interpolation (ADR-0027)
-      - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
-      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade, `generatorRings.ts`, `generatorBeads.ts`, `generatorGeometry.ts`, `generatorObserverCone.ts`)
-      - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
-  - `store/`
-    - `cosmicStore.ts` — External state store & animation frame ticker
-    - `hoverStore.ts` — Atomic external store for 60 FPS ribbon scrubber isolation
-  - `workers/`
-    - `ephemerisWorker.ts` — Dedicated worker thread for Meeus ephemeris & 365-day matrices
-    - `ephemerisWorkerManager.ts` — Application singleton worker manager, deduplication & matrix cache
-    - `workerSanitizers.ts` — Parameter boundary clamping & defensive input gatekeepers
-    - `workerSanitizers.test.ts` — Boundary validation & pathological input test suite
-  - `hooks/`
-    - `useCosmicEngine.ts` — Selective domain engine hook
-    - `useCosmicScene.ts` — Reactive 3D scene hook & specialized projection selectors
-    - `useEphemerisWorker.ts` — Worker dispatch hook with 100ms throttling & sequence stamping
-    - `useDashboardLayout.ts` — Window layout state, drag-and-drop, resize, locking, presets & storage
-  - `components/`
-    - `widgets/` — Lazy-loaded observatory visualizers (`React.lazy()`)
-      - `common/useRibbonScrubber.ts` — Bidirectional timeline coordinate & pointer dragging hook
-      - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`, `todayTokens.ts`)
-        - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`, `meridianConfigHelpers.ts`)
-        - `common/` — Shared today visual primitives (`SkyDomeFooter.tsx`, `MeridianDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`)
-      - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, `useArmillaryInteractions`, `controls/`, `canvas/`)
-      - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`, `ribbon/`)
-      - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`, `ribbon/`)
-      - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`, `ShadowRayHoverHud.tsx`, `hooks/useNodalPlaneMath.ts`)
-      - `terminator/` — Daylight Terminator Map (`TerminatorMap`, `TerminatorHoverHud.tsx`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx`, `hooks/useTerminatorMapMath.ts`)
-      - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView`, `OrbitSvgCanvas`, `OrbitPhysicsHud.tsx`, `macroTokens.ts`)
-      - `tides/` — Earth Gravitational Tidal Force (`MicroTideView`, `hooks/useTideMath.ts`)
-    - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
-    - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/` (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`))
-    - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `MiniMoon`, `MiniMoon.test.tsx`, `WindowErrorBoundary`, `PhaseVisual`)
-- `.gitattributes` — Standard line-ending normalization (`eol=lf`) and binary asset flags
-- `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
-- `docs/`
-  - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
-  - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0039`)
-
-### Subsystem Task Routing Matrix
-
-| Observatory Subsystem | Domain Mathematical Core | Presenter / Math Hook | UI Container & Layers | Primary Targeted Vitest Suite |
-| :--- | :--- | :--- | :--- | :--- |
-| **Today's Horizon Dome** | `today/{elevation,meridian,draconic}.ts` | `use{Sun,Moon}ElevationMath.ts`, `use{Sun,Moon}MeridianMath.ts` | `TodayHorizonView.tsx`, `SkyDomeBase.tsx`, `MeridianDomeBase.tsx` | `npx vitest run TodayWidget.test.tsx` |
-| **Solar Almanac** | `solar.ts`, `astroConstants.ts` | `useCosmicEngine.ts` | `SolarAlmanacCard.tsx`, `SolarRibbonChart.tsx`, `PolarSunlightDial.tsx` | `npx vitest run SolarWidget.test.tsx` |
-| **Lunar Almanac** | `lunar.ts`, `astroConstants.ts` | `useCosmicEngine.ts` | `LunarAlmanacCard.tsx`, `LunarRibbonChart.tsx`, `TidalWaveOscillator.tsx` | `npx vitest run LunarWidget.test.tsx` |
-| **Eclipse Demonstrator** | `eclipse.ts`, `scene/cameras.ts` | `useEclipseScene()`, `useNodalPlaneMath.ts` | `EclipseDemonstrator.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | `npx vitest run EclipseWidget.test.tsx` |
-| **Terminator Map** | `terminatorTracks.ts`, `globe.ts` | `useTerminatorMapMath.ts` | `TerminatorMap.tsx`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx` | `npx vitest run TerminatorMap.test.tsx` |
-| **Macro Orbit** | `scene/generator.ts`, `milestones.ts` | `useHeliocentricScene()` | `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `OrbitPhysicsHud.tsx` | `npx vitest run MacroOrbitWidget.test.tsx` |
-| **Gyro-Morph Armillary** | `armillary/{generator,projections}.ts` | `useArmillaryInteractions.ts`, `useStagedCamera.ts` | `GyroArmillaryView.tsx`, `ArmillarySvgCanvas.tsx`, `ArmillaryBeadsLayer.tsx` | `npx vitest run ArmillaryWidget.test.tsx` |
-| **Gravitational Tides** | `lunar.ts`, `projection.ts` | `useTideMath.ts` | `MicroTideView.tsx`, `MiniGlobe.tsx` | `npx vitest run TidesWidget.test.tsx` |
-
+> [!TIP]
+> - **Architecture & Code Layout**: See [`ARCHITECTURE.md`](ARCHITECTURE.md) for interface contracts, canonical code layout, and the Subsystem Task Routing Matrix.
+> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0042`).

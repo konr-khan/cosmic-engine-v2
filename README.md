@@ -90,13 +90,14 @@ Cosmic Engine V2.0/
 ├── tsconfig.json                # TypeScript root configuration (strict mode)
 ├── vite.config.ts               # Vite configuration & plugin setup
 ├── postcss.config.js            # PostCSS configuration
-├── PROJECT.md                   # Master feature ledger (F1–F77) & milestone matrix (M1–M39)
+├── ARCHITECTURE.md              # System topology, runtime contracts, code layout & task routing
+├── PROJECT.md                   # Master feature ledger (F1–F87) & milestone matrix (M1–M42)
 ├── README.md                    # Repository documentation & quick start
-├── AGENTS.md                    # Agent protocols & full granular file navigation map
+├── AGENTS.md                    # Operational prompt kernel, agent protocols & coding guardrails
 ├── docs/                        # Persistent technical specifications & ADRs
 │   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
 │   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001–0039)
+│   └── adr/                     # Architecture Decision Records (ADRs 0001–0042)
 └── src/
     ├── main.tsx                 # React root renderer
     ├── App.tsx                  # Master Observatory dashboard container
@@ -114,7 +115,7 @@ Cosmic Engine V2.0/
 ```
 
 > [!TIP]
-> For the complete, granular submodule file tree with all individual SVG canvas layers and decomposed modules, see [`PROJECT.md`](./PROJECT.md#code-layout).
+> For the complete, granular submodule file tree with all individual SVG canvas layers, decomposed modules, and targeted test routing, see [`ARCHITECTURE.md`](./ARCHITECTURE.md#4-canonical-code-layout).
 
 ---
 
@@ -156,7 +157,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Unit-Safety AST Guardrails** | `src/types/unitSafety.test.ts` (8 tests) | Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), and strict $\le 18\text{ KB}$ `AGENTS.md` kernel size budget |
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` (13 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (23 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
-| **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (5 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`), and `shallowEqual` protection |
+| **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (5 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useCosmicScene` and `useHeliocentricScene`), and `shallowEqual` protection |
 | **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (31 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Worker Parameter Sanitization & Clamping** | `src/workers/workerSanitizers.test.ts` (16 tests) | Boundary validation and clamping gatekeepers: Meeus year validity range ([-2000, 3000]), geographic latitude/longitude bounds, astronomical Julian Date clamping, decimal hour wrapping, and NaN/Infinity resilience |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (10 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
@@ -186,7 +187,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **LRU Cache Utility** | `src/utils/lruCache.test.ts` (14 tests) | Generic LRU cache eviction order, capacity limits, promotion on get/set, and Map iterator ordering |
 | **Solstice Jump Controls** | `src/components/layout/chronometer/SolsticeJumpControls.test.tsx` (9 tests) | Astronomical turning point buttons (Mar/Sep Equinox, Jun/Dec Solstice), UTC date dispatch, and twilight badge styles |
 | **Astrolabe Dial Component** | `src/components/layout/chronometer/AstrolabeDial.test.tsx` (22 tests) | Concentric SVG control rings (Date, Time, Lon, Lat), observer-locked camera yaw calculations, latitude rail positioning, pointer event callbacks, and rollover boundaries |
-| **Atomic Hover Store** | `src/store/hoverStore.test.ts` (4 tests) | High-frequency ribbon scrubber state isolation (`hoveredDate`, `hoveredTime`, `hoverPosition`), shallow equality memoization, and zero-cascade subscriber notifications |
+| **Atomic Hover Store** | `src/store/hoverStore.test.ts` (4 tests) | High-frequency ribbon scrubber state isolation (`hoverTime`, `hoverDate`, and atomic batch updates), shallow equality memoization, and zero-cascade subscriber notifications |
 | **Terminator Ground Tracks Math** | `src/utils/cosmicMath/terminatorTracks.test.ts` (16 tests) | 24-hour diurnal ground tracks ($[-12\text{h}, +12\text{h}]$) for Subsolar and Sublunar points, antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons, and temporal vector dashes |
 | **Armillary Interactions Hook** | `src/components/widgets/armillary/useArmillaryInteractions.test.ts` (24 tests) | Astrolabe touch and pointer interactions, camera dragging state isolation, model click-to-snap target dispatch, Free Rete angle calculation, and pointer capture lifecycles |
 | **Terminator Hover HUD Component** | `src/components/widgets/terminator/TerminatorHoverHud.test.tsx` (4 tests) | Interactive Subsolar and Sublunar point hover cards, distance and apparent diameter telemetry, $\pm 24\text{h}$ proximity-gated nodal status badges, and astronomical coordinate formatting |

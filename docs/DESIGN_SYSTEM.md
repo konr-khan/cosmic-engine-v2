@@ -49,7 +49,7 @@ To maximize information density without adding text clutter, orbital loops and c
   - **Tympan Altitude Arcs (Almucantars)**: Smoothly glide from eccentric stereographic circles to concentric horizon stereonet rings (`transform="scale(0.94 + 0.06 * progress)"`, `#06b6d4` for horizon, `#64748b` dashed for altitudes).
   - **Alidade Sighting Arm**: Expands radially (`transform="scale(0.92 + 0.08 * opacity)"`) from the center pivot reticle pin.
 * **Keplerian Orbit Ring & Milestones**: Thin gold orbit path (`#fbbf24`, `0.75px`) with 6 milestone nodes featuring geodesic spherical SLERP trajectories:
-  - **Milestone Color Codes**: Perihelion `#a855f7` (Purple), June Solstice `#38bdf8` (Sky Blue), December Solstice `#f43f5e` (Rose Red), March Equinox `#34d399` (Emerald), September Equinox `#fbbf24` (Amber), Aphelion `#818cf8` (Indigo).
+  - **Milestone Color Codes**: Perihelion `#ef4444` (Red), March & September Equinoxes `#c084fc` (Purple), June & December Solstices `#f59e0b` (Amber), Aphelion `#38bdf8` (Sky Blue).
   - **Seasonal Milestone Halo Tokens**:
     - *Macro Orbit View ($580\times 560$ canvas, $R_{\text{orbit}} \approx 220$)*:
       - Resting State: Translucent outer halo (`fill={color}`, `opacity="0.20"`, `r="11px"`), inner core node (`r="5.5px"`, `fill={color}`, `stroke="#ffffff"`, `strokeWidth="1.5"`, `className="drop-shadow-md"`).
@@ -111,7 +111,7 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 9. Enlarged Touch Hit Target (r = 1.6R, cursor-pointer)     │
+│ 9. Enlarged Touch Hit Target (r = 1.6R, conditional cursor) │
 │ 8. Monospace Label Overlay ("EARTH", drop-shadow-md)        │
 │ 7. Observer Pin ("YOU") (Solid #38bdf8 day / Hollow #94a3b8 night│
 │ 6. Specular Planetary Limb Rim (#60a5fa 1.2px / #93c5fd)    │
@@ -139,7 +139,7 @@ The `<MiniGlobe />` component (`src/components/common/MiniGlobe.tsx`) unifies th
 | **6. Limb Rim** | Outer Rim | `#60a5fa` (`strokeWidth="1.2"`, opacity `0.8`) + inner `#93c5fd` (`strokeWidth="0.4"`) | Dual-layer specular spherical limb boundary |
 | **7. Observer Pin** | Observer Marker ("YOU") | Day: Solid Sky Blue `#38bdf8` ($r=1.6-1.8\text{px}$) + white ring + pulse halo; Night: Hollow Slate `#94a3b8` ring (`fill="none"`, `strokeWidth="0.8px"`, $r=1.4-1.6\text{px}$) | True topocentric geographic observer pin conforming to solid (day) vs. hollow (night) rule |
 | **8. Label** | Monospace Tag | Monospace `text-[9px] font-mono font-bold fill-blue-300` | High-contrast label with dark drop shadow |
-| **9. Hit Target** | Pointer Target | `fill="transparent"`, $r = \max(16\text{px}, 1.6 R)$ | Generous hit area preventing hover flickering |
+| **9. Hit Target** | Pointer Target | `fill="transparent"`, $r = \max(16\text{px}, 1.6 R)$, conditional `cursor-pointer` / `cursor-default` | Generous hit area preventing hover flickering; applies `cursor-pointer` only when interactive handlers (`onClick`, `onPointerEnter`, `onPointerLeave`) are provided (`cursor-default` when static) |
 
 #### 2. Canonical View Modes
 * **`topdown` (Heliocentric Macro Orbit)**: Renders Sunward daylight semicircle oriented dynamically toward Sun focus F1 (`sunAngleDeg`), with tilted $23.44^\circ$ polar axis and elliptical equator/tropics chords.

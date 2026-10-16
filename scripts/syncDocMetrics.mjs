@@ -154,7 +154,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Cosmic Scene Hook',
     file: 'src/hooks/useCosmicScene.test.ts',
-    focus: 'Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`), and `shallowEqual` protection'
+    focus: 'Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useCosmicScene` and `useHeliocentricScene`), and `shallowEqual` protection'
   },
   {
     domain: 'Ephemeris Worker Hook',
@@ -304,7 +304,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Atomic Hover Store',
     file: 'src/store/hoverStore.test.ts',
-    focus: 'High-frequency ribbon scrubber state isolation (`hoveredDate`, `hoveredTime`, `hoverPosition`), shallow equality memoization, and zero-cascade subscriber notifications'
+    focus: 'High-frequency ribbon scrubber state isolation (`hoverTime`, `hoverDate`, and atomic batch updates), shallow equality memoization, and zero-cascade subscriber notifications'
   },
   {
     domain: 'Terminator Ground Tracks Math',
@@ -468,16 +468,18 @@ if (shouldCompileDossier) {
 
   const tocLines = [
     '1. [System Overview & Setup](#system-overview-setup)',
-    '2. [Project Roadmap, Features & Milestones](#project-roadmap-features-milestones)',
-    '3. [Agent Guidelines, Protocols & Architecture Map](#agent-guidelines-protocols-architecture-map)',
-    '4. [Critical Log of Historical Dead Ends](#critical-log-of-historical-dead-ends)',
-    '5. [Astronomical Math Specification](#astronomical-math-specification)',
-    '6. [Design System & Visual Vector Tokens](#design-system-visual-vector-tokens)',
-    ...adrs.map((adr, i) => `${i + 7}. [${adr.title}](#${adr.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')})`)
+    '2. [System Topology, Contracts & Code Layout](#system-topology-contracts-code-layout)',
+    '3. [Project Roadmap, Features & Milestones](#project-roadmap-features-milestones)',
+    '4. [Agent Guidelines, Protocols & Architecture Map](#agent-guidelines-protocols-architecture-map)',
+    '5. [Critical Log of Historical Dead Ends](#critical-log-of-historical-dead-ends)',
+    '6. [Astronomical Math Specification](#astronomical-math-specification)',
+    '7. [Design System & Visual Vector Tokens](#design-system-visual-vector-tokens)',
+    ...adrs.map((adr, i) => `${i + 8}. [${adr.title}](#${adr.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')})`)
   ];
 
   const sections = [
     { title: 'System Overview & Setup', file: 'README.md' },
+    { title: 'System Topology, Contracts & Code Layout', file: 'ARCHITECTURE.md' },
     { title: 'Project Roadmap, Features & Milestones', file: 'PROJECT.md' },
     { title: 'Agent Guidelines, Protocols & Architecture Map', file: 'AGENTS.md' },
     { title: 'Critical Log of Historical Dead Ends', file: 'DEAD_ENDS.md' },
