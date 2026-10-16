@@ -94,7 +94,6 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
       peakElevation={noonElevation as number}
       peakDirectionSuffix={culmination.shortTag}
       meridianDirection={culmination.meridianLabel}
-      culminationDirection={culmination.direction}
       sightingBanner={culmination.sightingSummary}
       currentElevation={currentSunElevation}
       elevationColorClass={SOLAR_TWILIGHT_BADGE_CLASSES[twilightStatus.phase]}

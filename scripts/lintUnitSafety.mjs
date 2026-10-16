@@ -175,11 +175,18 @@ export function runMathPurityCheck(targetDir = cosmicMathDir) {
           'classProperties'
         ]
       });
-    } catch (_) {
+    } catch (err) {
+      violations.push({
+        filePath,
+        line: 1,
+        column: 1,
+        source: `Failed to parse AST: ${err.message}`,
+        snippet: ''
+      });
       continue;
     }
 
-const BANNED_MATH_PRESENTATION_REGEX = /^(text|bg|fill|stroke)-[a-z]+-\d{2,3}$/;
+    const BANNED_MATH_PRESENTATION_REGEX = /^(text|bg|fill|stroke)-[a-z]+-\d{2,3}$/;
 
     const lines = content.split('\n');
     walkAst(ast, (node) => {
@@ -211,6 +218,23 @@ const BANNED_MATH_PRESENTATION_REGEX = /^(text|bg|fill|stroke)-[a-z]+-\d{2,3}$/;
             snippet: lines[line - 1]?.trim() || ''
           });
         }
+      }
+
+      if (
+        node.type === 'NewExpression' &&
+        node.callee?.type === 'Identifier' &&
+        node.callee?.name === 'Date' &&
+        (!node.arguments || node.arguments.length === 0)
+      ) {
+        const line = node.loc?.start.line || 1;
+        const column = node.loc?.start.column || 0;
+        violations.push({
+          filePath,
+          line,
+          column: column + 1,
+          source: "unparameterized 'new Date()' in pure math module",
+          snippet: lines[line - 1]?.trim() || ''
+        });
       }
     });
   }

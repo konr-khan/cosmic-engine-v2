@@ -1,7 +1,7 @@
 /**
  * @file controls.test.tsx
  * Unit test suite for interactive observatory controls:
- * - ControlRing (radial dials, arc sweep, indicator trigonometry, hover events)
+ * - ControlRing (radial dials, arc sweep, indicator trigonometry)
  * - LatitudeSlider (globe guide axis, coordinate clamping, preset selection)
  * - PolarLongitudeSelector (polar coordinate dial, radial spokes, city jump chips)
  * - BufferedInput (input buffering, enter commit, focus/blur lifecycle)
@@ -114,25 +114,20 @@ describe('Observatory Interactive Controls Test Suite', () => {
       expect(cOffset.y).toBeCloseTo(100, 1);
     });
 
-    it('fires onHover callback on pointer enter and pointer leave', () => {
-      const onHover = vi.fn();
-      const element = (
-        <ControlRing 
-          radius={50} 
-          width={10} 
-          value={12} 
-          max={24} 
-          color="#a855f7" 
-          onHover={onHover} 
-        />
+    it('renders active arc trail and handle thumb cleanly', () => {
+      const html = renderToStaticMarkup(
+        <svg>
+          <ControlRing 
+            radius={50} 
+            width={10} 
+            value={12} 
+            max={24} 
+            color="#a855f7" 
+          />
+        </svg>
       );
-
-      // Invoke props directly
-      element.props.onHover(true);
-      expect(onHover).toHaveBeenCalledWith(true);
-
-      element.props.onHover(false);
-      expect(onHover).toHaveBeenCalledWith(false);
+      expect(html).toContain('stroke="#a855f7"');
+      expect(html).toContain('translate(');
     });
   });
 
@@ -200,6 +195,20 @@ describe('Observatory Interactive Controls Test Suite', () => {
       expect(element.props.onChange).toBe(onChange);
       element.props.onChange(23.5);
       expect(onChange).toHaveBeenCalledWith(23.5);
+    });
+
+    it('provides accessible ARIA slider semantics and focus ring', () => {
+      const html = renderToStaticMarkup(
+        <LatitudeSlider latitude={45} onChange={vi.fn()} />
+      );
+
+      expect(html).toContain('role="slider"');
+      expect(html).toContain('aria-label="Observer Latitude"');
+      expect(html).toContain('aria-valuenow="45"');
+      expect(html).toContain('aria-valuemin="-90"');
+      expect(html).toContain('aria-valuemax="90"');
+      expect(html).toContain('tabindex="0"');
+      expect(html).toContain('focus-visible:ring-2');
     });
   });
 
@@ -271,6 +280,20 @@ describe('Observatory Interactive Controls Test Suite', () => {
 
       element.props.onChange(139.7); // Tokyo
       expect(onChange).toHaveBeenCalledWith(139.7);
+    });
+
+    it('provides accessible ARIA slider semantics and focus ring', () => {
+      const html = renderToStaticMarkup(
+        <PolarLongitudeSelector longitude={-122} onChange={vi.fn()} />
+      );
+
+      expect(html).toContain('role="slider"');
+      expect(html).toContain('aria-label="Observer Longitude"');
+      expect(html).toContain('aria-valuenow="-122"');
+      expect(html).toContain('aria-valuemin="-180"');
+      expect(html).toContain('aria-valuemax="180"');
+      expect(html).toContain('tabindex="0"');
+      expect(html).toContain('focus-visible:ring-2');
     });
   });
 

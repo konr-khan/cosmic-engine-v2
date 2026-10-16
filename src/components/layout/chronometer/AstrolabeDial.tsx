@@ -219,8 +219,40 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
 
   const currentDisplayRing = activeRing || hoveredRing;
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!onTimeChange) return;
+    let delta = 0;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') delta = -0.25;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') delta = 0.25;
+    else if (e.key === 'PageDown') delta = -1;
+    else if (e.key === 'PageUp') delta = 1;
+    else if (e.key === 'Home') {
+      e.preventDefault();
+      onTimeChange(0);
+      return;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      onTimeChange(24);
+      return;
+    }
+    if (delta !== 0) {
+      e.preventDefault();
+      const newTime = parseFloat(Math.max(0, Math.min(24, timeOfDay + delta)).toFixed(2));
+      onTimeChange(newTime);
+    }
+  };
+
   return (
-    <div className="relative w-full aspect-square max-w-[270px] mx-auto select-none touch-none">
+    <div 
+      role="slider"
+      tabIndex={0}
+      aria-label="Observation Time of Day"
+      aria-valuenow={timeOfDay}
+      aria-valuemin={0}
+      aria-valuemax={24}
+      onKeyDown={handleKeyDown}
+      className="relative w-full aspect-square max-w-[270px] mx-auto select-none touch-none rounded-full focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none"
+    >
       <svg 
         ref={svgRef}
         viewBox="-135 -135 270 270" 
@@ -249,7 +281,6 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
           value={dayOfYear} 
           max={totalDays} 
           color={THEME.date} 
-          formatValue={formatDate}
         />
 
         {/* 2. SECOND RING (R=102): TIME OF DAY (Blue) */}
@@ -259,7 +290,6 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
           value={timeOfDay} 
           max={24} 
           color={THEME.time} 
-          formatValue={formatTimeStr}
         />
 
         {/* 3. THIRD RING (R=78): LONGITUDE (Amber, 0° top, +90° right, -90° left) */}
@@ -269,7 +299,6 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
           value={longitude} 
           max={360} 
           color={THEME.lon} 
-          formatValue={formatLon}
         />
 
         {/* 4. FOURTH RING (R=54): LATITUDE ARMILLARY RAIL (Rose) */}

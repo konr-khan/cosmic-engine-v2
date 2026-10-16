@@ -44,7 +44,7 @@ Cosmic Engine adheres to two foundational principles of scientific information d
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 880 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 886 tests)
 
 ---
 
@@ -136,7 +136,7 @@ Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-
 
 ## 🧪 Testing
 
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**880 tests**):
+The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**886 tests**):
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -162,11 +162,11 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (10 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **MiniGlobe SVG Component** | `src/components/common/MiniGlobe.test.tsx` (14 tests) | 9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping |
 | **Window Error Boundary** | `src/components/common/WindowErrorBoundary.test.tsx` (9 tests) | Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience |
-| **Interactive Controls** | `src/components/controls/controls.test.tsx` (19 tests) | Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags |
+| **Interactive Controls** | `src/components/controls/controls.test.tsx` (21 tests) | Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags |
 | **Dashboard Window Layout** | `src/components/layout/DashboardWindow.test.tsx` (17 tests) | Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts |
-| **Layout & Chronometer Dock** | `src/components/layout/layout.test.tsx` (8 tests) | Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing |
+| **Layout & Chronometer Dock** | `src/components/layout/layout.test.tsx` (10 tests) | Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing |
 | **Ribbon Scrubber Hook** | `src/components/widgets/common/useRibbonScrubber.test.ts` (10 tests) | Bidirectional 2D coordinate scaling (dayToX, xToDay, timeToY, yToTime), synodic sub-window scaling, dragging state, and pointer capture lifecycle |
-| **SkyDomeBase Primitive** | `src/components/widgets/today/SkyDomeBase.test.tsx` (18 tests) | Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors |
+| **SkyDomeBase Primitive** | `src/components/widgets/today/SkyDomeBase.test.tsx` (19 tests) | Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors |
 | **Sky Dome Hooks & Primitives** | `src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx` (12 tests) | Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer |
 | **Today Horizon Widget** | `src/components/widgets/today/TodayWidget.test.tsx` (24 tests) | SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles |
 | **Meridian View-Model Config Helpers** | `src/components/widgets/today/hooks/meridianConfigHelpers.test.ts` (9 tests) | Strongly typed view-model builders for radial ticks, swaths, gate anchors, and peak targets deduplicating Sun and Moon meridian views |
@@ -185,7 +185,7 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Observatory Root Dashboard** | `src/App.test.tsx` (5 tests) | 12-column responsive layout grid, master preset windows, ObsNavbar branding, and OrbitalChronometer dock integration |
 | **LRU Cache Utility** | `src/utils/lruCache.test.ts` (14 tests) | Generic LRU cache eviction order, capacity limits, promotion on get/set, and Map iterator ordering |
 | **Solstice Jump Controls** | `src/components/layout/chronometer/SolsticeJumpControls.test.tsx` (9 tests) | Astronomical turning point buttons (Mar/Sep Equinox, Jun/Dec Solstice), UTC date dispatch, and twilight badge styles |
-| **Astrolabe Dial Component** | `src/components/layout/chronometer/AstrolabeDial.test.tsx` (21 tests) | Concentric SVG control rings (Date, Time, Lon, Lat), observer-locked camera yaw calculations, latitude rail positioning, pointer event callbacks, and rollover boundaries |
+| **Astrolabe Dial Component** | `src/components/layout/chronometer/AstrolabeDial.test.tsx` (22 tests) | Concentric SVG control rings (Date, Time, Lon, Lat), observer-locked camera yaw calculations, latitude rail positioning, pointer event callbacks, and rollover boundaries |
 | **Atomic Hover Store** | `src/store/hoverStore.test.ts` (4 tests) | High-frequency ribbon scrubber state isolation (`hoveredDate`, `hoveredTime`, `hoverPosition`), shallow equality memoization, and zero-cascade subscriber notifications |
 | **Terminator Ground Tracks Math** | `src/utils/cosmicMath/terminatorTracks.test.ts` (16 tests) | 24-hour diurnal ground tracks ($[-12\text{h}, +12\text{h}]$) for Subsolar and Sublunar points, antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons, and temporal vector dashes |
 | **Armillary Interactions Hook** | `src/components/widgets/armillary/useArmillaryInteractions.test.ts` (24 tests) | Astrolabe touch and pointer interactions, camera dragging state isolation, model click-to-snap target dispatch, Free Rete angle calculation, and pointer capture lifecycles |

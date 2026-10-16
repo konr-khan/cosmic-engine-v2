@@ -7,9 +7,7 @@ export interface ControlRingProps {
   value: number;
   max: number;
   color: string;
-  formatValue?: (val: number) => string;
   rangeOffset?: number;
-  onHover?: (hovered: boolean) => void;
 }
 
 export const ControlRing: React.FC<ControlRingProps> = ({ 
@@ -18,9 +16,7 @@ export const ControlRing: React.FC<ControlRingProps> = ({
   value, 
   max, 
   color, 
-  formatValue, 
-  rangeOffset = 0,
-  onHover
+  rangeOffset = 0
 }) => {
   // Convert value to angle (0-360 deg, 0° at 12 o'clock, clockwise)
   let normalizedValue = value - rangeOffset;
@@ -37,11 +33,7 @@ export const ControlRing: React.FC<ControlRingProps> = ({
   const largeArcFlag = clampedAngle > 180 ? 1 : 0;
 
   return (
-    <g 
-      className="select-none group touch-none"
-      onPointerEnter={() => onHover && onHover(true)}
-      onPointerLeave={() => onHover && onHover(false)}
-    >
+    <g className="select-none group touch-none">
       {/* Background Track with Inner/Outer Hairline Borders */}
       <circle cx="0" cy="0" r={radius} fill="none" stroke="#0f172a" strokeWidth={width} />
       <circle cx="0" cy="0" r={radius - width / 2} fill="none" stroke="#334155" strokeWidth="0.5" strokeOpacity="0.4" />

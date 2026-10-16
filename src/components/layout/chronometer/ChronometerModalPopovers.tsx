@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Globe, Compass, X } from 'lucide-react';
 import { LatitudeSlider } from '../../controls/LatitudeSlider';
 import { PolarLongitudeSelector } from '../../controls/PolarLongitudeSelector';
@@ -23,6 +23,20 @@ export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> =
   onLatChange = () => {},
   onLonChange = () => {}
 }) => {
+  // Global Escape key listener to dismiss active popover dialog
+  useEffect(() => {
+    if (!activePopup) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activePopup, onClose]);
+
   if (!activePopup) return null;
 
   return (
@@ -36,6 +50,9 @@ export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> =
           onClick={onClose}
         >
           <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Coordinate Selector"
             className="bg-slate-950/95 border border-slate-800 text-white rounded-2xl p-3.5 sm:p-4 shadow-2xl max-w-sm sm:max-w-md w-full relative space-y-3 max-h-[85vh] my-auto overflow-y-auto backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -79,6 +96,9 @@ export const ChronometerModalPopovers: React.FC<ChronometerModalPopoversProps> =
           onClick={onClose}
         >
           <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Coordinate Selector"
             className="bg-slate-950/95 border border-slate-800 text-white rounded-2xl p-3.5 sm:p-4 shadow-2xl max-w-sm sm:max-w-md w-full relative space-y-3 max-h-[85vh] my-auto overflow-y-auto backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >

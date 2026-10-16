@@ -91,7 +91,6 @@ export const SunMeridianDome: React.FC<SunMeridianDomeProps> = ({
       peakElevation={peakAlt}
       peakDirectionSuffix={todayCulmination.shortTag}
       meridianDirection={todayCulmination.meridianLabel}
-      culminationDirection={todayCulmination.direction}
       sightingBanner={todayCulmination.sightingSummary}
       currentElevation={currentSunElevation}
       elevationColorClass={currentSunElevation >= 0 ? 'text-amber-400' : 'text-slate-400'}

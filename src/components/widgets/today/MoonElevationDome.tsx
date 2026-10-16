@@ -111,7 +111,6 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       peakElevation={transitPeakElevation}
       peakDirectionSuffix={culmination.shortTag}
       meridianDirection={culmination.meridianLabel}
-      culminationDirection={culmination.direction}
       sightingBanner={culmination.sightingSummary}
       currentElevation={currentMoonElevation}
       elevationColorClass={LUNAR_ELEVATION_BADGE_CLASSES[lunarStatus.phase]}

@@ -100,7 +100,8 @@ export const SkyDomeFooter: React.FC<SkyDomeFooterProps> = ({
       </div>
 
       {/* Column 2: Transit Snap Button */}
-      <div
+      <button
+        type="button"
         onClick={onSnapTransit}
         className={`text-center transition-all cursor-pointer p-1.5 rounded-lg border shadow-sm flex flex-col justify-center min-w-0 ${transitBgClass}`}
         title={transitTooltip}
@@ -111,7 +112,7 @@ export const SkyDomeFooter: React.FC<SkyDomeFooterProps> = ({
         <span className={`font-semibold text-[10px] sm:text-xs font-mono whitespace-nowrap truncate ${transitTimeClass}`}>
           {transitTimeFormatted} <span className={`text-[9px] font-normal font-sans ${transitUtcClass}`}>UTC</span>
         </span>
-      </div>
+      </button>
 
       {/* Column 3: Declination Badge */}
       <div 

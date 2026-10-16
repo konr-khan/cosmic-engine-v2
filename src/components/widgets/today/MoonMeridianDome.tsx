@@ -99,7 +99,6 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
       peakElevation={peakAlt}
       peakDirectionSuffix={todayCulmination.shortTag}
       meridianDirection={todayCulmination.meridianLabel}
-      culminationDirection={todayCulmination.direction}
       sightingBanner={todayCulmination.sightingSummary}
       currentElevation={currentMoonElevation}
       elevationColorClass={isNodalModeActive ? (isAscendingBranch ? 'text-sky-300' : 'text-rose-300') : 'text-slate-200'}

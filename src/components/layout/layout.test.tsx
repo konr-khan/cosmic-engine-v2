@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { ObsNavbar } from './ObsNavbar';
 import { OrbitalChronometer } from './OrbitalChronometer';
 import { ChronometerReadoutCards, parseTimeString, formatTimeHHMM } from './chronometer/ChronometerReadoutCards';
+import { ChronometerModalPopovers } from './chronometer/ChronometerModalPopovers';
 import { PRESET_LAYOUTS } from '../../hooks/useDashboardLayout';
 import { SolarAlmanacData } from '../../types';
 
@@ -73,6 +74,23 @@ describe('Layout Subsystem & Chronometer Dock Integration', () => {
       expect(htmlUnlocked).toContain(PRESET_LAYOUTS['master'].name);
       expect(htmlUnlocked).toContain('Lock Layout');
       expect(htmlUnlocked).toContain('Lock All Window Positions');
+    });
+
+    it('provides accessible menu button semantics with aria-expanded and aria-haspopup', () => {
+      const html = renderToStaticMarkup(
+        React.createElement(ObsNavbar, {
+          activePresetKey: 'balanced',
+          onSelectPreset: vi.fn(),
+          widgets: mockWidgets,
+          onToggleWidget: vi.fn(),
+          isAllLocked: false,
+          onToggleAllLocked: vi.fn(),
+          onResetLayout: vi.fn()
+        })
+      );
+
+      expect(html).toContain('aria-expanded="false"');
+      expect(html).toContain('aria-haspopup="menu"');
     });
   });
 
@@ -257,6 +275,23 @@ describe('Layout Subsystem & Chronometer Dock Integration', () => {
 
       simulateDirectLon(-250);
       expect(onLonMock).toHaveBeenCalledWith(-180);
+    });
+  });
+
+  describe('ChronometerModalPopovers Dialog A11y', () => {
+    it('renders modal popovers with dialog role, aria-modal, and label semantics', () => {
+      const html = renderToStaticMarkup(
+        React.createElement(ChronometerModalPopovers, {
+          activePopup: 'lat',
+          onClose: vi.fn(),
+          latitude: 47.06,
+          longitude: -122.33
+        })
+      );
+
+      expect(html).toContain('role="dialog"');
+      expect(html).toContain('aria-modal="true"');
+      expect(html).toContain('aria-label="Coordinate Selector"');
     });
   });
 });

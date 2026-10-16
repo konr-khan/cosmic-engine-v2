@@ -22,8 +22,6 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   longitude = -122.81,
   timeOfDay = 12,
   currentDate = J2000_DATE,
-  onSetTime,
-  onSetDate,
   hoverTime,
   onHoverTime
 }) => {

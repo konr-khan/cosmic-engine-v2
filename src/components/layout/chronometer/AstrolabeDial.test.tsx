@@ -77,6 +77,17 @@ describe('AstrolabeDial Component', () => {
       // Equator reference chord (x1="-45" y1="0" x2="45" y2="0")
       expect(html).toContain('x1="-45" y1="0" x2="45" y2="0"');
     });
+
+    it('provides accessible ARIA slider semantics and keyboard navigation focus ring', () => {
+      const html = renderToStaticMarkup(<AstrolabeDial {...standardProps} />);
+      expect(html).toContain('role="slider"');
+      expect(html).toContain('aria-label="Observation Time of Day"');
+      expect(html).toContain('aria-valuenow="12"');
+      expect(html).toContain('aria-valuemin="0"');
+      expect(html).toContain('aria-valuemax="24"');
+      expect(html).toContain('tabindex="0"');
+      expect(html).toContain('focus-visible:ring-2');
+    });
   });
 
   describe('Observer-Locked Camera Yaw Calculation', () => {

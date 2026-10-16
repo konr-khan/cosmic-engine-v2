@@ -40,7 +40,6 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
 
   const {
     safeTides,
-    safeAngles,
     safeLocalTideStatus,
     computedPhaseValue,
     tideTextColor,
@@ -48,13 +47,9 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
     sunAngleDeg,
     isLeftHemisphere,
     safeSunLambda,
-    trueAscNodeLon,
-    thetaNodeDeg,
-    thetaDescNodeDeg,
     nodalSegments,
     nodePos,
     moonAngleDeg,
-    moonRad,
     moonX,
     moonY,
     isMoonAsc
@@ -266,7 +261,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
                 )}
 
                 {/* Ascending Node Pin ☊ */}
-                <g transform={`translate(${nodePos.asc.x}, ${nodePos.asc.y})`} className="cursor-pointer">
+                <g transform={`translate(${nodePos.asc.x}, ${nodePos.asc.y})`}>
                   <circle r="4" fill="#020617" stroke="#38bdf8" strokeWidth="1.2" />
                   <circle r="1.5" fill="#38bdf8" />
                   <text
@@ -280,7 +275,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
                 </g>
 
                 {/* Descending Node Pin ☋ */}
-                <g transform={`translate(${nodePos.desc.x}, ${nodePos.desc.y})`} className="cursor-pointer">
+                <g transform={`translate(${nodePos.desc.x}, ${nodePos.desc.y})`}>
                   <circle r="4" fill="#020617" stroke="#f43f5e" strokeWidth="1.2" />
                   <circle r="1.5" fill="#f43f5e" />
                   <text

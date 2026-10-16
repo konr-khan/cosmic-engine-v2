@@ -43,6 +43,27 @@ export const PolarLongitudeSelector: React.FC<PolarLongitudeSelectorProps> = ({
     onChange(Math.round(newLon));
   }, [onChange]);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    let delta = 0;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') delta = -1;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') delta = 1;
+    else if (e.key === 'PageDown') delta = -15;
+    else if (e.key === 'PageUp') delta = 15;
+    else if (e.key === 'Home') {
+      e.preventDefault();
+      onChange(-180);
+      return;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      onChange(180);
+      return;
+    }
+    if (delta !== 0) {
+      e.preventDefault();
+      onChange(Math.max(-180, Math.min(180, Math.round(longitude + delta))));
+    }
+  };
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
@@ -55,8 +76,15 @@ export const PolarLongitudeSelector: React.FC<PolarLongitudeSelectorProps> = ({
       
       {/* 360° Polar Dial Canvas */}
       <div 
-        className={`w-full max-w-[190px] aspect-square relative touch-none shrink-0 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         ref={svgRef}
+        role="slider"
+        tabIndex={0}
+        aria-label="Observer Longitude"
+        aria-valuenow={longitude}
+        aria-valuemin={-180}
+        aria-valuemax={180}
+        onKeyDown={handleKeyDown}
+        className={`w-full max-w-[190px] aspect-square relative touch-none shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onPointerDown={handlePointerDown}
         onPointerMove={(e) => isDragging && updateLongitude(e.clientX, e.clientY)}
         onPointerUp={(e) => { 

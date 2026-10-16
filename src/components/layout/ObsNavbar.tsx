@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Globe, 
   LayoutTemplate, 
@@ -49,6 +49,37 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
 }) => {
   const [showPresetsMenu, setShowPresetsMenu] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const presetsRef = useRef<HTMLDivElement>(null);
+  const layersRef = useRef<HTMLDivElement>(null);
+
+  // Outside-click and Escape key listeners to dismiss open menus
+  useEffect(() => {
+    if (!showPresetsMenu && !showOptions) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowPresetsMenu(false);
+        setShowOptions(false);
+      }
+    };
+
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (showPresetsMenu && presetsRef.current && !presetsRef.current.contains(target)) {
+        setShowPresetsMenu(false);
+      }
+      if (showOptions && layersRef.current && !layersRef.current.contains(target)) {
+        setShowOptions(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [showPresetsMenu, showOptions]);
 
   const handleSelectPresetClick = (presetId: string) => {
     onSelectPreset(presetId);
@@ -77,8 +108,10 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
         <div className="flex items-center gap-2">
           
           {/* WORKSPACE PRESETS DROPDOWN */}
-          <div className="relative">
+          <div className="relative" ref={presetsRef}>
             <button
+              aria-expanded={showPresetsMenu}
+              aria-haspopup="menu"
               onClick={() => {
                 setShowPresetsMenu(!showPresetsMenu);
                 if (showOptions) setShowOptions(false);
@@ -132,8 +165,10 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
           </div>
 
           {/* Simulation Layers Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={layersRef}>
             <button
+              aria-expanded={showOptions}
+              aria-haspopup="menu"
               onClick={() => {
                 setShowOptions(!showOptions);
                 if (showPresetsMenu) setShowPresetsMenu(false);

@@ -13,10 +13,11 @@
  */
 
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Sun, Moon } from 'lucide-react';
 import { SkyDomeBase, EL_R, EL_CX, EL_CY } from './SkyDomeBase';
+import { SkyDomeFooter } from './common/SkyDomeFooter';
 
 describe('SkyDomeBase Primitive Component Test Suite', () => {
   it('exports canonical elevation arc geometry constants', () => {
@@ -415,6 +416,30 @@ describe('SkyDomeBase Primitive Component Test Suite', () => {
     expect(northPoleHtml).not.toContain('>E</text>');
     expect(northPoleHtml).not.toContain('>W</text>');
     expect(northPoleHtml).toContain('Polar longitude: 0° (Greenwich Meridian)');
+  });
+
+  describe('SkyDomeFooter Semantic Buttons', () => {
+    it('renders Transit Snap badge as an accessible button element with type="button"', () => {
+      const html = renderToStaticMarkup(
+        <SkyDomeFooter
+          riseSetPrimaryText="06:00 / 18:00"
+          transitLabel="Solar Noon"
+          transitTimeFormatted="12:00"
+          onSnapTransit={vi.fn()}
+          declinationLabel="Declination"
+          declinationFormatted="+23.4°"
+          primaryModeText="Standard"
+          secondaryModeText="Twilight"
+          isSecondaryActive={false}
+          onToggleMode={vi.fn()}
+        />
+      );
+
+      expect(html).toContain('<button');
+      expect(html).toContain('type="button"');
+      expect(html).toContain('Solar Noon');
+      expect(html).toContain('12:00');
+    });
   });
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { EARTH_MILESTONES } from './milestones';
 import { OrbitHeaderControls } from './OrbitHeaderControls';
@@ -24,12 +24,25 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(1.0);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const handleWheelZoom = (e: React.WheelEvent<SVGSVGElement>) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    setZoom((z) => Math.min(3.5, Math.max(0.5, parseFloat((z * factor).toFixed(2)))));
-  };
+  // Native non-passive wheel zoom listener to prevent passive event warnings and page scroll latching
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      setZoom((z) => Math.min(3.5, Math.max(0.5, parseFloat((z * factor).toFixed(2)))));
+    };
+
+    el.addEventListener('wheel', handleNativeWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, []);
 
   // Synchronize observer geographic coordinates and time from store
   const storeState = useChronometerStore(selectMacroObserverParams);
@@ -107,7 +120,10 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
       />
 
       {/* Main SVG Heliocentric Orbit Viewport */}
-      <div className="relative w-full flex-1 min-h-[300px] flex items-center justify-center bg-slate-950 rounded-xl border border-slate-800/80 p-4 overflow-hidden">
+      <div 
+        ref={containerRef}
+        className="relative w-full flex-1 min-h-[300px] flex items-center justify-center bg-slate-950 rounded-xl border border-slate-800/80 p-4 overflow-hidden"
+      >
         <OrbitHoverHud hoverData={activeHoverData} />
         
         <OrbitSvgCanvas
@@ -131,7 +147,6 @@ export const MacroOrbitView: React.FC<MacroOrbitViewProps> = ({
           timeOfDay={effectiveTime}
           lunarOrbitPath={helioScene.lunarOrbitPath}
           zoom={zoom}
-          onWheelZoom={handleWheelZoom}
           onDateScrub={handleDateScrub}
           year={currentDate.getUTCFullYear()}
         />

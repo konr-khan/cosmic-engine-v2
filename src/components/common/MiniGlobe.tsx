@@ -103,10 +103,8 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   viewMode = 'topdown',
   sunLambdaDeg = 0,
   sunAngleDeg,
-  subsolarVector,
   subsolarCameraVector,
   declination = 0,
-  rightAscension = 0,
   camera,
   latitude = 47.06,
   longitude = -122.81,
@@ -448,7 +446,7 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
         cy="0" 
         r={Math.max(16, safeRadius * 1.6)} 
         fill="transparent" 
-        className="cursor-pointer" 
+        className={onClick || onPointerEnter || onPointerLeave ? 'cursor-pointer' : 'cursor-default'} 
         onPointerEnter={onPointerEnter} 
         onPointerLeave={onPointerLeave} 
         onClick={onClick} 

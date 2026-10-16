@@ -44,7 +44,6 @@ export interface SkyDomeBaseProps {
   showTwilightBands?: boolean;
   elevationStatusSubtitle?: string;
   meridianDirection?: 'S' | 'N' | 'Z';
-  culminationDirection?: 'South' | 'North' | 'Zenith';
   sightingBanner?: string;
   peakDirectionSuffix?: string;
   bodyX?: number;
@@ -77,7 +76,6 @@ export const SkyDomeBase: React.FC<SkyDomeBaseProps> = ({
   showTwilightBands = false,
   elevationStatusSubtitle,
   meridianDirection,
-  culminationDirection,
   sightingBanner,
   peakDirectionSuffix,
   bodyX = EL_CX,

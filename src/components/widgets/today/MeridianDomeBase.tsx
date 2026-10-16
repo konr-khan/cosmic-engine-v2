@@ -70,7 +70,6 @@ export interface MeridianDomeBaseProps {
   peakElevation: number;
   peakDirectionSuffix?: string;
   meridianDirection?: 'S' | 'N' | 'Z';
-  culminationDirection?: 'South' | 'North' | 'Zenith';
   sightingBanner?: string;
   currentElevation: number;
   elevationColorClass?: string;
@@ -306,7 +305,6 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
   peakElevation,
   peakDirectionSuffix,
   meridianDirection,
-  culminationDirection,
   sightingBanner,
   currentElevation,
   elevationColorClass,
@@ -349,7 +347,6 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
       peakElevation={peakElevation}
       peakDirectionSuffix={peakDirectionSuffix}
       meridianDirection={meridianDirection}
-      culminationDirection={culminationDirection}
       sightingBanner={sightingBanner}
       currentElevation={currentElevation}
       elevationColorClass={elevationColorClass}

@@ -135,6 +135,9 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F81 | Dynamic Draconic Node Window Bounding & LRU Cache | Derived $k$-range dynamically from `windowDays` in `calculateTrueLunarNodeEvents`; added 128-slot LRU cache; integer day-bucketed nodal calculations in `useTideMath.ts` | M40 | ADR-0040 |
 | F82 | Ephemeris Single-Pass Distribution & Worker Synchronous Cache Seeding | Propagated pre-computed solar ephemeris across 3D scene bodies; seeded worker LRU caches synchronously during mount to eliminate double 365-day matrix calculation | M40 | ADR-0040 |
 | F83 | 365-Day SVG Ribbon Sub-Layer & Armillary Continuum Hot-Path Optimization | Wrapped `SolarRibbonBands`, `SolarRibbonAxes`, `LunarRibbonAxes`, `LunarRibbonCurves` in `React.memo`; optimized Armillary path streaming and fast coordinate conversion | M40 | ADR-0040 |
+| F84 | Shared Almanac Shortcuts Rail & Non-Passive Wheel Zoom | Extracted `<AlmanacShortcutsRail />` primitive; replaced synthetic passive wheel zoom in `MacroOrbitView` with native `{ passive: false }` listener preventing scroll latching | M41 | ADR-0041 |
+| F85 | Accessible Custom Controls, Keyboard Navigation & Modal Dialog Semantics | Added ARIA slider semantics (`role="slider"`) and arrow/page-key stepping to `LatitudeSlider`, `PolarLongitudeSelector`, `AstrolabeDial`; added `Escape` and outside-click dismissal to dialogs/menus; converted transit jump to semantic `<button>` | M41 | ADR-0041 |
+| F86 | AST Linter Temporal Purity Gatekeeper & Dead Props Cleanup | Enforced temporal purity (`new Date()` ban in math modules) and reported parse errors in `lintUnitSafety.mjs`; purged dead props across `MiniGlobe`, `MicroTideView`, `ControlRing`, `SkyDomeBase`, `GyroArmillaryView` | M41 | ADR-0041 |
 
 ## Milestones
 
@@ -146,7 +149,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M40)
+### Recent Milestones (M21–M41)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -169,6 +172,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M38 | Codebase Health Refactoring, Domain Purity & Widget Decoupling | `src/utils/cosmicMath/`, `macroTokens.ts`, `MeridianDomeFooter.tsx`, `useTideMath.ts`, `useNodalPlaneMath.ts`, `DEAD_ENDS.md`, ADR-0038 | M1–M37 | DONE |
 | M39 | Codebase Hardening, UTC Invariance & Type-Safe Worker RPC | `src/store/`, `src/workers/`, `src/types/`, `src/components/`, `DEAD_ENDS.md`, ADR-0039 | M1–M38 | DONE |
 | M40 | Priorities 1–3 Codebase Hardening, Nominal Type Guardrails & 60 FPS Ribbon Memoization | `src/types/`, `src/store/`, `src/workers/`, `src/hooks/`, `src/utils/cosmicMath/`, `src/components/`, ADR-0040 | M1–M39 | DONE |
+| M41 | Priorities 4 & 5 UI Consolidation, Accessible Controls & AST Linter Hardening | `src/components/`, `src/hooks/`, `scripts/`, ADR-0041 | M1–M40 | DONE |
 
 ## Interface Contracts & Domain Models
 

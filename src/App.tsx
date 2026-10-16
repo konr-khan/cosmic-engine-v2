@@ -158,8 +158,6 @@ const ArmillaryWidgetContent = React.memo(function ArmillaryWidgetContent() {
       longitude={longitude}
       timeOfDay={timeOfDay}
       currentDate={date}
-      onSetTime={cosmicActions.setTimeOfDay}
-      onSetDate={cosmicActions.setDate}
     />
   );
 });

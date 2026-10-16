@@ -48,8 +48,6 @@ export interface GyroArmillaryViewProps {
   longitude?: number;
   timeOfDay?: number;
   currentDate?: Date;
-  onSetTime?: (time: number) => void;
-  onSetDate?: (date: Date) => void;
   hoverTime?: number | null;
   onHoverTime?: (time: number | null) => void;
 }
