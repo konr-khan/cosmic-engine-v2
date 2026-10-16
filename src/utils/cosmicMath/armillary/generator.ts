@@ -6,12 +6,11 @@
  */
 
 import { Degrees, Latitude, Longitude, HoursDecimal, JulianDate, asDegrees } from '../../../types/units';
-import { Vector3D } from '../../../types/coordinates';
+import { Vector2D, Vector3D } from '../../../types/coordinates';
 import { clamp, slerp3D, calculateGMST, calculateLST } from '../core';
 import { calculateEarthOrbitalPhysics } from '../solar';
+import { calculateMeanLunarNodeLongitude } from '../lunar';
 import {
-  J2000_JD,
-  JULIAN_CENTURY_DAYS,
   ASTRONOMICAL_UNIT_KM,
   EARTH_ORBITAL_SPEED_MEAN_KMS,
   SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
@@ -114,17 +113,18 @@ export function generateArmillaryModel(params: {
   const lambdaClamp = clamp(morphLambda, 0, 1);
   const transT = clamp(projectionTransitionT, 0, 1);
   const obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
-  const T = (julianDate - J2000_JD) / JULIAN_CENTURY_DAYS;
-  const defaultNodeLon = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
+  const defaultNodeLon = calculateMeanLunarNodeLongitude(julianDate);
   const nodeLonDeg = moonNodeLonDeg ?? defaultNodeLon;
-  const baseLstDeg = calculateLST(julianDate, longitude);
+  const gmstDeg = calculateGMST(julianDate);
+  const baseLstDeg = asDegrees(((gmstDeg + longitude) % 360 + 360) % 360);
   const lstDeg = isFreeReteMode 
     ? asDegrees(((baseLstDeg + freeReteOffsetDeg) % 360 + 360) % 360)
     : baseLstDeg;
-  const gmstDeg = calculateGMST(julianDate);
 
-  const { apparentSolarHours } = calculateReteAngleToLST(lstDeg, sunRaDeg);
-  const focalBeacon = generateProjectionFocalBeacon(projectionMode, r0, cameraPitch, cameraYaw, lambdaClamp);
+  const sunHourAngleDeg = ((lstDeg - sunRaDeg + 540) % 360) - 180;
+  const apparentSolarHours = Math.round(((((sunHourAngleDeg / 15) + 12) % 24 + 24) % 24) * 100) / 100;
+  const rotateCamera = createEulerCameraRotator(cameraPitch, cameraYaw, 0);
+  const focalBeacon = generateProjectionFocalBeacon(projectionMode, r0, cameraPitch, cameraYaw, lambdaClamp, rotateCamera, lambdaClamp > 0.45);
   const reteOffset = isFreeReteMode ? freeReteOffsetDeg : 0;
 
   // Calculate live Keplerian orbital physics
@@ -136,8 +136,6 @@ export function generateArmillaryModel(params: {
     solarIrradiancePercent: physicsSolar.solarIrradiancePercent ?? 100.0,
     sunAngularDiameterArcmin: physicsSolar.sunAngularDiameterArcmin ?? SUN_ANGULAR_DIAMETER_1AU_ARCMIN
   };
-
-  const rotateCamera = createEulerCameraRotator(cameraPitch, cameraYaw, 0);
   const project2D = createContinuousProjectionResolver(
     fromProjectionMode,
     projectionMode,
@@ -164,8 +162,29 @@ export function generateArmillaryModel(params: {
   // Helper to project a single 3D vector with staged morphing
   const transformVertex = (p3d: Vector3D): ArmillaryRingVertex => {
     const pCam = rotateCamera(p3d.x, p3d.y, p3d.z);
-    const pProj = project2D(p3d);
+    if (geomLambda === 0) {
+      const screenPos = { x: pCam.x, y: -pCam.y };
+      return {
+        p3d,
+        pCam,
+        pProj: screenPos,
+        screenPos,
+        isFront: isFrontFixed ? true : pCam.z >= 0
+      };
+    }
 
+    if (geomLambda === 1) {
+      const pProj = project2D(p3d);
+      return {
+        p3d,
+        pCam,
+        pProj,
+        screenPos: { x: pProj.x, y: -pProj.y },
+        isFront: true
+      };
+    }
+
+    const pProj = project2D(p3d);
     const screenX = oneMinusGeom * pCam.x + geomLambda * pProj.x;
     const screenY = oneMinusGeom * (-pCam.y) + geomLambda * (-pProj.y);
     const isFront = isFrontFixed ? true : pCam.z >= 0;
@@ -176,6 +195,25 @@ export function generateArmillaryModel(params: {
       pProj,
       screenPos: { x: screenX, y: screenY },
       isFront
+    };
+  };
+
+  const tempVec3: Vector3D = { x: 0, y: 0, z: 0 };
+  const projectScreenPos = (x: number, y: number, z: number): Vector2D => {
+    const pCam = rotateCamera(x, y, z);
+    if (geomLambda === 0) {
+      return { x: pCam.x, y: -pCam.y };
+    }
+    tempVec3.x = x;
+    tempVec3.y = y;
+    tempVec3.z = z;
+    const pProj = project2D(tempVec3);
+    if (geomLambda === 1) {
+      return { x: pProj.x, y: -pProj.y };
+    }
+    return {
+      x: oneMinusGeom * pCam.x + geomLambda * pProj.x,
+      y: oneMinusGeom * (-pCam.y) + geomLambda * (-pProj.y)
     };
   };
 
@@ -203,9 +241,10 @@ export function generateArmillaryModel(params: {
     : targetGeom;
 
   // Spherical SLERP blending across modes (preserving radius and geodesic trajectory)
-  const blendedSun3D: Vector3D = slerp3D(sourceGeom.sun3D, targetGeom.sun3D, transT);
-  const blendedEarth3D: Vector3D = slerp3D(sourceGeom.earth3D, targetGeom.earth3D, transT);
-  const blendedMoon3D: Vector3D = slerp3D(sourceGeom.moon3D, targetGeom.moon3D, transT);
+  const isDirectGeom = sourceGeom === targetGeom || transT >= 1.0;
+  const blendedSun3D: Vector3D = isDirectGeom ? targetGeom.sun3D : slerp3D(sourceGeom.sun3D, targetGeom.sun3D, transT);
+  const blendedEarth3D: Vector3D = isDirectGeom ? targetGeom.earth3D : slerp3D(sourceGeom.earth3D, targetGeom.earth3D, transT);
+  const blendedMoon3D: Vector3D = isDirectGeom ? targetGeom.moon3D : slerp3D(sourceGeom.moon3D, targetGeom.moon3D, transT);
 
   const celestialRingsOpacity = (1 - transT) * sourceGeom.celestialRingsOpacity + transT * targetGeom.celestialRingsOpacity;
   const orbitRingOpacity = (1 - transT) * sourceGeom.orbitRingOpacity + transT * targetGeom.orbitRingOpacity;
@@ -277,6 +316,7 @@ export function generateArmillaryModel(params: {
     blendedEarth3D,
     blendedSun3D,
     transformVertex,
+    projectScreenPos,
     morphLambda: lambdaClamp,
     projectionMode,
     r0,

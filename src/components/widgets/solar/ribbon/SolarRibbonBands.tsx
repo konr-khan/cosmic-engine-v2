@@ -2,7 +2,7 @@ import React from 'react';
 import { AnnualSolarMatrixItem } from '../../../../types';
 
 export interface SolarRibbonBandsProps {
-  almanacData: AnnualSolarMatrixItem[];
+  almanacData?: AnnualSolarMatrixItem[];
   keyStats: {
     earliestSunrise: AnnualSolarMatrixItem;
     latestSunset: AnnualSolarMatrixItem;
@@ -18,8 +18,7 @@ export interface SolarRibbonBandsProps {
   chartH?: number;
 }
 
-export const SolarRibbonBands: React.FC<SolarRibbonBandsProps> = ({
-  almanacData,
+export const SolarRibbonBands: React.FC<SolarRibbonBandsProps> = React.memo(({
   keyStats,
   dayToX,
   timeToY,
@@ -88,6 +87,7 @@ export const SolarRibbonBands: React.FC<SolarRibbonBandsProps> = ({
       )}
     </>
   );
-};
+});
+SolarRibbonBands.displayName = 'SolarRibbonBands';
 
 export default SolarRibbonBands;

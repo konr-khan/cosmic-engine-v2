@@ -31,7 +31,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   onSetTime, 
   latitude = 47.06, 
   longitude = -122.81, 
-  currentDay = 1, 
+  currentDay: propCurrentDay = 1, 
   onDayChange, 
   currentDate = J2000_DATE, 
   hoverDate, 
@@ -56,10 +56,9 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
 
   const year = currentDate ? currentDate.getUTCFullYear() : 2026;
   const totalDays = getDaysInYear(year);
-  const activeDay = Math.min(
-    totalDays, 
-    effectiveHoverDate ? getDayOfYear(effectiveHoverDate) : currentDay
-  );
+  const currentDay = currentDate ? getDayOfYear(currentDate) : propCurrentDay;
+  const activeDay = Math.min(totalDays, currentDay);
+  const previewDay = effectiveHoverDate ? Math.min(totalDays, getDayOfYear(effectiveHoverDate)) : currentDay;
 
   // 1. 365-Day Annual Lunar Ephemeris Computation (offloaded to Web Worker)
   const annualLunarData: AnnualLunarMatrixItem[] = useAnnualLunarWorker({ year, latitude, longitude }) || [];
@@ -111,9 +110,8 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   const [timeMode, setTimeMode] = useState<'utc' | 'local'>('utc');
   const [viewMode, setViewMode] = useState<'synodic' | 'annual'>('synodic');
 
-  const displayData = (hoveredDay && annualLunarData[hoveredDay - 1]) 
-    ? annualLunarData[hoveredDay - 1] 
-    : activeData;
+  const displayDay = hoveredDay ?? (effectiveHoverDate ? previewDay : activeDay);
+  const displayData = annualLunarData[displayDay - 1] || activeData;
   const transitHour = displayData.transit ?? transit ?? 12;
   const decDeg = (orbitalData?.lunarPos?.declination ?? lunarEvents.declination ?? 0) as number;
 
@@ -130,7 +128,11 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/60">
           <Calendar className="w-3.5 h-3.5 text-indigo-400" />
           <span className="font-semibold text-slate-200">
-            {hoveredDay ? `Inspect: ${getDayLabel(hoveredDay)}` : getDayLabel(activeDay)}
+            {hoveredDay 
+              ? `Inspect: ${getDayLabel(hoveredDay)}` 
+              : effectiveHoverDate 
+                ? `Inspect: ${getDayLabel(previewDay)}` 
+                : getDayLabel(activeDay)}
           </span>
         </div>
       </div>
@@ -168,7 +170,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
         {/* Box 1 (Moonrise / Moonset) */}
         <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 flex flex-col items-center justify-center text-center shadow-inner">
           <span className="text-[9px] text-slate-400 block uppercase font-sans font-medium">
-            {hoveredDay ? 'Inspect Rise / Set' : 'Moonrise / Moonset'}
+            {hoveredDay || effectiveHoverDate ? 'Inspect Rise / Set' : 'Moonrise / Moonset'}
           </span>
           <span className="text-slate-200 font-semibold text-xs mt-0.5 font-mono">
             {displayData.polarState === 'circumpolar_up' || (displayData.moonrise === 0 && displayData.moonset === 24) ? (

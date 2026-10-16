@@ -9,44 +9,48 @@ export function buildSegmentedSvgPaths(vertices: ArmillaryRingVertex[]): { front
   const len = vertices.length;
   if (len === 0) return { frontPathD: '', backPathD: '', fullPathD: '' };
 
-  const fullSegments: string[] = new Array(len);
-  const frontSegments: string[] = [];
-  const backSegments: string[] = [];
+  let fullPathD = '';
+  let frontPathD = '';
+  let backPathD = '';
 
   let inFront = false;
   let inBack = false;
 
   for (let i = 0; i < len; i++) {
     const v = vertices[i];
-    const sx = v.screenPos.x.toFixed(2);
-    const sy = v.screenPos.y.toFixed(2);
+    const sx = Math.round(v.screenPos.x * 100) / 100;
+    const sy = Math.round(v.screenPos.y * 100) / 100;
     const coord = `${sx} ${sy}`;
 
-    fullSegments[i] = i === 0 ? `M ${coord}` : `L ${coord}`;
+    if (i === 0) {
+      fullPathD = `M ${coord}`;
+    } else {
+      fullPathD += ` L ${coord}`;
+    }
 
     if (v.isFront) {
       if (!inFront) {
-        frontSegments.push(`M ${coord}`);
+        frontPathD += frontPathD.length > 0 ? ` M ${coord}` : `M ${coord}`;
         inFront = true;
       } else {
-        frontSegments.push(`L ${coord}`);
+        frontPathD += ` L ${coord}`;
       }
       inBack = false;
     } else {
       if (!inBack) {
-        backSegments.push(`M ${coord}`);
+        backPathD += backPathD.length > 0 ? ` M ${coord}` : `M ${coord}`;
         inBack = true;
       } else {
-        backSegments.push(`L ${coord}`);
+        backPathD += ` L ${coord}`;
       }
       inFront = false;
     }
   }
 
   return {
-    frontPathD: frontSegments.join(' '),
-    backPathD: backSegments.join(' '),
-    fullPathD: fullSegments.join(' ') + ' '
+    frontPathD,
+    backPathD,
+    fullPathD: fullPathD + ' '
   };
 }
 
@@ -57,7 +61,7 @@ export interface ParametricRingConfig {
   frontStrokeWidth: number;
   backStrokeWidth: number;
   sampleCount?: number;
-  samplePoint: (t: number) => Vector3D; // t in [0, 1]
+  samplePoint: (t: number, index: number) => Vector3D; // t in [0, 1], index in [0, sampleCount]
 }
 
 /**
@@ -71,13 +75,46 @@ export function generateParametricRing3D(
   const numSamples = config.sampleCount ?? 64;
   const vertices: ArmillaryRingVertex[] = new Array(numSamples + 1);
 
+  let fullPathD = '';
+  let frontPathD = '';
+  let backPathD = '';
+  let inFront = false;
+  let inBack = false;
+
   for (let i = 0; i <= numSamples; i++) {
     const t = i / numSamples;
-    const p3d = config.samplePoint(t);
-    vertices[i] = transformVertex(p3d);
-  }
+    const p3d = config.samplePoint(t, i);
+    const v = transformVertex(p3d);
+    vertices[i] = v;
 
-  const paths = buildSegmentedSvgPaths(vertices);
+    const sx = Math.round(v.screenPos.x * 100) / 100;
+    const sy = Math.round(v.screenPos.y * 100) / 100;
+    const sxy = sx + ' ' + sy;
+
+    if (i === 0) {
+      fullPathD = 'M ' + sxy;
+    } else {
+      fullPathD += ' L ' + sxy;
+    }
+
+    if (v.isFront) {
+      if (!inFront) {
+        frontPathD += frontPathD.length === 0 ? ('M ' + sxy) : (' M ' + sxy);
+        inFront = true;
+      } else {
+        frontPathD += ' L ' + sxy;
+      }
+      inBack = false;
+    } else {
+      if (!inBack) {
+        backPathD += backPathD.length === 0 ? ('M ' + sxy) : (' M ' + sxy);
+        inBack = true;
+      } else {
+        backPathD += ' L ' + sxy;
+      }
+      inFront = false;
+    }
+  }
 
   return {
     id: config.id,
@@ -86,6 +123,8 @@ export function generateParametricRing3D(
     frontStrokeWidth: config.frontStrokeWidth,
     backStrokeWidth: config.backStrokeWidth,
     vertices,
-    ...paths
+    frontPathD,
+    backPathD,
+    fullPathD: fullPathD + ' '
   };
 }

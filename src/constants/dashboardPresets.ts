@@ -122,3 +122,4 @@ export const PRESET_LAYOUTS: Record<string, PresetLayout> = {
 };
 
 export const STORAGE_KEY = 'cosmic_window_layout_v10';
+export const DEFAULT_WINDOWS: WindowLayoutConfig[] = PRESET_LAYOUTS.master.windows;

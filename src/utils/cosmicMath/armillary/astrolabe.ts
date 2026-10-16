@@ -32,10 +32,13 @@ export function calculateAlmucantarCircle(altDeg: Degrees | number, latitude: La
   const centerY = clamp(rawCenterY, -maxRadius, maxRadius);
   const radius = clamp(rawRadius, 0.1, maxRadius);
 
+  const roundedY = Math.round(centerY * 100) / 100;
+  const roundedRadius = Math.round(radius * 100) / 100;
+
   return {
     altitude: asDegrees(altDeg),
-    centerY: parseFloat((Object.is(centerY, -0) ? 0 : centerY).toFixed(2)),
-    radius: parseFloat(radius.toFixed(2)),
+    centerY: Object.is(roundedY, -0) ? 0 : roundedY,
+    radius: roundedRadius,
     isHorizon: Math.abs(altDeg) < 0.1
   };
 }
@@ -50,6 +53,8 @@ export function generateAlmucantars(latitude: Latitude, stepDeg: number = 15, r0
   }
   return list;
 }
+
+const almucantarsCache = new Map<string, AlmucantarCircleData[]>();
 
 /**
  * Generates continuous Almucantars for Stereographic, Horizon, or cross-transitioning plates.
@@ -66,6 +71,30 @@ export function generateContinuousAlmucantars(
   const isHorizonSource = fromProjectionMode === 'horizon';
   const isTransitioning = fromProjectionMode && fromProjectionMode !== projectionMode && transT < 1.0;
 
+  if (!isTransitioning) {
+    const cacheKey = `${latitude}_${r0}_${stepDeg}_${isHorizonTarget}`;
+    const cached = almucantarsCache.get(cacheKey);
+    if (cached) return cached;
+
+    const list: AlmucantarCircleData[] = [];
+    for (let alt = 0; alt <= 85; alt += stepDeg) {
+      if (isHorizonTarget) {
+        const clampedAlt = clamp(alt, -89.9, 90);
+        const horizonRadius = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+        list.push({
+          altitude: asDegrees(alt),
+          centerY: 0,
+          radius: Math.round(horizonRadius * 100) / 100,
+          isHorizon: Math.abs(alt) < 0.1
+        });
+      } else {
+        list.push(calculateAlmucantarCircle(alt, latitude, r0));
+      }
+    }
+    almucantarsCache.set(cacheKey, list);
+    return list;
+  }
+
   const list: AlmucantarCircleData[] = [];
   for (let alt = 0; alt <= 85; alt += stepDeg) {
     const stereoCircle = calculateAlmucantarCircle(alt, latitude, r0);
@@ -74,23 +103,21 @@ export function generateContinuousAlmucantars(
     const horizonCircle: AlmucantarCircleData = {
       altitude: asDegrees(alt),
       centerY: 0,
-      radius: parseFloat(horizonRadius.toFixed(2)),
+      radius: Math.round(horizonRadius * 100) / 100,
       isHorizon: Math.abs(alt) < 0.1
     };
 
-    if (!isTransitioning) {
-      list.push(isHorizonTarget ? horizonCircle : stereoCircle);
-    } else {
-      const sourceCircle = isHorizonSource ? horizonCircle : stereoCircle;
-      const targetCircle = isHorizonTarget ? horizonCircle : stereoCircle;
-      const t = clamp(transT, 0, 1);
-      list.push({
-        altitude: asDegrees(alt),
-        centerY: parseFloat(((1 - t) * sourceCircle.centerY + t * targetCircle.centerY).toFixed(2)),
-        radius: parseFloat(((1 - t) * sourceCircle.radius + t * targetCircle.radius).toFixed(2)),
-        isHorizon: Math.abs(alt) < 0.1
-      });
-    }
+    const sourceCircle = isHorizonSource ? horizonCircle : stereoCircle;
+    const targetCircle = isHorizonTarget ? horizonCircle : stereoCircle;
+    const t = clamp(transT, 0, 1);
+    const blendedY = Math.round(((1 - t) * sourceCircle.centerY + t * targetCircle.centerY) * 100) / 100;
+    const blendedR = Math.round(((1 - t) * sourceCircle.radius + t * targetCircle.radius) * 100) / 100;
+    list.push({
+      altitude: asDegrees(alt),
+      centerY: blendedY === 0 ? 0 : blendedY,
+      radius: blendedR,
+      isHorizon: Math.abs(alt) < 0.1
+    });
   }
   return list;
 }
@@ -165,7 +192,7 @@ export function calculateReteAngleToLST(
   const apparentSolarHours = ((((sunHourAngleDeg / 15) + 12) % 24) + 24) % 24;
 
   return {
-    apparentLSTDeg: parseFloat(apparentLSTDeg.toFixed(1)),
-    apparentSolarHours: parseFloat(apparentSolarHours.toFixed(2))
+    apparentLSTDeg: Math.round(apparentLSTDeg * 10) / 10,
+    apparentSolarHours: Math.round(apparentSolarHours * 100) / 100
   };
 }

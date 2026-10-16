@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { getPhaseName } from '../../../../utils/cosmicMath';
 import { formatTime } from '../../../../utils/formatters';
 import { AnnualLunarMatrixItem } from '../../../../types';
@@ -30,7 +30,7 @@ export interface LunarRibbonCurvesProps {
   moonsetPathD: string;
 }
 
-export const LunarRibbonCurves: React.FC<LunarRibbonCurvesProps> = ({
+export const LunarRibbonCurves: React.FC<LunarRibbonCurvesProps> = React.memo(({
   chartW,
   chartH,
   padLeft,
@@ -56,40 +56,45 @@ export const LunarRibbonCurves: React.FC<LunarRibbonCurvesProps> = ({
   moonrisePathD,
   moonsetPathD
 }) => {
+  // Memoize Daily Moonrise-to-Moonset Braided Lines / Pillars across 365 days
+  const dailyPillars = useMemo(() => {
+    return visibleDays.map((d) => {
+      const isUp = d.polarState === 'circumpolar_up' || (d.moonrise === 0 && d.moonset === 24);
+      const isDown = d.polarState === 'circumpolar_down';
+      if (isDown) return null;
+
+      const riseT = isUp ? 0 : transformTime(d.moonrise);
+      const setT = isUp ? 24 : transformTime(d.moonset);
+      if (riseT === null || setT === null) return null;
+      const x = dayToX(d.day);
+      const yRise = timeToY(riseT);
+      const ySet = timeToY(setT);
+      
+      const isFull = Math.abs(d.phaseValue - 0.5) < 0.08;
+      const isSuper = d.isPerigee;
+      
+      const strokeColor = isUp ? '#0ea5e9' : (isSuper ? "#10b981" : (isFull ? "#f8fafc" : "#38bdf8"));
+      const opacity = isUp ? 0.7 : (isSuper ? 0.9 : (isFull ? 0.85 : (isSynodic ? 0.7 : 0.4)));
+      const strokeW = isSynodic ? (isSuper ? 6 : (isFull ? 5 : 4)) : (isSuper ? 2 : (isFull ? 1.6 : 1));
+
+      return (
+        <line 
+          key={d.day}
+          x1={x} y1={yRise} 
+          x2={x} y2={ySet} 
+          stroke={strokeColor} 
+          strokeWidth={strokeW} 
+          strokeOpacity={opacity}
+          strokeLinecap="round"
+        />
+      );
+    });
+  }, [visibleDays, dayToX, timeToY, transformTime, isSynodic]);
+
   return (
     <>
       {/* Render Daily Moonrise-to-Moonset Braided Lines / Pillars */}
-      {visibleDays.map((d) => {
-        const isUp = d.polarState === 'circumpolar_up' || (d.moonrise === 0 && d.moonset === 24);
-        const isDown = d.polarState === 'circumpolar_down';
-        if (isDown) return null;
-
-        const riseT = isUp ? 0 : transformTime(d.moonrise);
-        const setT = isUp ? 24 : transformTime(d.moonset);
-        if (riseT === null || setT === null) return null;
-        const x = dayToX(d.day);
-        const yRise = timeToY(riseT);
-        const ySet = timeToY(setT);
-        
-        const isFull = Math.abs(d.phaseValue - 0.5) < 0.08;
-        const isSuper = d.isPerigee;
-        
-        const strokeColor = isUp ? '#0ea5e9' : (isSuper ? "#10b981" : (isFull ? "#f8fafc" : "#38bdf8"));
-        const opacity = isUp ? 0.7 : (isSuper ? 0.9 : (isFull ? 0.85 : (isSynodic ? 0.7 : 0.4)));
-        const strokeW = isSynodic ? (isSuper ? 6 : (isFull ? 5 : 4)) : (isSuper ? 2 : (isFull ? 1.6 : 1));
-
-        return (
-          <line 
-            key={d.day}
-            x1={x} y1={yRise} 
-            x2={x} y2={ySet} 
-            stroke={strokeColor} 
-            strokeWidth={strokeW} 
-            strokeOpacity={opacity}
-            strokeLinecap="round"
-          />
-        );
-      })}
+      {dailyPillars}
 
       {/* Continuous Moonrise Curve */}
       {moonrisePathD && (
@@ -255,4 +260,5 @@ export const LunarRibbonCurves: React.FC<LunarRibbonCurvesProps> = ({
       })()}
     </>
   );
-};
+});
+LunarRibbonCurves.displayName = 'LunarRibbonCurves';

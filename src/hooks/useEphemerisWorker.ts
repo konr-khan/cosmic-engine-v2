@@ -130,8 +130,18 @@ export const useEphemerisWorker = ({
  * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
  */
 export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitude: Latitude }): AnnualSolarMatrixItem[] => {
-  const [workerSolar, setWorkerSolar] = useState<AnnualSolarMatrixItem[] | null>(null);
+  const currentKey = `${year}_${latitude}`;
+  const [activeKey, setActiveKey] = useState(currentKey);
+  const [workerSolar, setWorkerSolar] = useState<AnnualSolarMatrixItem[] | null>(() => {
+    return ephemerisWorkerManager.getCachedAnnualSolar(year, latitude) ?? null;
+  });
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
+
+  if (activeKey !== currentKey) {
+    setActiveKey(currentKey);
+    const cached = ephemerisWorkerManager.getCachedAnnualSolar(year, latitude);
+    setWorkerSolar(cached ?? null);
+  }
 
   useEffect(() => {
     if (!ephemerisWorkerManager.isAvailable()) {
@@ -157,10 +167,14 @@ export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitud
 
   const syncSolar = useMemo(() => {
     if (isWorkerActive && workerSolar !== null) return null;
+    const cached = ephemerisWorkerManager.getCachedAnnualSolar(year, latitude);
+    if (cached) return cached;
     try {
       const safeYear = sanitizeYear(year);
       const safeLat = sanitizeLatitude(latitude);
-      return calculateAnnualSolarMatrix(safeYear, safeLat);
+      const matrix = calculateAnnualSolarMatrix(safeYear, safeLat);
+      ephemerisWorkerManager.seedAnnualSolarCache(year, latitude, matrix);
+      return matrix;
     } catch (err) {
       console.error('[useAnnualSolarWorker] Synchronous fallback calculation failed:', err);
       return [];
@@ -183,8 +197,18 @@ export const useAnnualLunarWorker = ({
   latitude: Latitude; 
   longitude: Longitude; 
 }): AnnualLunarMatrixItem[] => {
-  const [workerLunar, setWorkerLunar] = useState<AnnualLunarMatrixItem[] | null>(null);
+  const currentKey = `${year}_${latitude}_${longitude}`;
+  const [activeKey, setActiveKey] = useState(currentKey);
+  const [workerLunar, setWorkerLunar] = useState<AnnualLunarMatrixItem[] | null>(() => {
+    return ephemerisWorkerManager.getCachedAnnualLunar(year, latitude, longitude) ?? null;
+  });
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
+
+  if (activeKey !== currentKey) {
+    setActiveKey(currentKey);
+    const cached = ephemerisWorkerManager.getCachedAnnualLunar(year, latitude, longitude);
+    setWorkerLunar(cached ?? null);
+  }
 
   useEffect(() => {
     if (!ephemerisWorkerManager.isAvailable()) {
@@ -210,11 +234,15 @@ export const useAnnualLunarWorker = ({
 
   const syncLunar = useMemo(() => {
     if (isWorkerActive && workerLunar !== null) return null;
+    const cached = ephemerisWorkerManager.getCachedAnnualLunar(year, latitude, longitude);
+    if (cached) return cached;
     try {
       const safeYear = sanitizeYear(year);
       const safeLat = sanitizeLatitude(latitude);
       const safeLon = sanitizeLongitude(longitude);
-      return calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
+      const matrix = calculateAnnualLunarMatrix(safeYear, safeLat, safeLon);
+      ephemerisWorkerManager.seedAnnualLunarCache(year, latitude, longitude, matrix);
+      return matrix;
     } catch (err) {
       console.error('[useAnnualLunarWorker] Synchronous fallback calculation failed:', err);
       return [];

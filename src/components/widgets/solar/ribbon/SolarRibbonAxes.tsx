@@ -3,7 +3,7 @@ import React from 'react';
 export const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export interface SolarRibbonAxesProps {
-  width: number;
+  width?: number;
   height: number;
   paddingLeft: number;
   paddingTop: number;
@@ -13,8 +13,7 @@ export interface SolarRibbonAxesProps {
   timeToY: (time: number) => number;
 }
 
-export const SolarRibbonAxes: React.FC<SolarRibbonAxesProps> = ({
-  width,
+export const SolarRibbonAxes: React.FC<SolarRibbonAxesProps> = React.memo(({
   height,
   paddingLeft,
   paddingTop,
@@ -76,6 +75,7 @@ export const SolarRibbonAxes: React.FC<SolarRibbonAxesProps> = ({
       })}
     </>
   );
-};
+});
+SolarRibbonAxes.displayName = 'SolarRibbonAxes';
 
 export default SolarRibbonAxes;

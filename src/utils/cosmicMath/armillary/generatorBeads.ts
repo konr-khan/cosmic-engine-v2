@@ -10,7 +10,7 @@ import { toRadians, toDegrees, clamp, slerp3D } from '../core';
 import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../astroConstants';
 import { EARTH_MILESTONES } from '../milestones';
 import { ASTROLABE_STARS } from './constants';
-import { equatorialToCartesian3D, equatorialToHorizontal, rotateEuler3D } from './coordinates';
+import { equatorialToCartesian3D, equatorialToHorizontal, equatorialToHorizontalFast, rotateEuler3D } from './coordinates';
 import { 
   ArmillaryRingVertex, 
   ArmillaryMilestoneNode, 
@@ -23,6 +23,18 @@ export type ArmillaryProjectedStar = ArmillaryStarData & ArmillaryRingVertex & {
   altDeg: number;
   azDeg: number;
 };
+
+const PRECOMPUTED_STARS_UNIT_3D = ASTROLABE_STARS.map((s) => {
+  const raRad = toRadians(s.raDeg);
+  const decRad = toRadians(s.decDeg);
+  const cosDec = Math.cos(decRad);
+  return {
+    ux: cosDec * Math.cos(raRad),
+    uy: Math.sin(decRad),
+    uz: cosDec * Math.sin(raRad),
+    star: s
+  };
+});
 
 /**
  * Projects the 12 classical navigational astrolabe stars onto the celestial sphere and plate.
@@ -37,18 +49,33 @@ export function computeArmillaryStars(params: {
 }): ArmillaryProjectedStar[] {
   const { rBloom, reteOffset, cBloom, latitude, lstDeg, transformVertex } = params;
 
-  return ASTROLABE_STARS.map((s) => {
-    const p3dBase = equatorialToCartesian3D(s.raDeg, s.decDeg, rBloom);
-    const p3dRotated = rotateEuler3D(p3dBase, 0, reteOffset, 0);
+  const isReteZero = reteOffset === 0;
+  const reteRad = isReteZero ? 0 : toRadians(reteOffset);
+  const cosRete = isReteZero ? 1 : Math.cos(reteRad);
+  const sinRete = isReteZero ? 0 : Math.sin(reteRad);
+
+  const latRad = toRadians(latitude);
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+
+  return PRECOMPUTED_STARS_UNIT_3D.map(({ ux, uy, uz, star }) => {
+    const bx = rBloom * ux;
+    const by = rBloom * uy;
+    const bz = rBloom * uz;
+
+    const rx = isReteZero ? bx : bx * cosRete + bz * sinRete;
+    const ry = by;
+    const rz = isReteZero ? bz : -bx * sinRete + bz * cosRete;
+
     const p3dOffset: Vector3D = {
-      x: cBloom.x + p3dRotated.x,
-      y: cBloom.y + p3dRotated.y,
-      z: cBloom.z + p3dRotated.z
+      x: cBloom.x + rx,
+      y: cBloom.y + ry,
+      z: cBloom.z + rz
     };
     const v = transformVertex(p3dOffset);
-    const horiz = equatorialToHorizontal(s.raDeg, s.decDeg, latitude, lstDeg);
+    const horiz = equatorialToHorizontalFast(star.raDeg, star.decDeg, sinLat, cosLat, lstDeg);
     return {
-      ...s,
+      ...star,
       p3d: p3dOffset,
       pCam: v.pCam,
       pProj: v.pProj,
@@ -71,10 +98,11 @@ export function computeArmillaryMilestones(params: {
 }): ArmillaryMilestoneNode[] {
   const { sourceMilestones3D, targetMilestones3D, transT, transformVertex } = params;
 
+  const isDirect = transT >= 1.0 || sourceMilestones3D === targetMilestones3D;
   return EARTH_MILESTONES.map((m, idx) => {
     const targetM3D = targetMilestones3D[idx]?.p3d || { x: 0, y: 0, z: 0 };
     const sourceM3D = sourceMilestones3D[idx]?.p3d || targetM3D;
-    const blendedM3D: Vector3D = slerp3D(sourceM3D, targetM3D, transT);
+    const blendedM3D: Vector3D = isDirect ? targetM3D : slerp3D(sourceM3D, targetM3D, transT);
     const v = transformVertex(blendedM3D);
     return {
       ...m,
@@ -195,8 +223,11 @@ export function computeArmillaryBodies(params: {
   const earthV = transformVertex(blendedEarth3D);
   const sunV = transformVertex(blendedSun3D);
   const moonV = transformVertex(blendedMoon3D);
-  const sunHoriz = equatorialToHorizontal(sunRaDeg, sunDecDeg, latitude, lstDeg);
-  const moonHoriz = equatorialToHorizontal(moonRaDeg, moonDecDeg, latitude, lstDeg);
+  const latRad = toRadians(latitude);
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+  const sunHoriz = equatorialToHorizontalFast(sunRaDeg, sunDecDeg, sinLat, cosLat, lstDeg);
+  const moonHoriz = equatorialToHorizontalFast(moonRaDeg, moonDecDeg, sinLat, cosLat, lstDeg);
 
   // Normalized Sun-to-Earth camera-space vector for physical 3D terminator shading
   const edx = sunV.pCam.x - earthV.pCam.x;

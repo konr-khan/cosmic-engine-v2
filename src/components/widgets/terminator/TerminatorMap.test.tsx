@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import TerminatorMap from '.';
-import { SolarAlmanacData, OrbitalData } from '../../../types';
+import { SolarAlmanacData, OrbitalData, asDegrees } from '../../../types';
 import { julianDateToDate, calculateTrueLunarNodeEvents, J2000_JD } from '../../../utils/cosmicMath';
 
 describe('TerminatorMap Component & Twilight Projection Suite', () => {
@@ -32,7 +32,7 @@ describe('TerminatorMap Component & Twilight Projection Suite', () => {
     nodeLongitude: 125,
     descendingNodeLongitude: 305,
     lunarPos: {
-      rightAscension: 120,
+      rightAscension: asDegrees(120),
       declination: 18.2,
       distanceKm: 363000,
       phase: 0.95,

@@ -16,7 +16,6 @@ import {
   Latitude, 
   Longitude, 
   HoursDecimal, 
-  asDegrees,
   toDegrees
 } from '../types/units';
 import { Vector2D, Vector3D } from '../types/coordinates';
@@ -203,8 +202,8 @@ export function useHeliocentricScene(
   const axialTiltDeg = toDegrees(scene3D.earth.obliquity);
 
   const physics: SolarPositionFull = useMemo(() => {
-    return calculateEarthOrbitalPhysics(julianDate);
-  }, [julianDate]);
+    return scene3D.earth.physics ?? calculateEarthOrbitalPhysics(julianDate);
+  }, [scene3D.earth.physics, julianDate]);
 
   const eclipse: EclipseData = useMemo(() => {
     return calculateEclipseData(julianDate);

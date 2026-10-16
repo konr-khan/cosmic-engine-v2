@@ -8,7 +8,7 @@
 
 import { Degrees, Radians, JulianDate, Latitude, Longitude, HoursDecimal } from '../../../types/units';
 import { Vector3D } from '../../../types/coordinates';
-import { LunarPhaseName, EclipseType } from '../../../types/astronomy';
+import { LunarPhaseName, EclipseType, SolarPositionFull } from '../../../types/astronomy';
 import { OrbitalSegments } from '../projection';
 
 /** Scale rendering mode for planetary orbits */
@@ -143,6 +143,8 @@ export interface SceneEarth3D extends SceneBody3D {
   sunAngularDiameterArcmin: number;
   /** Geographic coordinates of subsolar point */
   subsolarGeo?: { lat: Latitude; lon: Longitude };
+  /** Complete solar position and orbital physics */
+  physics?: SolarPositionFull;
 }
 
 /** Moon-specific 3D body properties */

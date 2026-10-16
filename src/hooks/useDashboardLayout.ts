@@ -4,11 +4,25 @@ import {
   ICON_MAP, 
   PRESET_LAYOUTS, 
   STORAGE_KEY,
+  DEFAULT_WINDOWS,
   PresetLayout 
 } from '../constants/dashboardPresets';
 
-export { ICON_MAP, PRESET_LAYOUTS, STORAGE_KEY };
+export { ICON_MAP, PRESET_LAYOUTS, STORAGE_KEY, DEFAULT_WINDOWS };
 export type { PresetLayout };
+
+function isValidWindowConfig(item: unknown): item is WindowLayoutConfig {
+  if (!item || typeof item !== 'object') return false;
+  const w = item as Record<string, unknown>;
+  return (
+    typeof w.id === 'string' &&
+    w.id.length > 0 &&
+    typeof w.title === 'string' &&
+    typeof w.colSpan === 'number' &&
+    w.colSpan > 0 &&
+    (typeof w.height === 'string' || typeof w.height === 'number')
+  );
+}
 
 export interface UseDashboardLayoutReturn {
   activePresetKey: string;
@@ -40,7 +54,9 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(isValidWindowConfig)) {
+          return parsed;
+        }
       }
       return PRESET_LAYOUTS.master.windows;
     } catch {
@@ -72,7 +88,21 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   }, []);
 
   const toggleWidget = useCallback((key: string) => {
-    setWidgets(prev => ({ ...prev, [key]: !prev[key] }));
+    setWidgets(prev => {
+      const willBeActive = !prev[key];
+      if (willBeActive) {
+        setWindows(currentWindows => {
+          if (!currentWindows.some(w => w.id === key)) {
+            const canonical = DEFAULT_WINDOWS.find(w => w.id === key);
+            if (canonical) {
+              return [...currentWindows, canonical];
+            }
+          }
+          return currentWindows;
+        });
+      }
+      return { ...prev, [key]: willBeActive };
+    });
   }, []);
 
   const handleDragStart = useCallback((e: React.DragEvent<HTMLElement>, id: string) => {
@@ -89,6 +119,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData('text/plain');
     if (!sourceId || sourceId === targetId) return;
+    if (isAllLocked || lockedWindows[sourceId] || lockedWindows[targetId]) return;
 
     setWindows(prev => {
       const sourceIdx = prev.findIndex(w => w.id === sourceId);
@@ -100,9 +131,10 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       newOrder.splice(targetIdx, 0, removed);
       return newOrder;
     });
-  }, []);
+  }, [isAllLocked, lockedWindows]);
 
   const handleResize = useCallback((id: string, _newWidth: number, newHeight: number | string) => {
+    if (isAllLocked || lockedWindows[id]) return;
     setWindows(prev => prev.map(w => {
       if (w.id === id) {
         const heightVal = typeof newHeight === 'string' ? (newHeight.endsWith('px') ? newHeight : `${newHeight}px`) : `${newHeight}px`;
@@ -110,13 +142,14 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       }
       return w;
     }));
-  }, []);
+  }, [isAllLocked, lockedWindows]);
 
   const handleToggleLock = useCallback((id: string) => {
     setLockedWindows(prev => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
   const handleToggleColSpan = useCallback((id: string) => {
+    if (isAllLocked || lockedWindows[id]) return;
     setWindows(prev => prev.map(w => {
       if (w.id === id) {
         // Toggle between 12 (panoramic 2-col) and 6 (standard 1-col)
@@ -125,7 +158,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       }
       return w;
     }));
-  }, []);
+  }, [isAllLocked, lockedWindows]);
 
   const handleResetLayout = useCallback(() => {
     setActivePresetKey('master');

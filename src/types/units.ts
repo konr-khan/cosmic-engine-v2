@@ -33,27 +33,34 @@ export type SpeedMultiplier = number;
 export const asDegrees = (val: number): Degrees => val as Degrees;
 export const asRadians = (val: number): Radians => val as Radians;
 export const asJulianDate = (val: number): JulianDate => val as JulianDate;
+export const asJulianCenturies = (val: number): JulianCenturies => val as JulianCenturies;
+
+/** Forbidden brand intersections preventing accidental cross-assignment between degrees and radians */
+export type NotRadians = number & { readonly [RadiansBrand]?: never };
+export type NotDegrees = number & { readonly [DegreesBrand]?: never };
 
 /**
  * Converts decimal degrees to radians.
  * Acts as a verified conversion gatekeeper between degree and radian domain models.
+ * Rejects branded Radians at compile time via NotRadians brand guard.
  */
-export const toRadians = (deg: Degrees | number): Radians => {
-  return asRadians(deg * (Math.PI / 180));
+export const toRadians = (deg: (Degrees | number) & NotRadians): Radians => {
+  return asRadians((deg as number) * (Math.PI / 180));
 };
 
 /**
  * Converts radians to decimal degrees.
+ * Rejects branded Degrees at compile time via NotDegrees brand guard.
  */
-export const toDegrees = (rad: Radians | number): Degrees => {
-  return asDegrees(rad * (180 / Math.PI));
+export const toDegrees = (rad: (Radians | number) & NotDegrees): Degrees => {
+  return asDegrees((rad as number) * (180 / Math.PI));
 };
 
 /**
  * Converts a Julian Date to Julian Centuries elapsed since J2000.0 (JD 2451545.0).
  */
 export const julianDateToCenturies = (jd: JulianDate | number): JulianCenturies => {
-  return ((jd - 2451545.0) / 36525.0) as JulianCenturies;
+  return asJulianCenturies((jd - 2451545.0) / 36525.0);
 };
 
 /**

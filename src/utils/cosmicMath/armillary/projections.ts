@@ -1,8 +1,10 @@
 import { Degrees, Latitude } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
-import { toRadians, clamp } from '../core';
-import { cartesian3DToEquatorial, equatorialToHorizontal } from './coordinates';
+import { toRadians, toDegrees, clamp } from '../core';
+import { cartesian3DToEquatorial, equatorialToHorizontal, equatorialToHorizontalFast } from './coordinates';
 import { ArmillaryProjectionMode } from './types';
+
+const nz = (v: number): number => (v === 0 ? 0 : v);
 
 /**
  * Stereographic Conformal Projection
@@ -26,16 +28,16 @@ export function projectStereographicConformal(p: Vector3D, r0: number = 100): Ve
     const xClamped = clamp(p.x * (r0 / (safeSign * 1e-6)), -maxBound, maxBound);
     const yClamped = clamp(p.z * (r0 / (safeSign * 1e-6)), -maxBound, maxBound);
     return {
-      x: Object.is(xClamped, -0) ? 0 : xClamped,
-      y: Object.is(yClamped, -0) ? 0 : yClamped
+      x: nz(xClamped),
+      y: nz(yClamped)
     };
   }
   const scale = r0 / denom;
   const xClamped = clamp(p.x * scale, -maxBound, maxBound);
   const yClamped = clamp(p.z * scale, -maxBound, maxBound);
   return {
-    x: Object.is(xClamped, -0) ? 0 : xClamped,
-    y: Object.is(yClamped, -0) ? 0 : yClamped
+    x: nz(xClamped),
+    y: nz(yClamped)
   };
 }
 
@@ -46,8 +48,8 @@ export function projectStereographicConformal(p: Vector3D, r0: number = 100): Ve
  */
 export function projectRojasOrthographic(p: Vector3D, _r0: number = 100): Vector2D {
   return {
-    x: Object.is(p.x, -0) ? 0 : p.x,
-    y: Object.is(p.y, -0) ? 0 : p.y
+    x: nz(p.x),
+    y: nz(p.y)
   };
 }
 
@@ -68,8 +70,8 @@ export function projectTopocentricHorizon(altDeg: number, azDeg: number, r0: num
   const yClamped = clamp(-r * Math.cos(azRad), -maxBound, maxBound);
 
   return {
-    x: Object.is(xClamped, -0) ? 0 : xClamped,
-    y: Object.is(yClamped, -0) ? 0 : yClamped
+    x: nz(xClamped),
+    y: nz(yClamped)
   };
 }
 
@@ -92,6 +94,74 @@ export function computeProjection2D(
     const horiz = equatorialToHorizontal(raDeg, decDeg, latitude, lstDeg);
     return projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
   }
+}
+
+function projectCartesianToTopocentricHorizon(
+  p: Vector3D,
+  sinLat: number,
+  cosLat: number,
+  cosLst: number,
+  sinLst: number,
+  r0: number
+): Vector2D {
+  const r = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  if (r < 1e-6) {
+    return projectTopocentricHorizon(0, 0, r0);
+  }
+  const sinDec = clamp(p.y / r, -1, 1);
+  const cosDec = Math.sqrt(Math.max(0, 1 - sinDec * sinDec));
+
+  const rXZ = Math.hypot(p.x, p.z);
+  let cosH: number;
+  let sinH: number;
+  if (rXZ < 1e-6) {
+    cosH = 1;
+    sinH = 0;
+  } else {
+    const cosRa = p.x / rXZ;
+    const sinRa = p.z / rXZ;
+    cosH = cosLst * cosRa + sinLst * sinRa;
+    sinH = sinLst * cosRa - cosLst * sinRa;
+  }
+
+  const sinAlt = sinLat * sinDec + cosLat * cosDec * cosH;
+  const altRad = Math.asin(clamp(sinAlt, -1, 1));
+  const altDeg = toDegrees(altRad);
+
+  let altVal: number;
+  let azVal: number;
+
+  if (Math.abs(altDeg - 90) < 1e-5) {
+    altVal = 90;
+    azVal = 0;
+  } else if (Math.abs(altDeg + 90) < 1e-5) {
+    altVal = -90;
+    azVal = 0;
+  } else {
+    const sinAz = -cosDec * sinH;
+    const cosAz = sinDec * cosLat - cosDec * sinLat * cosH;
+    const azRad = Math.atan2(sinAz, cosAz);
+    const azDeg = ((toDegrees(azRad) % 360) + 360) % 360;
+
+    altVal = Math.round(altDeg * 100) / 100;
+    azVal = Math.round(azDeg * 100) / 100;
+    altVal = nz(altVal);
+    if (azVal === 360 || nz(azVal) === 0) azVal = 0;
+  }
+
+  const clampedAlt = clamp(altVal, -89.9, 90);
+  const rRaw = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+  const maxBound = r0 * 10;
+  const rP = Math.min(rRaw, maxBound);
+  const azR = toRadians(azVal);
+
+  const xClamped = clamp(rP * Math.sin(azR), -maxBound, maxBound);
+  const yClamped = clamp(-rP * Math.cos(azR), -maxBound, maxBound);
+
+  return {
+    x: nz(xClamped),
+    y: nz(yClamped)
+  };
 }
 
 /**
@@ -123,11 +193,13 @@ export function createContinuousProjectionResolver(
     } else if (targetMode === 'rojas') {
       return (p3d: Vector3D) => projectRojasOrthographic(p3d, r0);
     } else {
-      return (p3d: Vector3D) => {
-        const { raDeg, decDeg } = cartesian3DToEquatorial(p3d);
-        const horiz = equatorialToHorizontal(raDeg, decDeg, latitude, lstDeg);
-        return projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
-      };
+      const latRad = toRadians(latitude);
+      const sinLat = Math.sin(latRad);
+      const cosLat = Math.cos(latRad);
+      const lstRad = toRadians(lstDeg);
+      const cosLst = Math.cos(lstRad);
+      const sinLst = Math.sin(lstRad);
+      return (p3d: Vector3D) => projectCartesianToTopocentricHorizon(p3d, sinLat, cosLat, cosLst, sinLst, r0);
     }
   }
 
@@ -144,14 +216,18 @@ export function createContinuousProjectionResolver(
     const currentT = isToHorizon ? t : 1 - t; // 0.0 = Stereographic, 1.0 = Horizon
     const effLat = 90 - (90 - latitude) * currentT;
     const effLst = lstDeg * currentT;
+    const latRad = toRadians(effLat);
+    const sinLat = Math.sin(latRad);
+    const cosLat = Math.cos(latRad);
+    const lstRad = toRadians(effLst);
+    const cosLst = Math.cos(lstRad);
+    const sinLst = Math.sin(lstRad);
 
     // Smooth C1 Hermite blend weight for coordinate phase bridge
     const w = currentT * currentT * (3 - 2 * currentT);
 
     return (p3d: Vector3D) => {
-      const { raDeg, decDeg } = cartesian3DToEquatorial(p3d);
-      const horiz = equatorialToHorizontal(raDeg, decDeg, effLat, effLst);
-      const pHoriz = projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
+      const pHoriz = projectCartesianToTopocentricHorizon(p3d, sinLat, cosLat, cosLst, sinLst, r0);
       const pStereo = projectStereographicConformal(p3d, r0);
 
       return {

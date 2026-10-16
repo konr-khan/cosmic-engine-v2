@@ -1,4 +1,24 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+let mockRefs: { current: any }[] = [];
+let mockRefIndex = 0;
+
+vi.mock('react', async (importOriginal) => {
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    useRef: (initial: any) => {
+      if (!mockRefs[mockRefIndex]) {
+        mockRefs[mockRefIndex] = { current: initial };
+      }
+      return mockRefs[mockRefIndex++];
+    },
+    useCallback: (fn: any) => fn,
+    useSyncExternalStore: (_subscribe: any, getSnapshot: () => any) => getSnapshot()
+  };
+});
+
 import { 
   cosmicStore, 
   cosmicActions, 
@@ -7,7 +27,9 @@ import {
   selectDate, 
   selectTimeOfDay, 
   selectIsPlaying, 
-  selectSpeed 
+  selectSpeed,
+  useChronometerStore,
+  type CosmicStoreState
 } from './cosmicStore';
 
 describe('Cosmic Store & State Isolation Suite', () => {
@@ -213,5 +235,52 @@ describe('Cosmic Store & State Isolation Suite', () => {
     expect(state.timeOfDay).toBeCloseTo(expectedWrappedTime, 5);
     expect(state.date.getUTCDate()).toBe(20); // Decremented from 21 to 20
   });
+
+  it('safely catches errors thrown in subscriber callbacks without aborting notification loop', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const faultyListener = vi.fn().mockImplementation(() => {
+      throw new Error('Exploding subscriber');
+    });
+    const healthyListener = vi.fn();
+
+    const unsub1 = cosmicStore.subscribe(faultyListener);
+    const unsub2 = cosmicStore.subscribe(healthyListener);
+
+    cosmicActions.setTimeOfDay(15);
+
+    expect(faultyListener).toHaveBeenCalled();
+    expect(healthyListener).toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith('Error in CosmicStore subscriber:', expect.any(Error));
+
+    unsub1();
+    unsub2();
+    errorSpy.mockRestore();
+  });
+
+  it('re-evaluates snapshot when selector changes while chronometer is paused', () => {
+    mockRefs = [];
+    mockRefIndex = 0;
+
+    // 1. Initial render with selector returning { date: null }
+    const selectorA = (_s: CosmicStoreState) => ({ date: null });
+    const result1 = useChronometerStore(selectorA);
+    expect(result1.date).toBeNull();
+
+    // 2. Chronometer remains paused (cosmicStore state reference unchanged).
+    // Component re-renders with new selector returning live { date: s.date }
+    mockRefIndex = 0;
+    const selectorB = (s: CosmicStoreState) => ({ date: s.date });
+    const result2 = useChronometerStore(selectorB);
+
+    // Should return live date, NOT the stale cached { date: null }!
+    expect(result2.date).not.toBeNull();
+    expect(result2.date?.getTime()).toBe(cosmicStore.getState().date.getTime());
+
+    // 3. Third render with same selectorB (still paused): returns memoized reference
+    mockRefIndex = 0;
+    const result3 = useChronometerStore(selectorB);
+    expect(result3).toBe(result2);
+  });
 });
+
 

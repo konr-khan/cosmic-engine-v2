@@ -116,7 +116,8 @@ export type LunarPhaseName =
 
 /** Meeus analytical lunar ephemeris output */
 export interface LunarPosition {
-  rightAscension: HoursDecimal | number;
+  /** Right Ascension in degrees [0..360) */
+  rightAscension: Degrees;
   declination: Degrees | number;
   distanceKm: number;
   distanceEarthRadii?: number;

@@ -9,7 +9,7 @@ import {
 } from './astroConstants';
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees } from '../../types/units';
-import { SolarPositionFull, AnnualSolarMatrixItem } from '../../types/astronomy';
+import { SolarPosition, SolarPositionFull, AnnualSolarMatrixItem } from '../../types/astronomy';
 
 export type { SolarPositionFull, AnnualSolarMatrixItem };
 
@@ -61,16 +61,16 @@ export const calculateSolarPosition = (julianDate: JulianDate | number): SolarPo
     declination: asDegrees(declination), 
     equationOfTime, 
     rightAscension: alpha,
-    lambda: asDegrees(parseFloat(normLambda.toFixed(4))),
-    eclipticLongitude: parseFloat(normLambda.toFixed(4)),
-    sunAngularRadiusDeg: parseFloat(sunAngularRadiusDeg.toFixed(4)),
+    lambda: asDegrees(normLambda),
+    eclipticLongitude: normLambda,
+    sunAngularRadiusDeg,
     n,
-    distanceAU: parseFloat(distanceAU.toFixed(5)),
+    distanceAU,
     distanceKm: Math.round(distanceKm),
-    orbitalSpeedKms: parseFloat(orbitalSpeedKms.toFixed(2)),
+    orbitalSpeedKms,
     solarIrradianceWm2: Math.round(solarIrradianceWm2),
-    solarIrradiancePercent: parseFloat(solarIrradiancePercent.toFixed(1)),
-    sunAngularDiameterArcmin: parseFloat(sunAngularDiameterArcmin.toFixed(2)),
+    solarIrradiancePercent,
+    sunAngularDiameterArcmin,
     isPerihelion,
     isAphelion,
     meanAnomaly: g
@@ -82,7 +82,13 @@ export const calculateSolarPosition = (julianDate: JulianDate | number): SolarPo
  * @param julianDate - Julian Date
  * @returns Earth orbital physics
  */
-export const calculateEarthOrbitalPhysics = (julianDate: JulianDate | number): SolarPositionFull => {
+export const calculateEarthOrbitalPhysics = (
+  julianDate: JulianDate | number,
+  precomputedSolar?: SolarPositionFull | SolarPosition
+): SolarPositionFull => {
+  if (precomputedSolar && 'orbitalSpeedKms' in precomputedSolar) {
+    return precomputedSolar as SolarPositionFull;
+  }
   return calculateSolarPosition(julianDate);
 };
 

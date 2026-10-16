@@ -11,7 +11,7 @@ import {
 import { calculateSolarPosition } from './solar';
 import { calculateLunarPosition } from './lunar';
 import { JulianDate, asJulianDate, Degrees, Radians, asDegrees } from '../../types/units';
-import { EclipseType } from '../../types/astronomy';
+import { EclipseType, SolarPosition, SolarPositionFull, LunarPosition, LunarPositionFull } from '../../types/astronomy';
 
 export interface NodalPhaseParameters {
   nodeAngleDeg: Degrees;
@@ -85,9 +85,17 @@ export interface EclipseCalculationResult {
  * @param julianDate - Julian Date
  * @returns Eclipse status and alignment details
  */
-export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCalculationResult => {
-  const solarPos = calculateSolarPosition(julianDate);
-  const lunarPos = calculateLunarPosition(julianDate);
+export const calculateEclipseData = (
+  julianDate: JulianDate | number,
+  precomputedSolar?: SolarPositionFull | SolarPosition,
+  precomputedLunar?: LunarPositionFull | LunarPosition
+): EclipseCalculationResult => {
+  const solarPos: SolarPositionFull = (precomputedSolar && 'rightAscension' in precomputedSolar)
+    ? (precomputedSolar as SolarPositionFull)
+    : calculateSolarPosition(julianDate);
+  const lunarPos: LunarPositionFull = (precomputedLunar && 'beta' in precomputedLunar)
+    ? (precomputedLunar as LunarPositionFull)
+    : calculateLunarPosition(julianDate, solarPos);
 
   // Ecliptic longitude elongation (Moon - Sun)
   const sunLambda = solarPos.lambda ?? solarPos.eclipticLongitude ?? 0;
@@ -192,7 +200,8 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
   const argumentOfLatitude = lunarPos.argumentOfLatitude !== undefined
     ? parseFloat((((lunarPos.argumentOfLatitude % 360) + 360) % 360).toFixed(4))
     : undefined;
-  const isAscendingHemisphere = beta >= 0;
+  const formattedBeta = parseFloat(beta.toFixed(3));
+  const isAscendingHemisphere = formattedBeta >= 0;
   const nodeLongitude = lunarPos.nodeLongitude !== undefined
     ? parseFloat(lunarPos.nodeLongitude.toFixed(4))
     : undefined;
@@ -205,7 +214,7 @@ export const calculateEclipseData = (julianDate: JulianDate | number): EclipseCa
     category,
     label,
     obscuration,
-    beta: parseFloat(beta.toFixed(3)),
+    beta: formattedBeta,
     nodeProximityDeg,
     alignmentPercent,
     isEclipseActive: type !== "NONE",
@@ -313,32 +322,55 @@ export const findUpcomingEclipses = (
     // If near syzygy (within ~1 day), solve exact peak JD
     let peakJD = jd;
     let isCandidate = false;
+    let isNewMoon = false;
+    let dLon0 = 0;
 
     if (distToNewMoon < 7 && Math.abs(lun.beta) < 1.6) {
-      const dLonConj = ((elongation + 180) % 360) - 180;
-      peakJD = asJulianDate(jd - (dLonConj / 12.19));
+      dLon0 = ((elongation + 180) % 360) - 180;
+      peakJD = asJulianDate(jd - (dLon0 / 12.19));
       isCandidate = true;
+      isNewMoon = true;
     } else if (distToFullMoon < 7 && Math.abs(lun.beta) < 1.6) {
-      const dLonOpp = ((elongation - 180 + 540) % 360) - 180;
-      peakJD = asJulianDate(jd - (dLonOpp / 12.19));
+      dLon0 = ((elongation - 180 + 540) % 360) - 180;
+      peakJD = asJulianDate(jd - (dLon0 / 12.19));
       isCandidate = true;
+      isNewMoon = false;
     }
 
     if (isCandidate) {
-      const eclipse = calculateEclipseData(peakJD);
-      if (eclipse.isEclipseActive) {
-        const peakOffset = peakJD - startJD;
-        const isDuplicate = list.some(item => Math.abs(item.dayOffset - peakOffset) < 10);
-        if (!isDuplicate && peakOffset >= 0) {
-          const eventDate = new Date(startDate.getTime() + peakOffset * 86400000);
-          const peakHour = (((peakJD + 0.5) % 1) * 24 + 24) % 24;
-          list.push({
-            date: eventDate,
-            timeOfDay: parseFloat(peakHour.toFixed(3)),
-            dayOffset: Math.round(peakOffset),
-            title: eventDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }),
-            ...eclipse
-          });
+      // Refine peakJD with secant/Newton step
+      const sol1 = calculateSolarPosition(peakJD);
+      const lun1 = calculateLunarPosition(peakJD);
+      const sunLambda1 = sol1.lambda ?? sol1.eclipticLongitude ?? 0;
+      const moonLambda1 = lun1.lambda ?? lun1.eclipticLongitude ?? 0;
+      const elong1 = ((moonLambda1 - sunLambda1) % 360 + 360) % 360;
+      const dLon1 = isNewMoon
+        ? ((elong1 + 180) % 360) - 180
+        : ((elong1 - 180 + 540) % 360) - 180;
+
+      const dt = peakJD - jd;
+      const rate = Math.abs(dt) > 1e-5 ? (dLon0 - dLon1) / dt : 12.19;
+      const effectiveRate = Math.abs(rate) > 5 ? rate : 12.19;
+      peakJD = asJulianDate(peakJD - (dLon1 / effectiveRate));
+
+      // Evaluate lunar position and ecliptic latitude beta at refined peakJD
+      const lunAtPeak = calculateLunarPosition(peakJD);
+      if (Math.abs(lunAtPeak.beta) < 1.6) {
+        const eclipse = calculateEclipseData(peakJD);
+        if (eclipse.isEclipseActive) {
+          const peakOffset = peakJD - startJD;
+          const isDuplicate = list.some(item => Math.abs(item.dayOffset - peakOffset) < 10);
+          if (!isDuplicate && peakOffset >= 0) {
+            const eventDate = new Date(startDate.getTime() + peakOffset * 86400000);
+            const peakHour = (((peakJD + 0.5) % 1) * 24 + 24) % 24;
+            list.push({
+              date: eventDate,
+              timeOfDay: parseFloat(peakHour.toFixed(3)),
+              dayOffset: Math.round(peakOffset),
+              title: eventDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }),
+              ...eclipse
+            });
+          }
         }
       }
     }

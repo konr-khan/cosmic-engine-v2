@@ -151,5 +151,5 @@ export const useCosmicEngine = (
     }
 
     return { solarData, orbitalData, julianDate: JD };
-  }, [date, timeOfDay, latitude, longitude, isLunarActive, isEclipseActive, isOrbitalActive, julianDate, lunarEvents, eclipse]);
+  }, [julianDate, timeOfDay, latitude, longitude, isOrbitalActive, lunarEvents, eclipse]);
 };

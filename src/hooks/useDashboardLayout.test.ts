@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PRESET_LAYOUTS } from './useDashboardLayout';
+import { PRESET_LAYOUTS, DEFAULT_WINDOWS, STORAGE_KEY } from './useDashboardLayout';
 
 // Mock React hooks to test the layout hook state transitions deterministically
 let stateStore: Record<string, any> = {};
@@ -27,6 +27,15 @@ vi.mock('react', async (importOriginal) => {
   };
 });
 
+let mockStorage: Record<string, string> = {};
+const mockLocalStorage = {
+  getItem: (key: string) => mockStorage[key] ?? null,
+  setItem: (key: string, value: string) => { mockStorage[key] = String(value); },
+  removeItem: (key: string) => { delete mockStorage[key]; },
+  clear: () => { mockStorage = {}; }
+};
+(globalThis as any).localStorage = mockLocalStorage;
+
 import { useDashboardLayout } from './useDashboardLayout';
 
 describe('useDashboardLayout hook suite', () => {
@@ -34,9 +43,7 @@ describe('useDashboardLayout hook suite', () => {
     stateStore = {};
     stateSetters = {};
     stateCounter = 0;
-    try {
-      localStorage.clear();
-    } catch {}
+    mockStorage = {};
   });
 
   it('initializes with master preset layout defaults', () => {
@@ -138,25 +145,133 @@ describe('useDashboardLayout hook suite', () => {
     expect(resetLayout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
   });
 
-  it('toggles column span between 1-Col and 2-Col with handleToggleColSpan', () => {
+  it('appends canonical config from DEFAULT_WINDOWS when toggling on a widget not in windows', () => {
     stateCounter = 0;
     const layout = useDashboardLayout();
-    const armillaryWin = layout.windows.find((w: { id: string }) => w.id === 'armillary');
-    const initialColSpan = armillaryWin?.colSpan;
-    expect(initialColSpan).toBe(12);
+    // Switch to 'solar' preset which only contains 4 windows (today, almanac, map, macroOrbit)
+    layout.handleSelectPreset('solar');
 
-    layout.handleToggleColSpan('armillary');
+    stateCounter = 0;
+    const solarLayout = useDashboardLayout();
+    expect(solarLayout.windows.some((w: { id: string }) => w.id === 'eclipse')).toBe(false);
+    expect(solarLayout.widgets.eclipse).toBe(false);
+
+    // Toggle 'eclipse' on
+    solarLayout.toggleWidget('eclipse');
 
     stateCounter = 0;
     const updated = useDashboardLayout();
-    const toggledWin = updated.windows.find((w: { id: string }) => w.id === 'armillary');
-    expect(toggledWin?.colSpan).toBe(6);
+    expect(updated.widgets.eclipse).toBe(true);
+    const eclipseWin = updated.windows.find((w: { id: string }) => w.id === 'eclipse');
+    expect(eclipseWin).toBeDefined();
+    expect(eclipseWin?.colSpan).toBe(12);
+    expect(eclipseWin?.height).toBe('460px');
+  });
 
-    layout.handleToggleColSpan('armillary');
-
+  it('validates schema when reading localStorage and falls back if corrupt or invalid', () => {
+    // 1. Corrupt JSON
+    localStorage.setItem(STORAGE_KEY, '{ invalid json');
+    stateStore = {};
     stateCounter = 0;
-    const toggledBack = useDashboardLayout();
-    const backWin = toggledBack.windows.find((w: { id: string }) => w.id === 'armillary');
-    expect(backWin?.colSpan).toBe(12);
+    let layout = useDashboardLayout();
+    expect(layout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
+
+    // 2. Non-array JSON
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ notAnArray: true }));
+    stateStore = {};
+    stateCounter = 0;
+    layout = useDashboardLayout();
+    expect(layout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
+
+    // 3. Empty array
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    stateStore = {};
+    stateCounter = 0;
+    layout = useDashboardLayout();
+    expect(layout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
+
+    // 4. Array with invalid item schema (missing id, invalid colSpan)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([
+      { id: '', title: 'Broken', colSpan: 'wide', height: 100 }
+    ]));
+    stateStore = {};
+    stateCounter = 0;
+    layout = useDashboardLayout();
+    expect(layout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
+
+    // 5. Valid schema
+    const validWindows = [
+      { id: 'today', title: "Today's Sky", colSpan: 12, height: '400px' }
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(validWindows));
+    stateStore = {};
+    stateCounter = 0;
+    layout = useDashboardLayout();
+    expect(layout.windows.length).toBe(1);
+    expect(layout.windows[0].id).toBe('today');
+  });
+
+  it('enforces isAllLocked and lockedWindows guards for handleDrop, handleResize, and handleToggleColSpan', () => {
+    stateCounter = 0;
+    const layout = useDashboardLayout();
+    const firstId = layout.windows[0].id;
+    const secondId = layout.windows[1].id;
+    const initialHeight = layout.windows[0].height;
+    const initialColSpan = layout.windows[0].colSpan;
+
+    // A. When isAllLocked is active
+    layout.setIsAllLocked(true);
+    stateCounter = 0;
+    const lockedAll = useDashboardLayout();
+
+    const mockDropEvent = {
+      preventDefault: vi.fn(),
+      dataTransfer: {
+        getData: vi.fn().mockReturnValue(firstId)
+      }
+    } as unknown as React.DragEvent<HTMLElement>;
+
+    // Attempt drop
+    lockedAll.handleDrop(mockDropEvent, secondId);
+    stateCounter = 0;
+    let check = useDashboardLayout();
+    expect(check.windows[0].id).toBe(firstId); // Order unchanged!
+
+    // Attempt resize
+    lockedAll.handleResize(firstId, 0, '999px');
+    stateCounter = 0;
+    check = useDashboardLayout();
+    expect(check.windows[0].height).toBe(initialHeight); // Height unchanged!
+
+    // Attempt colSpan toggle
+    lockedAll.handleToggleColSpan(firstId);
+    stateCounter = 0;
+    check = useDashboardLayout();
+    expect(check.windows[0].colSpan).toBe(initialColSpan); // ColSpan unchanged!
+
+    // B. Unlock all, lock specifically firstId
+    lockedAll.setIsAllLocked(false);
+    lockedAll.handleToggleLock(firstId);
+    stateCounter = 0;
+    const singleLocked = useDashboardLayout();
+    expect(singleLocked.lockedWindows[firstId]).toBe(true);
+
+    // Attempt drop on locked window
+    singleLocked.handleDrop(mockDropEvent, secondId);
+    stateCounter = 0;
+    check = useDashboardLayout();
+    expect(check.windows[0].id).toBe(firstId); // Order unchanged!
+
+    // Attempt resize on locked window
+    singleLocked.handleResize(firstId, 0, '999px');
+    stateCounter = 0;
+    check = useDashboardLayout();
+    expect(check.windows[0].height).toBe(initialHeight); // Height unchanged!
+
+    // Attempt colSpan toggle on locked window
+    singleLocked.handleToggleColSpan(firstId);
+    stateCounter = 0;
+    check = useDashboardLayout();
+    expect(check.windows[0].colSpan).toBe(initialColSpan); // ColSpan unchanged!
   });
 });

@@ -25,7 +25,17 @@ export interface ComputeArmillaryObserverConeParams {
   cameraPitch?: number;
   cameraYaw?: number;
   sunDecDeg?: number;
+  projectScreenPos?: (x: number, y: number, z: number) => Vector2D;
 }
+
+const NUM_DISC_SAMPLES = 72;
+const PRECOMPUTED_CONE_TRIG = Array.from({ length: NUM_DISC_SAMPLES }, (_, k) => {
+  const alphaK = (k / NUM_DISC_SAMPLES) * 2 * Math.PI;
+  return {
+    cos: Math.cos(alphaK),
+    sin: Math.sin(alphaK)
+  };
+});
 
 /**
  * Derives the topocentric observer sky cone, zenith ray, and tangent horizon disc.
@@ -90,7 +100,6 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
   const u = { x: uRaw.x / uLen, y: uRaw.y / uLen, z: uRaw.z / uLen };
   const w = { x: nzY * u.z - nzZ * u.y, y: nzZ * u.x - nzX * u.z, z: nzX * u.y - nzY * u.x };
 
-  const NUM_DISC_SAMPLES = 72;
   const rCanopy = 20;
   const phaseBU = clamp((morphLambda - 0.45) / 0.55, 0, 1);
   const oneMinusU = 1 - phaseBU;
@@ -105,63 +114,107 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
   const rawAx = oneMinusU * obsV.screenPos.x + phaseBU * fScreen.x;
   const rawAy = oneMinusU * obsV.screenPos.y + phaseBU * fScreen.y;
   const A: Vector2D = {
-    x: Object.is(rawAx, -0) ? 0 : rawAx,
-    y: Object.is(rawAy, -0) ? 0 : rawAy
+    x: rawAx === 0 ? 0 : rawAx,
+    y: rawAy === 0 ? 0 : rawAy
   };
 
+  const getScreenPos = params.projectScreenPos ?? ((x: number, y: number, z: number) => transformVertex({ x, y, z }).screenPos);
+
   // 1. Compute 72 rim vertices around the circumference
-  const morphedPoints: Vector2D[] = [];
+  const morphedPoints: Vector2D[] = new Array(NUM_DISC_SAMPLES + 1);
+
+  // 5. Morphed zenith ray
+  const rawZenithEndX = oneMinusU * zenithV.screenPos.x;
+  const rawZenithEndY = oneMinusU * zenithV.screenPos.y;
+  const zenithEnd: Vector2D = {
+    x: rawZenithEndX === 0 ? 0 : rawZenithEndX,
+    y: rawZenithEndY === 0 ? 0 : rawZenithEndY
+  };
+
+  const zDirX = zenithEnd.x - A.x;
+  const zDirY = zenithEnd.y - A.y;
+  const zDirLen = Math.hypot(zDirX, zDirY);
+  const hasZDir = zDirLen >= 1e-4;
+
+  let minCross = Infinity;
+  let maxCross = -Infinity;
+  let pLeft: Vector2D = A;
+  let pRight: Vector2D = A;
+  const fmt1 = (val: number) => Math.round(val * 10) / 10;
+
+  const ruX = rCanopy * u.x;
+  const ruY = rCanopy * u.y;
+  const ruZ = rCanopy * u.z;
+  const rwX = rCanopy * w.x;
+  const rwY = rCanopy * w.y;
+  const rwZ = rCanopy * w.z;
+
+  const discCoords: string[] = new Array(NUM_DISC_SAMPLES);
+
   for (let k = 0; k < NUM_DISC_SAMPLES; k++) {
-    const alphaK = (k / NUM_DISC_SAMPLES) * 2 * Math.PI;
-    const cosA = Math.cos(alphaK);
-    const sinA = Math.sin(alphaK);
+    const trig = PRECOMPUTED_CONE_TRIG[k];
+    const cosA = trig.cos;
+    const sinA = trig.sin;
 
-    // Celestial canopy point around zenith tip
-    const pt3D: Vector3D = {
-      x: pZenith3D.x + rCanopy * (u.x * cosA + w.x * sinA),
-      y: pZenith3D.y + rCanopy * (u.y * cosA + w.y * sinA),
-      z: pZenith3D.z + rCanopy * (u.z * cosA + w.z * sinA)
-    };
-    const ScK = transformVertex(pt3D).screenPos;
-
+    let pt: Vector2D;
     if (phaseBU === 0) {
-      morphedPoints.push(ScK);
+      const px = pZenith3D.x + (ruX * cosA + rwX * sinA);
+      const py = pZenith3D.y + (ruY * cosA + rwY * sinA);
+      const pz = pZenith3D.z + (ruZ * cosA + rwZ * sinA);
+      pt = getScreenPos(px, py, pz);
+    } else if (phaseBU === 1) {
+      pt = getScreenPos(r0 * cosA, 0, r0 * sinA);
     } else {
-      // Plate base ring vertex in equatorial plane
-      const l3D: Vector3D = {
-        x: r0 * cosA,
-        y: 0,
-        z: r0 * sinA
+      const px = pZenith3D.x + (ruX * cosA + rwX * sinA);
+      const py = pZenith3D.y + (ruY * cosA + rwY * sinA);
+      const pz = pZenith3D.z + (ruZ * cosA + rwZ * sinA);
+      const ScK = getScreenPos(px, py, pz);
+      const SlK = getScreenPos(r0 * cosA, 0, r0 * sinA);
+      const rx = oneMinusU * ScK.x + phaseBU * SlK.x;
+      const ry = oneMinusU * ScK.y + phaseBU * SlK.y;
+      pt = {
+        x: rx === 0 ? 0 : rx,
+        y: ry === 0 ? 0 : ry
       };
-      const SlK = transformVertex(l3D).screenPos;
-      const px = oneMinusU * ScK.x + phaseBU * SlK.x;
-      const py = oneMinusU * ScK.y + phaseBU * SlK.y;
-      morphedPoints.push({
-        x: Object.is(px, -0) ? 0 : px,
-        y: Object.is(py, -0) ? 0 : py
-      });
+    }
+    morphedPoints[k] = pt;
+
+    const fx = fmt1(pt.x);
+    const fy = fmt1(pt.y);
+    discCoords[k] = `${fx} ${fy}`;
+
+    if (k === 0) {
+      pLeft = pt;
+      pRight = pt;
+    }
+
+    if (hasZDir) {
+      const vx = pt.x - A.x;
+      const vy = pt.y - A.y;
+      const cross = zDirX * vy - zDirY * vx;
+      if (cross < minCross) {
+        minCross = cross;
+        pLeft = pt;
+      }
+      if (cross > maxCross) {
+        maxCross = cross;
+        pRight = pt;
+      }
     }
   }
 
   // Close loop: index 72 matches index 0
-  morphedPoints.push(morphedPoints[0]);
+  morphedPoints[NUM_DISC_SAMPLES] = morphedPoints[0];
+  const joinedDisc = discCoords.join(' L ');
+  const fmtAx = fmt1(A.x);
+  const fmtAy = fmt1(A.y);
+  const horizonDiscPathD = `M ${joinedDisc} Z`;
+  const conePathD = `M ${fmtAx} ${fmtAy} L ${joinedDisc} L ${fmtAx} ${fmtAy} Z`;
 
-  // 2. Continuous closed disc path (Horizon tangent disc -> Astrolabe plate base rim)
-  let horizonDiscPathD = '';
-  if (morphedPoints.length > 0) {
-    horizonDiscPathD = `M ${morphedPoints[0].x.toFixed(1)} ${morphedPoints[0].y.toFixed(1)} `;
-    for (let i = 1; i < morphedPoints.length; i++) {
-      horizonDiscPathD += `L ${morphedPoints[i].x.toFixed(1)} ${morphedPoints[i].y.toFixed(1)} `;
-    }
-    horizonDiscPathD += 'Z';
+  if (!hasZDir) {
+    pLeft = morphedPoints[0] || A;
+    pRight = morphedPoints[Math.floor(NUM_DISC_SAMPLES / 2)] || A;
   }
-
-  // 3. Volumetric conical fill envelope connecting Apex A to the outer rim
-  let conePathD = `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} `;
-  for (let i = 0; i < morphedPoints.length; i++) {
-    conePathD += `L ${morphedPoints[i].x.toFixed(1)} ${morphedPoints[i].y.toFixed(1)} `;
-  }
-  conePathD += `L ${A.x.toFixed(1)} ${A.y.toFixed(1)} Z`;
 
   // 4. Morphed 8 cardinal/intercardinal compass rays (indices: [0, 9, 18, 27, 36, 45, 54, 63])
   const RAY_INDICES = [0, 9, 18, 27, 36, 45, 54, 63];
@@ -177,48 +230,7 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
     });
   }
 
-  // 5. Morphed zenith ray
-  const rawZenithEndX = oneMinusU * zenithV.screenPos.x;
-  const rawZenithEndY = oneMinusU * zenithV.screenPos.y;
-  const zenithEnd: Vector2D = {
-    x: Object.is(rawZenithEndX, -0) ? 0 : rawZenithEndX,
-    y: Object.is(rawZenithEndY, -0) ? 0 : rawZenithEndY
-  };
-
-  // 6. Silhouette rays connecting Apex A to extreme tangent points of the rim
-  const zDirX = zenithEnd.x - A.x;
-  const zDirY = zenithEnd.y - A.y;
-  const zDirLen = Math.hypot(zDirX, zDirY);
-
-  let pLeft: Vector2D;
-  let pRight: Vector2D;
-
-  if (zDirLen < 1e-4) {
-    pLeft = morphedPoints[0] || A;
-    pRight = morphedPoints[Math.floor(NUM_DISC_SAMPLES / 2)] || A;
-  } else {
-    let minCross = Infinity;
-    let maxCross = -Infinity;
-    pLeft = morphedPoints[0] || A;
-    pRight = morphedPoints[0] || A;
-
-    for (let i = 0; i < NUM_DISC_SAMPLES; i++) {
-      const pt = morphedPoints[i];
-      const vx = pt.x - A.x;
-      const vy = pt.y - A.y;
-      const cross = zDirX * vy - zDirY * vx;
-      if (cross < minCross) {
-        minCross = cross;
-        pLeft = pt;
-      }
-      if (cross > maxCross) {
-        maxCross = cross;
-        pRight = pt;
-      }
-    }
-  }
-
-  const silhouetteLinesPathD = `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} L ${pLeft.x.toFixed(1)} ${pLeft.y.toFixed(1)} M ${A.x.toFixed(1)} ${A.y.toFixed(1)} L ${pRight.x.toFixed(1)} ${pRight.y.toFixed(1)}`;
+  const silhouetteLinesPathD = `M ${fmt1(A.x)} ${fmt1(A.y)} L ${fmt1(pLeft.x)} ${fmt1(pLeft.y)} M ${fmt1(A.x)} ${fmt1(A.y)} L ${fmt1(pRight.x)} ${fmt1(pRight.y)}`;
 
   // 7. Solar elevation angle for observer (Jean Meeus Chapter 13)
   const decRad = toRadians(sunDecDeg ?? 0);

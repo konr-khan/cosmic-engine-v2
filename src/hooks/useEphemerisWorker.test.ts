@@ -773,24 +773,119 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     // Advance timers to elapse the remaining 60ms (total 100ms)
     vi.advanceTimersByTime(60);
 
-    // Trailing timer should have fired, posting request 3 (the latest state)
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
+    // Trailing timer should have fired, flushing pending requests (id: 2 and id: 3)
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(3);
     expect((manager.worker as any).postMessage).toHaveBeenLastCalledWith({
       type: 'CALCULATE_EPHEMERIS',
-      id: 2,
+      id: 3,
       payload: expect.objectContaining({ julianDate: 2451545.04, timeOfDay: 13.0 })
     });
 
-    // Simulate worker response for request 2
+    // Simulate worker response for request 3
     (manager.worker as any).onmessage({
       data: {
         type: 'EPHEMERIS_SUCCESS',
-        id: 2,
+        id: 3,
         payload: { lunarEvents: { day: 3 }, eclipse: null, timestamp: 999 }
       }
     });
 
     expect(cb3).toHaveBeenCalledWith({ lunarEvents: { day: 3 }, eclipse: null, timestamp: 999 });
+
+    vi.useRealTimers();
+  });
+
+  it('coalesces concurrent throttled calls with identical coordinates and merges different active flags', () => {
+    vi.useFakeTimers();
+
+    class MockWorker {
+      postMessage: any = vi.fn();
+      terminate: any = vi.fn();
+      onmessage: any = null;
+      onerror: any = null;
+    }
+
+    globalThis.Worker = MockWorker as any;
+    const manager = new EphemerisWorkerManager();
+
+    const cbLeading = vi.fn();
+    const cbLunarOnly = vi.fn();
+    const cbEclipseOnly = vi.fn();
+
+    // 1. Initial leading-edge request (t = 0)
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.0,
+      timeOfDay: 12,
+      calculateLunar: true,
+      calculateEclipse: true,
+      throttleMs: 100
+    }, cbLeading);
+
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+
+    // Advance 20ms into throttle window
+    vi.advanceTimersByTime(20);
+
+    // 2. Widget A calls with calculateLunar: true, calculateEclipse: false
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.04,
+      timeOfDay: 13.0,
+      calculateLunar: true,
+      calculateEclipse: false,
+      throttleMs: 100
+    }, cbLunarOnly);
+
+    // 3. Widget B calls with calculateLunar: false, calculateEclipse: true (same coord tuple!)
+    manager.requestCalculation({
+      latitude: 47.06,
+      longitude: -122.81,
+      julianDate: 2451545.04,
+      timeOfDay: 13.0,
+      calculateLunar: false,
+      calculateEclipse: true,
+      throttleMs: 100
+    }, cbEclipseOnly);
+
+    // Still only 1 message posted while inside throttle window
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+
+    // Advance remaining 80ms to elapse 100ms throttle timer
+    vi.advanceTimersByTime(80);
+
+    // Trailing timer fires: single merged request dispatched with BOTH flags true
+    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
+    expect((manager.worker as any).postMessage).toHaveBeenLastCalledWith({
+      type: 'CALCULATE_EPHEMERIS',
+      id: 2,
+      payload: expect.objectContaining({
+        julianDate: 2451545.04,
+        timeOfDay: 13.0,
+        calculateLunar: true,
+        calculateEclipse: true
+      })
+    });
+
+    // Simulate worker response for request 2
+    const mockPayload = {
+      lunarEvents: { day: 4 } as any,
+      eclipse: { type: 'PARTIAL' } as any,
+      timestamp: 1000
+    };
+    (manager.worker as any).onmessage({
+      data: {
+        type: 'EPHEMERIS_SUCCESS',
+        id: 2,
+        payload: mockPayload
+      }
+    });
+
+    // Both widget callbacks must receive the complete response without flag starvation
+    expect(cbLunarOnly).toHaveBeenCalledWith(mockPayload);
+    expect(cbEclipseOnly).toHaveBeenCalledWith(mockPayload);
 
     vi.useRealTimers();
   });

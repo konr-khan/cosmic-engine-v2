@@ -14,6 +14,7 @@ import {
   generateDiurnalPath,
   calculateMonthlyLunarDeclinationBounds,
   calculateSkyDomeLunarNodes,
+  SkyDomeLunarNode,
   getLunarElevationStatus,
   calculateCulminationBearing,
   calculateRiseSetAzimuth,
@@ -143,6 +144,30 @@ export const useMoonElevationMath = ({
   const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
 
   const nodalData = useMemo(() => {
+    if (!isNodalModeActive) {
+      return {
+        ascendingNode: null as unknown as SkyDomeLunarNode,
+        descendingNode: null as unknown as SkyDomeLunarNode,
+        moonBeta: 0,
+        isMoonAscending: false,
+        isWaxing: false,
+        argumentOfLatitude: 0,
+        orbitalProgressPercent: 0,
+        daysToNextNode: 0,
+        daysSincePrevNode: 0,
+        upcomingNodeType: 'ascending' as const,
+        prevNodeType: 'descending' as const,
+        upcomingNode: null as unknown as SkyDomeLunarNode,
+        nearestNode: null as unknown as SkyDomeLunarNode,
+        nearestNodeType: 'ascending' as const,
+        nearestNodeDistDays: 0,
+        isApproachingNearestNode: false,
+        isNearNode: false,
+        quadrantLabel: '',
+        timelineNodes: [],
+        timelineSegments: []
+      };
+    }
     return calculateSkyDomeLunarNodes(
       latitude,
       jd,
@@ -153,7 +178,7 @@ export const useMoonElevationMath = ({
         phaseValue: phase.value !== undefined ? Number(phase.value) : undefined
       }
     );
-  }, [latitude, jd, displayTime, solarNoon, sunLambda, phase.value]);
+  }, [isNodalModeActive, latitude, jd, displayTime, solarNoon, sunLambda, phase.value]);
 
   const eclipticPathResult = useMemo(
     () => generateDiurnalPath(latitude, sunDeclination),

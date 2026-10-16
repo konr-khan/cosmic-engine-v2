@@ -129,6 +129,12 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | F75 | Immutable `J2000_DATE` Prop Identity Stability & AST Guardrail | Replaced dynamic `= new Date()` default parameters across 19 components and hooks with immutable `J2000_DATE` constant; added automated AST linter gatekeeper in `lintUnitSafety.mjs` | M39 | ADR-0039 |
 | F76 | Discriminated Ephemeris Worker RPC Maps & Type-Safety | Introduced typed request/payload maps in `worker.ts` and refactored `_requestAnnualCalculation` in `ephemerisWorkerManager.ts`, eliminating all 5 loose `as any` casts | M39 | ADR-0039 |
 | F77 | Meridian View-Model Helper Extraction (`meridianConfigHelpers.ts`) | Extracted strongly typed view-model builders (`createMeridianRadialTickConfig`, `createMeridianSwathConfig`, `createMeridianGateAnchorConfig`, `createMeridianPeakTargetConfig`) deduplicating Sun and Moon dome config boilerplate | M39 | ADR-0039 |
+| F78 | Nominal Brand Erasure Closure & Strict Unit Guardrails | Added forbidden brand intersections (`NotRadians`, `NotDegrees`) to `toRadians` and `toDegrees`; added `asJulianCenturies`; updated right ascension typing to degrees `[0, 360)` | M40 | ADR-0040 |
+| F79 | Full IEEE-754 Ephemeris Precision & Centralized Mean Node Polynomial | Removed `.toFixed(4)` truncation from `calculateLunarPosition` and `calculateSolarPosition`; centralized `calculateMeanLunarNodeLongitude`; refined eclipse syzygy peaks with secant root solver | M40 | ADR-0040 |
+| F80 | Granular Store Selector Memoization & Worker Throttle Coalescing | Added `lastSelectorRef` to `useChronometerStore`; fixed multi-widget trailing-edge throttle overwrites in `ephemerisWorkerManager.ts`; fixed React hook ordering in `NodalPlaneVisualizer.tsx` | M40 | ADR-0040 |
+| F81 | Dynamic Draconic Node Window Bounding & LRU Cache | Derived $k$-range dynamically from `windowDays` in `calculateTrueLunarNodeEvents`; added 128-slot LRU cache; integer day-bucketed nodal calculations in `useTideMath.ts` | M40 | ADR-0040 |
+| F82 | Ephemeris Single-Pass Distribution & Worker Synchronous Cache Seeding | Propagated pre-computed solar ephemeris across 3D scene bodies; seeded worker LRU caches synchronously during mount to eliminate double 365-day matrix calculation | M40 | ADR-0040 |
+| F83 | 365-Day SVG Ribbon Sub-Layer & Armillary Continuum Hot-Path Optimization | Wrapped `SolarRibbonBands`, `SolarRibbonAxes`, `LunarRibbonAxes`, `LunarRibbonCurves` in `React.memo`; optimized Armillary path streaming and fast coordinate conversion | M40 | ADR-0040 |
 
 ## Milestones
 
@@ -140,7 +146,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M39)
+### Recent Milestones (M21–M40)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -162,6 +168,7 @@ A unified, hierarchical 3D astronomical scene graph engine establishing a single
 | M37 | Circular Dependency Elimination & Astro-Math Core Decomposition | `src/utils/formatters.ts`, `src/utils/cosmicMath/core.ts`, `polarDialGeometry.ts`, `DEAD_ENDS.md`, ADR-0037 | M1–M36 | DONE |
 | M38 | Codebase Health Refactoring, Domain Purity & Widget Decoupling | `src/utils/cosmicMath/`, `macroTokens.ts`, `MeridianDomeFooter.tsx`, `useTideMath.ts`, `useNodalPlaneMath.ts`, `DEAD_ENDS.md`, ADR-0038 | M1–M37 | DONE |
 | M39 | Codebase Hardening, UTC Invariance & Type-Safe Worker RPC | `src/store/`, `src/workers/`, `src/types/`, `src/components/`, `DEAD_ENDS.md`, ADR-0039 | M1–M38 | DONE |
+| M40 | Priorities 1–3 Codebase Hardening, Nominal Type Guardrails & 60 FPS Ribbon Memoization | `src/types/`, `src/store/`, `src/workers/`, `src/hooks/`, `src/utils/cosmicMath/`, `src/components/`, ADR-0040 | M1–M39 | DONE |
 
 ## Interface Contracts & Domain Models
 

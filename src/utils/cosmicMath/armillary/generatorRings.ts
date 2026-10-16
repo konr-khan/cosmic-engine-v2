@@ -39,6 +39,15 @@ export interface GenerateArmillaryRingsParams {
   morphLambda?: number;
 }
 
+const NUM_RING_SAMPLES = 72;
+const RING_COS = new Float64Array(NUM_RING_SAMPLES + 1);
+const RING_SIN = new Float64Array(NUM_RING_SAMPLES + 1);
+for (let i = 0; i <= NUM_RING_SAMPLES; i++) {
+  const rad = (i / NUM_RING_SAMPLES) * 2 * Math.PI;
+  RING_COS[i] = Math.cos(rad);
+  RING_SIN[i] = Math.sin(rad);
+}
+
 /**
  * Builds the 8 depth-sorted celestial and orbital ring paths for the armillary sphere:
  * 0. Orbital Path (Keplerian heliocentric / Ecliptic track)
@@ -67,7 +76,7 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
   } = params;
 
   const rings: ArmillaryRingPath[] = [];
-  const NUM_SAMPLES = 72;
+  const NUM_SAMPLES = NUM_RING_SAMPLES;
 
   // 0. Orbital Path Ring (Keplerian / Ecliptic orbit with rigid plane tilt)
   const isTargetHelio = projectionMode === 'heliocentric';
@@ -80,6 +89,8 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
   const eOrb = exaggerateEccentricity ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
   const bOrb = aOrb * Math.sqrt(Math.max(0, 1 - eOrb * eOrb));
   const tiltRad = toRadians(tGeo * obliquity);
+  const yOrbFactor = (1 - isHelioT) * aOrb * Math.sin(tiltRad);
+  const zOrbFactor = -(isHelioT * bOrb + (1 - isHelioT) * aOrb * Math.cos(tiltRad));
 
   rings.push(
     generateParametricRing3D(
@@ -90,17 +101,11 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 1.6,
         backStrokeWidth: 0.8,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          const angleRad = t * 2 * Math.PI;
-          const xOrb = aOrb * Math.cos(angleRad);
-          const yOrb = (1 - isHelioT) * aOrb * Math.sin(angleRad) * Math.sin(tiltRad);
-          const zOrb = -(isHelioT * bOrb + (1 - isHelioT) * aOrb * Math.cos(tiltRad)) * Math.sin(angleRad);
-          return {
-            x: xOrb,
-            y: yOrb,
-            z: zOrb
-          };
-        }
+        samplePoint: (_t, i) => ({
+          x: aOrb * RING_COS[i],
+          y: yOrbFactor * RING_SIN[i],
+          z: zOrbFactor * RING_SIN[i]
+        })
       },
       transformVertex
     )
@@ -113,6 +118,14 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
   const nodeRad = toRadians(nodeLonDeg);
   const rotFrameRad = tGeo * epsRad;
 
+  const cosInc = Math.cos(incRad);
+  const sinInc = Math.sin(incRad);
+  const cosNode = Math.cos(nodeRad);
+  const sinNode = Math.sin(nodeRad);
+  const cosFrame = Math.cos(rotFrameRad);
+  const sinFrame = Math.sin(rotFrameRad);
+  const isGeoApparent = projectionMode === 'geocentric';
+
   rings.push(
     generateParametricRing3D(
       {
@@ -122,26 +135,21 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 1.2,
         backStrokeWidth: 0.6,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          // u is the orbital angle starting from the ascending node Omega
-          const u = t * 2 * Math.PI;
-          // In the orbital plane:
-          const xOrb = lunarOrbitRadius * Math.cos(u);
-          const yOrb = lunarOrbitRadius * Math.sin(u) * Math.sin(incRad);
-          const zOrb = lunarOrbitRadius * Math.sin(u) * Math.cos(incRad);
-          // Rotate in ecliptic plane by node longitude Omega:
-          const xEcl = xOrb * Math.cos(nodeRad) - zOrb * Math.sin(nodeRad);
-          const yEcl = yOrb;
-          const zEcl = xOrb * Math.sin(nodeRad) + zOrb * Math.cos(nodeRad);
+        samplePoint: (_t, i) => {
+          const cosA = RING_COS[i];
+          const sinA = RING_SIN[i];
+          const xOrb = lunarOrbitRadius * cosA;
+          const yOrb = lunarOrbitRadius * sinA * sinInc;
+          const zOrb = lunarOrbitRadius * sinA * cosInc;
 
-          // Lunar orbit ring frame rotation: rotate by tGeo * epsRad
-          const cosFrame = Math.cos(rotFrameRad);
-          const sinFrame = Math.sin(rotFrameRad);
+          const xEcl = xOrb * cosNode - zOrb * sinNode;
+          const yEcl = yOrb;
+          const zEcl = xOrb * sinNode + zOrb * cosNode;
+
           const xRel = xEcl;
           const yRel = yEcl * cosFrame + zEcl * sinFrame;
           const zRel = -yEcl * sinFrame + zEcl * cosFrame;
 
-          const isGeoApparent = projectionMode === 'geocentric';
           return {
             x: blendedEarth3D.x + xRel,
             y: blendedEarth3D.y + yRel,
@@ -172,16 +180,24 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 2.0,
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          const p = equatorialToCartesian3D(t * 360, 0, rBloom);
-          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
-        }
+        samplePoint: (_t, i) => ({
+          x: cBloom.x + rBloom * RING_COS[i],
+          y: cBloom.y,
+          z: cBloom.z + rBloom * RING_SIN[i]
+        })
       },
       transformVertex
     )
   );
 
   // 3. Ecliptic Rete Ring (Inclined at 23.44°, Rotates with LST or Free Rete Offset)
+  const sinEps = Math.sin(epsRad);
+  const cosEps = Math.cos(epsRad);
+  const zBaseSign = isGeoApparent ? -1 : 1;
+  const reteRad = toRadians(reteOffset);
+  const cosRete = Math.cos(reteRad);
+  const sinRete = Math.sin(reteRad);
+
   rings.push(
     generateParametricRing3D(
       {
@@ -191,14 +207,16 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 2.2,
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          const isGeoApparent = projectionMode === 'geocentric';
-          const lRad = toRadians(t * 360);
-          const xBase = rBloom * Math.cos(lRad);
-          const yBase = rBloom * Math.sin(lRad) * Math.sin(epsRad);
-          const zBase = (isGeoApparent ? -1 : 1) * rBloom * Math.sin(lRad) * Math.cos(epsRad);
-          const p = rotateEuler3D({ x: xBase, y: yBase, z: zBase }, 0, reteOffset, 0);
-          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
+        samplePoint: (_t, i) => {
+          const cosA = RING_COS[i];
+          const sinA = RING_SIN[i];
+          const xBase = rBloom * cosA;
+          const yBase = rBloom * sinA * sinEps;
+          const zBase = zBaseSign * rBloom * sinA * cosEps;
+          const px = reteOffset === 0 ? xBase : xBase * cosRete + zBase * sinRete;
+          const py = yBase;
+          const pz = reteOffset === 0 ? zBase : -xBase * sinRete + zBase * cosRete;
+          return { x: cBloom.x + px, y: cBloom.y + py, z: cBloom.z + pz };
         }
       },
       transformVertex
@@ -206,6 +224,9 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
   );
 
   // 4. Tropic of Cancer (Dec = +23.44° - Muted Antique Brass)
+  const rTropic = rBloom * cosEps;
+  const yCancer = rBloom * sinEps;
+
   rings.push(
     generateParametricRing3D(
       {
@@ -215,10 +236,11 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 0.9,
         backStrokeWidth: 0.5,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          const p = equatorialToCartesian3D(t * 360, obliquity, rBloom);
-          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
-        }
+        samplePoint: (_t, i) => ({
+          x: cBloom.x + rTropic * RING_COS[i],
+          y: cBloom.y + yCancer,
+          z: cBloom.z + rTropic * RING_SIN[i]
+        })
       },
       transformVertex
     )
@@ -234,16 +256,23 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 0.9,
         backStrokeWidth: 0.5,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          const p = equatorialToCartesian3D(t * 360, -obliquity, rBloom);
-          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
-        }
+        samplePoint: (_t, i) => ({
+          x: cBloom.x + rTropic * RING_COS[i],
+          y: cBloom.y - yCancer,
+          z: cBloom.z + rTropic * RING_SIN[i]
+        })
       },
       transformVertex
     )
   );
 
   // 6. Local Horizon Ring (Alt = 0°)
+  const pitchRad = toRadians(latitude - 90);
+  const cosPitch = Math.cos(pitchRad);
+  const sinPitch = Math.sin(pitchRad);
+  const pyFactor = rBloom * sinPitch;
+  const pzFactor = -rBloom * cosPitch;
+
   rings.push(
     generateParametricRing3D(
       {
@@ -253,11 +282,11 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 2.0,
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          const p3dHoriz = horizontalToCartesian3D(0, t * 360, rBloom);
-          const p = rotateEuler3D(p3dHoriz, -(90 - latitude), 0, 0);
-          return { x: cBloom.x + p.x, y: cBloom.y + p.y, z: cBloom.z + p.z };
-        }
+        samplePoint: (_t, i) => ({
+          x: cBloom.x + rBloom * RING_SIN[i],
+          y: cBloom.y + pyFactor * RING_COS[i],
+          z: cBloom.z + pzFactor * RING_COS[i]
+        })
       },
       transformVertex
     )
@@ -273,14 +302,11 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
         frontStrokeWidth: 1.2,
         backStrokeWidth: 0.8,
         sampleCount: NUM_SAMPLES,
-        samplePoint: (t) => {
-          const theta = t * 2 * Math.PI;
-          return {
-            x: cBloom.x,
-            y: cBloom.y + rBloom * Math.sin(theta),
-            z: cBloom.z + rBloom * Math.cos(theta)
-          };
-        }
+        samplePoint: (_t, i) => ({
+          x: cBloom.x,
+          y: cBloom.y + rBloom * RING_SIN[i],
+          z: cBloom.z + rBloom * RING_COS[i]
+        })
       },
       transformVertex
     )

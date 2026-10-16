@@ -1,5 +1,6 @@
 import { Degrees, asDegrees } from '../../types/units';
 import { SeasonalMilestoneId } from './scene/types';
+import { EARTH_PERIHELION_LONGITUDE_DEG } from './astroConstants';
 
 export interface MilestoneItem {
   id: SeasonalMilestoneId | string;
@@ -17,10 +18,10 @@ export interface MilestoneItem {
  * Heliocentric longitudes:
  * - March Equinox: 180° (Sun at 0° Aries, Earth on Left at 9 o'clock)
  * - June Solstice: 270° (Sun at 90° Cancer, Earth on Bottom at 6 o'clock)
- * - Aphelion: 282.94° (~5:30)
+ * - Aphelion: 282.937° (~5:30)
  * - September Equinox: 0° (Sun at 180° Libra, Earth on Right at 3 o'clock)
  * - December Solstice: 90° (Sun at 270° Capricorn, Earth on Top at 12 o'clock)
- * - Perihelion: 102.94° (~11:30)
+ * - Perihelion: 102.937° (~11:30)
  */
 export const EARTH_MILESTONES: MilestoneItem[] = [
   {
@@ -30,7 +31,7 @@ export const EARTH_MILESTONES: MilestoneItem[] = [
     distanceAU: 0.983,
     distanceKm: 147098070,
     speedKms: 30.29,
-    helioEclipticLon: asDegrees(102.94),
+    helioEclipticLon: EARTH_PERIHELION_LONGITUDE_DEG,
     description: "Earth's closest approach to the Sun. Orbital velocity peaks according to Kepler's 2nd Law (Equal Areas in Equal Times)."
   },
   {
@@ -60,7 +61,7 @@ export const EARTH_MILESTONES: MilestoneItem[] = [
     distanceAU: 1.017,
     distanceKm: 152097700,
     speedKms: 29.29,
-    helioEclipticLon: asDegrees(282.94),
+    helioEclipticLon: asDegrees(((Number(EARTH_PERIHELION_LONGITUDE_DEG) + 180) % 360 + 360) % 360),
     description: "Earth's furthest orbital point from the Sun. Orbital velocity reaches minimum speed according to Kepler's 2nd Law."
   },
   {

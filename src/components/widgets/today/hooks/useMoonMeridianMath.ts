@@ -14,6 +14,7 @@ import {
   calculateLunarExtremaCulminations,
   calculateMonthlyLunarDeclinationBounds,
   calculateSkyDomeLunarNodes,
+  SkyDomeLunarNode,
   calculateMeridianPoint,
   generateMeridianSwathD,
   calculateMeridianRadialTick,
@@ -144,6 +145,30 @@ export const useMoonMeridianMath = ({
   const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
 
   const nodalData = useMemo(() => {
+    if (!isNodalModeActive) {
+      return {
+        ascendingNode: null as unknown as SkyDomeLunarNode,
+        descendingNode: null as unknown as SkyDomeLunarNode,
+        moonBeta: 0,
+        isMoonAscending: false,
+        isWaxing: false,
+        argumentOfLatitude: 0,
+        orbitalProgressPercent: 0,
+        daysToNextNode: 0,
+        daysSincePrevNode: 0,
+        upcomingNodeType: 'ascending' as const,
+        prevNodeType: 'descending' as const,
+        upcomingNode: null as unknown as SkyDomeLunarNode,
+        nearestNode: null as unknown as SkyDomeLunarNode,
+        nearestNodeType: 'ascending' as const,
+        nearestNodeDistDays: 0,
+        isApproachingNearestNode: false,
+        isNearNode: false,
+        quadrantLabel: '',
+        timelineNodes: [],
+        timelineSegments: []
+      };
+    }
     return calculateSkyDomeLunarNodes(
       latitude,
       jd,
@@ -155,7 +180,7 @@ export const useMoonMeridianMath = ({
         moonBeta: orbitalData?.lunarPos?.beta !== undefined ? Number(orbitalData.lunarPos.beta) : undefined,
       }
     );
-  }, [latitude, jd, displayTime, solarNoon, sunLambda, phase.value, orbitalData?.lunarPos?.beta]);
+  }, [isNodalModeActive, latitude, jd, displayTime, solarNoon, sunLambda, phase.value, orbitalData?.lunarPos?.beta]);
 
   const isAscendingBranch = nodalData.isMoonAscending;
   // Eclipse-convention: Sky Blue for β >= 0 (North of ecliptic), Rose Red for β < 0 (South of ecliptic)

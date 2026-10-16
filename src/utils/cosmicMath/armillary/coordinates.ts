@@ -58,21 +58,24 @@ export function horizontalToCartesian3D(altDeg: Degrees | number, azDeg: Degrees
 }
 
 /**
- * Computes topocentric Altitude and Azimuth from observer Latitude and Local Hour Angle (H) & Declination.
- * Solves Azimuth via exact 2-argument atan2 matching MATH_SPEC.md Section 7.I (singularity-free).
+ * Fast topocentric Altitude and Azimuth solver with precomputed sin/cos latitude.
  */
-export function equatorialToHorizontal(
+export function equatorialToHorizontalFast(
   raDeg: Degrees | number,
   decDeg: Degrees | number,
-  latitude: Latitude,
+  sinLat: number,
+  cosLat: number,
   lstDeg: Degrees | number
 ): { altDeg: number; azDeg: number } {
-  const H = (((lstDeg - raDeg) % 360 + 360) % 360);
+  const H = (((Number(lstDeg) - Number(raDeg)) % 360 + 360) % 360);
   const hRad = toRadians(H);
-  const latRad = toRadians(latitude);
   const decRad = toRadians(decDeg);
+  const sinDec = Math.sin(decRad);
+  const cosDec = Math.cos(decRad);
+  const cosH = Math.cos(hRad);
+  const sinH = Math.sin(hRad);
 
-  const sinAlt = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hRad);
+  const sinAlt = sinLat * sinDec + cosLat * cosDec * cosH;
   const altRad = Math.asin(clamp(sinAlt, -1, 1));
   const altDeg = toDegrees(altRad);
 
@@ -84,18 +87,32 @@ export function equatorialToHorizontal(
     return { altDeg: -90, azDeg: 0 };
   }
 
-  const sinAz = -Math.cos(decRad) * Math.sin(hRad);
-  const cosAz = Math.sin(decRad) * Math.cos(latRad) - Math.cos(decRad) * Math.sin(latRad) * Math.cos(hRad);
+  const sinAz = -cosDec * sinH;
+  const cosAz = sinDec * cosLat - cosDec * sinLat * cosH;
   const azRad = Math.atan2(sinAz, cosAz);
   const azDeg = ((toDegrees(azRad) % 360) + 360) % 360;
 
-  const altVal = parseFloat(altDeg.toFixed(2));
-  const azVal = parseFloat(azDeg.toFixed(2));
+  const altVal = Math.round(altDeg * 100) / 100;
+  const azVal = Math.round(azDeg * 100) / 100;
 
   return { 
-    altDeg: Object.is(altVal, -0) ? 0 : altVal, 
-    azDeg: Object.is(azVal, -0) || azVal === 360 ? 0 : azVal 
+    altDeg: altVal === 0 ? 0 : altVal, 
+    azDeg: (azVal === 0 || azVal === 360) ? 0 : azVal 
   };
+}
+
+/**
+ * Computes topocentric Altitude and Azimuth from observer Latitude and Local Hour Angle (H) & Declination.
+ * Solves Azimuth via exact 2-argument atan2 matching MATH_SPEC.md Section 7.I (singularity-free).
+ */
+export function equatorialToHorizontal(
+  raDeg: Degrees | number,
+  decDeg: Degrees | number,
+  latitude: Latitude,
+  lstDeg: Degrees | number
+): { altDeg: number; azDeg: number } {
+  const latRad = toRadians(latitude);
+  return equatorialToHorizontalFast(raDeg, decDeg, Math.sin(latRad), Math.cos(latRad), lstDeg);
 }
 
 /**
@@ -110,38 +127,51 @@ export function createEulerCameraRotator(
 ): (x: number, y: number, z: number) => Vector3D {
   const pitch = toRadians(pitchDeg);
   const yaw = toRadians(yawDeg);
-  const roll = toRadians(rollDeg);
 
-  // 1. Roll around Z
-  const cosR = Math.cos(roll);
-  const sinR = Math.sin(roll);
-
-  // 2. Yaw around Y
+  const cosP = Math.cos(pitch);
+  const sinP = Math.sin(pitch);
   const cosY = Math.cos(yaw);
   const sinY = Math.sin(yaw);
 
-  // 3. Pitch around X
-  const cosP = Math.cos(pitch);
-  const sinP = Math.sin(pitch);
+  if (rollDeg === 0) {
+    const m00 = cosY;
+    const m02 = sinY;
+    const m10 = sinY * sinP;
+    const m11 = cosP;
+    const m12 = -cosY * sinP;
+    const m20 = -sinY * cosP;
+    const m21 = sinP;
+    const m22 = cosY * cosP;
 
-  return (x: number, y: number, z: number): Vector3D => {
-    // 1. Roll around Z
-    const x1 = x * cosR - y * sinR;
-    const y1 = x * sinR + y * cosR;
-    const z1 = z;
+    return (x: number, y: number, z: number): Vector3D => ({
+      x: x * m00 + z * m02,
+      y: x * m10 + y * m11 + z * m12,
+      z: x * m20 + y * m21 + z * m22
+    });
+  }
 
-    // 2. Yaw around Y
-    const x2 = x1 * cosY + z1 * sinY;
-    const y2 = y1;
-    const z2 = -x1 * sinY + z1 * cosY;
+  const roll = toRadians(rollDeg);
+  const cosR = Math.cos(roll);
+  const sinR = Math.sin(roll);
 
-    // 3. Pitch around X
-    const x3 = x2;
-    const y3 = y2 * cosP - z2 * sinP;
-    const z3 = y2 * sinP + z2 * cosP;
+  // Combined 3x3 matrix for Roll(Z) -> Yaw(Y) -> Pitch(X):
+  const m00 = cosY * cosR;
+  const m01 = -cosY * sinR;
+  const m02 = sinY;
 
-    return { x: x3, y: y3, z: z3 };
-  };
+  const m10 = sinP * sinY * cosR + cosP * sinR;
+  const m11 = -sinP * sinY * sinR + cosP * cosR;
+  const m12 = -sinP * cosY;
+
+  const m20 = -cosP * sinY * cosR + sinP * sinR;
+  const m21 = cosP * sinY * sinR + sinP * cosR;
+  const m22 = cosP * cosY;
+
+  return (x: number, y: number, z: number): Vector3D => ({
+    x: x * m00 + y * m01 + z * m02,
+    y: x * m10 + y * m11 + z * m12,
+    z: x * m20 + y * m21 + z * m22
+  });
 }
 
 /**

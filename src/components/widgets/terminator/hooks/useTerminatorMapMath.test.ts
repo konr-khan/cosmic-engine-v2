@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useTerminatorMapMath } from './useTerminatorMapMath';
-import { SolarAlmanacData, OrbitalData } from '../../../../types';
+import { SolarAlmanacData, OrbitalData, asDegrees } from '../../../../types';
 
 // Mock React's hooks to execute synchronously in pure unit test environment
 vi.mock('react', async (importOriginal) => {
@@ -43,7 +43,7 @@ describe('useTerminatorMapMath Hook Suite', () => {
     nodeLongitude: 125,
     descendingNodeLongitude: 305,
     lunarPos: {
-      rightAscension: 120,
+      rightAscension: asDegrees(120),
       declination: 18.2,
       distanceKm: 363000,
       phase: 0.95,

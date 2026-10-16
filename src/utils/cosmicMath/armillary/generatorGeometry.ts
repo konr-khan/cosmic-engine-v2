@@ -40,6 +40,24 @@ export interface ComputeRawModeGeometryParams {
   lambdaClamp: number;
 }
 
+const STATIC_MILESTONES_HELIO_UNIT = EARTH_MILESTONES.map((m) => {
+  const lonRad = toRadians(m.helioEclipticLon);
+  return {
+    id: m.id,
+    cosLon: Math.cos(lonRad),
+    sinLon: Math.sin(lonRad)
+  };
+});
+
+const STATIC_MILESTONES_GEO_UNIT = EARTH_MILESTONES.map((m) => {
+  const apparentSunLonRad = toRadians(((m.helioEclipticLon + 180) % 360 + 360) % 360);
+  return {
+    id: m.id,
+    cosLon: Math.cos(apparentSunLonRad),
+    sinLon: Math.sin(apparentSunLonRad)
+  };
+});
+
 /**
  * Computes raw 3D body positions, milestone nodes, and layer opacities for a given continuum mode.
  * 
@@ -93,17 +111,14 @@ export function computeRawModeGeometry(
 
     if (phaseAT === 0) {
       // Heliocentric milestones along Earth's orbit
-      const milestones3D = EARTH_MILESTONES.map((m) => {
-        const lonRad = toRadians(m.helioEclipticLon);
-        return {
-          id: m.id,
-          p3d: {
-            x: a * Math.cos(lonRad),
-            y: 0,
-            z: -b * Math.sin(lonRad)
-          }
-        };
-      });
+      const milestones3D = STATIC_MILESTONES_HELIO_UNIT.map((m) => ({
+        id: m.id,
+        p3d: {
+          x: a * m.cosLon,
+          y: 0,
+          z: -b * m.sinLon
+        }
+      }));
 
       return {
         sun3D: helioSun,
@@ -139,7 +154,7 @@ export function computeRawModeGeometry(
       z: -moonRaw.z
     };
 
-    const normalizeZero = (v: number): number => (Object.is(v, -0) ? 0 : v);
+    const normalizeZero = (v: number): number => (v === 0 ? 0 : v);
     const normalizeVector3D = (v: Vector3D): Vector3D => ({
       x: normalizeZero(v.x),
       y: normalizeZero(v.y),
@@ -173,24 +188,24 @@ export function computeRawModeGeometry(
 
     // Smoothly interpolate milestones from heliocentric orbit to apparent geocentric ecliptic path
     // via slerp3D to preserve orbital radius on S^2 without chord-cutting collapse through the origin
-    const milestones3D = EARTH_MILESTONES.map((m) => {
-      const lonRad = toRadians(m.helioEclipticLon);
+    const sinEps = Math.sin(epsRad);
+    const cosEps = Math.cos(epsRad);
+    const milestones3D = STATIC_MILESTONES_HELIO_UNIT.map((m, idx) => {
       const helioM: Vector3D = {
-        x: a * Math.cos(lonRad),
+        x: a * m.cosLon,
         y: 0,
-        z: -b * Math.sin(lonRad)
+        z: -b * m.sinLon
       };
-
-      const apparentSunLonRad = toRadians(((m.helioEclipticLon + 180) % 360 + 360) % 360);
+      const geoUnit = STATIC_MILESTONES_GEO_UNIT[idx];
       const geoM: Vector3D = {
-        x: a * Math.cos(apparentSunLonRad),
-        y: a * Math.sin(apparentSunLonRad) * Math.sin(epsRad),
-        z: -a * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
+        x: a * geoUnit.cosLon,
+        y: a * geoUnit.sinLon * sinEps,
+        z: -a * geoUnit.sinLon * cosEps
       };
 
       return {
         id: m.id,
-        p3d: slerp3D(helioM, geoM, phaseAT)
+        p3d: phaseAT === 1 ? geoM : slerp3D(helioM, geoM, phaseAT)
       };
     });
 
@@ -231,17 +246,16 @@ export function computeRawModeGeometry(
     };
 
     // Milestones along Sun's apparent ecliptic path (helioLon + 180°)
-    const milestones3D = EARTH_MILESTONES.map((m) => {
-      const apparentSunLonRad = toRadians(((m.helioEclipticLon + 180) % 360 + 360) % 360);
-      return {
-        id: m.id,
-        p3d: {
-          x: a * Math.cos(apparentSunLonRad),
-          y: a * Math.sin(apparentSunLonRad) * Math.sin(epsRad),
-          z: -a * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
-        }
-      };
-    });
+    const sinEpsGeo = Math.sin(epsRad);
+    const cosEpsGeo = Math.cos(epsRad);
+    const milestones3D = STATIC_MILESTONES_GEO_UNIT.map((m) => ({
+      id: m.id,
+      p3d: {
+        x: a * m.cosLon,
+        y: a * m.sinLon * sinEpsGeo,
+        z: -a * m.sinLon * cosEpsGeo
+      }
+    }));
 
     return {
       sun3D,
@@ -261,31 +275,45 @@ export function computeRawModeGeometry(
   // 2D Astrolabe modes (stereographic, rojas, horizon)
   const earth3D: Vector3D = { x: 0, y: 0, z: 0 };
   const epsRad = toRadians(obliquity);
+  const sinEpsAstrolabe = Math.sin(epsRad);
+  const cosEpsAstrolabe = Math.cos(epsRad);
   const sunLonRad = toRadians(((sunLambdaDeg % 360) + 360) % 360);
 
   // Mathematical Sun bead clamped strictly to the Ecliptic track:
-  // x = r0 * cos(lambda), y = r0 * sin(lambda) * sin(eps), z = r0 * sin(lambda) * cos(eps)
   const sun3DBase: Vector3D = {
     x: r0 * Math.cos(sunLonRad),
-    y: r0 * Math.sin(sunLonRad) * Math.sin(epsRad),
-    z: r0 * Math.sin(sunLonRad) * Math.cos(epsRad)
+    y: r0 * Math.sin(sunLonRad) * sinEpsAstrolabe,
+    z: r0 * Math.sin(sunLonRad) * cosEpsAstrolabe
   };
-  const sun3D = rotateEuler3D(sun3DBase, 0, reteOffset, 0);
 
   const moon3DBase = equatorialToCartesian3D(moonRaDeg, moonDecDeg, r0);
-  const moon3D = rotateEuler3D(moon3DBase, 0, reteOffset, 0);
 
-  const milestones3D = EARTH_MILESTONES.map((m) => {
-    const apparentSunLonRad = toRadians((m.helioEclipticLon + 180) % 360);
-    return {
-      id: m.id,
-      p3d: {
-        x: r0 * Math.cos(apparentSunLonRad),
-        y: r0 * Math.sin(apparentSunLonRad) * Math.sin(epsRad),
-        z: r0 * Math.sin(apparentSunLonRad) * Math.cos(epsRad)
-      }
+  let sun3D = sun3DBase;
+  let moon3D = moon3DBase;
+  if (reteOffset !== 0) {
+    const reteRad = toRadians(reteOffset);
+    const cosRete = Math.cos(reteRad);
+    const sinRete = Math.sin(reteRad);
+    sun3D = {
+      x: sun3DBase.x * cosRete + sun3DBase.z * sinRete,
+      y: sun3DBase.y,
+      z: -sun3DBase.x * sinRete + sun3DBase.z * cosRete
     };
-  });
+    moon3D = {
+      x: moon3DBase.x * cosRete + moon3DBase.z * sinRete,
+      y: moon3DBase.y,
+      z: -moon3DBase.x * sinRete + moon3DBase.z * cosRete
+    };
+  }
+
+  const milestones3D = STATIC_MILESTONES_GEO_UNIT.map((m) => ({
+    id: m.id,
+    p3d: {
+      x: r0 * m.cosLon,
+      y: r0 * m.sinLon * sinEpsAstrolabe,
+      z: r0 * m.sinLon * cosEpsAstrolabe
+    }
+  }));
 
   // Staged plate decorations fade in as lambda increases
   const stagedBezelOpacity = clamp((lambdaClamp - 0.2) / 0.6, 0, 1);

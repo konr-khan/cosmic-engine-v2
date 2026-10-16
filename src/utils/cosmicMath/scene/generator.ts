@@ -36,6 +36,9 @@ import {
 } from './types';
 import { normalizeVector3D } from './transforms';
 
+/** Display semi-major axis (pixels) for Earth orbit in exaggerated scale mode */
+export const EXAGGERATED_EARTH_SEMI_MAJOR_AXIS = 200;
+
 /**
  * Generates the complete 3D Cosmic Scene Graph for a given epoch and scale mode.
  * 
@@ -46,7 +49,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
   const {
     julianDate: jdInput,
     scaleMode = 'true',
-    r0 = 200,
+    r0 = EXAGGERATED_EARTH_SEMI_MAJOR_AXIS,
     timeOfDay = 12.0
   } = params;
 
@@ -68,8 +71,8 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
 
   // 2. Pure Ephemeris Calculations
   const solarPhysics = calculateEarthOrbitalPhysics(jd);
-  const lunarPos = calculateLunarPosition(jd);
-  const eclipse = calculateEclipseData(jd);
+  const lunarPos = calculateLunarPosition(jd, solarPhysics);
+  const eclipse = calculateEclipseData(jd, solarPhysics, lunarPos);
 
   const obliquityDeg = calculateEarthObliquity(jd);
   const obliquityRad = toRadians(obliquityDeg);
@@ -263,16 +266,22 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
     z: 0
   });
 
+  const sceneScale = scaleMode === 'exaggerated' ? EXAGGERATED_EARTH_SEMI_MAJOR_AXIS : 1;
+  const umbraDistAu = umbraLengthKm / ASTRONOMICAL_UNIT_KM;
+  const umbraDistScene = umbraDistAu * sceneScale;
+  const penumbraDistAu = penumbraLengthKm / ASTRONOMICAL_UNIT_KM;
+  const penumbraDistScene = penumbraDistAu * sceneScale;
+
   const umbraApex: Vector3D = {
-    x: earthPos.x + (umbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.x,
-    y: earthPos.y + (umbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.y,
-    z: earthPos.z + (umbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.z
+    x: earthPos.x + umbraDistScene * shadowAxis.x,
+    y: earthPos.y + umbraDistScene * shadowAxis.y,
+    z: earthPos.z + umbraDistScene * shadowAxis.z
   };
 
   const penumbraApex: Vector3D = {
-    x: earthPos.x - (penumbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.x,
-    y: earthPos.y - (penumbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.y,
-    z: earthPos.z - (penumbraLengthKm / ASTRONOMICAL_UNIT_KM) * shadowAxis.z
+    x: earthPos.x - penumbraDistScene * shadowAxis.x,
+    y: earthPos.y - penumbraDistScene * shadowAxis.y,
+    z: earthPos.z - penumbraDistScene * shadowAxis.z
   };
 
   const umbraRadiusAtMoonKm = Math.max(0, 1.02 * rEarthKm * (1 - lunarDistKm / Math.max(1e-6, umbraLengthKm)));
@@ -334,8 +343,9 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       },
       subsolarGeo: {
         lat: solarPhysics.declination,
-        lon: asDegrees(-15 * (timeOfDay - 12))
-      }
+        lon: asDegrees(((((-15 * (timeOfDay - 12) - (solarPhysics.equationOfTime / 4) + 180) % 360) + 360) % 360) - 180)
+      },
+      physics: solarPhysics
     },
     moon: {
       position: moonWorldPos,

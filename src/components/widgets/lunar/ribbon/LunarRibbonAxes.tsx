@@ -22,7 +22,7 @@ export interface LunarRibbonAxesProps {
   targetHoverDay: number | null;
 }
 
-export const LunarRibbonAxes: React.FC<LunarRibbonAxesProps> = ({
+export const LunarRibbonAxes: React.FC<LunarRibbonAxesProps> = React.memo(({
   chartW,
   chartH,
   padLeft,
@@ -168,4 +168,5 @@ export const LunarRibbonAxes: React.FC<LunarRibbonAxesProps> = ({
       })}
     </>
   );
-};
+});
+LunarRibbonAxes.displayName = 'LunarRibbonAxes';

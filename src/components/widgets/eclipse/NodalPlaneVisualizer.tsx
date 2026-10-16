@@ -20,31 +20,20 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   longitude = -122.81,
   timeOfDay = 12
 }) => {
-  if (!eclipse) return null;
   const math = useNodalPlaneMath({ eclipse, currentDate });
-  if (!math) return null;
+  if (!eclipse || !math) return null;
 
   const {
-    beta,
-    distKm,
-    offsetKm,
-    umbraRadKm,
     isInsideUmbra,
     sunAngularDiamArcmin,
     sunLambdaDeg,
-    moonDistKm,
     moonAngularDiamArcmin,
     axialSunRadius,
     axialMoonRadius,
     isTotalCapable,
     centerX,
     centerY,
-    orbitalRx,
-    scalePxPerDeg,
-    nodeAngleRad,
     isAscending,
-    phaseVal,
-    phaseRad,
     isWaxing,
     moonX,
     moonY,
@@ -53,11 +42,8 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
     ascNodeY,
     descNodeX,
     descNodeY,
-    ascNodeDepth,
-    descNodeDepth,
     isAscBehindEarth,
     isDescBehindEarth,
-    moonDepth,
     isNearSide,
     distFromEarthCenter,
     isMoonOccludedByEarth

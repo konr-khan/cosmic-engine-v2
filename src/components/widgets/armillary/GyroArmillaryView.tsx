@@ -3,6 +3,7 @@ import {
   generateArmillaryModel, 
   getJulianDate, 
   calculateEphemerisFrame,
+  calculateMeanLunarNodeLongitude,
   J2000_DATE
 } from '../../../utils/cosmicMath';
 import { GyroArmillaryViewProps, ArmillaryCameraState, ArmillaryProjectionMode } from './types';
@@ -139,8 +140,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       handleResetFromNodal();
     } else {
       setIsNodalActive(true);
-      const T = (julianDate - 2451545.0) / 36525;
-      const defaultNodeLon = ((125.04452 - 1934.136261 * T) % 360 + 360) % 360;
+      const defaultNodeLon = calculateMeanLunarNodeLongitude(julianDate);
       const nodeLon = Number(moonNodeLonDeg ?? defaultNodeLon);
       handleSnapToNodal(nodeLon);
     }

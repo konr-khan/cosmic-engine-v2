@@ -6,6 +6,7 @@ import {
   calculateTrueLunarNodeEvents 
 } from '../../../../utils/cosmicMath';
 import { TidalVectors } from '../../../../types';
+import { asJulianDate } from '../../../../types/units';
 import { OrbitalAngles } from '../../../../types/coordinates';
 
 export interface UseTideMathParams {
@@ -97,13 +98,15 @@ export function useTideMath(params: UseTideMathParams): UseTideMathResult {
   const rawDescNodeDeg = (rawNodeDeg + 180) % 360;
 
   // True Lunar Node Crossings (where true ecliptic latitude beta = 0, Dead End #16)
-  const { trueAscNodeLon, trueDescNodeLon } = useMemo(() => {
-    const jd = julianDate !== undefined
-      ? julianDate
-      : (currentDate !== undefined ? getJulianDate(currentDate, timeOfDay) : null);
+  const rawJd = julianDate !== undefined
+    ? julianDate
+    : (currentDate !== undefined ? getJulianDate(currentDate, timeOfDay) : null);
+  const jdDayBucket = rawJd !== null ? Math.floor(Number(rawJd)) : null;
 
-    if (jd !== null) {
-      const trueEvents = calculateTrueLunarNodeEvents(jd, 16);
+  const { trueAscNodeLon, trueDescNodeLon } = useMemo(() => {
+    if (jdDayBucket !== null) {
+      const bucketJd = asJulianDate(jdDayBucket + 0.5);
+      const trueEvents = calculateTrueLunarNodeEvents(bucketJd, 16);
       const ascCrossings = trueEvents.allCrossings.filter((c: { type: string }) => c.type === 'ascending');
       const descCrossings = trueEvents.allCrossings.filter((c: { type: string }) => c.type === 'descending');
 
@@ -124,7 +127,7 @@ export function useTideMath(params: UseTideMathParams): UseTideMathResult {
       trueAscNodeLon: rawNodeDeg,
       trueDescNodeLon: rawDescNodeDeg
     };
-  }, [julianDate, currentDate, timeOfDay, rawNodeDeg, rawDescNodeDeg]);
+  }, [jdDayBucket, rawNodeDeg, rawDescNodeDeg]);
 
   const thetaNodeDeg = -trueAscNodeLon;
   const thetaDescNodeDeg = -trueDescNodeLon;

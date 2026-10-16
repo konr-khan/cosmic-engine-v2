@@ -99,12 +99,12 @@ const CANONICAL_SUITES = [
   {
     domain: '3D Obliquity & Earth Projections',
     file: 'src/utils/cosmicMath/projection.test.ts',
-    focus: 'Earth axial obliquity ($23.439^\circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping'
+    focus: 'Earth axial obliquity ($23.439^\\circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping'
   },
   {
     domain: 'Armillary Continuum & Projections',
     file: 'src/utils/cosmicMath/armillary/armillary.test.ts',
-    focus: 'Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0\sec\epsilon$)'
+    focus: 'Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0\\sec\\epsilon$)'
   },
   {
     domain: 'Armillary Benchmark',
@@ -114,17 +114,17 @@ const CANONICAL_SUITES = [
   {
     domain: 'Armillary Adversarial',
     file: 'src/utils/cosmicMath/armillary/m3_adversarial.test.ts',
-    focus: 'Analytical closed-form Stereographic Ecliptic invariant ($R_0\sec\epsilon$), Sun bead clamping residuals ($< 1.42 \times 10^{-13}\text{ px}$), and 10,000-sample randomized Monte Carlo transitions'
+    focus: 'Analytical closed-form Stereographic Ecliptic invariant ($R_0\\sec\\epsilon$), Sun bead clamping residuals ($< 1.42 \\times 10^{-13}\\text{ px}$), and 10,000-sample randomized Monte Carlo transitions'
   },
   {
     domain: 'Domain Invariants & Physics Conservation',
     file: 'src/utils/cosmicMath/domainInvariants.test.ts',
-    focus: 'Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 \dot{\theta} = \text{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance'
+    focus: 'Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 \\dot{\\theta} = \\text{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance'
   },
   {
     domain: '3D Scene Graph Math',
     file: 'src/utils/cosmicMath/scene/scene.test.ts',
-    focus: '3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\circ$ inclined lunar orbit with continuous nodal precession $\Omega(t)$, and 3D syzygy shadow cones'
+    focus: '3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\\circ$ inclined lunar orbit with continuous nodal precession $\\Omega(t)$, and 3D syzygy shadow cones'
   },
   {
     domain: 'Scene Cameras Stress',
@@ -134,7 +134,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Scene Coordinate Adversarial',
     file: 'src/utils/cosmicMath/scene/m1_adversarial.test.ts',
-    focus: 'Coordinate frame invariants, axial tilt matrix preservation ($23.439^\circ$) in inertial space, and singular polar viewing angles'
+    focus: 'Coordinate frame invariants, axial tilt matrix preservation ($23.439^\\circ$) in inertial space, and singular polar viewing angles'
   },
   {
     domain: 'Unit-Safety AST Guardrails',
@@ -149,7 +149,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Cosmic Engine Hook',
     file: 'src/hooks/useCosmicEngine.test.ts',
-    focus: 'Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$)'
+    focus: 'Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\\circ\\text{N}, -90^\\circ\\text{S}$)'
   },
   {
     domain: 'Cosmic Scene Hook',
@@ -259,22 +259,22 @@ const CANONICAL_SUITES = [
   {
     domain: 'Armillary Visualizer Widget',
     file: 'src/components/widgets/armillary/ArmillaryWidget.test.tsx',
-    focus: 'Continuum model generation, camera staging timing (pitch/yaw at $\lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification'
+    focus: 'Continuum model generation, camera staging timing (pitch/yaw at $\\lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification'
   },
   {
     domain: 'Staged Camera Hook',
     file: 'src/components/widgets/armillary/useStagedCamera.test.ts',
-    focus: '2-phase Euler angle interpolation ($\lambda \le 0.45$), canonical pole locking ($\lambda \ge 0.45$), memory angle retention, and reverse transition unwinding'
+    focus: '2-phase Euler angle interpolation ($\\lambda \\le 0.45$), canonical pole locking ($\\lambda \\ge 0.45$), memory angle retention, and reverse transition unwinding'
   },
   {
     domain: 'Camera Staging Adversarial',
     file: 'src/components/widgets/armillary/m2_adversarial.test.ts',
-    focus: 'Camera alignment timing ($0 \le \lambda \le 0.45$), canonical pole lock ($0.45 \le \lambda \le 1.0$), geodesic wrapping, and custom user 3D angle restoration'
+    focus: 'Camera alignment timing ($0 \\le \\lambda \\le 0.45$), canonical pole lock ($0.45 \\le \\lambda \\le 1.0$), geodesic wrapping, and custom user 3D angle restoration'
   },
   {
     domain: 'Depth Stroke Unification',
     file: 'src/components/widgets/depthUnificationStress.test.ts',
-    focus: 'Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\lambda \in [0.85, 1.0]$'
+    focus: 'Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\\lambda \\in [0.85, 1.0]$'
   },
   {
     domain: 'Spherical Globe Projection & Clipping',
@@ -320,6 +320,51 @@ const CANONICAL_SUITES = [
     domain: 'Terminator Hover HUD Component',
     file: 'src/components/widgets/terminator/TerminatorHoverHud.test.tsx',
     focus: 'Interactive Subsolar and Sublunar point hover cards, distance and apparent diameter telemetry, $\\pm 24\\text{h}$ proximity-gated nodal status badges, and astronomical coordinate formatting'
+  },
+  {
+    domain: 'MiniMoon SVG Component',
+    file: 'src/components/common/MiniMoon.test.tsx',
+    focus: 'MiniMoon rendering across lunar phases, ascending/descending nodal coloring, waxing solid vs. waning dashed stroke styles, and eclipse umbral highlights'
+  },
+  {
+    domain: 'Armillary Beads Layer',
+    file: 'src/components/widgets/armillary/ArmillaryBeadsLayer.test.tsx',
+    focus: 'Celestial body rendering, Moon phase illumination paths (`computeMoonPhasePath`), observer cone projections, 3D bead positioning, and Keplerian milestone styling'
+  },
+  {
+    domain: 'Armillary Controls & HUD',
+    file: 'src/components/widgets/armillary/ArmillaryControls.test.tsx',
+    focus: 'Mode selector pills (`ArmillaryModePills`), continuum morph slider rail, layer visibility toggles, interactive hover HUD, and telemetry readout HUDs'
+  },
+  {
+    domain: 'Nodal Plane Math Hook',
+    file: 'src/components/widgets/eclipse/hooks/useNodalPlaneMath.test.ts',
+    focus: 'Axial projection coordinates, umbra geometry and shadow containment, apparent angular diameters, 4-quadrant orbital stroke segments, and depth occlusion sorting'
+  },
+  {
+    domain: 'Tide Math Hook',
+    file: 'src/components/widgets/tides/hooks/useTideMath.test.ts',
+    focus: 'Tidal gravity ellipse deformation ($r_x, r_y$), spring vs. neap alignment classification, orbital coordinate positioning, and presentation styling tokens'
+  },
+  {
+    domain: 'Armillary Morphing Engine',
+    file: 'src/utils/cosmicMath/armillary/armillaryMorph.test.ts',
+    focus: 'Continuous 3D translation (Copernican to Geocentric, $\\lambda \\le 0.45$), observer horizon cone deformation, volumetric laser cone flattening, and boundary coordinate continuity'
+  },
+  {
+    domain: 'Stereographic Conformal Invariants',
+    file: 'src/utils/cosmicMath/armillary/armillaryStereographic.test.ts',
+    focus: 'Analytical closed-form stereographic invariants ($R_0\\sec\\epsilon$), circle preservation under stereographic projection, non-degeneracy, and scale-invariance'
+  },
+  {
+    domain: 'Temporal Formatters & Parsing',
+    file: 'src/utils/formatters.test.ts',
+    focus: 'UTC calendar date formatting (`formatYMD`), 24h & 12h AM/PM time string parsing (`parseTimeString`), HH:MM formatting, and edge case resilience'
+  },
+  {
+    domain: 'Worker Synchronous Fallback',
+    file: 'src/workers/workerFallback.test.ts',
+    focus: 'Deterministic main-thread ephemeris fallback routines, annual matrix computation, cache integration, and failsafe zombie error handling'
   }
 ];
 

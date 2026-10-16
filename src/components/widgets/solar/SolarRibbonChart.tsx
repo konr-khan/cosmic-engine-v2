@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { getDayOfYear } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem } from '../../../types';
 import { useRibbonScrubber } from '../common/useRibbonScrubber';
@@ -90,7 +90,7 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = React.memo(({
     }
   });
 
-  const buildBandPath = (topKey: keyof AnnualSolarMatrixItem, bottomKey: keyof AnnualSolarMatrixItem): string => {
+  const buildBandPath = useCallback((topKey: keyof AnnualSolarMatrixItem, bottomKey: keyof AnnualSolarMatrixItem): string => {
     if (!almanacData.length) return '';
     let path = `M ${dayToX(1)},${timeToY(almanacData[0][topKey] as number)}`;
     for (let i = 0; i < almanacData.length; i++) {
@@ -101,16 +101,16 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = React.memo(({
     }
     path += ` Z`;
     return path;
-  };
+  }, [almanacData, dayToX, timeToY]);
 
-  const buildLinePath = (key: keyof AnnualSolarMatrixItem): string => {
+  const buildLinePath = useCallback((key: keyof AnnualSolarMatrixItem): string => {
     if (!almanacData.length) return '';
     let path = `M ${dayToX(1)},${timeToY(almanacData[0][key] as number)}`;
     for (let i = 1; i < almanacData.length; i++) {
       path += ` L ${dayToX(almanacData[i].day)},${timeToY(almanacData[i][key] as number)}`;
     }
     return path;
-  };
+  }, [almanacData, dayToX, timeToY]);
 
   const targetHoverDay = hoverDay !== null 
     ? hoverDay 
@@ -160,7 +160,6 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = React.memo(({
         style={{ cursor: isDragging ? 'grabbing' : 'crosshair' }}
       >
         <SolarRibbonBands
-          almanacData={almanacData}
           keyStats={keyStats}
           dayToX={dayToX}
           timeToY={timeToY}
@@ -173,7 +172,6 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = React.memo(({
           chartH={chartH}
         />
         <SolarRibbonAxes
-          width={width}
           height={height}
           paddingLeft={paddingLeft}
           paddingTop={paddingTop}

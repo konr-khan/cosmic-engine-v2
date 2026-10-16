@@ -7,9 +7,21 @@
  */
 
 import { describe, it, expect } from 'vitest';
-// @ts-expect-error - lintUnitSafety is a Node ESM module executed in Vitest runner
 import { runUnitSafetyCheck, runMathPurityCheck, getAgentsSizeBudget, runDefaultDateCheck } from '../../scripts/lintUnitSafety.mjs';
 import { parse } from '@babel/parser';
+import { 
+  Degrees, 
+  Radians, 
+  JulianDate, 
+  JulianCenturies, 
+  asDegrees, 
+  asRadians, 
+  asJulianDate, 
+  asJulianCenturies, 
+  toRadians, 
+  toDegrees, 
+  julianDateToCenturies 
+} from './units';
 
 interface UnitViolation {
   filePath: string;
@@ -127,5 +139,40 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
       expect.fail(`Found ${violations.length} default new Date() violations in components/hooks:\n${summary}`);
     }
     expect(violations).toHaveLength(0);
+  });
+});
+
+describe('Nominal Branded Unit Safety & Forbidden Brand Intersections', () => {
+  it('correctly constructs and brands JulianCenturies via asJulianCenturies', () => {
+    const centuries = asJulianCenturies(0.25);
+    expect(centuries).toBe(0.25);
+    const calculated = julianDateToCenturies(asJulianDate(2451545.0 + 36525.0));
+    expect(calculated).toBeCloseTo(1.0, 6);
+  });
+
+  it('correctly converts degrees to radians and radians to degrees with IEEE-754 precision', () => {
+    const deg180 = asDegrees(180);
+    const radPi = toRadians(deg180);
+    expect(radPi).toBeCloseTo(Math.PI, 10);
+
+    const backToDeg = toDegrees(radPi);
+    expect(backToDeg).toBeCloseTo(180, 10);
+
+    // Raw unbranded numbers are accepted
+    expect(toRadians(90)).toBeCloseTo(Math.PI / 2, 10);
+    expect(toDegrees(Math.PI / 2)).toBeCloseTo(90, 10);
+  });
+
+  it('enforces compile-time brand safety preventing cross-assignment between Degrees and Radians', () => {
+    const rad = asRadians(Math.PI);
+    const deg = asDegrees(180);
+
+    // @ts-expect-error - Branded Radians cannot be passed to toRadians (rejects double-conversion)
+    const invalidR2R = toRadians(rad);
+    expect(invalidR2R).toBeDefined();
+
+    // @ts-expect-error - Branded Degrees cannot be passed to toDegrees (rejects double-conversion)
+    const invalidD2D = toDegrees(deg);
+    expect(invalidD2D).toBeDefined();
   });
 });

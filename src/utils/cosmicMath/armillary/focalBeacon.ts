@@ -1,8 +1,28 @@
 import { Vector2D, Vector3D } from '../../../types/coordinates';
-import { toRadians } from '../core';
-import { rotateEuler3D } from './coordinates';
-import { projectStereographicConformal } from './projections';
+import { createEulerCameraRotator } from './coordinates';
 import { ArmillaryProjectionMode, ProjectionFocalBeaconOutput, LaserRay } from './types';
+
+// Pre-computed static unit circle points for 8 cardinal/intercardinal rays
+const RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315] as const;
+const PRECOMPUTED_RAYS = RAY_ANGLES.map(angleDeg => {
+  const rad = (angleDeg * Math.PI) / 180;
+  return {
+    cos: Math.cos(rad),
+    sin: Math.sin(rad),
+    angleDeg,
+    color: angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24'
+  };
+});
+
+// Pre-computed static unit circle points for 72 cone samples
+const NUM_CONE_SAMPLES = 72;
+const PRECOMPUTED_CONE = Array.from({ length: NUM_CONE_SAMPLES + 1 }, (_, i) => {
+  const rad = (i / NUM_CONE_SAMPLES) * 2 * Math.PI;
+  return {
+    cos: Math.cos(rad),
+    sin: Math.sin(rad)
+  };
+});
 
 /**
  * Generates the 3D position and 2D projected laser rays for the Center of Projection (Focal Pole).
@@ -15,7 +35,9 @@ export function generateProjectionFocalBeacon(
   r0: number = 100,
   cameraPitch: number = 25,
   cameraYaw: number = 35,
-  morphLambda: number = 0.0
+  morphLambda: number = 0.0,
+  precomputedRotator?: (x: number, y: number, z: number) => Vector3D,
+  skipDetails: boolean = false
 ): ProjectionFocalBeaconOutput {
   let focal3D: Vector3D;
   if (projectionMode === 'stereographic') {
@@ -26,66 +48,59 @@ export function generateProjectionFocalBeacon(
     focal3D = { x: 0, y: -r0, z: 0 };
   }
 
-  const pCam = rotateEuler3D(focal3D, cameraPitch, cameraYaw, 0);
+  const rotateCam = precomputedRotator ?? createEulerCameraRotator(cameraPitch, cameraYaw, 0);
+  const pCam = rotateCam(focal3D.x, focal3D.y, focal3D.z);
   const targetFocalY = projectionMode === 'rojas' ? 0 : r0 * 1.2;
   const rawX = (1 - morphLambda) * pCam.x;
   const rawY = (1 - morphLambda) * (-pCam.y) + morphLambda * targetFocalY;
   const focalScreenPos: Vector2D = {
-    x: Object.is(rawX, -0) ? 0 : rawX,
-    y: Object.is(rawY, -0) ? 0 : rawY
+    x: rawX === 0 ? 0 : rawX,
+    y: rawY === 0 ? 0 : rawY
   };
 
-  const laserRays: LaserRay[] = [];
-
-  // 1. Generate 8 discrete cardinal/intercardinal laser rays
-  const RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
-  for (const angleDeg of RAY_ANGLES) {
-    const rad = toRadians(angleDeg);
-    const ringPoint3D: Vector3D = {
-      x: r0 * Math.cos(rad),
-      y: 0,
-      z: r0 * Math.sin(rad)
+  if (skipDetails) {
+    return {
+      focal3D,
+      focalScreenPos,
+      focalZCam: pCam.z,
+      laserRays: [],
+      conePathD: ''
     };
-    const ringCam = rotateEuler3D(ringPoint3D, cameraPitch, cameraYaw, 0);
-    const ringProj = projectStereographicConformal(ringPoint3D, r0);
+  }
 
-    const endX = (1 - morphLambda) * ringCam.x + morphLambda * ringProj.x;
-    const endY = (1 - morphLambda) * (-ringCam.y) + morphLambda * (-ringProj.y);
+  const oneMinusMorph = 1 - morphLambda;
+  const laserRays: LaserRay[] = new Array(PRECOMPUTED_RAYS.length);
 
-    laserRays.push({
+  for (let idx = 0; idx < PRECOMPUTED_RAYS.length; idx++) {
+    const ray = PRECOMPUTED_RAYS[idx];
+    const ringPointX = r0 * ray.cos;
+    const ringPointZ = r0 * ray.sin;
+    const ringCam = rotateCam(ringPointX, 0, ringPointZ);
+    // On equatorial plane y = 0, projectStereographicConformal(p, r0) is identically (p.x, p.z)
+    const endX = oneMinusMorph * ringCam.x + morphLambda * ringPointX;
+    const endY = oneMinusMorph * (-ringCam.y) + morphLambda * (-ringPointZ);
+
+    laserRays[idx] = {
       start: focalScreenPos,
       end: { x: endX, y: endY },
-      color: angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24',
+      color: ray.color,
       opacity: 0.6
-    });
-  }
-
-  // 2. Generate smooth 360-degree closed conic envelope (72 samples, 0° to 360°)
-  const NUM_CONE_SAMPLES = 72;
-  const conePoints: Vector2D[] = [];
-  for (let i = 0; i <= NUM_CONE_SAMPLES; i++) {
-    const rad = (i / NUM_CONE_SAMPLES) * 2 * Math.PI;
-    const ringPoint3D: Vector3D = {
-      x: r0 * Math.cos(rad),
-      y: 0,
-      z: r0 * Math.sin(rad)
     };
-    const ringCam = rotateEuler3D(ringPoint3D, cameraPitch, cameraYaw, 0);
-    const ringProj = projectStereographicConformal(ringPoint3D, r0);
-
-    const endX = (1 - morphLambda) * ringCam.x + morphLambda * ringProj.x;
-    const endY = (1 - morphLambda) * (-ringCam.y) + morphLambda * (-ringProj.y);
-    conePoints.push({ x: endX, y: endY });
   }
 
-  let conePathD = '';
-  if (conePoints.length > 0) {
-    conePathD = `M ${focalScreenPos.x.toFixed(1)} ${focalScreenPos.y.toFixed(1)} `;
-    for (const pt of conePoints) {
-      conePathD += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
-    }
-    conePathD += 'Z';
+  const fmt1 = (val: number) => Math.round(val * 10) / 10;
+  let conePathD = `M ${fmt1(focalScreenPos.x)} ${fmt1(focalScreenPos.y)} `;
+  for (let i = 0; i <= NUM_CONE_SAMPLES; i++) {
+    const sample = PRECOMPUTED_CONE[i];
+    const ringPointX = r0 * sample.cos;
+    const ringPointZ = r0 * sample.sin;
+    const ringCam = rotateCam(ringPointX, 0, ringPointZ);
+
+    const endX = oneMinusMorph * ringCam.x + morphLambda * ringPointX;
+    const endY = oneMinusMorph * (-ringCam.y) + morphLambda * (-ringPointZ);
+    conePathD += `L ${fmt1(endX)} ${fmt1(endY)} `;
   }
+  conePathD += 'Z';
 
   return {
     focal3D,

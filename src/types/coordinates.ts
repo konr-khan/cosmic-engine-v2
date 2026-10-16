@@ -3,7 +3,7 @@
  * Astronomical coordinate systems and 2D/3D vector definitions.
  */
 
-import { Degrees, HoursDecimal, Radians } from './units';
+import { Degrees, Radians } from './units';
 
 /** Local topocentric horizon coordinate system */
 export interface AltAzimuthCoordinates {
@@ -17,8 +17,8 @@ export interface AltAzimuthCoordinates {
 
 /** Equatorial coordinate system */
 export interface EquatorialCoordinates {
-  /** Right Ascension [0..24 decimal hours or 0..360 degrees] */
-  rightAscension: HoursDecimal | Degrees | number;
+  /** Right Ascension in degrees [0..360) */
+  rightAscension: Degrees;
   /** Declination [-90..+90 degrees] */
   declination: Degrees | number;
   /** Local Hour Angle [0..24 hours or 0..360 degrees] */
