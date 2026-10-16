@@ -17,6 +17,9 @@ To eliminate documentation drift and adhere to **Smallest Effective Difference (
 - **Architectural Decision Records**: Consult [`docs/adr/`](docs/adr/) for milestone decisions (`0001–0042`) and evolutionary amendment banners.
 - **Public System Overview & Setup**: Consult [`README.md`](README.md) for user-facing features and quick-start guides.
 
+> [!IMPORTANT]
+> **Strict SSoT Boundaries**: Each document has an exclusive, non-overlapping single responsibility. Architecture diagrams, file trees, and subsystem contracts live strictly in [`ARCHITECTURE.md`](ARCHITECTURE.md). [`PROJECT.md`](PROJECT.md) is strictly a feature and milestone ledger. Never duplicate structural models into `AGENTS.md` or `PROJECT.md`.
+
 ---
 
 ## 2. Tech Stack & Essential Commands
@@ -68,6 +71,7 @@ Consult [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full 3D scene graph dataflo
 - **No Automatic Commits Rule**: Never commit changes to git automatically. Present changes and verification results first, and only execute `git commit` when the user explicitly says `'commit'`.
 
 ### B. Subagent Delegation & Core Invariants
+- **Strict SSoT Boundary Invariant**: Each document possesses an exclusive, non-overlapping single responsibility. Never duplicate architectural diagrams, file trees, or runtime contracts into `AGENTS.md` or `PROJECT.md`. When system structure changes, update [`ARCHITECTURE.md`](ARCHITECTURE.md) directly rather than writing ad-hoc summaries elsewhere.
 - **Nominal Branded Units Guardrail**: Never modify `src/types/units.ts` without running `npm test` and `npm run typecheck`. Bridge presentation types (`Latitude`, `Longitude`) into math routines via `latToRadians(lat)`, `lonToRadians(lon)`, or `toRadians(asDegrees(lat))`—never use raw casts (`as unknown as Radians`).
 - **UI Unit Safety AST Guardrail**: Presentation components under `src/components/**` must never import or call `asDegrees()` or `asRadians()` (`npm run lint:units` / `src/types/unitSafety.test.ts`).
 - **Barrel Export Integrity**: Never modify barrel exports (`index.ts`) without verifying zero circular dependencies or type-only export breaks.
