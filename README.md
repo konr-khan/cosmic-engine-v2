@@ -1,143 +1,111 @@
 # 🌌 Cosmic Engine V2.0
 
-**Cosmic Engine V2.0** is an interactive, browser-based astronomical simulation and ephemeris dashboard built with React 19, TypeScript (Strict Mode with Symbol-branded units), Vite, and Tailwind CSS v4.
+**Cosmic Engine V2.0** is an interactive, real-time astronomical observatory and ephemeris simulation engine built with React 19, TypeScript 7 (Strict Nominal Units), Vite 8, Tailwind CSS v4, and a dedicated Web Worker Ephemeris Engine.
+
+Conceived and engineered from day one as an **exclusively AI pair-programmed system**, Cosmic Engine V2.0 pairs high-precision Jean Meeus astronomical algorithms and a unified 3D celestial scene graph with a deterministic, machine-verifiable engineering harness designed for zero-regression human-AI collaboration.
 
 ---
 
-## ✨ Features
+## 🤖 AI-Native Engineering & Guardrail Architecture
 
-- 🪐 **Gyro-Morph Dynamic Armillary & Astrolabe**: Seamless 5-model continuum uniting Copernican planetary orbits (`☉ Orbit`), geocentric celestial spheres (`⊕ Apparent`), stereographic astrolabes (`🧭 Rete`), universal orthographic plates (`📐 Rojas`), and topocentric horizon nets (`🔭 Horizon`). Features 2-stage staged camera alignment with memory retention, nodal plane alignment toggle (`[ ☊ Nodal ]`) snapping view into the tilted lunar orbit plane, edge-on ring plane solid line blending, circle-preserving conformal projections, free Rete spinning with real-time Apparent Solar Time solving, interactive Alidade sighting with star-locking, and volumetric projection cones.
-- ☀️ **Solar Almanac & 24h Polar Sector Dial**: Solstice and equinox pathing, 3-tier twilight durations (civil, nautical, astronomical), analemma equation of time, solar noon tracking, and polar day/night handling, integrated side-by-side with an interactive 24-hour circular polar dial with Solar Noon vs. UTC modes.
-- 👁️ **Today's Sky Horizon Dome**: Real-time dual elevation domes for the Sun and Moon with live zenith tracking, dynamic hemisphere culmination detection (resolving tropical inversions), solar noon click-to-snap, 3-tier atmospheric twilight strata, lunar standstill and solstice swaths, unified `<MiniMoon />` rendering, and interactive Draconic nodal crossing countdown rails.
-- 🌙 **Lunar Almanac & Ephemeris**: 365-day braided moonrise/moonset ribbon chart with Zulu time indexing, 30-day synodic lunar almanac with single-click date navigation, unified high-precision `<MiniMoon />` disc rendering with libration tilt and terminator shading, Meeus true geocentric phase angle ($i$) and disc illumination ($k$), iterative high-latitude rise/set solver with circumpolar continuous visibility detection, perigee/apogee distance metrics, and parallactic angles.
-- 🌊 **Gravitational Tidal Force Micro-View**: 2D Earth-Moon gravitational tidal vector simulation featuring a 3D rotating `<MiniGlobe />`, prograde counter-clockwise orbital coordination, 4-quadrant color/stroke-coded nodal loops, and a dynamic ocean tidal wave oscillator tracking neap-to-spring deformation ratios.
-- 🌒 **Side-by-Side Dual-Perspective Eclipse Demonstrator**: Synchronized dual perspectives uniting an edge-on ecliptic transverse profile with ray-traced Umbra/Penumbra shadow cones, and an axial sightline down-the-barrel view displaying true prograde lunar transits with physically accurate dark backside optics (`isDark={true}`), color-coded nodal crossings, unified `<MiniMoon />`, and 5 historical/future peak UTC presets.
-- 🧭 **Interactive Astrolabe Chronometer**: 4-concentric interactive SVG dial for direct manipulation of calendar date (with full year tooltip), time, longitude, and latitude, with astronomical turning point jumps and direct military time string parsing.
-- 🗺️ **Daylight Terminator Map**: Real-time cylindrical Earth projection with observer meridian centering, dynamic distance and apparent diameter scaling for Subsolar and Sublunar points, 4-tier twilight shadow boundaries, and 24-hour diurnal celestial ground tracks with antimeridian seam wrapping.
-- 🪐 **Solar System Macro Orbit**: Heliocentric Keplerian planetary orbit view with True Scale ($e=0.0167$) vs. Exaggerated ($e=0.25$) scale modes, persistent glowing milestone halo nodes (Perihelion, Aphelion, Solstices, Equinoxes), interactive orbit dragging/scrubbing synchronized to the global chronometer, and live orbital physics telemetry (irradiance, velocity, AU).
-- 🧩 **Dynamic Code-Splitting & Lazy Loading**: Dynamic `React.lazy()` imports wrapped in dark glassmorphic `<Suspense>` skeletons across all observatory windows, cutting initial bundle size by 50% and eliminating chunk limit warnings.
-- 🌐 **Unified 3D Astronomical Scene Graph**: Single geometric source of truth (`src/utils/cosmicMath/scene/`) uniting Heliocentric orbits, Geocentric inclined lunar orbits with continuous nodal precession, Earth axial obliquity, and reusable modular `<MiniGlobe />` with physical day/night terminator clipping.
-- ⚡ **Web Worker Ephemeris Multiprocessing**: Offloads heavy Meeus ephemeris and syzygy shadow algorithms to dedicated Web Workers via a singleton manager with 100ms throttling, monotonic sequence stamping, and automatic synchronous fallback.
-- ⏱️ **External 60 FPS Chronometer, Hover Stores & Render Decoupling**: High-frequency animation loops powered by React 19 `useSyncExternalStore` and `requestAnimationFrame`, isolating time ticking and ribbon scrubbing from the React render tree with parameterized selective hook selectors (`useCosmicEngine`, `useCosmicScene`) and decomposed, memoized widget content components to maintain smooth 60 FPS performance with zero unnecessary re-render cascades.
-- 🛡️ **Fault-Tolerant Window Grid**: Responsive drag-and-drop workspace layout with customizable window sizing, lock states, curated workspace presets, and isolated React Error Boundaries for every widget.
+Rather than relying on informal conventions that drift across sessions, Cosmic Engine V2.0 encodes its mathematical, architectural, and visual invariants into **compile-time type firewalls, Babel AST linters, empirical physics conservation suites, and a strict Single-Source-of-Truth (SSoT) documentation graph**:
 
----
-
-## 🎨 Design Philosophy & UX Principles
-
-Cosmic Engine adheres to two foundational principles of scientific information design and human-computer interaction:
-
-1. **Smallest Effective Difference (SED)**:
-   - High-density astronomical data is rendered with minimal visual clutter, subtle contrast gradations, muted coordinate grids, and clean vector geometry.
-   - Eliminates decorative noise ("chartjunk") so the astronomical physics, trajectories, and curves speak for themselves.
-2. **Progressive Disclosure**:
-   - Primary viewports remain clean, uncluttered, and instantly glanceable.
-   - Rich underlying astronomical physics (parallactic angles, exact syzygy obscuration percentages, orbital speeds, perigee/apogee distance metrics) are readily discoverable via interactive scrubbers, hover cards, tooltips, and modal fine-tuning popovers—making it immediately obvious how to access deeper mathematical detail without overwhelming the primary display.
+1. **Always-Loaded Operational Prompt Kernel ([`AGENTS.md`](./AGENTS.md))**:
+   - Bounded strictly under `18.0 KB` (enforced by [`unitSafety.test.ts`](./src/types/unitSafety.test.ts)) to prevent context truncation.
+   - Governs every AI session via a **3-Tier Blast-Radius Triage Protocol**, a **File-Glob $\rightarrow$ Test Router**, and explicit `DO` / `NEVER` AST code cards.
+2. **Compile-Time Nominal Unit Firewall ([`src/types/units.ts`](./src/types/units.ts))**:
+   - Angular metrics (`Degrees`, `Radians`) and epochs (`JulianDate`, `JulianCenturies`) use unique Symbol brands with forbidden brand intersections (`NotRadians`, `NotDegrees`).
+   - Passing degrees into a trigonometric solver expecting radians (`Math.sin`, Meeus ephemeris series) or double-converting branded values fails at compile time (`npm run typecheck`).
+3. **Programmatic Babel AST Guardrails ([`scripts/lintUnitSafety.mjs`](./scripts/lintUnitSafety.mjs))**:
+   - **UI Unit Boundary**: Bans `asDegrees()` and `asRadians()` across all 116+ UI files in `src/components/**`, forcing presentation components through verified conversion gatekeepers (`latToRadians`, `lonToRadians`, `toRadians`).
+   - **Mathematical Domain Purity**: Scans `src/utils/cosmicMath/**` to guarantee 0 React imports, 0 UI component imports, 0 Tailwind presentation tokens, and 0 unparameterized `new Date()` calls.
+   - **Prop Identity Stability**: Bans `= new Date()` default parameter fallbacks across `src/components/**` and `src/hooks/**` (enforcing immutable `J2000_DATE` fallbacks) to prevent 60 FPS referential churn.
+4. **Empirical Physics Conservation & Adversarial Stress Suites**:
+   - Domain tests verify physical conservation laws directly—including Keplerian areal velocity invariance ($r^2\dot{\theta} = \text{const}$), vis-viva orbital energy conservation, 10,000-sample Monte Carlo stereographic ring invariants ($R_0\sec\epsilon$), and a strict **$< 0.8\text{ ms/frame}$ hot-loop latency budget** across 1,000 continuous frames.
+5. **Institutional Memory & Anti-Pattern Ledger ([`DEAD_ENDS.md`](./DEAD_ENDS.md) & [`docs/adr/`](./docs/adr/))**:
+   - Documents 42 Architecture Decision Records (`ADR 0001–0042`) and historical mathematical/rendering dead ends so future AI sessions never repeat discarded approaches.
 
 ---
 
-## 🛠️ Tech Stack
+## 🔭 The 8 Observatory Instruments & Core Engine
+
+### Interactive Observatory Subsystems
+
+| Instrument | Coordinate Frame & Projection | Key Capabilities | Primary Entry Point |
+| :--- | :--- | :--- | :--- |
+| **🪐 Gyro-Morph Armillary & Astrolabe** | Continuous 5-Model Morph (`☉ Orbit` $\leftrightarrow$ `⊕ Apparent` $\leftrightarrow$ `🧭 Rete` $\leftrightarrow$ `📐 Rojas` $\leftrightarrow$ `🔭 Horizon`) | 2-phase staged camera ($\lambda = 0.45$ pole lock), nodal plane snap (`[ ☊ Nodal ]`), conformal stereographic rings, Free Rete apparent solar time solver, star-locking Alidade & volumetric cones | [`GyroArmillaryView.tsx`](./src/components/widgets/armillary/GyroArmillaryView.tsx) |
+| **👁️ Today's Sky Horizon Dome** | Topocentric Prime Vertical & Local Celestial Meridian (`2-Dome` / `4-Dome Quad`) | Dual Sun/Moon elevation & meridian domes, tropical culmination inversion detection, solstice & 18.6y lunar standstill swaths, 3-tier twilight strata & Draconic nodal countdown rail | [`TodayHorizonView.tsx`](./src/components/widgets/today/TodayHorizonView.tsx) |
+| **☀️ Solar Almanac & Polar Dial** | Geocentric Declination & 24h Topocentric Polar Sector | Annual daylight ribbon scrubber, Equation of Time analemma metrics, civil/nautical/astronomical twilight bands, and interactive 24h circular polar sector dial (Solar Noon vs. UTC) | [`SolarAlmanacCard.tsx`](./src/components/widgets/solar/SolarAlmanacCard.tsx) |
+| **🌙 Lunar Almanac & Ephemeris** | Geocentric Ecliptic & Topocentric Iterative Rise/Set | 365-day braided moonrise/moonset ribbon, 30-day synodic phase grid, Meeus phase angle ($i$) & illumination ($k$), circumpolar visibility solver, and ocean tidal wave oscillator | [`LunarAlmanacCard.tsx`](./src/components/widgets/lunar/LunarAlmanacCard.tsx) |
+| **🌒 Dual-Perspective Eclipse Demonstrator** | Synchronized Geocentric Transverse Profile & Axial Sightline | Ray-traced Umbra/Penumbra shadow cones, prograde right-to-left lunar transit with dark backside optics, 4-quadrant nodal loop depth sorting, and 5 historical/future eclipse presets + recurrence scanner | [`EclipseDemonstrator.tsx`](./src/components/widgets/eclipse/EclipseDemonstrator.tsx) |
+| **🗺️ Daylight Terminator Map** | Observer-Centered Cylindrical Equirectangular | Dynamic subsolar (AU) & sublunar (km) apparent disc scaling, 4-tier twilight shadow boundaries, analytical continent wrapping, and $\pm 12\text{h}$ diurnal ground tracks with antimeridian seam interpolation | [`TerminatorMap.tsx`](./src/components/widgets/terminator/TerminatorMap.tsx) |
+| **🪐 Solar System Macro Orbit** | Heliocentric Ecliptic Top-Down (`True` $e=0.0167$ vs. `Exaggerated` $e=0.25$) | Interactive Keplerian orbit scrubbing, 6 persistent seasonal/orbital milestone halo nodes (Perihelion, Aphelion, Solstices, Equinoxes), and live 1 AU orbital physics telemetry | [`MacroOrbitView.tsx`](./src/components/widgets/macro/MacroOrbitView.tsx) |
+| **🌊 Gravitational Tidal Micro-View** | Geocentric Equatorial & Lunar Nodal Plane | Earth-Moon gravitational differential vector field, 3D rotating `<MiniGlobe />`, prograde counter-clockwise Moon revolution, and spring-to-neap ocean potential ellipse deformation | [`MicroTideView.tsx`](./src/components/widgets/tides/MicroTideView.tsx) |
+
+### Core Runtime & Concurrency Architecture
+
+- **Unified 3D Astronomical Scene Graph ([`src/utils/cosmicMath/scene/`](./src/utils/cosmicMath/scene/))**: Single geometric source of truth generating Heliocentric, Geocentric, and Topocentric coordinates, $23.439^\circ$ Earth axial obliquity, $5.14^\circ$ inclined lunar orbit with continuous nodal precession $\Omega(t)$, and reusable `<MiniGlobe />` / `<MiniMoon />` SVG primitives.
+- **60 FPS External Chronometer & Hover Stores ([`src/store/`](./src/store/))**: High-frequency animation loops (`cosmicStore.ts`) and 365-day ribbon scrubbing (`hoverStore.ts`) are isolated from React's top-level state tree via React 19 `useSyncExternalStore` with granular selector memoization.
+- **Web Worker Ephemeris Multiplexer ([`src/workers/`](./src/workers/))**: Offloads heavy Meeus series and 365-day annual matrices to a dedicated worker thread via `ephemerisWorkerManager.ts` with 100ms trailing-edge flag-merging throttling, monotonic `requestId` stamps, pre-seeded LRU caches, and synchronous main-thread fallback (`workerFallback.ts`).
+- **Interactive Astrolabe Chronometer & Fault-Tolerant Grid ([`src/components/layout/`](./src/components/layout/))**: 4-ring concentric SVG astrolabe dial (Date, Time, Longitude, Latitude) docked inside a 12-column drag-and-drop workspace where every lazy-loaded widget is isolated inside a self-recovering `<WindowErrorBoundary />`.
+
+---
+
+## 🗺️ Single-Source-of-Truth (SSoT) Documentation Map
+
+To prevent documentation drift across AI pair-programming sessions, every architectural, mathematical, and visual concern lives in an **exclusive, non-overlapping Single Source of Truth**:
+
+| Document | Exclusive Responsibility |
+| :--- | :--- |
+| **[`AGENTS.md`](./AGENTS.md)** | **Always-Loaded AI Prompt Kernel**: 3-tier blast-radius triage, file-glob test router, and enforced AST `DO`/`NEVER` code cards |
+| **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** | **System Topology & Runtime Contracts**: 3D scene-graph dataflow diagram, TypeScript interface contracts, canonical file tree, and subsystem task router |
+| **[`docs/MATH_SPEC.md`](./docs/MATH_SPEC.md)** | **Astronomical Math Specification**: Jean Meeus equations, coordinate transformations, stereographic invariants, and syzygy shadow geometry |
+| **[`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)** | **Visual Tokens & Stroke Grammar**: Smallest Effective Difference (SED) principles, semantic colors (Sky Blue / Rose Red / Amber), and 2D/3D SVG stroke encodings |
+| **[`DEAD_ENDS.md`](./DEAD_ENDS.md)** | **Historical Anti-Pattern Log**: Critical post-mortems of failed geometric, projection, camera staging, and worker concurrency approaches |
+| **[`PROJECT.md`](./PROJECT.md)** | **Feature & Milestone Ledger**: Complete chronological inventory of completed features (`F1–F87`) and engineering milestones (`M1–M42`) |
+| **[`docs/adr/`](./docs/adr/)** | **Architecture Decision Records**: 42 immutable decision records (`ADR 0001–0042`) with evolutionary amendment tracking |
+
+---
+
+## 🛠️ Tech Stack & Quick Start
 
 - **Framework**: React 19 (`react`, `react-dom`)
 - **Language**: TypeScript 7.0+ (Strict Mode with Symbol-branded units: `Degrees`, `Radians`, `JulianDate`, `JulianCenturies`)
 - **Bundler & Dev Server**: Vite 8+ (`vite`)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
-- **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
-- **Concurrency**: Web Worker dedicated thread & singleton multiplexer
+- **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`, `src/store/hoverStore.ts`)
+- **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
 - **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 886 tests)
-
----
-
-## 🚀 Quick Start
 
 ```bash
 # Install dependencies
 npm install
 
-# Start local development server
+# Start local development server (Vite HMR)
 npm run dev
 
-# Run TypeScript type check
-npm run typecheck
+# Run the full mandatory verification gate (typecheck -> lint:units -> vitest -> build)
+npm run verify
 
-# Run Vitest test suite in native single-run mode
-npm test
+# Run targeted inner-loop checks
+npm run typecheck          # TypeScript 7 strict nominal brand check (tsc --noEmit)
+npm run lint:units         # Babel AST unit-safety, math-purity, default-Date & AGENTS.md budget linter
+npm test                   # Full Vitest suite in single-run mode
+npm run test:coverage      # Vitest with v8 coverage report
 
-# Run Vitest with v8 code coverage reporting
-npm run test:coverage
-
-# Run Babel AST branded unit-safety linter across all UI components
-npm run lint:units
-
-# Run automated documentation metric synchronizer
-npm run sync:docs
-
-# Build production bundle
-npm run build
-
-# Preview production build locally
-npm run preview
+# Synchronize automated documentation metrics & master dossier
+npm run sync:docs          # Updates live Vitest suite/test counts in README.md and AGENTS.md
+npm run sync:dossier       # Compiles docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md
 ```
 
 ---
 
-## 🏛️ Architecture Overview
+## 🧪 Verification & Test Harness
 
-```
-Cosmic Engine V2.0/
-├── index.html                   # HTML entry point with title & viewport config
-├── package.json                 # Project dependencies & Vite scripts
-├── tsconfig.json                # TypeScript root configuration (strict mode)
-├── vite.config.ts               # Vite configuration & plugin setup
-├── postcss.config.js            # PostCSS configuration
-├── ARCHITECTURE.md              # System topology, runtime contracts, code layout & task routing
-├── PROJECT.md                   # Master feature ledger (F1–F87) & milestone matrix (M1–M42)
-├── README.md                    # Repository documentation & quick start
-├── AGENTS.md                    # Operational prompt kernel, agent protocols & coding guardrails
-├── docs/                        # Persistent technical specifications & ADRs
-│   ├── MATH_SPEC.md             # Canonical astronomical math & coordinate specification
-│   ├── DESIGN_SYSTEM.md         # Canonical visual tokens, color semantics & stroke encodings
-│   └── adr/                     # Architecture Decision Records (ADRs 0001–0042)
-└── src/
-    ├── main.tsx                 # React root renderer
-    ├── App.tsx                  # Master Observatory dashboard container
-    ├── types/                   # Symbol-branded nominal units, coordinates & RPC contracts
-    ├── utils/cosmicMath/        # Pure astronomical mathematical algorithms, projections & scene graph
-    │   └── scene/               # Unified 3D Astronomical Scene Graph & Camera Projection Rigs
-    ├── store/                   # High-frequency external chronometer store (60 FPS ticker)
-    ├── workers/                 # Web Worker offloading for Meeus ephemeris & annual matrices
-    ├── hooks/                   # Custom domain hooks (engine, 3D scene, worker RPC, dashboard layout)
-    └── components/              # Grouped visual component architecture
-        ├── widgets/             # 8 core observatory subsystems (Armillary, Solar, Lunar, etc.)
-        ├── controls/            # Interactive astrolabe dials, sliders & longitude selector
-        ├── layout/              # Observatory navbar, window wrappers & chronometer dock
-        └── common/              # Shared error boundaries, mini globe, mini moon & phase discs
-```
+The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**886 tests**):
 
-> [!TIP]
-> For the complete, granular submodule file tree with all individual SVG canvas layers, decomposed modules, and targeted test routing, see [`ARCHITECTURE.md`](./ARCHITECTURE.md#4-canonical-code-layout).
-
----
-
-## 📐 TypeScript Unit Typing Strategy
-
-Cosmic Engine employs a **pragmatic hybrid typing model** that balances compile-time mathematical safety in orbital/trigonometric algorithms with frictionless React UI state management:
-
-1. **Nominal Symbol Branding for High-Risk Invariants**:
-   - Angular metrics (`Degrees`, `Radians`) and temporal epochs (`JulianDate`, `JulianCenturies`) use unique symbol-branded nominal types ([`src/types/units.ts`](src/types/units.ts)).
-   - The TypeScript compiler will reject any attempt to pass degrees into trigonometric solvers expecting radians (`Math.sin`, Meeus ephemeris equations) without an explicit conversion.
-2. **Ergonomic Type Aliases for Presentation & UI**:
-   - Coordinates, sliders, and timeline parameters (`Latitude`, `Longitude`, `HoursDecimal`, `DayOfYear`, `Pixels`) remain pure `number` type aliases.
-   - This eliminates casting friction across React components, SVG viewports, and native `<input>` form handlers.
-3. **Conversion Gatekeepers & Boundary Contracts**:
-   - Dedicated gatekeeper utility functions (`toRadians(deg: Degrees): Radians`, `toDegrees(rad: Radians): Degrees`, `julianDateToCenturies(jd: JulianDate): JulianCenturies`, `latToRadians(lat: Latitude): Radians`, `radiansToLat(rad: Radians): Latitude`, `lonToRadians(lon: Longitude): Radians`, `radiansToLon(rad: Radians): Longitude`) serve as verified, compile-time bridges between distinct unit spaces.
-   - When crossing from UI parameters (`Latitude`, `Longitude`) into trigonometric solvers, parameters are explicitly wrapped and converted via `latToRadians(lat)` (or `toRadians(asDegrees(lat))`) to ensure type safety without unsafe casts.
-
----
-
-## 🧪 Testing
-
-The test harness uses **Vitest** to validate mathematical precision, hook edge cases, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**886 tests**):
+<details>
+<summary><strong>📊 Expand Full 59-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -201,13 +169,4 @@ The test harness uses **Vitest** to validate mathematical precision, hook edge c
 | **Temporal Formatters & Parsing** | `src/utils/formatters.test.ts` (11 tests) | UTC calendar date formatting (`formatYMD`), 24h & 12h AM/PM time string parsing (`parseTimeString`), HH:MM formatting, and edge case resilience |
 | **Worker Synchronous Fallback** | `src/workers/workerFallback.test.ts` (26 tests) | Deterministic main-thread ephemeris fallback routines, annual matrix computation, cache integration, and failsafe zombie error handling |
 
-Run the full suite with:
-```bash
-npm test -- --run
-```
-
----
-
-## 🤖 Agent & Pair Programming Guidelines
-
-This project maintains an active [`AGENTS.md`](./AGENTS.md) guide detailing architecture maps, coding invariants, performance rules, mathematical contracts, and verification standards for AI pair programming sessions.
+</details>
