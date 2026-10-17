@@ -1,125 +1,129 @@
-# AGENTS.md — Agent Guidelines, Operating Protocols & Architecture Kernel
+# AGENTS.md — Operational Prompt Kernel & Enforced Guardrails
 
-Welcome to **Cosmic Engine V2.0**. This operational prompt kernel defines essential protocols, architectural invariants, mathematical guardrails, and coding standards for AI agents working on this codebase.
+This file is the always-loaded operational kernel for AI agents working in **Cosmic Engine V2.0** (React 19, TypeScript 7 Strict Nominal Units, Vite 8, Tailwind CSS v4, Web Worker Ephemeris Engine). Every rule below is either enforced by automated AST/Vitest checks or governs execution protocol.
 
 ---
 
-## 1. Project Overview & Single Source of Truth Hierarchy
-
-**Cosmic Engine V2.0** is an interactive, browser-based astronomical simulation and ephemeris dashboard built with React 19, TypeScript (Strict Mode with Symbol-branded nominal units), Vite, and Tailwind CSS v4.
-
-To eliminate documentation drift and adhere to **Smallest Effective Difference (SED)** principles, consult the authoritative **Single Source of Truth (SSoT)** for each domain:
-- **System Topology, Code Layout & Task Routing**: Consult [`ARCHITECTURE.md`](ARCHITECTURE.md) for the master dataflow diagram, subsystem contracts, exhaustive file tree, and targeted Vitest task routing matrix.
-- **Active Feature Ledger & Milestones**: Consult [`PROJECT.md`](PROJECT.md) for the complete Feature Inventory (`F1–F87`) and Milestone Matrix (`M1–M42`).
-- **Astronomical Math & Ephemerides**: Consult [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) for canonical algorithms, coordinate transformations, and Jean Meeus citations.
-- **Visual Tokens & Design Grammar**: Consult [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) for semantic color palettes, vector stroke encodings, and glassmorphic telemetry rules.
-- **Historical Anti-Patterns**: Consult [`DEAD_ENDS.md`](DEAD_ENDS.md) for the tabular registry of failed historical approaches and their validated solutions.
-- **Architectural Decision Records**: Consult [`docs/adr/`](docs/adr/) for milestone decisions (`0001–0042`) and evolutionary amendment banners.
-- **Public System Overview & Setup**: Consult [`README.md`](README.md) for user-facing features and quick-start guides.
+## 1. Single Source of Truth (SSoT) & Command Matrix
 
 > [!IMPORTANT]
-> **Strict SSoT Boundaries**: Each document has an exclusive, non-overlapping single responsibility. Architecture diagrams, file trees, and subsystem contracts live strictly in [`ARCHITECTURE.md`](ARCHITECTURE.md). [`PROJECT.md`](PROJECT.md) is strictly a feature and milestone ledger. Never duplicate structural models into `AGENTS.md` or `PROJECT.md`.
+> **Strict Zero-Duplication Rule**: Never duplicate architecture diagrams, file trees, math formulas, or feature ledgers across documents. Read and update the exclusive SSoT for your target domain:
 
----
+| Domain | Authoritative SSoT | When to Consult / Update |
+| :--- | :--- | :--- |
+| **Topology, Contracts & File Tree** | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Modifying module boundaries, scene-graph dataflow, worker RPC contracts, or adding/moving files |
+| **Astronomical Math & Ephemerides** | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | Touching `src/utils/cosmicMath/**`, coordinate frames, Meeus equations, or syzygy shadow geometry |
+| **Visual Tokens & Stroke Grammar** | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Touching `src/components/**`, SVG stroke encodings, semantic colors, or glassmorphic HUDs |
+| **Historical Anti-Patterns** | [`DEAD_ENDS.md`](DEAD_ENDS.md) | Before refactoring core math, 3D projections, worker throttling, or camera staging |
+| **Feature & Milestone Ledger** | [`PROJECT.md`](PROJECT.md) | Recording completed user-facing features (`F1–F87`) or milestones (`M1–M42`) |
+| **Architectural Decision Records** | [`docs/adr/`](docs/adr/) | Reviewing historical invariants (`0001–0042`) or adding evolutionary amendment banners |
 
-## 2. Tech Stack & Essential Commands
+### Essential Commands & Automated Gatekeepers
 
-- **Framework**: React 19 (`react`, `react-dom`)
-- **Language**: TypeScript 7.0+ (Strict Mode with Symbol-branded units: `Degrees`, `Radians`, `JulianDate`, `JulianCenturies`)
-- **Bundler & Dev Server**: Vite 8+ (`vite`)
-- **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
-- **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`)
-- **Concurrency**: Application-level Web Worker singleton manager (`src/workers/ephemerisWorkerManager.ts`) offloading to dedicated worker thread (`src/workers/ephemerisWorker.ts`)
 - **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 886 tests)
 
-### Essential Commands
-
-| Command | Purpose |
+| Command | Purpose & When to Run |
 | :--- | :--- |
-| `npm run dev` | Starts Vite local development server |
-| `npm run typecheck` | Runs TypeScript compiler in typecheck mode (`tsc --noEmit`) |
-| `npm test` | Runs Vitest unit test suite in native single-run mode (`vitest run`) |
-| `npm run test:coverage` | Runs Vitest with v8 code coverage reporting |
-| `npm run lint:units` | Runs Babel AST branded unit-safety linter across all UI components |
-| `npm run sync:docs` | Runs automated Vitest test metric synchronizer |
-| `npm run sync:dossier` | Compiles master documentation dossier on demand (`--dossier`) |
-| `npm run verify` | Runs full verification suite (`typecheck`, `lint:units`, `vitest`, and `build`) |
-| `npm run build` | Builds production distribution to `dist/` (`tsc --noEmit && vite build`) |
-| `npm run preview` | Previews built production bundle locally |
+| `npx vitest run <suite>` | **Fast inner-loop test** — run the targeted suite from Section 3 immediately after any edit |
+| `npm run lint:units` | **AST guardrail linter** (`scripts/lintUnitSafety.mjs`) — checks UI unit safety, math purity, `= new Date()` ban & `AGENTS.md` size budget (`5–18 KB`) |
+| `npm run typecheck` | **Strict compiler check** (`tsc --noEmit`) — verifies nominal branded unit types and barrel exports |
+| `npm run verify` | **Mandatory pre-completion gate** — runs `typecheck`, `lint:units`, `vitest`, and `build` in serial |
+| `npm run sync:docs` | **Test metric synchronizer** (`scripts/syncDocMetrics.mjs`) — run whenever adding, removing, or renaming Vitest tests |
+| `npm run sync:dossier` | Compiles `docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md` on demand (`--dossier`) |
 
 ---
 
-## 3. Subsystem Architecture & Key Contracts
+## 2. Blast-Radius Triage & Execution Protocol
 
-Consult [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full 3D scene graph dataflow diagram, TypeScript interface contracts, and exhaustive file layout (`src/types/`, `src/utils/cosmicMath/`, `src/store/`, `src/workers/`, `src/hooks/`, `src/components/`).
+Match your workflow to the task's blast radius instead of applying heavyweight ceremony to trivial tasks or cowboy-coding complex ones:
 
-- **Pure Mathematical Engine (`src/utils/cosmicMath/`)**: Deterministic functions free of React state, UI tokens, or unparameterized `new Date()`. Conforms strictly to [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
-- **External Chronometer Store (`src/store/cosmicStore.ts`)**: Decouples 60 FPS animation ticking from React render trees via `useSyncExternalStore` with memoized selectors (`useChronometerStore(s => s.timeOfDay)`).
-- **Atomic Hover Store (`src/store/hoverStore.ts`)**: Isolates high-frequency ribbon scrubber state (`hoverTime`, `hoverDate`, `setHoverState`, `setHoverTime`, `setHoverDate`), preventing 60 FPS cascades across unhovered widgets.
-- **Web Worker Ephemeris Processing (`src/workers/`)**: Multiplexes requests via `ephemerisWorkerManager.ts` with 100ms trailing-edge flag-merging throttling, monotonic `requestId` stamping, mount-time LRU cache seeding, and synchronous fallback (`workerFallback.ts`).
-- **Unified 3D Scene Graph & Primitives**: `useCosmicScene()` and `useHeliocentricScene()` drive Macro Orbit, Eclipse Demonstrator (`LiveSyzygyView.tsx` + `NodalPlaneVisualizer.tsx`), and Gyro-Morph Armillary. `<MiniGlobe />` and `<MiniMoon />` self-contain their 3D orientation and terminator clipping.
-- **Fault-Tolerant Window Grid (`DashboardWindow.tsx`)**: Every lazy-loaded widget is wrapped in `WindowErrorBoundary.tsx` with dynamic chunk retry recovery.
+| Tier | Scope / Blast Radius | Execution & Delegation Protocol | Verification Requirement |
+| :--- | :--- | :--- | :--- |
+| **Tier 1: Micro / Read-Only** | Q&A, diagnostics, docs, or localized fix in $\le 2$ files within one subsystem | Execute directly in the parent context. No Plan Artifact or Human Gate required prior to edit. | Targeted `npx vitest run <suite>` + `npm run verify` if code changed |
+| **Tier 2: Scoped Feature / Fix** | Single-subsystem feature or bugfix spanning $2\text{–}5$ files without contract breaks | State a concise inline plan. Delegate noisy test/build loops or multi-file edits to a worker subagent to keep parent context clean. | Targeted suite + `npm run verify` (+ `npm run sync:docs` if test counts changed) |
+| **Tier 3: Architectural / Core Math** | Cross-subsystem refactor, new widget, worker RPC change, or `cosmicMath` algorithm change | **3-Phase Human Gate Lifecycle**:<br>1. **Plan**: Create Implementation Plan Artifact & pause at **HUMAN GATE**.<br>2. **Execute**: Isolate phase execution in subagent sandboxes.<br>3. **Review**: Run `npm run verify` & present Walkthrough Artifact. | Full `npm run verify` + benchmark/adversarial suites + `npm run sync:docs` |
 
----
-
-## 4. Agent Operating Protocols & Subagent Delegation
-
-### A. Manager-Worker Pattern
-- **Orchestrator Role**: The primary agent acts as the **Lead Architect / Orchestrator**. Delegate implementation, noisy terminal runs, diagnostics, and multi-file edits to specialized worker subagents.
-- **Context Hygiene**: Never execute broad file rewrites or heavy terminal commands directly in the parent context. Isolate diagnostic scans, lint runs, and test executions within subagent sandboxes.
-- **Verification Before Completion**: No task is complete without passing `npm run verify` (`typecheck`, `lint:units`, `vitest`, and `build` in serial).
-- **No Automatic Commits Rule**: Never commit changes to git automatically. Present changes and verification results first, and only execute `git commit` when the user explicitly says `'commit'`.
-
-### B. Subagent Delegation & Core Invariants
-- **Strict SSoT Boundary Invariant**: Each document possesses an exclusive, non-overlapping single responsibility. Never duplicate architectural diagrams, file trees, or runtime contracts into `AGENTS.md` or `PROJECT.md`. When system structure changes, update [`ARCHITECTURE.md`](ARCHITECTURE.md) directly rather than writing ad-hoc summaries elsewhere.
-- **Nominal Branded Units Guardrail**: Never modify `src/types/units.ts` without running `npm test` and `npm run typecheck`. Bridge presentation types (`Latitude`, `Longitude`) into math routines via `latToRadians(lat)`, `lonToRadians(lon)`, or `toRadians(asDegrees(lat))`—never use raw casts (`as unknown as Radians`).
-- **UI Unit Safety AST Guardrail**: Presentation components under `src/components/**` must never import or call `asDegrees()` or `asRadians()` (`npm run lint:units` / `src/types/unitSafety.test.ts`).
-- **Barrel Export Integrity**: Never modify barrel exports (`index.ts`) without verifying zero circular dependencies or type-only export breaks.
-- **Mathematical Provenance Guardrail**: Never delete, minify, or rewrite comments citing Jean Meeus chapter references or IAU standard models in `src/utils/cosmicMath/`.
-- **Temporal Purity & J2000 Standardization**: Pure math modules (`src/utils/cosmicMath/**`) must never instantiate unparameterized `new Date()`. Components and hooks must use immutable `J2000_DATE` (`2451545.0`) instead of `= new Date()` default parameters.
-- **`< 0.8 ms` Hot-Loop Latency Budget**: Armillary model generation must compute frames in $< 0.8\text{ ms}$ on average across 1,000 frames (`armillaryBenchmark.test.ts`). Reuse cached 3x3 Euler matrices and single-pass SVG path streaming without per-frame object allocations.
-- **Documentation Synchronization & Context Budget**: Keep `README.md`, `ARCHITECTURE.md`, `PROJECT.md`, `AGENTS.md`, and `docs/` synchronized. Maintain `AGENTS.md` strictly $\le 18\text{ KB}$ (enforced by `unitSafety.test.ts` and `syncDocMetrics.mjs`).
+- **No Automatic Commits**: Never run `git commit` unless the user explicitly instructs `'commit'`.
 
 ---
 
-## 5. Phased Execution & Human Gates
+## 3. File-Glob Action & Test Router
 
-All complex architectural changes and feature additions follow a structured 3-phase lifecycle:
+When modifying files matching a glob below, enforce its invariant and run its targeted test suite before running `npm run verify`:
 
-1. **Plan Phase**: Analyze requirements, generate an **Implementation Plan Artifact**, and pause at a **HUMAN GATE** for explicit confirmation before modifying code.
-2. **Execution Phase**: Execute one phase at a time in an isolated subagent sandbox, verifying each phase before advancing.
-3. **Verification & Review Phase**: Run `npm run verify`, produce a **Verification Walkthrough Artifact**, and pause at a **HUMAN GATE** for review. Only commit when explicitly instructed.
-
----
-
-## 6. Coding Standards, Architectural Invariants & Testing
-
-### A. Code Standards & Refactoring Invariants
-1. **Modernize Deprecations**: Use modern React 19 paradigms and Tailwind v4 CSS directives when touching files.
-2. **Modularity & Clean Architecture**: Ensure single responsibility per module and zero circular imports.
-3. **Strict Type & Linter Integrity**: Zero tolerance for suppressed type errors, unchecked assertions, or disabled linters (`npm run typecheck`).
-4. **No Regressions**: All unit tests must pass on every modification. Add unit tests to the appropriate domain suite when extending functionality.
-5. **React 19 Directives**:
-   - **Direct `ref` Passing**: Pass `ref` as a standard prop; never use deprecated `React.forwardRef()`.
-   - **Data Flow & Store Invariants**: Maintain stable selector references in `useSyncExternalStore` for 60 FPS ticker loops; do not place Suspense boundaries on per-frame hot paths.
-   - **Memoization Hygiene**: Keep pure mathematical routines in `src/utils/cosmicMath/` as standalone top-level functions without unnecessary `useCallback`/`useMemo` wrappers outside render loops.
-
-### B. Testing & Mocking Standards
-- **Vitest Mocking**: Mock `Worker` and `ephemerisWorkerManager` with deterministic synchronous responses for hook tests; mock `requestAnimationFrame` with timer stubs for store tests; mock `localStorage` for layout tests.
-- **Floating-Point Precision**: Use `expect(val).toBeCloseTo(expected, 4)` for astronomical calculations (or `2` decimal places for empirical angles/distances).
-
-### C. AI Pair-Programming Invariants & Cognitive Guardrails
-1. **Zero Ad-Hoc Math Re-implementation**: Import canonical IAU/Meeus algorithms and constants from `src/utils/cosmicMath/` and `astroConstants.ts`.
-2. **Zero Lossy Constant Rounding**: Never hardcode magic numbers (`23.44`, `5.14`); use `EARTH_AXIAL_OBLIQUITY_J2000_DEG` and `MOON_ORBIT_INCLINATION_DEG`.
-3. **Zero High-Frequency React State**: Route 60 FPS animation and ribbon scrubbing exclusively through `cosmicStore` or `hoverStore`.
-4. **Direct Execution Over Brittle Mocking**: Invoke deterministic math utilities directly in tests rather than mocking them.
-5. **Targeted Subsystem Routing**: For fast feedback, consult the Subsystem Task Routing Matrix in [`ARCHITECTURE.md#5-subsystem-task-routing-matrix`](ARCHITECTURE.md#5-subsystem-task-routing-matrix) to run targeted test suites (`npx vitest run <file>`) before executing `npm run verify`.
+| File Glob | SSoT Reference | Fast Targeted Vitest Command | Subsystem Invariant |
+| :--- | :--- | :--- | :--- |
+| `src/types/**` | [`ARCHITECTURE.md`](ARCHITECTURE.md) | `npx vitest run unitSafety.test.ts` | Preserve Symbol brands (`Degrees`, `Radians`, `JulianDate`, `JulianCenturies`) & `NotRadians`/`NotDegrees` guards |
+| `src/utils/cosmicMath/{core,solar,lunar,eclipse,globe,projection,terminatorTracks}.ts` | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | `npx vitest run {core,solar,lunar,eclipse,globe,projection,terminatorTracks}.test.ts domainInvariants.test.ts` | 100% pure functions; preserve Jean Meeus / IAU citations; import constants from `astroConstants.ts` |
+| `src/utils/cosmicMath/scene/**` | [`ARCHITECTURE.md`](ARCHITECTURE.md) | `npx vitest run scene.test.ts cameras.stress.test.ts m1_adversarial.test.ts` | Single 3D geometric truth across Heliocentric, Geocentric & Topocentric frames |
+| `src/utils/cosmicMath/armillary/**` | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | `npx vitest run armillary.test.ts armillaryBenchmark.test.ts m3_adversarial.test.ts armillaryMorph.test.ts armillaryStereographic.test.ts` | **$< 0.8\text{ ms/frame}$ hot-loop budget** across 1,000 frames; reuse cached 3x3 Euler matrices; zero per-frame heap churn |
+| `src/utils/cosmicMath/today/**` | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | `npx vitest run todaySky.test.ts` | Polar clamping & iterative rise/set / meridian swath continuity |
+| `src/store/**` | [`ARCHITECTURE.md`](ARCHITECTURE.md) | `npx vitest run cosmicStore.test.ts hoverStore.test.ts` | Route 60 FPS ticking through `cosmicStore` and ribbon scrubbing through `hoverStore` (`useSyncExternalStore`) |
+| `src/workers/**`, `src/hooks/**` | [`ARCHITECTURE.md`](ARCHITECTURE.md) | `npx vitest run useCosmicEngine.test.ts useCosmicScene.test.ts useEphemerisWorker.test.ts workerSanitizers.test.ts workerFallback.test.ts` | Maintain 100ms trailing-edge flag-merging throttling, monotonic `requestId` stamps, and `workerFallback.ts` parity |
+| `src/components/widgets/today/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run TodayWidget.test.tsx SkyDomeBase.test.tsx SkyDomeHooksAndPrimitives.test.tsx meridianConfigHelpers.test.ts` | Shared `SkyDomeBase` (`260x120`) and `MeridianDomeBase` view-model contracts |
+| `src/components/widgets/armillary/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run ArmillaryWidget.test.tsx useStagedCamera.test.ts m2_adversarial.test.ts useArmillaryInteractions.test.ts ArmillaryBeadsLayer.test.tsx ArmillaryControls.test.tsx` | 2-phase camera staging ($\lambda = 0.45$ pole lock) & depth stroke unification ($\lambda \in [0.85, 1.0]$) |
+| `src/components/widgets/{solar,lunar,eclipse,terminator,macro,tides}/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run {SolarWidget,LunarWidget,EclipseWidget,TerminatorMap,MacroOrbitWidget,TidesWidget}.test.tsx` | Use `<MiniGlobe />` and `<MiniMoon />` primitives; wrap widgets in `WindowErrorBoundary` |
+| `src/components/{common,controls,layout}/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run MiniGlobe.test.tsx MiniMoon.test.tsx controls.test.tsx DashboardWindow.test.tsx layout.test.tsx App.test.tsx` | Use `useId()` for SVG `<clipPath>`/`<mask>` IDs to prevent DOM collisions across multi-instance globes/moons |
 
 ---
 
-## 7. Design System & UX Principles
+## 4. Enforced AST & Runtime Guardrails (`DO` vs. `NEVER`)
 
-All semantic colors (Sky Blue for observer/ascending node, Rose Red for descending node, Amber for subsolar/daylight), vector stroke encodings, and glassmorphic telemetry rules are canonically defined in [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
-- **Smallest Effective Difference (SED)**: Render high-density astronomical data with minimal visual clutter, subtle contrast gradations, muted coordinate grids, and clean vector geometry.
-- **Progressive Disclosure**: Keep primary viewports clean and glanceable; expose rich ephemeris telemetry via hover tooltips, scrubbers, and modal popovers.
-- **Affordance Clarity & Window Hierarchy**: Interactive controls must present unambiguous visual affordances (`cursor-pointer`, `cursor-crosshair`, hover highlights). Widgets remain unbordered and flush within `DashboardWindow`.
+The following four guardrails are **programmatically enforced by `npm run lint:units` and `src/types/unitSafety.test.ts`**. Violating any of them will fail the build:
+
+### Guardrail 1: UI Nominal Unit Boundary (`src/components/**`)
+Presentation components must never import or call raw nominal assertion wrappers (`asDegrees`, `asRadians`). Route all angular conversions through verified gatekeepers (`toRadians`, `toDegrees`, `latToRadians`, `lonToRadians`) or consume pre-branded fields from math hooks.
+- ❌ **NEVER** in `src/components/**`:
+  ```ts
+  import { asDegrees, asRadians } from '../../types/units'; // AST Violation!
+  const angle = asDegrees(rawInput);                        // AST Violation!
+  const dirty = rawLat as unknown as Radians;               // Forbidden type cast!
+  ```
+- ✅ **DO** in `src/components/**`:
+  ```ts
+  import { latToRadians, toRadians } from '../../types/units';
+  const phiRad = latToRadians(latitude); // Safely bridges Latitude -> Radians
+  const thetaRad = toRadians(45);        // Safely converts unbranded number -> Radians
+  ```
+
+### Guardrail 2: Pure Mathematical Engine (`src/utils/cosmicMath/**`)
+Domain math modules must remain 100% deterministic, stateless, and decoupled from React, UI components, Tailwind tokens, and wall-clock time.
+- ❌ **NEVER** in `src/utils/cosmicMath/**`:
+  ```ts
+  import { useMemo } from 'react';             // AST Violation: React import in math module!
+  const color = 'stroke-amber-400';            // AST Violation: Tailwind token in math module!
+  const now = new Date();                      // AST Violation: Unparameterized new Date()!
+  const tilt = 23.44;                          // Cognitive Violation: Lossy magic constant!
+  ```
+- ✅ **DO** in `src/utils/cosmicMath/**`:
+  ```ts
+  import { EARTH_AXIAL_OBLIQUITY_J2000_DEG, J2000_DATE } from './astroConstants';
+  export function computeDeclination(jd: JulianDate): Degrees { /* pure Meeus math */ }
+  ```
+
+### Guardrail 3: Prop Identity Stability (`src/components/**`, `src/hooks/**`)
+Default parameter allocations like `= new Date()` create a fresh object reference on every render, breaking `useMemo`/`React.memo` and triggering 60 FPS worker/render cascades.
+- ❌ **NEVER** in `src/components/**` or `src/hooks/**`:
+  ```ts
+  export function useSolarData(date: Date = new Date()) { ... } // AST Violation!
+  ```
+- ✅ **DO** in `src/components/**` or `src/hooks/**`:
+  ```ts
+  import { J2000_DATE } from '../utils/cosmicMath/astroConstants';
+  export function useSolarData(date: Date = J2000_DATE) { ... }
+  ```
+
+### Guardrail 4: React 19 & 60 FPS Render Hygiene
+- **High-Frequency State Isolation**: Never drive 60 FPS animation frames or ribbon hover scrubbing via React `useState` in top-level containers. Subscribe granularly via `useChronometerStore(s => s.timeOfDay)` (`src/store/cosmicStore.ts`) or `useHoverStore(s => s.hoverTime)` (`src/store/hoverStore.ts`).
+- **React 19 Direct `ref` Prop**: Pass `ref` as a standard prop on function components; never use deprecated `React.forwardRef()`.
+- **Vitest Precision & Mocking**: Invoke deterministic `cosmicMath` functions directly in tests (never mock pure math). Assert floating-point astronomy results with `expect(val).toBeCloseTo(expected, 4)` (or `2` for empirical angles/distances). Mock `ephemerisWorkerManager`, `requestAnimationFrame`, and `localStorage` in hook/layout tests.
+
+---
+
+## 5. Pre-Completion Verification Checklist
+
+Before declaring any code or documentation task complete:
+1. Run `npm run verify` (`typecheck` $\rightarrow$ `lint:units` $\rightarrow$ `vitest` $\rightarrow$ `build`) and confirm **0 errors**.
+2. If you added, removed, or renamed any unit tests, run `npm run sync:docs` so `README.md` and `AGENTS.md` test counters stay synchronized.
+3. Ensure `AGENTS.md` remains strictly within `5.0 KB – 18.0 KB` (`unitSafety.test.ts`).
+4. Present verification results clearly and wait for explicit user instruction before committing.
