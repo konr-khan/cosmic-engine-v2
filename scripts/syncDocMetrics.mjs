@@ -577,7 +577,50 @@ if (fs.existsSync(architecturePath)) {
 }
 
 // ==========================================
-// 4. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md (Opt-in via --dossier)
+// 4. Synchronize Quick Index Line Ranges (MATH_SPEC.md & DESIGN_SYSTEM.md)
+// ==========================================
+function syncSpecSectionLineRanges(specPath, label) {
+  if (!fs.existsSync(specPath)) return;
+  const rawContent = fs.readFileSync(specPath, 'utf8');
+  const eol = rawContent.includes('\r\n') ? '\r\n' : '\n';
+  const lines = rawContent.split(/\r?\n/);
+  const totalLines = lines.length;
+
+  const headers = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^## (\d+)\.\s+/);
+    if (m) {
+      headers.push({ secNum: m[1], startLine: i + 1 });
+    }
+  }
+  if (headers.length === 0) return;
+
+  const rangeBySec = new Map();
+  for (let i = 0; i < headers.length; i++) {
+    const startLine = headers[i].startLine;
+    const endLine = i + 1 < headers.length ? headers[i + 1].startLine - 1 : totalLines;
+    rangeBySec.set(headers[i].secNum, `L${startLine}–L${endLine}`);
+  }
+
+  const updatedLines = lines.map(line =>
+    line.replace(
+      /^(\|\s*\*\*\[(\d+)\.\s+[^\]]+\]\([^)]+\)\*\*\s*\|\s*)`L\d+[–-]L\d+`(\s*\|.*)$/,
+      (match, prefix, secNum, suffix) => {
+        const rangeStr = rangeBySec.get(secNum);
+        return rangeStr ? `${prefix}\`${rangeStr}\`${suffix}` : match;
+      }
+    )
+  );
+
+  fs.writeFileSync(specPath, updatedLines.join(eol), 'utf8');
+  console.log(`✔ ${label} Quick Index line ranges (Lxx–Lyy) synchronized (${headers.length} sections).`);
+}
+
+syncSpecSectionLineRanges(path.join(rootDir, 'docs', 'MATH_SPEC.md'), 'docs/MATH_SPEC.md');
+syncSpecSectionLineRanges(path.join(rootDir, 'docs', 'DESIGN_SYSTEM.md'), 'docs/DESIGN_SYSTEM.md');
+
+// ==========================================
+// 5. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md (Opt-in via --dossier)
 // ==========================================
 const shouldCompileDossier = process.argv.includes('--dossier');
 if (shouldCompileDossier) {

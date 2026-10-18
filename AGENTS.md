@@ -7,7 +7,8 @@ This file is the always-loaded operational kernel for AI agents working in **Cos
 ## 1. Single Source of Truth (SSoT) & Command Matrix
 
 > [!IMPORTANT]
-> **Strict Zero-Duplication Rule**: Never duplicate architecture diagrams, file trees, math formulas, or feature ledgers across documents. Read and update the exclusive SSoT for your target domain:
+> - **Strict Zero-Duplication Rule**: Never duplicate architecture diagrams, file trees, math formulas, or feature ledgers across documents. Read and update the exclusive SSoT for your target domain.
+> - **In-Place SSoT Mutation Rule**: Living specifications (`ARCHITECTURE.md`, `docs/MATH_SPEC.md`, `docs/DESIGN_SYSTEM.md`) describe *current state only*, never chronological evolution. When modifying behavior, **edit the existing section in-place** rather than appending new subsections at the bottom. Record chronological history exclusively in `PROJECT.md` and `docs/adr/`.
 
 | Domain | Authoritative SSoT | When to Consult / Update |
 | :--- | :--- | :--- |
@@ -28,7 +29,7 @@ This file is the always-loaded operational kernel for AI agents working in **Cos
 | `npm run lint:units` | **AST guardrail linter** (`scripts/lintUnitSafety.mjs`) — checks UI unit safety, math purity, `= new Date()` ban & `AGENTS.md` size budget (`5–18 KB`) |
 | `npm run typecheck` | **Strict compiler check** (`tsc --noEmit`) — verifies nominal branded unit types and barrel exports |
 | `npm run verify` | **Mandatory pre-completion gate** — runs `typecheck`, `lint:units`, `vitest`, and `build` in serial |
-| `npm run sync:docs` | **Test metric synchronizer** (`scripts/syncDocMetrics.mjs`) — run whenever adding, removing, or renaming Vitest tests |
+| `npm run sync:docs` | **Documentation & metric synchronizer** (`scripts/syncDocMetrics.mjs`) — updates test counts, `Lxx–Lyy` spec index ranges & `F#`/`M#`/`ADR` ledgers |
 | `npm run sync:dossier` | Compiles `docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md` on demand (`--dossier`) |
 
 ---
@@ -124,6 +125,6 @@ Default parameter allocations like `= new Date()` create a fresh object referenc
 
 Before declaring any code or documentation task complete:
 1. Run `npm run verify` (`typecheck` $\rightarrow$ `lint:units` $\rightarrow$ `vitest` $\rightarrow$ `build`) and confirm **0 errors**.
-2. If you added, removed, or renamed any unit tests, run `npm run sync:docs` so `README.md` and `AGENTS.md` test counters stay synchronized.
+2. If you modified unit tests, living specifications (`MATH_SPEC.md`, `DESIGN_SYSTEM.md`), or project ledgers (`PROJECT.md`, `docs/adr/`), run `npm run sync:docs` so test counters, `Lxx–Lyy` section line ranges, and ledger ranges stay synchronized.
 3. Ensure `AGENTS.md` remains strictly within `5.0 KB – 18.0 KB` (`unitSafety.test.ts`).
 4. Present verification results clearly and wait for explicit user instruction before committing.
