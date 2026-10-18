@@ -371,30 +371,40 @@ const CANONICAL_SUITES = [
   }
 ];
 
-// Strict validation: every test suite discovered by Vitest must be registered in CANONICAL_SUITES
-const canonicalBasenames = new Set(CANONICAL_SUITES.map(s => path.basename(s.file)));
+// Strict bidirectional validation: every discovered test suite must exist in CANONICAL_SUITES, and every entry in CANONICAL_SUITES must exist on disk
+const canonicalPaths = new Set(CANONICAL_SUITES.map(s => s.file));
 const unmappedSuites = [];
-for (const suite of metricsData.testResults) {
-  const norm = suite.name.replace(/\\/g, '/');
-  const base = path.basename(norm);
-  if (!canonicalBasenames.has(base)) {
-    unmappedSuites.push(base);
+for (const relPath of fileMap.keys()) {
+  if (!canonicalPaths.has(relPath)) {
+    unmappedSuites.push(relPath);
   }
 }
-if (unmappedSuites.length > 0) {
-  console.error(`❌ Unregistered test suite(s) detected: ${unmappedSuites.join(', ')}`);
-  console.error('Please register all test suites in CANONICAL_SUITES in scripts/syncDocMetrics.mjs.');
+const staleSuites = [];
+for (const suite of CANONICAL_SUITES) {
+  if (!fileMap.has(suite.file)) {
+    staleSuites.push(suite.file);
+  }
+}
+if (unmappedSuites.length > 0 || staleSuites.length > 0) {
+  if (unmappedSuites.length > 0) {
+    console.error(`❌ Unregistered test suite(s) detected: ${unmappedSuites.join(', ')}`);
+  }
+  if (staleSuites.length > 0) {
+    console.error(`❌ Stale/missing test suite(s) in CANONICAL_SUITES: ${staleSuites.join(', ')}`);
+  }
+  console.error('Please keep CANONICAL_SUITES in scripts/syncDocMetrics.mjs in 1:1 sync with test files.');
   process.exit(1);
 }
-console.log(`✔ All ${totalFiles} test suites verified registered in CANONICAL_SUITES.`);
+console.log(`✔ All ${totalFiles} test suites verified 1:1 with CANONICAL_SUITES.`);
 
 // ==========================================
 // Automated Feature, Milestone & ADR Ledger Extraction
 // ==========================================
 let latestFeatureNum = 0;
 let latestMilestoneNum = 0;
+let projectContent = '';
 if (fs.existsSync(projectPath)) {
-  const projectContent = fs.readFileSync(projectPath, 'utf8');
+  projectContent = fs.readFileSync(projectPath, 'utf8');
   const featureMatches = [...projectContent.matchAll(/\|\s*F(\d+)\s*\|/g)];
   for (const m of featureMatches) {
     const n = parseInt(m[1], 10);
@@ -421,6 +431,26 @@ if (fs.existsSync(adrDir)) {
 
 const latestAdrStr = String(latestAdrNum).padStart(4, '0');
 console.log(`📋 SSoT Ledger Metrics: Features F1–F${latestFeatureNum}, Milestones M1–M${latestMilestoneNum}, ADRs 0001–${latestAdrStr}.`);
+
+// ==========================================
+// 0. Synchronize PROJECT.md Header & Footer Ranges
+// ==========================================
+if (projectContent) {
+  projectContent = projectContent.replace(
+    /Feature Inventory \(`F1[–-]F\d+`\)\*\* and \*\*Milestone & Phase Matrix \(`M1[–-]M\d+`\)/g,
+    `Feature Inventory (\`F1–F${latestFeatureNum}\`)** and **Milestone & Phase Matrix (\`M1–M${latestMilestoneNum}\`)`
+  );
+  projectContent = projectContent.replace(
+    /### Recent Milestones \(M21[–-]M\d+\)/g,
+    `### Recent Milestones (M21–M${latestMilestoneNum})`
+  );
+  projectContent = projectContent.replace(
+    /\(`0001` through `\d{4}`\)/g,
+    `(\`0001\` through \`${latestAdrStr}\`)`
+  );
+  fs.writeFileSync(projectPath, projectContent, 'utf8');
+  console.log('✔ PROJECT.md header & footer ledger ranges synchronized.');
+}
 
 // ==========================================
 // 1. Synchronize AGENTS.md

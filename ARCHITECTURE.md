@@ -49,8 +49,8 @@ Cosmic Engine V2.0 executes a decoupled dual-pipeline architecture: a **60 FPS R
         │ • Today's Horizon Dome (`TodayHorizonView`)   │         │ • Heliocentric Macro Orbit (`MacroOrbitView`)│
         │ • Solar Almanac (`SolarAlmanacCard`)         │         │ • Eclipse Demonstrator (`EclipseDemonstrator`)│
         │ • Lunar Almanac (`LunarAlmanacCard`)         │         │ • Gyro-Morph Armillary (`GyroArmillaryView`) │
-        │ • Daylight Terminator Map (`TerminatorMap`)  │         │ • Micro-Tidal Force (`MicroTideView`)        │
-        │ • Astrolabe HUDs & Glassmorphic Controls     │         │ • Shared `<MiniGlobe />` & `<MiniMoon />`    │
+        │ • Daylight Terminator Map (`TerminatorMap`)  │         │ • 2-Phase Camera Rigs (`useStagedCamera`)    │
+        │ • Micro-Tidal Force (`MicroTideView`)        │         │ • Shared `<MiniGlobe />` & `<MiniMoon />`    │
         └──────────────────────────────────────────────┘         └──────────────────────────────────────────────┘
 ```
 

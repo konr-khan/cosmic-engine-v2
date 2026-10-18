@@ -104,4 +104,4 @@ Automated AST unit safety linting, strict Single Source of Truth enforcement, an
 | ADR | Title | Milestone | Status | Key Focus |
 | :--- | :--- | :--- | :--- | :--- |
 | [0042](0042-documentation-sweep-and-architecture-ssot-split.md) | Documentation Sweep & Architecture SSoT Split | M42 | Accepted | SSoT separation between `ARCHITECTURE.md`, `MATH_SPEC.md`, and `DESIGN_SYSTEM.md` |
-| [0043](0043-ai-native-documentation-indexing-and-automated-ledger-sync.md) | AI-Native Documentation Indexing & Automated Ledger Sync | M43 | Proposed | Section indexes, SSoT reconciliation, automated ledger metric sync |
+| [0043](0043-ai-native-documentation-indexing-and-automated-ledger-sync.md) | AI-Native Documentation Indexing & Automated Ledger Sync | M43 | Accepted | Section indexes, SSoT reconciliation, automated ledger metric sync |

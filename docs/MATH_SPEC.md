@@ -6,22 +6,22 @@ This document serves as the ground-truth mathematical reference for **Cosmic Eng
 
 ## ⚡ Quick Section & Module Index
 
-| Section | Focus / Mathematical Domain | Canonical TS Module(s) |
-| :--- | :--- | :--- |
-| **[1. Coordinate Systems](#1-astronomical-coordinate-systems)** | Alt-Az, Equatorial, Ecliptic coordinates & IAU obliquity drift | `src/types/coordinates.ts`, `core.ts` |
-| **[2. Temporal Epochs](#2-temporal-epochs--julian-date-computations)** | Julian dates, centuries, DOY, GMST, LST, ground track longitude | `src/utils/cosmicMath/core.ts` |
-| **[3. Solar Ephemeris](#3-solar-ephemeris--keplerian-orbital-dynamics)** | Solar declination, RA, Equation of Time, Keplerian distance & velocity | `src/utils/cosmicMath/solar.ts` |
-| **[4. Twilight Thresholds](#4-twilight-thresholds--exact-polar-bound-handling)** | Civil/Nautical/Astro twilight, polar night & midnight sun clamping | `src/utils/cosmicMath/solar.ts` |
-| **[5. Lunar Ephemeris](#5-high-precision-lunar-ephemeris-meeus-truncated-series)** | Meeus series, phase angle ($i$), illumination ($k$), Newton-Raphson node solver | `src/utils/cosmicMath/lunar.ts` |
-| **[6. Eclipse Geometry](#6-syzygy-eclipse-shadow-geometry)** | Umbra/penumbra cones, apparent radius ratio ($k$), axial sightline | `src/utils/cosmicMath/eclipse.ts` |
-| **[7. Gyro-Morph Armillary](#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections)** | 5-model continuum, stereographic/Rojas/horizon plates, 2-phase camera staging | `src/utils/cosmicMath/armillary/**` |
-| **[8. Tidal Gravity Vectors](#8-gravitational-tidal-vectors--syzygy-deformation)** | Alignment factor, spring/neap bulge deformation, 4-quadrant nodal orbit | `src/components/widgets/tides/hooks/useTideMath.ts` |
-| **[9. Apparent Diameters](#9-dynamic-ephemeris-distance--apparent-diameter-scaling)** | Subsolar (AU) and Sublunar (km) angular diameter scaling | `src/utils/cosmicMath/{solar,lunar}.ts` |
-| **[10. 3D Scene Graph](#10-unified-3d-astronomical-scene-graph--canonical-camera-rigs)** | Heliocentric/Geocentric/Topocentric frames, camera rigs, limb clipping | `src/utils/cosmicMath/scene/**`, `globe.ts` |
-| **[11. Astro Constants](#11-centralized-physical-astronomical-constants--temporal-purity-astroconstantsts)** | IAU/WGS-84/Meeus registry, epoch purity & J2000 date fixtures | `src/utils/cosmicMath/astroConstants.ts` |
-| **[12. Today's Sky Dome](#12-sky-dome-projection--diurnal-transit-kinematics-todayskyts)** | Diurnal paths, culmination bearings (`S`, `N`, `Z`), colure chords | `src/utils/cosmicMath/today/**` |
-| **[13. Great Meridian Ring & 3D Illumination](#13-great-meridian-ring--heliocentric-camera-space-illumination-geometry)** | $0^\circ/180^\circ$ Great Meridian, 3D subsolar vector, laser morph continuum | `src/components/common/MiniGlobe.tsx`, `armillary/**` |
-| **[14. Diurnal Ground Tracks](#14-diurnal-celestial-ground-tracks-antimeridian-seam-interpolation--gated-lunar-nodes)** | $\pm 12\text{h}$ subsolar/sublunar tracks, antimeridian seam wrapping, nodal gates | `src/utils/cosmicMath/terminatorTracks.ts` |
+| Section | Lines | Focus / Mathematical Domain | Canonical TS Module(s) |
+| :--- | :--- | :--- | :--- |
+| **[1. Coordinate Systems](#1-astronomical-coordinate-systems)** | `L28–L52` | Alt-Az, Equatorial, Ecliptic coordinates & IAU obliquity drift | `src/types/coordinates.ts`, `core.ts` |
+| **[2. Temporal Epochs](#2-temporal-epochs--julian-date-computations)** | `L53–L109` | Julian dates, centuries, DOY, GMST, LST, ground track longitude | `src/utils/cosmicMath/core.ts` |
+| **[3. Solar Ephemeris](#3-solar-ephemeris--keplerian-orbital-dynamics)** | `L110–L158` | Solar declination, RA, Equation of Time, Keplerian distance & velocity | `src/utils/cosmicMath/solar.ts` |
+| **[4. Twilight Thresholds](#4-twilight-thresholds--exact-polar-bound-handling)** | `L159–L232` | Civil/Nautical/Astro twilight, polar night & midnight sun clamping | `src/utils/cosmicMath/solar.ts` |
+| **[5. Lunar Ephemeris](#5-high-precision-lunar-ephemeris-meeus-truncated-series)** | `L233–L310` | Meeus series, phase angle ($i$), illumination ($k$), Newton-Raphson node solver | `src/utils/cosmicMath/lunar.ts` |
+| **[6. Eclipse Geometry](#6-syzygy-eclipse-shadow-geometry)** | `L311–L482` | Umbra/penumbra cones, apparent radius ratio ($k$), axial sightline | `src/utils/cosmicMath/eclipse.ts` |
+| **[7. Gyro-Morph Armillary](#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections)** | `L483–L812` | 5-model continuum, stereographic/Rojas/horizon plates, 2-phase camera staging | `src/utils/cosmicMath/armillary/**` |
+| **[8. Tidal Gravity Vectors](#8-gravitational-tidal-vectors--syzygy-deformation)** | `L813–L866` | Alignment factor, spring/neap bulge deformation, 4-quadrant nodal orbit | `src/components/widgets/tides/hooks/useTideMath.ts` |
+| **[9. Apparent Diameters](#9-dynamic-ephemeris-distance--apparent-diameter-scaling)** | `L867–L886` | Subsolar (AU) and Sublunar (km) angular diameter scaling | `src/utils/cosmicMath/{solar,lunar}.ts` |
+| **[10. 3D Scene Graph](#10-unified-3d-astronomical-scene-graph--canonical-camera-rigs)** | `L887–L1162` | Heliocentric/Geocentric/Topocentric frames, camera rigs, limb clipping | `src/utils/cosmicMath/scene/**`, `globe.ts` |
+| **[11. Astro Constants](#11-centralized-physical-astronomical-constants--temporal-purity-astroconstantsts)** | `L1163–L1205` | IAU/WGS-84/Meeus registry, epoch purity & J2000 date fixtures | `src/utils/cosmicMath/astroConstants.ts` |
+| **[12. Today's Sky Dome](#12-sky-dome-projection--diurnal-transit-kinematics-todayskyts)** | `L1206–L1651` | Diurnal paths, culmination bearings (`S`, `N`, `Z`), colure chords | `src/utils/cosmicMath/today/**` |
+| **[13. Great Meridian Ring & 3D Illumination](#13-great-meridian-ring--heliocentric-camera-space-illumination-geometry)** | `L1652–L1811` | $0^\circ/180^\circ$ Great Meridian, 3D subsolar vector, laser morph continuum | `src/components/common/MiniGlobe.tsx`, `armillary/**` |
+| **[14. Diurnal Ground Tracks](#14-diurnal-celestial-ground-tracks-antimeridian-seam-interpolation--gated-lunar-nodes)** | `L1812–L1896` | $\pm 12\text{h}$ subsolar/sublunar tracks, antimeridian seam wrapping, nodal gates | `src/utils/cosmicMath/terminatorTracks.ts` |
 
 ---
 

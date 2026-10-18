@@ -6,17 +6,17 @@ This document codifies the design language, color tokens, 2D vector stroke encod
 
 ## ⚡ Quick Section & Component Index
 
-| Section | Focus / Visual Domain | Primary UI Components |
-| :--- | :--- | :--- |
-| **[1. Color Semantics](#1-color-semantics--astronomical-meaning)** | Semantic color palette (Sky Blue, Rose Red, Amber, Slate, Twilight tiers) | All widgets (`src/components/**`) |
-| **[2. Vector Stroke Encodings](#2-2d--3d-vector-stroke--path-encodings)** | 2D/3D orbital curves, SED rules, `<MiniGlobe />`, `<MiniMoon />` primitives | `src/components/widgets/**`, `MiniGlobe.tsx`, `MiniMoon.tsx` |
-| **[3. Glassmorphic Popovers & HUDs](#3-glassmorphic-popover--hud-hierarchy)** | Micro-typography, contrast halos, telemetry badges, hover cards | `*HoverHud.tsx`, `DashboardWindow.tsx`, footers |
-| **[4. 12-Column Responsive Grid](#4-12-column-responsive-panoramic-grid--1-col--2-col-controls)** | Panoramic vs. standard cards, 1-Col/2-Col toggles, HTML5 drag-and-drop | `src/components/layout/**`, `DashboardWindow.tsx` |
-| **[5. Interaction & Cursor Grammar](#5-interaction-patterns--cursor-grammar)** | Cursor semantics, click-to-snap, scrubbing, wheel zoom, touch boundaries | `src/components/controls/**`, `useRibbonScrubber.ts` |
-| **[6. Tidal Gravity Micro-View](#6-earth--tidal-gravity-micro-view-nodal-conventions)** | 4-quadrant nodal orbit, CCW prograde orientation, tidal bulge potential | `src/components/widgets/tides/MicroTideView.tsx` |
-| **[7. Dual-Perspective Eclipse](#7-dual-perspective-eclipse-demonstrator-sizing--layout-parity)** | Viewport parity ($520 \times 220$), transverse profile & axial sightline | `src/components/widgets/eclipse/EclipseDemonstrator.tsx` |
-| **[8. Today's Horizon Domes](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)** | Symmetrical dome viewBox ($260 \times 138$), twilight strata, colures, swaths | `src/components/widgets/today/**`, `SkyDomeBase.tsx` |
-| **[9. Terminator Map Ground Tracks](#9-terminator-map-diurnal-ground-tracks--nodal-encodings)** | Diurnal $\pm 12\text{h}$ subsolar/sublunar paths, forward weighting, nodal beacons | `src/components/widgets/terminator/**` |
+| Section | Lines | Focus / Visual Domain | Primary UI Components |
+| :--- | :--- | :--- | :--- |
+| **[1. Color Semantics](#1-color-semantics--astronomical-meaning)** | `L23–L42` | Semantic color palette (Sky Blue, Rose Red, Amber, Slate, Twilight tiers) | All widgets (`src/components/**`) |
+| **[2. Vector Stroke Encodings](#2-2d--3d-vector-stroke--path-encodings)** | `L43–L222` | 2D/3D orbital curves, SED rules, `<MiniGlobe />`, `<MiniMoon />` primitives | `src/components/widgets/**`, `MiniGlobe.tsx`, `MiniMoon.tsx` |
+| **[3. Glassmorphic Popovers & HUDs](#3-glassmorphic-popover--hud-hierarchy)** | `L223–L245` | Micro-typography, contrast halos, telemetry badges, hover cards | `*HoverHud.tsx`, `DashboardWindow.tsx`, footers |
+| **[4. 12-Column Responsive Grid](#4-12-column-responsive-panoramic-grid--1-col--2-col-controls)** | `L246–L262` | Panoramic vs. standard cards, 1-Col/2-Col toggles, HTML5 drag-and-drop | `src/components/layout/**`, `DashboardWindow.tsx` |
+| **[5. Interaction & Cursor Grammar](#5-interaction-patterns--cursor-grammar)** | `L263–L281` | Cursor semantics, click-to-snap, scrubbing, wheel zoom, touch boundaries | `src/components/controls/**`, `useRibbonScrubber.ts` |
+| **[6. Tidal Gravity Micro-View](#6-earth--tidal-gravity-micro-view-nodal-conventions)** | `L282–L306` | 4-quadrant nodal orbit, CCW prograde orientation, tidal bulge potential | `src/components/widgets/tides/MicroTideView.tsx` |
+| **[7. Dual-Perspective Eclipse](#7-dual-perspective-eclipse-demonstrator-sizing--layout-parity)** | `L307–L331` | Viewport parity ($520 \times 220$), transverse profile & axial sightline | `src/components/widgets/eclipse/EclipseDemonstrator.tsx` |
+| **[8. Today's Horizon Domes](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)** | `L332–L397` | Symmetrical dome viewBox ($260 \times 138$), twilight strata, colures, swaths | `src/components/widgets/today/**`, `SkyDomeBase.tsx` |
+| **[9. Terminator Map Ground Tracks](#9-terminator-map-diurnal-ground-tracks--nodal-encodings)** | `L398–L429` | Diurnal $\pm 12\text{h}$ subsolar/sublunar paths, forward weighting, nodal beacons | `src/components/widgets/terminator/**` |
 
 ---
 
