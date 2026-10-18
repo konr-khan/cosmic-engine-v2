@@ -3,6 +3,10 @@
 ## Status
 Accepted
 
+> [!NOTE]
+> **Evolutionary Amendment Banner (Post-ADR 0024 Analemma Retirement)**:
+> Note that `useAnalemma` was subsequently retired across the engine (see [ADR 0029](0029-60fps-chronometer-cascade-fix-and-widget-render-decoupling.md)). Physical Equation of Time ($EOT$) is evaluated unconditionally in `src/utils/cosmicMath/frame.ts`, and the frame cache key now strictly depends on `(jd, latitude, longitude)`.
+
 ## Context
 Following Milestone M23, Cosmic Engine V2.0 achieved mathematical precision and design system alignment across all observatory windows. However, a rigorous architectural audit of animation loops, worker synchronization, and component boundaries revealed six latency, purity, and coverage bottlenecks:
 

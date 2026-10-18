@@ -4,7 +4,7 @@ Welcome to the authoritative structural blueprint for **Cosmic Engine V2.0**. Th
 
 > [!NOTE]
 > - For agent operating protocols, coding standards, and cognitive guardrails, consult [`AGENTS.md`](AGENTS.md).
-> - For the historical Feature Inventory (`F1–F87`) and Milestone Matrix (`M1–M42`), consult [`PROJECT.md`](PROJECT.md).
+> - For the historical Feature Inventory (`F1–F88`) and Milestone Matrix (`M1–M43`), consult [`PROJECT.md`](PROJECT.md).
 > - For astronomical equations and coordinate transformations, consult [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
 > - For semantic color tokens and SVG vector stroke encodings, consult [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
 
@@ -12,51 +12,46 @@ Welcome to the authoritative structural blueprint for **Cosmic Engine V2.0**. Th
 
 ## 1. System Topology & Dataflow Diagram
 
-A unified, hierarchical 3D astronomical scene graph engine establishing a single geometric source of truth across Macro Orbit, Eclipse Demonstrator, and Gyro-Morph Armillary.
+Cosmic Engine V2.0 executes a decoupled dual-pipeline architecture: a **60 FPS Reactive Chronometer & Web Worker Ephemeris Pipeline** driving 2D horizon visualizers and HUD controls, alongside a **Hierarchical 3D Scene Graph Engine** providing a single geometric source of truth across 3D visualizers.
 
 ```
-                  ┌──────────────────────────────────────────────┐
-                  │          Meeus Ephemeris Core                │
-                  │   (Solar / Lunar / Planetary Algorithms)     │
-                  └──────────────────────┬───────────────────────┘
-                                         │
-                                         ▼
-                  ┌──────────────────────────────────────────────┐
-                  │         generateCosmicScene(params)          │
-                  │   • Heliocentric Ecliptic Frame (J2000)      │
-                  │   • Geocentric Ecliptic Frame                │
-                  │   • Geocentric Equatorial & Inertial Tilt    │
-                  │   • Terrestrial Topocentric Frame            │
-                  │   • Scale Modes: 'true' (e=0.0167) vs        │
-                  │                  'exaggerated' (e=0.25)      │
-                  │   • 6 Seasonal Milestones & Lunar Orbit 5.14°│
-                  │   • Umbra / Penumbra Syzygy Shadow Cones     │
-                  └──────────────────────┬───────────────────────┘
-                                         │
-                   ┌─────────────────────┼─────────────────────┐
-                   ▼                     ▼                     ▼
-        ┌─────────────────────┐┌───────────────────┐┌───────────────────┐
-        │projectHeliocentric  ││projectGeocentric  ││projectGeocentric  │
-        │      TopDown        ││    Transverse     ││      Axial        │
-        │(Top-down Helioc.)   ││(Side-on Syzygy)   ││(Sightline Miss)   │
-        └──────────┬──────────┘└─────────┬─────────┘└─────────┬─────────┘
-                   │                     │                    │
-                   ▼                     ▼                    ▼
-        ┌──────────────────────────────────────────────────────────────┐
-        │             Reactive Scene Hooks (`useCosmicScene.ts`)       │
-        │   • useCosmicScene() (Parameterized 3D Scene & Projections)  │
-        │   • useHeliocentricScene() (Top-down Heliocentric Selector)  │
-        └──────────────────────────────┬───────────────────────────────┘
-                                       │
-        ┌──────────────────────────────┼──────────────────────────────┐
-        ▼                              ▼                              ▼
-┌───────────────┐              ┌───────────────┐              ┌───────────────┐
-│Macro Orbit    │              │Eclipse        │              │Gyro-Morph     │
-│Widget         │              │Demonstrator   │              │Armillary      │
-│• OrbitSvg     │              │• LiveSyzygy   │              │• Armillary-   │
-│• MiniGlobe    │              │• NodalPlane   │              │  BeadsLayer   │
-│• Physics HUD  │              │• ShadowRays   │              │• MiniGlobe    │
-└───────────────┘              └───────────────┘              └───────────────┘
+                                 ┌──────────────────────────────────────────────────────────────┐
+                                 │                   Meeus Ephemeris Core                       │
+                                 │       `src/utils/cosmicMath/{core,solar,lunar,frame}.ts`     │
+                                 └──────────────┬───────────────────────────────┬───────────────┘
+                                                │                               │
+                        ┌───────────────────────┴──────┐         ┌──────────────┴────────────────────────┐
+                        ▼                              ▼         ▼                                       ▼
+        ┌──────────────────────────────────────────────┐         ┌──────────────────────────────────────────────┐
+        │ PIPELINE A: 60 FPS Store & Worker Engine     │         │ PIPELINE B: Hierarchical 3D Scene Graph      │
+        │ • 60 FPS Ticker (`cosmicStore.ts` rAF)       │         │ • generateCosmicScene(params)                │
+        │ • Atomic Scrubber (`hoverStore.ts`)          │         │ • Frames: Heliocentric / Geocentric / Topo   │
+        │ • Ephemeris Web Worker (100ms throttle)      │         │ • 6 Seasonal Milestones & 5.14° Lunar Orbit   │
+        │ • Deterministic Fallback (`workerFallback`)  │         │ • Analytical Umbra & Penumbra Shadow Cones   │
+        └──────────────────────┬───────────────────────┘         └──────────────────────┬───────────────────────┘
+                               │                                                        │
+                               ▼                                                        ▼
+        ┌──────────────────────────────────────────────┐         ┌──────────────────────────────────────────────┐
+        │ Hook Facade: `useCosmicEngine(params)`       │         │ Camera Rigs (`src/utils/cosmicMath/scene/`)   │
+        │ • Parameterized selective store selectors    │         │ • projectHeliocentricTopDown (Ecliptic)      │
+        │ • 1-entry frame memoization cache            │         │ • projectGeocentricTransverse (Syzygy)       │
+        │ • Synchronous warm cache bootstrap           │         │ • projectGeocentricAxial (Anti-Solar)        │
+        └──────────────────────┬───────────────────────┘         └──────────────────────┬───────────────────────┘
+                               │                                                        │
+                               │                                 ┌──────────────────────┴───────────────────────┐
+                               │                                 │ Scene Hooks (`useCosmicScene.ts`)            │
+                               │                                 │ • useCosmicScene()                           │
+                               │                                 │ • useHeliocentricScene()                     │
+                               │                                 └──────────────────────┬───────────────────────┘
+                               ▼                                                        ▼
+        ┌──────────────────────────────────────────────┐         ┌──────────────────────────────────────────────┐
+        │ 2D Presenters & Horizon Visualizers          │         │ 3D Celestial Visualizers                     │
+        │ • Today's Horizon Dome (`TodayHorizonView`)   │         │ • Heliocentric Macro Orbit (`MacroOrbitView`)│
+        │ • Solar Almanac (`SolarAlmanacCard`)         │         │ • Eclipse Demonstrator (`EclipseDemonstrator`)│
+        │ • Lunar Almanac (`LunarAlmanacCard`)         │         │ • Gyro-Morph Armillary (`GyroArmillaryView`) │
+        │ • Daylight Terminator Map (`TerminatorMap`)  │         │ • Micro-Tidal Force (`MicroTideView`)        │
+        │ • Astrolabe HUDs & Glassmorphic Controls     │         │ • Shared `<MiniGlobe />` & `<MiniMoon />`    │
+        └──────────────────────────────────────────────┘         └──────────────────────────────────────────────┘
 ```
 
 ---
@@ -160,12 +155,12 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `syncDocMetrics.mjs` — Automated Vitest suite counter and master documentation dossier compiler
 - `.gitattributes` — Standard line-ending normalization (`eol=lf`) and binary asset flags
 - `ARCHITECTURE.md` — System topology, runtime contracts, canonical code layout & task routing matrix
-- `PROJECT.md` — Historical Feature Inventory (`F1–F87`) & Milestone Matrix (`M1–M42`)
+- `PROJECT.md` — Historical Feature Inventory (`F1–F88`) and Milestone Matrix (`M1–M43`)
 - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0042`)
+  - `adr/` — Architecture Decision Records (`0001` through `0043`)
 
 ---
 
@@ -181,3 +176,4 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 | **Macro Orbit** | `scene/generator.ts`, `milestones.ts` | `useHeliocentricScene()` | `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `OrbitPhysicsHud.tsx` | `npx vitest run MacroOrbitWidget.test.tsx` |
 | **Gyro-Morph Armillary** | `armillary/{generator,projections}.ts` | `useArmillaryInteractions.ts`, `useStagedCamera.ts` | `GyroArmillaryView.tsx`, `ArmillarySvgCanvas.tsx`, `ArmillaryBeadsLayer.tsx` | `npx vitest run ArmillaryWidget.test.tsx` |
 | **Gravitational Tides** | `lunar.ts`, `projection.ts` | `useTideMath.ts` | `MicroTideView.tsx`, `MiniGlobe.tsx` | `npx vitest run TidesWidget.test.tsx` |
+| **Observatory Layout & Controls** | `useDashboardLayout.ts` | `useChronometerStore`, `useHoverStore` | `DashboardWindow.tsx`, `ObsNavbar.tsx`, `OrbitalChronometer.tsx`, `ControlRing.tsx`, `LatitudeSlider.tsx` | `npx vitest run controls.test.tsx DashboardWindow.test.tsx layout.test.tsx` |

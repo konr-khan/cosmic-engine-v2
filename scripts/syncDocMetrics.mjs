@@ -19,6 +19,9 @@ const rootDir = path.resolve(__dirname, '..');
 
 const readmePath = path.join(rootDir, 'README.md');
 const agentsPath = path.join(rootDir, 'AGENTS.md');
+const architecturePath = path.join(rootDir, 'ARCHITECTURE.md');
+const projectPath = path.join(rootDir, 'PROJECT.md');
+const adrDir = path.join(rootDir, 'docs', 'adr');
 const dossierPath = path.join(rootDir, 'docs', 'COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
 const tempJsonPath = path.join(rootDir, '.vitest-metrics.json');
 const vitestBinPath = path.join(rootDir, 'node_modules', 'vitest', 'vitest.mjs');
@@ -368,6 +371,57 @@ const CANONICAL_SUITES = [
   }
 ];
 
+// Strict validation: every test suite discovered by Vitest must be registered in CANONICAL_SUITES
+const canonicalBasenames = new Set(CANONICAL_SUITES.map(s => path.basename(s.file)));
+const unmappedSuites = [];
+for (const suite of metricsData.testResults) {
+  const norm = suite.name.replace(/\\/g, '/');
+  const base = path.basename(norm);
+  if (!canonicalBasenames.has(base)) {
+    unmappedSuites.push(base);
+  }
+}
+if (unmappedSuites.length > 0) {
+  console.error(`❌ Unregistered test suite(s) detected: ${unmappedSuites.join(', ')}`);
+  console.error('Please register all test suites in CANONICAL_SUITES in scripts/syncDocMetrics.mjs.');
+  process.exit(1);
+}
+console.log(`✔ All ${totalFiles} test suites verified registered in CANONICAL_SUITES.`);
+
+// ==========================================
+// Automated Feature, Milestone & ADR Ledger Extraction
+// ==========================================
+let latestFeatureNum = 0;
+let latestMilestoneNum = 0;
+if (fs.existsSync(projectPath)) {
+  const projectContent = fs.readFileSync(projectPath, 'utf8');
+  const featureMatches = [...projectContent.matchAll(/\|\s*F(\d+)\s*\|/g)];
+  for (const m of featureMatches) {
+    const n = parseInt(m[1], 10);
+    if (n > latestFeatureNum) latestFeatureNum = n;
+  }
+  const milestoneMatches = [...projectContent.matchAll(/\|\s*M(\d+)\s*\|/g)];
+  for (const m of milestoneMatches) {
+    const n = parseInt(m[1], 10);
+    if (n > latestMilestoneNum) latestMilestoneNum = n;
+  }
+}
+
+let latestAdrNum = 0;
+if (fs.existsSync(adrDir)) {
+  const adrFiles = fs.readdirSync(adrDir).filter(f => /^\d{4}-.*\.md$/.test(f));
+  for (const f of adrFiles) {
+    const m = f.match(/^(\d{4})-/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > latestAdrNum) latestAdrNum = n;
+    }
+  }
+}
+
+const latestAdrStr = String(latestAdrNum).padStart(4, '0');
+console.log(`📋 SSoT Ledger Metrics: Features F1–F${latestFeatureNum}, Milestones M1–M${latestMilestoneNum}, ADRs 0001–${latestAdrStr}.`);
+
 // ==========================================
 // 1. Synchronize AGENTS.md
 // ==========================================
@@ -380,22 +434,22 @@ if (fs.existsSync(agentsPath)) {
     `$1${totalFiles} modules, ${totalTests} tests)`
   );
 
-  // B. Directory tree file counts: supports complex names (cameras.stress.test.ts) and sub-clauses (13 tests: ...)
+  // B. Feature & Milestone ledger ranges
   agentsContent = agentsContent.replace(
-    /([a-zA-Z0-9_.-]+\.test\.[tj]sx?)(.*?)(\(\d+\s+tests?)(.*?\))/g,
-    (match, filename, middle, _countStr, suffix) => {
-      if (baseNameMap.has(filename)) {
-        const liveCount = baseNameMap.get(filename);
-        return `${filename}${middle}(${liveCount} test${liveCount === 1 ? '' : 's'}${suffix.startsWith(':') || suffix.startsWith(';') ? suffix : ')'}`;
-      }
-      return match;
-    }
+    /features \(`F1[–-]F\d+`\) or milestones \(`M1[–-]M\d+`\)/g,
+    `features (\`F1–F${latestFeatureNum}\`) or milestones (\`M1–M${latestMilestoneNum}\`)`
+  );
+
+  // C. ADR range
+  agentsContent = agentsContent.replace(
+    /historical invariants \(`0001[–-]\d{4}`\)/g,
+    `historical invariants (\`0001–${latestAdrStr}\`)`
   );
 
   fs.writeFileSync(agentsPath, agentsContent, 'utf8');
-  console.log('✔ AGENTS.md test metrics synchronized.');
+  console.log('✔ AGENTS.md test & ledger metrics synchronized.');
 
-  // C. Size budget assertion: AGENTS.md must remain <= 18 KB to prevent AI prompt truncation
+  // D. Size budget assertion: AGENTS.md must remain <= 18 KB to prevent AI prompt truncation
   const agentsSize = fs.statSync(agentsPath).size;
   const maxBudget = 18 * 1024; // 18 KB
   if (agentsSize > maxBudget) {
@@ -424,6 +478,24 @@ if (fs.existsSync(readmePath)) {
     `$1${totalFiles} modules, ${totalTests} tests)`
   );
 
+  // Ledger: Documents XX Architecture Decision Records
+  readmeContent = readmeContent.replace(
+    /Documents \d+ Architecture Decision Records \(`ADR 0001[–-]\d{4}`\)/g,
+    `Documents ${latestAdrNum} Architecture Decision Records (\`ADR 0001–${latestAdrStr}\`)`
+  );
+
+  // Ledger: features (F1–FXX) and engineering milestones (M1–MXX)
+  readmeContent = readmeContent.replace(
+    /features \(`F1[–-]F\d+`\) and engineering milestones \(`M1[–-]M\d+`\)/g,
+    `features (\`F1–F${latestFeatureNum}\`) and engineering milestones (\`M1–M${latestMilestoneNum}\`)`
+  );
+
+  // Ledger: XX immutable decision records (ADR 0001–00XX)
+  readmeContent = readmeContent.replace(
+    /\d+ immutable decision records \(`ADR 0001[–-]\d{4}`\)/g,
+    `${latestAdrNum} immutable decision records (\`ADR 0001–${latestAdrStr}\`)`
+  );
+
   // B. Build canonical test table rows
   const tableHeader = [
     '| Domain Module | File | Focus Areas |',
@@ -445,16 +517,41 @@ if (fs.existsSync(readmePath)) {
   }
 
   fs.writeFileSync(readmePath, readmeContent, 'utf8');
-  console.log('✔ README.md test metrics synchronized.');
+  console.log('✔ README.md test & ledger metrics synchronized.');
 }
 
 // ==========================================
-// 3. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md (Opt-in via --dossier)
+// 3. Synchronize ARCHITECTURE.md
+// ==========================================
+if (fs.existsSync(architecturePath)) {
+  let archContent = fs.readFileSync(architecturePath, 'utf8');
+
+  // Feature & Milestone references
+  archContent = archContent.replace(
+    /Feature Inventory \(`F1[–-]F\d+`\)(?: &| and) Milestone Matrix \(`M1[–-]M\d+`\)/g,
+    `Feature Inventory (\`F1–F${latestFeatureNum}\`) and Milestone Matrix (\`M1–M${latestMilestoneNum}\`)`
+  );
+  archContent = archContent.replace(
+    /Historical Feature Inventory \(`F1[–-]F\d+`\) & Milestone Matrix \(`M1[–-]M\d+`\)/g,
+    `Historical Feature Inventory (\`F1–F${latestFeatureNum}\`) & Milestone Matrix (\`M1–M${latestMilestoneNum}\`)`
+  );
+
+  // ADR reference
+  archContent = archContent.replace(
+    /Architecture Decision Records \(`0001` through `\d{4}`\)/g,
+    `Architecture Decision Records (\`0001\` through \`${latestAdrStr}\`)`
+  );
+
+  fs.writeFileSync(architecturePath, archContent, 'utf8');
+  console.log('✔ ARCHITECTURE.md ledger metrics synchronized.');
+}
+
+// ==========================================
+// 4. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md (Opt-in via --dossier)
 // ==========================================
 const shouldCompileDossier = process.argv.includes('--dossier');
 if (shouldCompileDossier) {
-  const adrDir = path.join(rootDir, 'docs', 'adr');
-  const adrFiles = fs.existsSync(adrDir) ? fs.readdirSync(adrDir).filter(f => f.endsWith('.md')).sort() : [];
+  const adrFiles = fs.existsSync(adrDir) ? fs.readdirSync(adrDir).filter(f => /^\d{4}-.*\.md$/.test(f)).sort() : [];
 
   const adrs = adrFiles.map(file => {
     const filePath = path.join(adrDir, file);

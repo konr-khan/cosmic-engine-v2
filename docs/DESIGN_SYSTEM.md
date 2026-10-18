@@ -4,6 +4,22 @@ This document codifies the design language, color tokens, 2D vector stroke encod
 
 ---
 
+## ⚡ Quick Section & Component Index
+
+| Section | Focus / Visual Domain | Primary UI Components |
+| :--- | :--- | :--- |
+| **[1. Color Semantics](#1-color-semantics--astronomical-meaning)** | Semantic color palette (Sky Blue, Rose Red, Amber, Slate, Twilight tiers) | All widgets (`src/components/**`) |
+| **[2. Vector Stroke Encodings](#2-2d--3d-vector-stroke--path-encodings)** | 2D/3D orbital curves, SED rules, `<MiniGlobe />`, `<MiniMoon />` primitives | `src/components/widgets/**`, `MiniGlobe.tsx`, `MiniMoon.tsx` |
+| **[3. Glassmorphic Popovers & HUDs](#3-glassmorphic-popover--hud-hierarchy)** | Micro-typography, contrast halos, telemetry badges, hover cards | `*HoverHud.tsx`, `DashboardWindow.tsx`, footers |
+| **[4. 12-Column Responsive Grid](#4-12-column-responsive-panoramic-grid--1-col--2-col-controls)** | Panoramic vs. standard cards, 1-Col/2-Col toggles, HTML5 drag-and-drop | `src/components/layout/**`, `DashboardWindow.tsx` |
+| **[5. Interaction & Cursor Grammar](#5-interaction-patterns--cursor-grammar)** | Cursor semantics, click-to-snap, scrubbing, wheel zoom, touch boundaries | `src/components/controls/**`, `useRibbonScrubber.ts` |
+| **[6. Tidal Gravity Micro-View](#6-earth--tidal-gravity-micro-view-nodal-conventions)** | 4-quadrant nodal orbit, CCW prograde orientation, tidal bulge potential | `src/components/widgets/tides/MicroTideView.tsx` |
+| **[7. Dual-Perspective Eclipse](#7-dual-perspective-eclipse-demonstrator-sizing--layout-parity)** | Viewport parity ($520 \times 220$), transverse profile & axial sightline | `src/components/widgets/eclipse/EclipseDemonstrator.tsx` |
+| **[8. Today's Horizon Domes](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)** | Symmetrical dome viewBox ($260 \times 138$), twilight strata, colures, swaths | `src/components/widgets/today/**`, `SkyDomeBase.tsx` |
+| **[9. Terminator Map Ground Tracks](#9-terminator-map-diurnal-ground-tracks--nodal-encodings)** | Diurnal $\pm 12\text{h}$ subsolar/sublunar paths, forward weighting, nodal beacons | `src/components/widgets/terminator/**` |
+
+---
+
 ## 1. Color Semantics & Astronomical Meaning
 
 Cosmic Engine uses a strict semantic color palette to represent physical astronomical states and coordinate geometries consistently across all widgets:
@@ -165,40 +181,8 @@ The `<MiniMoon />` component (`src/components/common/MiniMoon.tsx`) standardizes
   - **Center Sightline Pin**: Optional $r=1.5\text{px}$ center reticle pin for axial target alignment.
 
 ### G. Today's Horizon Observatory Domes & Draconic Kinematics
-* **Canonical Symmetrical Viewport (`viewBox="0 0 260 138"`)**:
-  - Shared geometric constants across `SunElevationDome` and `MoonElevationDome`: $CX = 130, CY = 104, R = 92$.
-  - Horizon baseline at $Y = 104$, Zenith marker (+90°) at $Y = 12$, Cardinal Azimuth ticks: East ($X = 38$), Meridian ($X = 130$), West ($X = 222$).
-  - Culmination Meridian indicator dynamically flips based on observer geographic latitude: **S** for Northern hemisphere ($\phi \ge 0^\circ$) vs. **N** for Southern hemisphere ($\phi < 0^\circ$).
-  - Sub-horizon vertical headroom: $34\text{px}$ ($Y \in [104, 138]$) accommodating nocturnal paths down to $-18^\circ$ astronomical twilight and negative declination excursions.
-* **Harmonized Atmospheric Twilight Strata Tokens**:
-  - **Daylight**: Amber / Gold (`#fbbf24`, $h \ge -0.833^\circ$).
-  - **Civil Twilight**: Warm Golden Amber (`#f59e0b`, $-6.0^\circ \le h < -0.833^\circ$).
-  - **Nautical Twilight**: Slate Navy (`#64748b`, $-12.0^\circ \le h < -6.0^\circ$).
-  - **Astronomical Twilight**: Deep Indigo Slate (`#334155`, $-18.0^\circ \le h < -12.0^\circ$).
-  - **Night**: Deep Space Slate (`#020617`, $h < -18.0^\circ$).
-* **Lunar Diurnal Arc Styling & Mode Separation**:
-  - **Standard (`Std`) Mode**: Diurnal elevation arc renders in serene lunar silver (`stroke="#e2e8f0"`, `strokeWidth="1.2"`), maintaining calm astronomical observation.
-  - **Nodal (`☊ Nodes`) Mode**: Diurnal elevation arc inherits canonical Eclipse-demonstrator 4-quadrant color and stroke encodings:
-    - **Sky Blue (`#38bdf8`)**: Moon North of Ecliptic ($\beta \ge 0$, Ascending hemisphere).
-    - **Rose Red (`#f43f5e`)**: Moon South of Ecliptic ($\beta < 0$, Descending hemisphere).
-    - **Solid Stroke**: Waxing Moon ($0^\circ \le \text{elongation} < 180^\circ$).
-    - **Dashed Stroke (`strokeDasharray="4 3"`)**: Waning Moon ($180^\circ \le \text{elongation} < 360^\circ$).
-* **Continuous Nocturnal Sub-Horizon Trajectory Styling**:
-  - Sub-horizon nocturnal paths ($h < 0^\circ, Y > 104$) are rendered strictly with **solid strokes** (`strokeDasharray = undefined`) and subdued opacity (`strokeOpacity="0.20"`, `strokeWidth="1.0"`).
-  - Eliminates misleading dashed strokes below the horizon, reserving dashed stroke encoding exclusively for waning lunar orbital phase.
-* **Bilateral Node Crossings & Gated Sky Dome Pins**:
-  - Ascending (☊, `#38bdf8`) and Descending (☋, `#f43f5e`) node pins on the Sky Dome are strictly temporal-gated: visible **only** when `nearestNodeDistDays <= 1.0` (or $|\beta| \le 0.8^\circ$), preventing on-dome node clutter.
-  - Sighting telemetry badge displays `"Crossing Today"` when within 24 hours of either node event.
-* **Centered $\pm 15$-Day Draconic Progress Micro-Rail**:
-  - Displayed within the Moon Dome Nodal Inspector modal: $X \in [12, 228]$ ($216\text{px}$ track width), anchored at $X = 120$ for Today ($T = 0$).
-  - Linear temporal mapping: $X(t) = 120 + t \cdot 7.2$ across $t \in [-15, +15]$ days.
-  - Continuous color-coded track segments: Sky Blue (`#38bdf8`) for northern ecliptic latitude $\beta(t) \ge 0$ vs. Rose Red (`#f43f5e`) for southern $\beta(t) < 0$.
-  - Historical and upcoming node pins: Ascending (Sky Blue circle, `☊`) and Descending (Rose Red circle, `☋`) pins with signed temporal offset tags (`-4.2d`, `+8.9d`).
-* **Footer Metric Relocation & 4-Column Panel (`grid-cols-4`)**:
-  - Segmented toggle controls (`[Std | Twilights]` / `[Std | ☊ Nodes]`) are housed in the 4th metric slot of the card footer:
-    - *Sun Dome*: `[Sunrise/Sunset | Solar Noon | Declination | [Std | Twilights]]`
-    - *Moon Dome*: `[Moonrise/Moonset | Lunar Transit | Declination | [Std | ☊ Nodes]]`
-  - Preserves clean card headers, uniform card heights, and horizontal alignment across the dashboard grid.
+For the authoritative visual tokens, symmetrical viewBox geometry ($260 \times 138$), atmospheric twilight strata, lunar diurnal arc modes, tri-state culmination bearings (`S`, `N`, `Z`), 4-column footer metrics, and Approach C parked gate anchors, consult **[Section 8: Today's Sky Dome Symmetrical Horizon & Nodal Tokens](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)**.
+
 
 ### H. Celestial Meridian Colure Profiles, Solstice Bifurcation & Sub-Horizon Twilight Kinematics
 * **Dual Dashed Solstice Milestone Arcs (`SunMeridianDome.tsx`)**:

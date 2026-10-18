@@ -3,6 +3,10 @@
 ## Status
 Accepted
 
+> [!NOTE]
+> **Evolutionary Amendment Banner (Post-ADR 0018 Field Standardization)**:
+> In subsequent refactoring, `hoverStore` field nomenclature was standardized from `hoveredTime` / `hoveredDate` to canonical `hoverTime` / `hoverDate` (and actions `setHoverTime`, `setHoverDate`, `setHoverState`), while positional calculations were localized directly to ribbon chart components.
+
 ## Context
 
 Following comprehensive static and runtime analysis of **Cosmic Engine V2.0**, several architectural friction points and optimization opportunities were identified across four critical domains:

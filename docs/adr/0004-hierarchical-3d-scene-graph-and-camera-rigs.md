@@ -3,6 +3,10 @@
 ## Status
 Accepted
 
+> [!NOTE]
+> **Evolutionary Amendment Banner (Post-ADR 0004 Hook Consolidation)**:
+> Early prototype designs conceptualized dedicated per-widget scene hooks (`useEclipseScene`, `useArmillaryScene`). In modern architecture, these were consolidated into the unified `useCosmicScene` (geocentric equatorial & axial cameras) and `useHeliocentricScene` (heliocentric ecliptic macro orbits), while presentation widgets receive deterministic scene coordinates as pure props.
+
 ## Context
 **Cosmic Engine V2.0** renders complex multi-body celestial phenomena across several distinct visualizer subsystems:
 1. **Heliocentric Macro Orbit View**: Keplerian planetary orbit with 6 seasonal milestones (Perihelion, Aphelion, Solstices, Equinoxes) and lunar orbit.

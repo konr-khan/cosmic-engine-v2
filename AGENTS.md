@@ -15,8 +15,8 @@ This file is the always-loaded operational kernel for AI agents working in **Cos
 | **Astronomical Math & Ephemerides** | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | Touching `src/utils/cosmicMath/**`, coordinate frames, Meeus equations, or syzygy shadow geometry |
 | **Visual Tokens & Stroke Grammar** | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Touching `src/components/**`, SVG stroke encodings, semantic colors, or glassmorphic HUDs |
 | **Historical Anti-Patterns** | [`DEAD_ENDS.md`](DEAD_ENDS.md) | Before refactoring core math, 3D projections, worker throttling, or camera staging |
-| **Feature & Milestone Ledger** | [`PROJECT.md`](PROJECT.md) | Recording completed user-facing features (`F1–F87`) or milestones (`M1–M42`) |
-| **Architectural Decision Records** | [`docs/adr/`](docs/adr/) | Reviewing historical invariants (`0001–0042`) or adding evolutionary amendment banners |
+| **Feature & Milestone Ledger** | [`PROJECT.md`](PROJECT.md) | Recording completed user-facing features (`F1–F88`) or milestones (`M1–M43`) |
+| **Architectural Decision Records** | [`docs/adr/`](docs/adr/) | Reviewing historical invariants (`0001–0043`) or adding evolutionary amendment banners |
 
 ### Essential Commands & Automated Gatekeepers
 

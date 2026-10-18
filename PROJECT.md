@@ -1,7 +1,7 @@
 # Project: Cosmic Engine V2.0 — Feature Inventory & Milestone Matrix
 
 > [!NOTE]
-> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F87`)** and **Milestone & Phase Matrix (`M1–M42`)**.
+> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F88`)** and **Milestone & Phase Matrix (`M1–M43`)**.
 
 ---
 
@@ -95,6 +95,7 @@
 | F85 | Accessible Custom Controls, Keyboard Navigation & Modal Dialog Semantics | Added ARIA slider semantics (`role="slider"`) and arrow/page-key stepping to `LatitudeSlider`, `PolarLongitudeSelector`, `AstrolabeDial`; added `Escape` and outside-click dismissal to dialogs/menus; converted transit jump to semantic `<button>` | M41 | ADR-0041 |
 | F86 | AST Linter Temporal Purity Gatekeeper & Dead Props Cleanup | Enforced temporal purity (`new Date()` ban in math modules) and reported parse errors in `lintUnitSafety.mjs`; purged dead props across `MiniGlobe`, `MicroTideView`, `ControlRing`, `SkyDomeBase`, `GyroArmillaryView` | M41 | ADR-0041 |
 | F87 | `ARCHITECTURE.md` SSoT Split, Prompt Kernel Slimming & Documentation Sweep | Extracted live system topology, runtime contracts, code layout, and task routing into `ARCHITECTURE.md`; slimmed `AGENTS.md` prompt kernel by 35.6% (`17.69 KB` $\to$ `11.40 KB`); synchronized `DESIGN_SYSTEM.md`, `README.md`, `PROJECT.md`, and `syncDocMetrics.mjs` | M42 | ADR-0042 |
+| F88 | Documentation Ecosystem Hardening & Automated Ledger Sync | Quick Section & Component/Module navigation indexes in `DESIGN_SYSTEM.md` and `MATH_SPEC.md`, SSoT contradiction reconciliation, explicit `#` and subsystem tagging across all 49 Dead Ends, dual-pipeline dataflow topology in `ARCHITECTURE.md`, ADR subsystem index, and automated ledger range validation in `syncDocMetrics.mjs` | M43 | ADR-0043 |
 
 ## 2. Milestones
 
@@ -106,7 +107,7 @@
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M42)
+### Recent Milestones (M21–M43)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -117,7 +118,7 @@
 | M26 | Web Worker Fallback Hardening & Parameter Gatekeepers | `workerSanitizers.ts`, `ephemerisWorkerManager.ts`, ADR-0026 | M1–M25 | DONE |
 | M27 | Terminator Map Diurnal Ground Tracks & Seam Interpolation | `terminatorTracks.ts`, `TerminatorMap.tsx`, ADR-0027 | M1–M26 | DONE |
 | M28 | Gyro-Morph Mathematical Hardening & Modular Ring Subsystem | `src/utils/cosmicMath/armillary/`, ADR-0028 | M1–M27 | DONE |
-| M29 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | src/hooks/, src/App.tsx, src/components/widgets/ | M1–M28 | DONE |
+| M29 | 60 FPS Chronometer Cascade Fix & Static Widget Decoupling | `src/hooks/`, `src/App.tsx`, `src/components/widgets/`, ADR-0029 | M1–M28 | DONE |
 | M30 | Meridian Dome Container/Presenter Hooks & Type/Filter Hygiene | `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`, `SunMeridianDome.tsx`, `MoonMeridianDome.tsx`, `App.tsx`, `useCosmicEngine.ts`, ADR-0030 | M1–M29 | DONE |
 | M31 | Solar Ribbon Chart Modular Decomposition | `SolarRibbonAxes.tsx`, `SolarRibbonBands.tsx`, `SolarRibbonOverlay.tsx`, `SolarRibbonChart.tsx`, `solar/index.ts`, ADR-0031 | M1–M30 | DONE |
 | M32 | Observer Co-Location, 3D Analytical Illumination & Dynamic Depth Sorting | `src/utils/cosmicMath/armillary/`, `ArmillaryBeadsLayer.tsx`, ADR-0032 | M1–M31 | DONE |
@@ -131,9 +132,10 @@
 | M40 | Priorities 1–3 Codebase Hardening, Nominal Type Guardrails & 60 FPS Ribbon Memoization | `src/types/`, `src/store/`, `src/workers/`, `src/hooks/`, `src/utils/cosmicMath/`, `src/components/`, ADR-0040 | M1–M39 | DONE |
 | M41 | Priorities 4 & 5 UI Consolidation, Accessible Controls & AST Linter Hardening | `src/components/`, `src/hooks/`, `scripts/`, ADR-0041 | M1–M40 | DONE |
 | M42 | Documentation Sweep & `ARCHITECTURE.md` Token-Preservation SSoT Split | `ARCHITECTURE.md`, `AGENTS.md`, `PROJECT.md`, `README.md`, `docs/DESIGN_SYSTEM.md`, `scripts/syncDocMetrics.mjs`, ADR-0042 | M1–M41 | DONE |
+| M43 | Documentation Ecosystem Hardening & Automated Ledger Sync | `DESIGN_SYSTEM.md`, `MATH_SPEC.md`, `DEAD_ENDS.md`, `ARCHITECTURE.md`, `docs/adr/`, `scripts/syncDocMetrics.mjs`, ADR-0043 | M1–M42 | DONE |
 
 ---
 
 > [!TIP]
 > - **Architecture & Code Layout**: See [`ARCHITECTURE.md`](ARCHITECTURE.md) for interface contracts, canonical code layout, and the Subsystem Task Routing Matrix.
-> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0042`).
+> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0043`).

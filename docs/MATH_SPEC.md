@@ -4,6 +4,27 @@ This document serves as the ground-truth mathematical reference for **Cosmic Eng
 
 ---
 
+## ⚡ Quick Section & Module Index
+
+| Section | Focus / Mathematical Domain | Canonical TS Module(s) |
+| :--- | :--- | :--- |
+| **[1. Coordinate Systems](#1-astronomical-coordinate-systems)** | Alt-Az, Equatorial, Ecliptic coordinates & IAU obliquity drift | `src/types/coordinates.ts`, `core.ts` |
+| **[2. Temporal Epochs](#2-temporal-epochs--julian-date-computations)** | Julian dates, centuries, DOY, GMST, LST, ground track longitude | `src/utils/cosmicMath/core.ts` |
+| **[3. Solar Ephemeris](#3-solar-ephemeris--keplerian-orbital-dynamics)** | Solar declination, RA, Equation of Time, Keplerian distance & velocity | `src/utils/cosmicMath/solar.ts` |
+| **[4. Twilight Thresholds](#4-twilight-thresholds--exact-polar-bound-handling)** | Civil/Nautical/Astro twilight, polar night & midnight sun clamping | `src/utils/cosmicMath/solar.ts` |
+| **[5. Lunar Ephemeris](#5-high-precision-lunar-ephemeris-meeus-truncated-series)** | Meeus series, phase angle ($i$), illumination ($k$), Newton-Raphson node solver | `src/utils/cosmicMath/lunar.ts` |
+| **[6. Eclipse Geometry](#6-syzygy-eclipse-shadow-geometry)** | Umbra/penumbra cones, apparent radius ratio ($k$), axial sightline | `src/utils/cosmicMath/eclipse.ts` |
+| **[7. Gyro-Morph Armillary](#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections)** | 5-model continuum, stereographic/Rojas/horizon plates, 2-phase camera staging | `src/utils/cosmicMath/armillary/**` |
+| **[8. Tidal Gravity Vectors](#8-gravitational-tidal-vectors--syzygy-deformation)** | Alignment factor, spring/neap bulge deformation, 4-quadrant nodal orbit | `src/components/widgets/tides/hooks/useTideMath.ts` |
+| **[9. Apparent Diameters](#9-dynamic-ephemeris-distance--apparent-diameter-scaling)** | Subsolar (AU) and Sublunar (km) angular diameter scaling | `src/utils/cosmicMath/{solar,lunar}.ts` |
+| **[10. 3D Scene Graph](#10-unified-3d-astronomical-scene-graph--canonical-camera-rigs)** | Heliocentric/Geocentric/Topocentric frames, camera rigs, limb clipping | `src/utils/cosmicMath/scene/**`, `globe.ts` |
+| **[11. Astro Constants](#11-centralized-physical-astronomical-constants--temporal-purity-astroconstantsts)** | IAU/WGS-84/Meeus registry, epoch purity & J2000 date fixtures | `src/utils/cosmicMath/astroConstants.ts` |
+| **[12. Today's Sky Dome](#12-sky-dome-projection--diurnal-transit-kinematics-todayskyts)** | Diurnal paths, culmination bearings (`S`, `N`, `Z`), colure chords | `src/utils/cosmicMath/today/**` |
+| **[13. Great Meridian Ring & 3D Illumination](#13-great-meridian-ring--heliocentric-camera-space-illumination-geometry)** | $0^\circ/180^\circ$ Great Meridian, 3D subsolar vector, laser morph continuum | `src/components/common/MiniGlobe.tsx`, `armillary/**` |
+| **[14. Diurnal Ground Tracks](#14-diurnal-celestial-ground-tracks-antimeridian-seam-interpolation--gated-lunar-nodes)** | $\pm 12\text{h}$ subsolar/sublunar tracks, antimeridian seam wrapping, nodal gates | `src/utils/cosmicMath/terminatorTracks.ts` |
+
+---
+
 ## 1. Astronomical Coordinate Systems
 
 ### A. Alt-Azimuth (Horizontal System)
@@ -1279,21 +1300,20 @@ The Moon's orbital nodes lie on the ecliptic plane ($\beta = 0^\circ$). Given As
    \]
    Node coordinates are then projected into 2D dome canvas space via `projectSkyDomePoint(H_node, delta_node, phi)`.
 
-### E. Draconic Nodal Cycle & Bilateral Proximity Solver
+### E. Draconic Nodal Cycle & True Ecliptic Proximity Solver
 
-1. **Draconic Constants & Argument of Latitude**:
-   * Draconic Month: $T_{\text{draconic}} = 27.21222\text{ days}$.
-   * Argument of Latitude: $F = (\lambda_{\text{moon}} - \Omega) \bmod 360^\circ \in [0^\circ, 360^\circ)$.
+1. **Draconic Periodic Cycle & Mean Argument Seed**:
+   * Mean Draconic Month Period: $T_{\text{draconic}} = 27.212220817\text{ days}$.
+   * Mean Argument of Latitude: $F = (\lambda_{\text{moon}} - \Omega) \bmod 360^\circ \in [0^\circ, 360^\circ)$.
+   * Mean argument $F$ provides the initial seed approximation $t_0$ for upcoming and previous node passages. To eliminate the $\sim 14$-hour divergence caused by evection and variation perturbations (see Section 5.E and Dead End #15), all true crossing epochs and countdowns are refined via the Newton-Raphson True Ecliptic Latitude Crossing solver (`findTrueLunarNodeCrossing`, $\beta = 0^\circ$).
 
 2. **Prograde Upcoming & Previous Node Distances**:
+   Evaluated chronologically via `calculateTrueLunarNodeEvents(julianDate, windowDays)`:
    \[
-   \Delta F_{\text{next}} = \begin{cases} 180^\circ - F & \text{if } F < 180^\circ \ (\text{upcoming is Descending } \mho) \\ 360^\circ - F & \text{if } F \ge 180^\circ \ (\text{upcoming is Ascending } \Omega) \end{cases}
+   t_{\text{next}} = \text{daysOffset of first event with } \text{daysOffset} > 0
    \]
    \[
-   \Delta F_{\text{prev}} = \begin{cases} F & \text{if } F < 180^\circ \ (\text{previous was Ascending } \Omega) \\ F - 180^\circ & \text{if } F \ge 180^\circ \ (\text{previous was Descending } \mho) \end{cases}
-   \]
-   \[
-   t_{\text{next}} = \frac{\Delta F_{\text{next}}}{360^\circ} \cdot T_{\text{draconic}}, \quad t_{\text{prev}} = \frac{\Delta F_{\text{prev}}}{360^\circ} \cdot T_{\text{draconic}} \quad [\text{days}]
+   t_{\text{prev}} = |\text{daysOffset}| \text{ of last event with } \text{daysOffset} \le 0
    \]
 
 3. **Bilateral Nearest Node Distance & 24-Hour Crossing Gate**:
@@ -1306,7 +1326,7 @@ The Moon's orbital nodes lie on the ecliptic plane ($\beta = 0^\circ$). Given As
    \[
    \text{isNearNode} = (d_{\text{nearest}} \le 1.0\text{ days}) \lor (|\beta_{\text{moon}}| \le 0.8^\circ)
    \]
-   **Physical Invariant**: Sky dome node pins are rendered if and only if $\text{nearestNodeDistDays} \le 1.0$. This prevents distant upcoming nodes ($t_{\text{next}} \approx 13\text{d}$) from rendering immediately following a completed crossing.
+   **Physical Invariant**: Sky dome node pins are rendered if and only if $\text{nearestNodeDistDays} \le 1.0$ (or $|\beta| \le 0.8^\circ$). This prevents distant upcoming nodes ($t_{\text{next}} \approx 13\text{d}$) from rendering immediately following a completed crossing.
 
 ### F. Centered $\pm 15$-Day Draconic Progress Micro-Rail
 
@@ -1317,11 +1337,11 @@ The Moon's orbital nodes lie on the ecliptic plane ($\beta = 0^\circ$). Given As
    \]
 
 2. **Continuous Color-Coded Segments**:
-   The $[-15, +15]$ timeline is subdivided at all node events $\{t_k\}$. For each sub-interval with midpoint $t_{\text{mid}}$:
+   The $[-15, +15]$ timeline is subdivided at all true node crossing events $\{t_k\}$ derived from `calculateTrueLunarNodeEvents`. For each sub-interval with midpoint $t_{\text{mid}}$:
    \[
-   F(t_{\text{mid}}) = \left( \left( F_0 + \frac{t_{\text{mid}}}{T_{\text{draconic}}} \cdot 360^\circ \right) \bmod 360^\circ + 360^\circ \right) \bmod 360^\circ
+   \beta(t_{\text{mid}}) = \text{calculateLunarPosition}(\text{JD} + t_{\text{mid}}).\beta
    \]
-   The segment is styled **Sky Blue (`#38bdf8`)** if $F(t_{\text{mid}}) < 180^\circ$ (Moon North of Ecliptic, $\beta \ge 0$), and **Rose Red (`#f43f5e`)** if $F(t_{\text{mid}}) \ge 180^\circ$ (Moon South of Ecliptic, $\beta < 0$).
+   The segment is styled **Sky Blue (`#38bdf8`)** if $\beta(t_{\text{mid}}) \ge 0^\circ$ (Moon North of Ecliptic, Ascending hemisphere), and **Rose Red (`#f43f5e`)** if $\beta(t_{\text{mid}}) < 0^\circ$ (Moon South of Ecliptic, Descending hemisphere).
 
 ### G. Monthly Lunar Declination Bounds (`calculateMonthlyLunarDeclinationBounds`)
 
