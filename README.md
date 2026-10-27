@@ -12,7 +12,7 @@ Rather than relying on informal conventions that drift across sessions, Cosmic E
 
 1. **Always-Loaded Operational Prompt Kernel ([`AGENTS.md`](./AGENTS.md))**:
    - Bounded strictly under `18.0 KB` (enforced by [`unitSafety.test.ts`](./src/types/unitSafety.test.ts)) to prevent context truncation.
-   - Governs every AI session via a **3-Tier Blast-Radius Triage Protocol**, a **File-Glob $\rightarrow$ Test Router**, and explicit `DO` / `NEVER` AST code cards.
+   - Governs every AI session via a **3-Tier Blast-Radius Triage Protocol**, a **File-Glob $\rightarrow$ Test Router**, and programmatic AST and runtime guardrail rules.
 2. **Compile-Time Nominal Unit Firewall ([`src/types/units.ts`](./src/types/units.ts))**:
    - Angular metrics (`Degrees`, `Radians`) and epochs (`JulianDate`, `JulianCenturies`) use unique Symbol brands with forbidden brand intersections (`NotRadians`, `NotDegrees`).
    - Passing degrees into a trigonometric solver expecting radians (`Math.sin`, Meeus ephemeris series) or double-converting branded values fails at compile time (`npm run typecheck`).
