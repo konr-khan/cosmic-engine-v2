@@ -9,14 +9,14 @@ This document codifies the design language, color tokens, 2D vector stroke encod
 | Section | Lines | Focus / Visual Domain | Primary UI Components |
 | :--- | :--- | :--- | :--- |
 | **[1. Color Semantics](#1-color-semantics--astronomical-meaning)** | `L23–L42` | Semantic color palette (Sky Blue, Rose Red, Amber, Slate, Twilight tiers) | All widgets (`src/components/**`) |
-| **[2. Vector Stroke Encodings](#2-2d--3d-vector-stroke--path-encodings)** | `L43–L222` | 2D/3D orbital curves, SED rules, `<MiniGlobe />`, `<MiniMoon />` primitives | `src/components/widgets/**`, `MiniGlobe.tsx`, `MiniMoon.tsx` |
-| **[3. Glassmorphic Popovers & HUDs](#3-glassmorphic-popover--hud-hierarchy)** | `L223–L245` | Micro-typography, contrast halos, telemetry badges, hover cards | `*HoverHud.tsx`, `DashboardWindow.tsx`, footers |
-| **[4. 12-Column Responsive Grid](#4-12-column-responsive-panoramic-grid--1-col--2-col-controls)** | `L246–L262` | Panoramic vs. standard cards, 1-Col/2-Col toggles, HTML5 drag-and-drop | `src/components/layout/**`, `DashboardWindow.tsx` |
-| **[5. Interaction & Cursor Grammar](#5-interaction-patterns--cursor-grammar)** | `L263–L281` | Cursor semantics, click-to-snap, scrubbing, wheel zoom, touch boundaries | `src/components/controls/**`, `useRibbonScrubber.ts` |
-| **[6. Tidal Gravity Micro-View](#6-earth--tidal-gravity-micro-view-nodal-conventions)** | `L282–L306` | 4-quadrant nodal orbit, CCW prograde orientation, tidal bulge potential | `src/components/widgets/tides/MicroTideView.tsx` |
-| **[7. Dual-Perspective Eclipse](#7-dual-perspective-eclipse-demonstrator-sizing--layout-parity)** | `L307–L331` | Viewport parity ($520 \times 220$), transverse profile & axial sightline | `src/components/widgets/eclipse/EclipseDemonstrator.tsx` |
-| **[8. Today's Horizon Domes](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)** | `L332–L397` | Symmetrical dome viewBox ($260 \times 138$), twilight strata, colures, swaths | `src/components/widgets/today/**`, `SkyDomeBase.tsx` |
-| **[9. Terminator Map Ground Tracks](#9-terminator-map-diurnal-ground-tracks--nodal-encodings)** | `L398–L429` | Diurnal $\pm 12\text{h}$ subsolar/sublunar paths, forward weighting, nodal beacons | `src/components/widgets/terminator/**` |
+| **[2. Vector Stroke Encodings](#2-2d--3d-vector-stroke--path-encodings)** | `L43–L187` | 2D/3D orbital curves, SED rules, `<MiniGlobe />`, `<MiniMoon />` primitives | `src/components/widgets/**`, `MiniGlobe.tsx`, `MiniMoon.tsx` |
+| **[3. Glassmorphic Popovers & HUDs](#3-glassmorphic-popover--hud-hierarchy)** | `L188–L210` | Micro-typography, contrast halos, telemetry badges, hover cards | `*HoverHud.tsx`, `DashboardWindow.tsx`, footers |
+| **[4. 12-Column Responsive Grid](#4-12-column-responsive-panoramic-grid--1-col--2-col-controls)** | `L211–L227` | Panoramic vs. standard cards, 1-Col/2-Col toggles, HTML5 drag-and-drop | `src/components/layout/**`, `DashboardWindow.tsx` |
+| **[5. Interaction & Cursor Grammar](#5-interaction-patterns--cursor-grammar)** | `L228–L246` | Cursor semantics, click-to-snap, scrubbing, wheel zoom, touch boundaries | `src/components/controls/**`, `useRibbonScrubber.ts` |
+| **[6. Tidal Gravity Micro-View](#6-earth--tidal-gravity-micro-view-nodal-conventions)** | `L247–L271` | 4-quadrant nodal orbit, CCW prograde orientation, tidal bulge potential | `src/components/widgets/tides/MicroTideView.tsx` |
+| **[7. Dual-Perspective Eclipse](#7-dual-perspective-eclipse-demonstrator-sizing--layout-parity)** | `L272–L296` | Viewport parity ($520 \times 220$), transverse profile & axial sightline | `src/components/widgets/eclipse/EclipseDemonstrator.tsx` |
+| **[8. Today's Horizon Domes](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)** | `L297–L394` | Symmetrical dome viewBox ($260 \times 138$), twilight strata, colures, swaths | `src/components/widgets/today/**`, `SkyDomeBase.tsx` |
+| **[9. Terminator Map Ground Tracks](#9-terminator-map-diurnal-ground-tracks--nodal-encodings)** | `L395–L425` | Diurnal $\pm 12\text{h}$ subsolar/sublunar paths, forward weighting, nodal beacons | `src/components/widgets/terminator/**` |
 
 ---
 
@@ -70,7 +70,7 @@ To maximize information density without adding text clutter, orbital loops and c
     - *Macro Orbit View ($580\times 560$ canvas, $R_{\text{orbit}} \approx 220$)*:
       - Resting State: Translucent outer halo (`fill={color}`, `opacity="0.20"`, `r="11px"`), inner core node (`r="5.5px"`, `fill={color}`, `stroke="#ffffff"`, `strokeWidth="1.5"`, `className="drop-shadow-md"`).
       - Hover State: Expanded glowing halo (`opacity="0.45"`, `r="18px"`, `className="animate-pulse"`), expanded core node (`r="8px"`).
-      - Token Architecture: Macro Orbit presentation styling tokens (Tailwind classes, hover state classes, and badge styling) are codified in [`src/components/widgets/macro/macroTokens.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/macro/macroTokens.ts) to maintain strict separation from pure Meeus domain math (`milestones.ts`).
+      - Token Architecture: Macro Orbit presentation styling tokens (Tailwind classes, hover state classes, and badge styling) are codified in [`src/components/widgets/macro/macroTokens.ts`](../src/components/widgets/macro/macroTokens.ts) to maintain strict separation from pure Meeus domain math (`milestones.ts`).
     - *Gyro-Morph Armillary ($300\times 300$ canvas, $R_{\text{orbit}} = 110$)*:
       - Resting State: Translucent outer halo (`opacity="0.25"`, `r="4.5px"`), inner core node (`r="2.0px"`, `strokeWidth="1.0"`).
       - Hover State: Direct SVG circle radius expansion to halo `r="7.0px"` (`opacity="0.45"`), core node `r="2.8px"` (`strokeWidth="1.2"`), paired with the glassmorphic milestone telemetry card (`ArmillaryHoverHud`). SVG group CSS scale transforms are strictly avoided to eliminate transform-origin off-orbit jumps. Bead pointer interactions are isolated during 3D camera rotation (`isDraggingCamera`).
@@ -180,43 +180,8 @@ The `<MiniMoon />` component (`src/components/common/MiniMoon.tsx`) standardizes
   - **Corona Glow**: Soft outer halo circle ($r = 1.5 \times \text{radius}$, `fillOpacity="0.18"`), tinted to active node or eclipse status.
   - **Center Sightline Pin**: Optional $r=1.5\text{px}$ center reticle pin for axial target alignment.
 
-### G. Today's Horizon Observatory Domes & Draconic Kinematics
-For the authoritative visual tokens, symmetrical viewBox geometry ($260 \times 138$), atmospheric twilight strata, lunar diurnal arc modes, tri-state culmination bearings (`S`, `N`, `Z`), 4-column footer metrics, and Approach C parked gate anchors, consult **[Section 8: Today's Sky Dome Symmetrical Horizon & Nodal Tokens](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)**.
-
-
-### H. Celestial Meridian Colure Profiles, Solstice Bifurcation & Sub-Horizon Twilight Kinematics
-* **Dual Dashed Solstice Milestone Arcs (`SunMeridianDome.tsx`)**:
-  - **June Solstice Arc (`solstice-swath-june`)**: Warm Gold (`stroke="#fbbf24"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the June Solstice Peak (`junePeakPoint.thetaDeg`).
-  - **December Solstice Arc (`solstice-swath-december`)**: Rich Bronze (`stroke="#d97706"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the December Solstice Peak (`decPeakPoint.thetaDeg`).
-  - **Milestone Anchoring Principle**: Both arcs anchor strictly to Today's Noon Culmination Peak on the outer circular meridian rim ($R = 92, CX = 130, CY = 104$). This preserves a static, calibrated seasonal scale and eliminates jitter from the moving diurnal Sun bead.
-* **Directional Migration Vibrancy ($d\delta/dt$)**:
-  - **Approaching Milestone Arc** ($\cos\lambda_\odot > 0$ for June, $\cos\lambda_\odot < 0$ for December): Rendered at full vibrancy (`strokeOpacity="0.85"`, `strokeWidth="1.25"`).
-  - **Receding Milestone Arc** (receding from solstice): Rendered in subdued tone (`strokeOpacity="0.40"`, `strokeWidth="0.9"`).
-* **Sub-Horizon Solstice Depiction & 3-Tier Kinematics in Twilight Mode**:
-  - **Twilight Noon Culmination ($0^\circ > h \ge -18^\circ$)**: When the winter solstice culmination falls below the horizon in polar latitudes, the solstice arc smoothly extends along the circular perimeter into the twilight strata ($Y \in [104, 132.43]$):
-    - *Civil Twilight* ($-0.833^\circ \ge h \ge -6.0^\circ$): Warm Golden Amber (`#f59e0b`).
-    - *Nautical Twilight* ($-6.0^\circ > h \ge -12.0^\circ$): Slate Navy (`#64748b`).
-    - *Astronomical Twilight* ($-12.0^\circ > h \ge -18.0^\circ$): Deep Indigo Slate (`#334155`).
-    - Rendered with an authentic radial tick pin and signed altitude label with twilight tier (e.g. `-3.1° S (Civil)`).
-  - **Astronomical Night Floor ($h < -18^\circ$)**: When noon culmination drops below the $-18^\circ$ floor (deep polar astronomical night), the solstice tick pin is completely suppressed (disappears), and the arc terminates cleanly at the $-18^\circ$ floor, preventing off-canvas orphan artifacts.
-  - **Standard (`Std`) Mode**: Sub-horizon solstice ticks are suppressed to keep the daytime horizon pristine.
-* **Mode-Coupled Diurnal Chord & Gate Anchor**:
-  - **Standard (`Std`) Mode**: `todayChord` and `gateAnchor` stop cleanly at the horizon ($h = 0^\circ, Y = 104$).
-  - **Twilight Mode**: `todayChord` and `gateAnchor` extend down to the $-18^\circ$ Astronomical Twilight floor ($Y = 132.43\text{px}$).
-* **Compact Meridian Telemetry & Duplicate Banner Suppression**:
-  - `hideElevationBanner?: boolean` prop on `<SkyDomeBase />`, defaulted to `true` on `<MeridianDomeBase />`.
-  - Suppresses duplicate middle elevation badges and sighting perspective banners on lower meridian profile cards while leaving upper diurnal elevation domes intact.
-* **Polar Directional Singularity Baseline Tokens ($|\phi| \ge 89.9^\circ$)**:
-  - **Meridian Profile Baseline (`MeridianDomeBase`)**:
-    - *North Pole ($\phi \ge +89.9^\circ$)*: `S (0°)` (Greenwich meridian, $X=38$) $\longleftrightarrow$ `Z (+90°)` (North Celestial Pole, $X=130$) $\longleftrightarrow$ `S (180°)` (Antimeridian, $X=222$).
-    - *South Pole ($\phi \le -89.9^\circ$)*: `N (0°)` ($X=38$) $\longleftrightarrow$ `Z (-90°)` ($X=130$) $\longleftrightarrow$ `N (180°)` ($X=222$).
-    - Replaces the misleading `"N"` label at the North Pole with explicit longitudinal horizon references, proving both horizons point South.
-  - **Upper Diurnal Elevation Dome Baseline (`SkyDomeBase`)**:
-    - *At Poles ($|\phi| \ge 89.9^\circ$)*: `90°E` $\longleftrightarrow$ `0° (Grw)` $\longleftrightarrow$ `90°W`.
-  - **Sighting Perspective Telemetry**:
-    - Displays `"North Pole Singularity · All Horizons South"` (or `"South Pole Singularity · All Horizons North"`).
-  - **Invariant Diurnal Metric Token**:
-    - Switches `"Noon Peak"` / `"Transit Peak"` badge to `"Constant Altitude"` reflecting the 24-hour horizontal circular path.
+### G. Today's Horizon Observatory Domes, Celestial Meridian Colure Profiles & Draconic Kinematics
+For the authoritative visual tokens, symmetrical viewBox geometry ($260 \times 138$), atmospheric twilight strata, lunar diurnal arc modes, tri-state culmination bearings (`S`, `N`, `Z`), dual dashed solstice milestone arcs, sub-horizon twilight kinematics, polar directional singularity baselines, 4-column footer metrics, and Approach C parked gate anchors, consult **[Section 8: Today's Sky Dome Symmetrical Horizon & Nodal Tokens](#8-todays-sky-dome-symmetrical-horizon--nodal-tokens)**.
 
 ---
 
@@ -309,10 +274,10 @@ The **Earth & Tidal Gravity Micro View** (`MicroTideView`) integrates the unifie
 The Eclipse Demonstrator renders two synchronized, mathematically aligned perspectives side-by-side in `activeTab === 'geometry'`:
 
 * **Layout & Viewport Parity**:
-  - **Identical Dimensions**: Both the Left pane (**Syzygy Profile & Shadow Rays** — `ShadowRayDiagram.tsx`) and Right pane (**Axial Sightline 5.14° Tilt** — `NodalPlaneVisualizer.tsx`) share identical SVG `viewBox="0 0 520 220"` ($26:11$ aspect ratio) and CSS class `w-full h-full block flex-1 min-h-[220px]`.
+  - **Identical Dimensions**: Both the Left pane (**Syzygy Profile & Shadow Rays** — `LiveSyzygyView.tsx`) and Right pane (**Axial Sightline 5.14° Tilt** — `NodalPlaneVisualizer.tsx`) share identical SVG `viewBox="0 0 520 220"` ($26:11$ aspect ratio) and CSS class `w-full h-full block flex-1 min-h-[220px]`.
   - **Aligned Origin & Ecliptic Plane**: Both viewports align on the exact same horizontal horizon line at $y = 110$.
 * **Geometric Proportions & Scaling**:
-  - **Left Pane (Transverse Syzygy Profile & Shadow Rays — `ShadowRayDiagram.tsx` / `LiveSyzygyView.tsx`)**:
+  - **Left Pane (Transverse Syzygy Profile & Shadow Rays — `LiveSyzygyView.tsx`)**:
     - *Sun Light Source*: Positioned at $X_\odot = 50, Y_\odot = 110$, radius $R_\odot = 28\text{px}$ with soft corona wash to $44\text{px}$.
     - *Earth Center*: Centered at $(X_\oplus, Y_\oplus) = (310, 110)$, radius $R_\oplus = 18\text{px}$.
     - *Shadow Cones*: Umbra core and penumbra envelope project horizontally toward the right screen boundary ($X > 310$).
@@ -392,6 +357,38 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
     - *Column 3*: Winter Solstice Peak / 30-Day Monthly Range.
     - *Column 4*: Hoisted `[Std | Twilight]` / `[Std | ☊ Nodes]` segmented toggle control.
   - **Lower Meridian Viewport (`hideFooter={true}`)**: Strips all redundant bottom bars, rendering a borderless flush bottom dome that visually anchors directly to the card floor.
+* **Dual Dashed Solstice Milestone Arcs (`SunMeridianDome.tsx`)**:
+  - **June Solstice Arc (`solstice-swath-june`)**: Warm Gold (`stroke="#fbbf24"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the June Solstice Peak (`junePeakPoint.thetaDeg`).
+  - **December Solstice Arc (`solstice-swath-december`)**: Rich Bronze (`stroke="#d97706"`, `strokeDasharray="3 2"`), spanning from Today's Noon Peak (`todayPeakPoint.thetaDeg`) to the December Solstice Peak (`decPeakPoint.thetaDeg`).
+  - **Milestone Anchoring Principle**: Both arcs anchor strictly to Today's Noon Culmination Peak on the outer circular meridian rim ($R = 92, CX = 130, CY = 104$). This preserves a static, calibrated seasonal scale and eliminates jitter from the moving diurnal Sun bead.
+* **Directional Migration Vibrancy ($d\delta/dt$)**:
+  - **Approaching Milestone Arc** ($\cos\lambda_\odot > 0$ for June, $\cos\lambda_\odot < 0$ for December): Rendered at full vibrancy (`strokeOpacity="0.85"`, `strokeWidth="1.25"`).
+  - **Receding Milestone Arc** (receding from solstice): Rendered in subdued tone (`strokeOpacity="0.40"`, `strokeWidth="0.9"`).
+* **Sub-Horizon Solstice Depiction & 3-Tier Kinematics in Twilight Mode**:
+  - **Twilight Noon Culmination ($0^\circ > h \ge -18^\circ$)**: When the winter solstice culmination falls below the horizon in polar latitudes, the solstice arc smoothly extends along the circular perimeter into the twilight strata ($Y \in [104, 132.43]$):
+    - *Civil Twilight* ($-0.833^\circ \ge h \ge -6.0^\circ$): Warm Golden Amber (`#f59e0b`).
+    - *Nautical Twilight* ($-6.0^\circ > h \ge -12.0^\circ$): Slate Navy (`#64748b`).
+    - *Astronomical Twilight* ($-12.0^\circ > h \ge -18.0^\circ$): Deep Indigo Slate (`#334155`).
+    - Rendered with an authentic radial tick pin and signed altitude label with twilight tier (e.g. `-3.1° S (Civil)`).
+  - **Astronomical Night Floor ($h < -18^\circ$)**: When noon culmination drops below the $-18^\circ$ floor (deep polar astronomical night), the solstice tick pin is completely suppressed (disappears), and the arc terminates cleanly at the $-18^\circ$ floor, preventing off-canvas orphan artifacts.
+  - **Standard (`Std`) Mode**: Sub-horizon solstice ticks are suppressed to keep the daytime horizon pristine.
+* **Mode-Coupled Diurnal Chord & Gate Anchor**:
+  - **Standard (`Std`) Mode**: `todayChord` and `gateAnchor` stop cleanly at the horizon ($h = 0^\circ, Y = 104$).
+  - **Twilight Mode**: `todayChord` and `gateAnchor` extend down to the $-18^\circ$ Astronomical Twilight floor ($Y = 132.43\text{px}$).
+* **Compact Meridian Telemetry & Duplicate Banner Suppression**:
+  - `hideElevationBanner?: boolean` prop on `<SkyDomeBase />`, defaulted to `true` on `<MeridianDomeBase />`.
+  - Suppresses duplicate middle elevation badges and sighting perspective banners on lower meridian profile cards while leaving upper diurnal elevation domes intact.
+* **Polar Directional Singularity Baseline Tokens ($|\phi| \ge 89.9^\circ$)**:
+  - **Meridian Profile Baseline (`MeridianDomeBase`)**:
+    - *North Pole ($\phi \ge +89.9^\circ$)*: `S (0°)` (Greenwich meridian, $X=38$) $\longleftrightarrow$ `Z (+90°)` (North Celestial Pole, $X=130$) $\longleftrightarrow$ `S (180°)` (Antimeridian, $X=222$).
+    - *South Pole ($\phi \le -89.9^\circ$)*: `N (0°)` ($X=38$) $\longleftrightarrow$ `Z (-90°)` ($X=130$) $\longleftrightarrow$ `N (180°)` ($X=222$).
+    - Replaces the misleading `"N"` label at the North Pole with explicit longitudinal horizon references, proving both horizons point South.
+  - **Upper Diurnal Elevation Dome Baseline (`SkyDomeBase`)**:
+    - *At Poles ($|\phi| \ge 89.9^\circ$)*: `90°E` $\longleftrightarrow$ `0° (Grw)` $\longleftrightarrow$ `90°W`.
+  - **Sighting Perspective Telemetry**:
+    - Displays `"North Pole Singularity · All Horizons South"` (or `"South Pole Singularity · All Horizons North"`).
+  - **Invariant Diurnal Metric Token**:
+    - Switches `"Noon Peak"` / `"Transit Peak"` badge to `"Constant Altitude"` reflecting the 24-hour horizontal circular path.
 
 ---
 

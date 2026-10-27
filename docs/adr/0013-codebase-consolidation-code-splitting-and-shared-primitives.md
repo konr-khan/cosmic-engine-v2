@@ -17,7 +17,7 @@ During the scaling of the Cosmic Engine V2.0 observatory platform, five architec
 3. **Duplicate 2D Timeline Dragging & Scrubbing**:
    - [`SolarRibbonChart.tsx`](../../src/components/widgets/solar/SolarRibbonChart.tsx) (365-day annual Zulu ribbon) and [`LunarRibbonChart.tsx`](../../src/components/widgets/lunar/LunarRibbonChart.tsx) (365-day synodic lunar braided ribbon) each maintained separate implementations of bidirectional linear coordinate projection (`dayToX`/`xToDay`, `timeToY`/`yToTime`) and pointer event dragging lifecycles.
 4. **Divergent Globe Implementations**:
-   - The chronometer dock in [`AstrolabeDial.tsx`](../../src/components/controls/AstrolabeDial.tsx) relied on a legacy 4-layer `LivingMarble.tsx` component with custom canvas rendering, uncalibrated subsolar positioning, and inconsistent observer orientation compared to the canonical 9-layer [`<MiniGlobe />`](../../src/components/common/MiniGlobe.tsx) component.
+   - The chronometer dock in [`AstrolabeDial.tsx`](../../src/components/layout/chronometer/AstrolabeDial.tsx) relied on a legacy 4-layer `LivingMarble.tsx` component with custom canvas rendering, uncalibrated subsolar positioning, and inconsistent observer orientation compared to the canonical 9-layer [`<MiniGlobe />`](../../src/components/common/MiniGlobe.tsx) component.
 5. **Monolithic Test Suites**:
    - Test suites were concentrated in massive test files (such as `cosmicMath.test.ts` with 134 tests and `widgets.test.ts` spanning 1,344 lines with 46 tests), making test failure isolation difficult, increasing test runner feedback latency, and obscuring component-level domain boundaries.
 
@@ -47,7 +47,7 @@ During the scaling of the Cosmic Engine V2.0 observatory platform, five architec
 * Re-implemented `SolarRibbonChart` and `LunarRibbonChart` using `useRibbonScrubber`, eliminating ~150 lines of duplicate code.
 
 ### 4. Canonical MiniGlobe Integration & Observer-Locked Reticle
-* Replaced `LivingMarble.tsx` in [`AstrolabeDial.tsx`](../../src/components/controls/AstrolabeDial.tsx) with the unified 9-layer [`<MiniGlobe />`](../../src/components/common/MiniGlobe.tsx).
+* Replaced `LivingMarble.tsx` in [`AstrolabeDial.tsx`](../../src/components/layout/chronometer/AstrolabeDial.tsx) with the unified 9-layer [`<MiniGlobe />`](../../src/components/common/MiniGlobe.tsx).
 * Implemented an **Observer-Locked Reticle**:
   - Observer pin remains centered along the prime vertical axis at $Y_{\text{obs}} = -R\sin\phi$ and $X_{\text{obs}} = 0$.
   - Connected camera yaw directly to the negative hour angle ($\text{yaw} = -H$), causing sunlight and the day/night terminator to rotate around the globe while the observer location remains facing the user.

@@ -7,7 +7,7 @@ This directory houses the formal Architectural Decision Records for **Cosmic Eng
 
 ---
 
-## Subsystem Index (ADR 0001 – 0043)
+## Subsystem Index (ADR 0001 – 0044)
 
 ### 1. Core Astronomy Math & Nominal Type Safety
 Pure, deterministic mathematical models adhering to Jean Meeus / IAU conventions and TypeScript strict nominal branding.
@@ -15,7 +15,7 @@ Pure, deterministic mathematical models adhering to Jean Meeus / IAU conventions
 | ADR | Title | Milestone | Status | Key Focus |
 | :--- | :--- | :--- | :--- | :--- |
 | [0002](0002-branded-nominal-unit-typing.md) | Branded Nominal Unit Typing | M2 | Accepted | `Degrees`, `Radians`, `JulianDate`, compile-time angle brand guards |
-| [0010](0010-domain-invariant-and-physics-conservation-hardening.md) | Domain Invariant & Physics Conservation Hardening | M10 | Accepted | Energy conservation, distance bounds, eclipse geometry invariants |
+| [0010](0010-domain-invariant-and-physics-conservation-hardening.md) | Domain Invariant & Physics Conservation Hardening | M13 | Accepted | Energy conservation, distance bounds, eclipse geometry invariants |
 | [0015](0015-true-ecliptic-lunar-node-crossing-kinematics.md) | True Ecliptic Lunar Node Crossing Kinematics | M15 | Accepted | Newton-Raphson true latitude solver replacing mean argument $F$ |
 | [0019](0019-polar-singularity-rectification-and-syzygy-apparent-ratio.md) | Polar Singularity Rectification & Syzygy Apparent Ratio | M19 | Accepted | Clamped polar azimuths and apparent lunar/solar angular ratio |
 | [0022](0022-polar-directional-singularity-rectification.md) | Polar Directional Singularity Rectification | M22 | Accepted | Meridian transit directional tags (`S`, `N`, `Z`) at polar extremes |
@@ -35,11 +35,11 @@ Hierarchical 3D astronomical scene graph across Heliocentric, Geocentric, Anti-S
 | :--- | :--- | :--- | :--- | :--- |
 | [0004](0004-hierarchical-3d-scene-graph-and-camera-rigs.md) | Hierarchical 3D Scene Graph & Canonical Camera Rigs | M4 | Accepted (Amended) | Single geometric truth across celestial reference frames |
 | [0005](0005-reusable-miniglobe-and-subsolar-projection.md) | Reusable `<MiniGlobe />` & Subsolar Projection | M5 | Accepted | Analytical day/night terminator clipping with subsolar vector |
-| [0007](0007-eclipse-axial-upsize-and-prograde-kinematics.md) | Eclipse Viewport Upsizing & Prograde Astronomical Kinematics | M7 | Accepted | $520 \times 220$ layout parity and physical prograde lunar transit |
-| [0008](0008-canonical-camera-alignment-and-sky-view-prograde-kinematics.md) | Canonical Camera Alignment & Prograde Transit Kinematics | M8 | Accepted (Amended) | Canonical $520 \times 220$ projections and signed $\Delta\lambda$ transit kinematics |
-| [0009](0009-ground-truth-heliocentric-and-geocentric-prograde-kinematics.md) | Ground-Truth Heliocentric & Geocentric Kinematics | M9 | Accepted | Counter-clockwise prograde orbital mechanics from North Ecliptic Pole |
-| [0011](0011-axial-sightline-anti-solar-camera-rectification.md) | Axial Sightline Anti-Solar Camera Rectification | M11 | Accepted | Anti-solar night-side camera orientation along Sun-Earth axis |
-| [0012](0012-lunar-orbit-dual-depth-sorting-and-node-muting.md) | Lunar Orbit Dual Depth-Sorting & Node Muting | M12 | Accepted | Line-of-sight depth sorting ($Z_{\text{cam}}$) and distant node muting |
+| [0007](0007-eclipse-axial-upsize-and-prograde-kinematics.md) | Eclipse Viewport Upsizing & Prograde Astronomical Kinematics | M9 | Accepted | $520 \times 220$ layout parity and physical prograde lunar transit |
+| [0008](0008-canonical-camera-alignment-and-sky-view-prograde-kinematics.md) | Canonical Camera Alignment & Prograde Transit Kinematics | M10 | Accepted (Amended) | Canonical $520 \times 220$ projections and signed $\Delta\lambda$ transit kinematics |
+| [0009](0009-ground-truth-heliocentric-and-geocentric-prograde-kinematics.md) | Ground-Truth Heliocentric & Geocentric Kinematics | M11 | Accepted | Counter-clockwise prograde orbital mechanics from North Ecliptic Pole |
+| [0011](0011-axial-sightline-anti-solar-camera-rectification.md) | Axial Sightline Anti-Solar Camera Rectification | M14 | Accepted | Anti-solar night-side camera orientation along Sun-Earth axis |
+| [0012](0012-lunar-orbit-dual-depth-sorting-and-node-muting.md) | Lunar Orbit Dual Depth-Sorting & Node Muting | M14 | Accepted | Line-of-sight depth sorting ($Z_{\text{cam}}$) and distant node muting |
 | [0032](0032-observer-colocation-and-3d-celestial-continuum.md) | Observer Colocation & 3D Celestial Continuum | M32 | Accepted | Synchronized topocentric observer pin across 3D and 2D views |
 | [0033](0033-copernican-geocentric-laser-morph-continuum.md) | Copernican-Geocentric Laser Morph Continuum | M33 | Accepted | Continuous geometric homotopy from Heliocentric to Geocentric frames |
 | [0035](0035-visual-polish-lunar-harmonization-and-nodal-sightline.md) | Visual Polish Lunar Harmonization & Nodal Sightline | M35 | Accepted | Sightline alignment and harmonized lunar limb illumination |
@@ -63,7 +63,7 @@ Topocentric horizon projections, S-Z-N celestial meridian colure kinematics, and
 
 | ADR | Title | Milestone | Status | Key Focus |
 | :--- | :--- | :--- | :--- | :--- |
-| [0014](0014-sky-dome-symmetrical-viewbox-twilight-strata-and-draconic-nodal-kinematics.md) | Sky Dome Symmetrical ViewBox, Twilight Strata & Nodal Kinematics | M14 | Accepted | $260 \times 120$ viewbox parity, twilight strata, draconic nodal tracks |
+| [0014](0014-sky-dome-symmetrical-viewbox-twilight-strata-and-draconic-nodal-kinematics.md) | Sky Dome Symmetrical ViewBox, Twilight Strata & Nodal Kinematics | M14 | Accepted | $260 \times 138$ viewbox parity, twilight strata, draconic nodal tracks |
 | [0016](0016-dynamic-sighting-aware-horizon-dome-and-tropical-culmination.md) | Dynamic Sighting-Aware Horizon Dome & Tropical Culmination | M16 | Accepted | Sighting-direction aware compass views and tropical culmination |
 | [0017](0017-quad-view-celestial-meridian-profiles.md) | Quad-View Celestial Meridian Profiles | M17 | Accepted | Shared S-Z-N colure architecture for Sun and Moon meridian transits |
 | [0021](0021-meridian-profile-solstice-bifurcation-and-subhorizon-twilight-kinematics.md) | Meridian Profile Solstice Bifurcation & Subhorizon Twilight | M21 | Accepted | Solstice corridor bifurcation and subhorizon twilight arc rendering |
@@ -91,7 +91,7 @@ Glassmorphic HUD styling, stroke grammar, accessible controls, and modular calen
 
 | ADR | Title | Milestone | Status | Key Focus |
 | :--- | :--- | :--- | :--- | :--- |
-| [0013](0013-codebase-consolidation-code-splitting-and-shared-primitives.md) | Codebase Consolidation, Code Splitting & Shared Primitives | M13 | Accepted | Shared `<MiniGlobe />`, `<MiniMoon />`, and UI code splitting |
+| [0013](0013-codebase-consolidation-code-splitting-and-shared-primitives.md) | Codebase Consolidation, Code Splitting & Shared Primitives | M14 | Accepted | Shared `<MiniGlobe />`, `<MiniMoon />`, and UI code splitting |
 | [0023](0023-principles-and-design-system-alignment.md) | Observatory Design System & Aesthetic Principles Alignment | M23 | Accepted | Glassmorphic HUDs, semantic stroke palettes, layout contracts |
 | [0031](0031-solar-ribbon-chart-modular-decomposition.md) | Solar Ribbon Chart Modular Decomposition | M31 | Accepted | Decomposed annual ribbon chart subcomponents and memoized paths |
 | [0041](0041-accessible-controls-and-ui-consolidation.md) | Accessible Controls & UI Consolidation | M41 | Accepted | Accessible buttons, slider primitives, keyboard navigation |
@@ -105,3 +105,4 @@ Automated AST unit safety linting, strict Single Source of Truth enforcement, an
 | :--- | :--- | :--- | :--- | :--- |
 | [0042](0042-documentation-sweep-and-architecture-ssot-split.md) | Documentation Sweep & Architecture SSoT Split | M42 | Accepted | SSoT separation between `ARCHITECTURE.md`, `MATH_SPEC.md`, and `DESIGN_SYSTEM.md` |
 | [0043](0043-ai-native-documentation-indexing-and-automated-ledger-sync.md) | AI-Native Documentation Indexing & Automated Ledger Sync | M43 | Accepted | Section indexes, SSoT reconciliation, automated ledger metric sync |
+| [0044](0044-documentation-ssot-consolidation-and-integrity-linter.md) | Living Spec In-Place Consolidation & Documentation Integrity Linter | M44 | Accepted | Consolidated Armillary/Meridian specs, `DE-xx` rectification, and automated doc integrity checks |

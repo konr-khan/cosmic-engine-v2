@@ -4,7 +4,7 @@ Welcome to the authoritative structural blueprint for **Cosmic Engine V2.0**. Th
 
 > [!NOTE]
 > - For agent operating protocols, coding standards, and cognitive guardrails, consult [`AGENTS.md`](AGENTS.md).
-> - For the historical Feature Inventory (`F1–F88`) and Milestone Matrix (`M1–M43`), consult [`PROJECT.md`](PROJECT.md).
+> - For the historical Feature Inventory (`F1–F89`) and Milestone Matrix (`M1–M44`), consult [`PROJECT.md`](PROJECT.md).
 > - For astronomical equations and coordinate transformations, consult [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
 > - For semantic color tokens and SVG vector stroke encodings, consult [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
 
@@ -105,7 +105,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `solar.ts` — Solar declination, EoT, twilight algorithms & annual solar matrix
       - `lunar.ts` — Lunar ephemeris, phase angle, disc illumination, Newton-Raphson crossing solver
       - `eclipse.ts` — Syzygy shadow geometry & eclipse recurrence scanner
-      - `today/` — Decomposed Topocentric Horizon & Meridian submodules
+      - `today/` — Decomposed Topocentric Horizon & Meridian submodules (`index.ts` barrel)
         - `elevation.ts` — Prime vertical dome projection, diurnal paths & rise/set azimuth octants
         - `meridian.ts` — S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
         - `draconic.ts` — True lunar node crossings, 18.6y standstills & micro-rail
@@ -140,7 +140,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
         - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`, `meridianConfigHelpers.ts`)
         - `common/` — Shared today visual primitives (`SkyDomeFooter.tsx`, `MeridianDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`)
       - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, `useArmillaryInteractions`, `controls/`, `canvas/`)
-      - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`, `ribbon/`)
+      - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`, `polarDialGeometry.ts`, `ribbon/`)
       - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`, `ribbon/`)
       - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`, `ShadowRayHoverHud.tsx`, `hooks/useNodalPlaneMath.ts`)
       - `terminator/` — Daylight Terminator Map (`TerminatorMap`, `TerminatorHoverHud.tsx`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx`, `hooks/useTerminatorMapMath.ts`)
@@ -155,12 +155,12 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `syncDocMetrics.mjs` — Automated Vitest suite counter and master documentation dossier compiler
 - `.gitattributes` — Standard line-ending normalization (`eol=lf`) and binary asset flags
 - `ARCHITECTURE.md` — System topology, runtime contracts, canonical code layout & task routing matrix
-- `PROJECT.md` — Historical Feature Inventory (`F1–F88`) and Milestone Matrix (`M1–M43`)
+- `PROJECT.md` — Historical Feature Inventory (`F1–F89`) and Milestone Matrix (`M1–M44`)
 - `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0043`)
+  - `adr/` — Architecture Decision Records (`0001` through `0044`)
 
 ---
 

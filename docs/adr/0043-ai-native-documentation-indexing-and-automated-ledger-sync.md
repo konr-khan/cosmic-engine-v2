@@ -10,10 +10,10 @@ Cosmic Engine V2.0 operates as an AI pair-programmed astronomical observatory en
    Extensive architectural specifications ([`docs/MATH_SPEC.md`](../MATH_SPEC.md) at ~130 KB and [`docs/DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md) at ~55 KB) exceed AI view tool buffer limits (~46 KB), requiring multi-pass paging to locate relevant mathematical definitions and visual tokens.
 2. **SSoT Contradictions & Historical Anti-Pattern Regressions**:
    Subtle contradictions between specifications risked AI regression:
-   - `DESIGN_SYSTEM.md` Section 2.G contained duplicate text with a hardcoded hemisphere meridian tag (`S` vs `N`), violating Dead End #17 and conflicting with Section 8's true tri-state culmination bearings (`S`, `N`, `Z`).
-   - `MATH_SPEC.md` Section 12.E–F referenced mean argument of latitude $F$ for draconic node crossings, conflicting with Section 5.E and Dead End #15 (which mandates Newton-Raphson solving of true lunar latitude $\beta(t) = 0^\circ$).
+   - `DESIGN_SYSTEM.md` Section 2.G contained duplicate text with a hardcoded hemisphere meridian tag (`S` vs `N`), violating DE-13 and conflicting with Section 8's true tri-state culmination bearings (`S`, `N`, `Z`).
+   - `MATH_SPEC.md` Section 12.E–F referenced mean argument of latitude $F$ for draconic node crossings, conflicting with Section 5.E and DE-11 (which mandates Newton-Raphson solving of true lunar latitude $\beta(t) = 0^\circ$).
 3. **Dead End Reference Disconnect**:
-   `DEAD_ENDS.md` lacked explicit row identifiers (`DE-xx`) and subsystem taxonomy tags, making references like "Dead Ends #16 and #33" ambiguous across refactoring milestones.
+   `DEAD_ENDS.md` lacked explicit row identifiers (`DE-xx`) and subsystem taxonomy tags, making raw line-offset citations (such as `DE-12` and `DE-29`) ambiguous across refactoring milestones.
 4. **Historical ADR Drift**:
    Early ADRs (ADR 0004, 0008, 0018, 0024) lacked explicit evolutionary amendment banners documenting subsequent simplifications (e.g., retirement of `useEclipseScene`/`useArmillaryScene` into `useCosmicScene`/`useHeliocentricScene`, standardization of `hoverStore` field names, and full retirement of `useAnalemma`).
 5. **Partial Dataflow in System Topology**:
@@ -31,7 +31,7 @@ Cosmic Engine V2.0 operates as an AI pair-programmed astronomical observatory en
 
 ### 2. SSoT Harmonization & Anti-Pattern Rectification
 - Purged duplicate text in `DESIGN_SYSTEM.md` §2.G and aligned with §8 (`S`, `N`, `Z` tri-state bearings).
-- Reconciled `MATH_SPEC.md` §12 with §5 and Dead End #15, documenting that mean argument $F$ acts only as the initial seed $t_0$ for Newton-Raphson true crossing solving.
+- Reconciled `MATH_SPEC.md` §12 with §5 and DE-11, documenting that mean argument $F$ acts only as the initial seed $t_0$ for Newton-Raphson true crossing solving.
 
 ### 3. Institutional Memory Taxonomy (`DEAD_ENDS.md`)
 - Formatted all 49 rows in [`DEAD_ENDS.md`](../../DEAD_ENDS.md) with explicit IDs (`DE-01` through `DE-49`) and subsystem categories (`Layout/Controls`, `Globe/Projection`, `Armillary`, `Eclipse`, `Today/Meridian`, `Math/Units`, `Store/Worker`, `Ribbon/Almanac`).

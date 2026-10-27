@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { runUnitSafetyCheck, runMathPurityCheck, getAgentsSizeBudget, runDefaultDateCheck } from '../../scripts/lintUnitSafety.mjs';
+import { runUnitSafetyCheck, runMathPurityCheck, getAgentsSizeBudget, runDefaultDateCheck, runDocIntegrityCheck } from '../../scripts/lintUnitSafety.mjs';
 import { parse } from '@babel/parser';
 import { 
   Degrees, 
@@ -137,6 +137,16 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
     if (violations.length > 0) {
       const summary = violations.map(v => `${v.filePath}:${v.line}:${v.column} [default new Date()]: ${v.snippet}`).join('\n');
       expect.fail(`Found ${violations.length} default new Date() violations in components/hooks:\n${summary}`);
+    }
+    expect(violations).toHaveLength(0);
+  });
+
+  it('enforces documentation SSoT integrity (0 broken links, 0 machine-local file:/// URIs, valid DE/ADR IDs, and synchronized Quick Index line ranges)', () => {
+    const { totalFiles, violations } = runDocIntegrityCheck();
+    expect(totalFiles).toBeGreaterThan(45);
+    if (violations.length > 0) {
+      const summary = violations.map(v => `${v.filePath}:${v.line} [${v.type}] ${v.message}`).join('\n');
+      expect.fail(`Found ${violations.length} documentation integrity violations:\n${summary}`);
     }
     expect(violations).toHaveLength(0);
   });

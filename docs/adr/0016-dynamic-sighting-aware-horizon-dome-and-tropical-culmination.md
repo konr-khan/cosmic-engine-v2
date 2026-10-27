@@ -28,7 +28,7 @@ Prior to this architectural revision, two significant limitations affected accur
 ## Decisions
 
 ### 1. Analytical Culmination Bearing Solver (`calculateCulminationBearing`)
-Implemented in [`src/utils/cosmicMath/todaySky.ts`](../../src/utils/cosmicMath/todaySky.ts):
+Implemented in [`src/utils/cosmicMath/todaySky.ts`](../../src/utils/cosmicMath/today/index.ts):
 - Evaluates the signed angular difference:
   \[
   \Delta = \delta - \phi

@@ -50,8 +50,21 @@ export interface DefaultDateResult {
   violations: DefaultDateViolation[];
 }
 
+export interface DocIntegrityViolation {
+  filePath: string;
+  line: number;
+  type: string;
+  message: string;
+}
+
+export interface DocIntegrityResult {
+  totalFiles: number;
+  violations: DocIntegrityViolation[];
+}
+
 export function runUnitSafetyCheck(): UnitSafetyResult;
 export function runMathPurityCheck(): MathPurityResult;
 export function getAgentsSizeBudget(): AgentsBudgetResult;
 export function runDefaultDateCheck(): DefaultDateResult;
+export function runDocIntegrityCheck(): DocIntegrityResult;
 export function getSourceFiles(dir: string): string[];

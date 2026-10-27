@@ -12,7 +12,7 @@ To ensure continuous dashboard operation across all user environments, the archi
 3. A background calculation request hangs or exceeds the safety timeout threshold (5,000 ms).
 4. The user makes large discontinuous date jumps where immediate Frame 0 synchronization is required before the background worker returns.
 
-However, an audit of the synchronous fallback paths in [`src/workers/ephemerisWorkerManager.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/workers/ephemerisWorkerManager.ts) and [`src/hooks/useEphemerisWorker.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/hooks/useEphemerisWorker.ts) revealed critical vulnerabilities:
+However, an audit of the synchronous fallback paths in [`src/workers/ephemerisWorkerManager.ts`](../../src/workers/ephemerisWorkerManager.ts) and [`src/hooks/useEphemerisWorker.ts`](../../src/hooks/useEphemerisWorker.ts) revealed critical vulnerabilities:
 1. **Unchecked Pathological Inputs on Main Thread**:
    If an invalid, non-finite, or extreme value (`NaN`, `Infinity`, extreme years like `999999` or `-100000`, or out-of-range coordinates) was passed, synchronous fallback routines directly executed on the main UI thread. This risked running 365-iteration loops on invalid dates, exhausting CPU resources, or propagating `NaN` across React render trees.
 2. **Callback Starvation on Calculation Exceptions**:
@@ -57,7 +57,7 @@ Added defensive parameter sanitization to the background Web Worker thread itsel
 - **Zero Main-Thread Freezes**: Pathological inputs (`NaN`, extreme years, out-of-range coordinates) are intercepted and sanitized before CPU-intensive loops execute.
 - **Resilient Subscriber Lifecycle**: Registered callbacks always resolve, preventing permanent loading states in observatory widgets.
 - **Graceful UI Degradation**: Calculation failures in single visualizers fall back cleanly to empty/null payloads without crashing parent React render trees.
-- **Comprehensive Test Coverage**: Expanded test matrix with 22 new tests across [`workerSanitizers.test.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/workers/workerSanitizers.test.ts) (16 tests) and [`useEphemerisWorker.test.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/hooks/useEphemerisWorker.test.ts) (6 tests).
+- **Comprehensive Test Coverage**: Expanded test matrix with 22 new tests across [`workerSanitizers.test.ts`](../../src/workers/workerSanitizers.test.ts) (16 tests) and [`useEphemerisWorker.test.ts`](../../src/hooks/useEphemerisWorker.test.ts) (6 tests).
 
 ### Invariants Maintained
 - Total project test suite expanded to **679 tests across 45 suites** (100% pass rate).

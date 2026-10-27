@@ -21,6 +21,7 @@ const readmePath = path.join(rootDir, 'README.md');
 const agentsPath = path.join(rootDir, 'AGENTS.md');
 const architecturePath = path.join(rootDir, 'ARCHITECTURE.md');
 const projectPath = path.join(rootDir, 'PROJECT.md');
+const deadEndsPath = path.join(rootDir, 'DEAD_ENDS.md');
 const adrDir = path.join(rootDir, 'docs', 'adr');
 const dossierPath = path.join(rootDir, 'docs', 'COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
 const tempJsonPath = path.join(rootDir, '.vitest-metrics.json');
@@ -207,7 +208,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'SkyDomeBase Primitive',
     file: 'src/components/widgets/today/SkyDomeBase.test.tsx',
-    focus: 'Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors'
+    focus: 'Shared 260x138 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors'
   },
   {
     domain: 'Sky Dome Hooks & Primitives',
@@ -429,8 +430,19 @@ if (fs.existsSync(adrDir)) {
   }
 }
 
+let latestDeadEndNum = 0;
+if (fs.existsSync(deadEndsPath)) {
+  const deContent = fs.readFileSync(deadEndsPath, 'utf8');
+  const deMatches = [...deContent.matchAll(/\|\s*\*\*DE-(\d+)\*\*\s*\|/g)];
+  for (const m of deMatches) {
+    const n = parseInt(m[1], 10);
+    if (n > latestDeadEndNum) latestDeadEndNum = n;
+  }
+}
+
 const latestAdrStr = String(latestAdrNum).padStart(4, '0');
-console.log(`📋 SSoT Ledger Metrics: Features F1–F${latestFeatureNum}, Milestones M1–M${latestMilestoneNum}, ADRs 0001–${latestAdrStr}.`);
+const latestDeStr = String(latestDeadEndNum).padStart(2, '0');
+console.log(`📋 SSoT Ledger Metrics: Features F1–F${latestFeatureNum}, Milestones M1–M${latestMilestoneNum}, ADRs 0001–${latestAdrStr}, Dead Ends DE-01–DE-${latestDeStr}.`);
 
 // ==========================================
 // 0. Synchronize PROJECT.md Header & Footer Ranges
@@ -470,10 +482,14 @@ if (fs.existsSync(agentsPath)) {
     `features (\`F1–F${latestFeatureNum}\`) or milestones (\`M1–M${latestMilestoneNum}\`)`
   );
 
-  // C. ADR range
+  // C. ADR & Dead End ranges
   agentsContent = agentsContent.replace(
     /historical invariants \(`0001[–-]\d{4}`\)/g,
     `historical invariants (\`0001–${latestAdrStr}\`)`
+  );
+  agentsContent = agentsContent.replace(
+    /\(`DE-01[–-]DE-\d{2}`\)/g,
+    `(\`DE-01–DE-${latestDeStr}\`)`
   );
 
   fs.writeFileSync(agentsPath, agentsContent, 'utf8');
@@ -510,8 +526,8 @@ if (fs.existsSync(readmePath)) {
 
   // Ledger: Documents XX Architecture Decision Records
   readmeContent = readmeContent.replace(
-    /Documents \d+ Architecture Decision Records \(`ADR 0001[–-]\d{4}`\)/g,
-    `Documents ${latestAdrNum} Architecture Decision Records (\`ADR 0001–${latestAdrStr}\`)`
+    /Documents \d+ Architecture Decision Records \(`ADR 0001[–-]\d{4}`\)(?: and \d+ historical anti-patterns \(`DE-01[–-]DE-\d{2}`\))?/g,
+    `Documents ${latestAdrNum} Architecture Decision Records (\`ADR 0001–${latestAdrStr}\`) and ${latestDeadEndNum} historical anti-patterns (\`DE-01–DE-${latestDeStr}\`)`
   );
 
   // Ledger: features (F1–FXX) and engineering milestones (M1–MXX)
@@ -582,9 +598,8 @@ if (fs.existsSync(architecturePath)) {
 function syncSpecSectionLineRanges(specPath, label) {
   if (!fs.existsSync(specPath)) return;
   const rawContent = fs.readFileSync(specPath, 'utf8');
-  const eol = rawContent.includes('\r\n') ? '\r\n' : '\n';
   const lines = rawContent.split(/\r?\n/);
-  const totalLines = lines.length;
+  const totalLines = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
 
   const headers = [];
   for (let i = 0; i < lines.length; i++) {
@@ -612,7 +627,7 @@ function syncSpecSectionLineRanges(specPath, label) {
     )
   );
 
-  fs.writeFileSync(specPath, updatedLines.join(eol), 'utf8');
+  fs.writeFileSync(specPath, updatedLines.join('\n'), 'utf8');
   console.log(`✔ ${label} Quick Index line ranges (Lxx–Lyy) synchronized (${headers.length} sections).`);
 }
 

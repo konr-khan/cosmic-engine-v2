@@ -57,7 +57,7 @@ Following a comprehensive independent codebase audit, several latent numerical b
 
 ### 6. Meridian View-Model Helper Extraction (Phase 6)
 - **Extract View-Model Builders**: Created `src/components/widgets/today/hooks/meridianConfigHelpers.ts` with strongly typed builders: `createMeridianRadialTickConfig`, `createMeridianSwathConfig`, `createMeridianGateAnchorConfig`, and `createMeridianPeakTargetConfig`.
-- **Preserve Domain Separation**: Refactored `useSunMeridianMath.ts` and `useMoonMeridianMath.ts` to consume these builders, deduplicating boilerplate while strictly preserving separate domain logic for the Sun's 1-year tropical cycle vs. the Moon's 18.6-year nodal precession (Dead End #49).
+- **Preserve Domain Separation**: Refactored `useSunMeridianMath.ts` and `useMoonMeridianMath.ts` to consume these builders, deduplicating boilerplate while strictly preserving separate domain logic for the Sun's 1-year tropical cycle vs. the Moon's 18.6-year nodal precession (DE-45).
 - **Dedicated Test Suite**: Added `meridianConfigHelpers.test.ts` with 9 unit tests.
 
 ---

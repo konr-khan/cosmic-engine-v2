@@ -7,22 +7,22 @@ Accepted
 Following Milestone M25 (which successfully extracted calculation cascades from the Elevation Domes into `useSunElevationMath` and `useMoonElevationMath`) and Milestone M29 (which decomposed the dashboard widget containers to eliminate 60 FPS cascades), two remaining areas of technical debt and maintenance overhead were identified:
 
 1. **Monolithic Meridian Dome Components**:
-   - Both [`SunMeridianDome.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/SunMeridianDome.tsx) (593 lines) and [`MoonMeridianDome.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/MoonMeridianDome.tsx) (629 lines) remained heavyweight monoliths.
+   - Both [`SunMeridianDome.tsx`](../../src/components/widgets/today/SunMeridianDome.tsx) (593 lines) and [`MoonMeridianDome.tsx`](../../src/components/widgets/today/MoonMeridianDome.tsx) (629 lines) remained heavyweight monoliths.
    - They intertwined complex mathematical derivations—3D diurnal colure direction cosines, split solstice/standstill swaths, polar antimeridian counterpart chords ($180^\circ$), 5-tier twilight thresholds, nodal crossing ticks ($\beta = 0^\circ$), and parked horizon gate anchors—directly inside component render bodies.
    - This tight coupling prevented isolated unit testing of the meridian math derivations without mounting full React SVG component trees.
 
 2. **Redundant Branded Type Assertions**:
-   - In [`src/App.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/App.tsx), redundant `latitude as Latitude`, `longitude as Longitude`, and `timeOfDay as HoursDecimal` type assertions remained across widget container wrappers (`TodayWidgetContent`, `TerminatorWidgetContent`, `ArmillaryWidgetContent`, `MicroTidesWidgetContent`, `EclipseWidgetContent`, `LunarAlmanacWidgetContent`, `SolarAlmanacWidgetContent`, and `MemoizedChronometerDock`), despite `CosmicStoreState` already branding these primitive properties.
+   - In [`src/App.tsx`](../../src/App.tsx), redundant `latitude as Latitude`, `longitude as Longitude`, and `timeOfDay as HoursDecimal` type assertions remained across widget container wrappers (`TodayWidgetContent`, `TerminatorWidgetContent`, `ArmillaryWidgetContent`, `MicroTidesWidgetContent`, `EclipseWidgetContent`, `LunarAlmanacWidgetContent`, `SolarAlmanacWidgetContent`, and `MemoizedChronometerDock`), despite `CosmicStoreState` already branding these primitive properties.
 
 3. **Duplicated Filter Active-Category Boolean Reduction**:
-   - In [`src/hooks/useCosmicEngine.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/hooks/useCosmicEngine.ts), the boolean resolution logic for `isLunarActive`, `isEclipseActive`, and `isOrbitalActive` duplicated multi-clause positive-filtering and negation-exclusion branches across three separate key collections.
+   - In [`src/hooks/useCosmicEngine.ts`](../../src/hooks/useCosmicEngine.ts), the boolean resolution logic for `isLunarActive`, `isEclipseActive`, and `isOrbitalActive` duplicated multi-clause positive-filtering and negation-exclusion branches across three separate key collections.
 
 ---
 
 ## Decisions
 
 ### 1. Solar Meridian Math Hook (`useSunMeridianMath.ts`)
-Created [`src/components/widgets/today/hooks/useSunMeridianMath.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/hooks/useSunMeridianMath.ts):
+Created [`src/components/widgets/today/hooks/useSunMeridianMath.ts`](../../src/components/widgets/today/hooks/useSunMeridianMath.ts):
 - Accepts `{ solarData, displayTime, latitude, currentDate, isTwilightModeActive }: UseSunMeridianMathParams`.
 - Encapsulates:
   - Solar culmination altitude and directional bearing (`todayCulmination`).
@@ -35,7 +35,7 @@ Created [`src/components/widgets/today/hooks/useSunMeridianMath.ts`](file:///c:/
 - Memoizes all calculations with strict dependency arrays and exports `useSunMeridianMath`, `OBLIQUITY`, `getTwilightTier`, and types.
 
 ### 2. Lunar Meridian Math Hook (`useMoonMeridianMath.ts`)
-Created [`src/components/widgets/today/hooks/useMoonMeridianMath.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/hooks/useMoonMeridianMath.ts):
+Created [`src/components/widgets/today/hooks/useMoonMeridianMath.ts`](../../src/components/widgets/today/hooks/useMoonMeridianMath.ts):
 - Accepts `{ orbitalData, solarData, displayTime, latitude, currentDate, isNodalModeActive }: UseMoonMeridianMathParams`.
 - Encapsulates:
   - Lunar transit peak altitude and directional bearing (`todayCulmination`).
@@ -78,8 +78,8 @@ export const resolveActiveCategory = (
 Eliminated redundant logic across `isLunarActive`, `isEclipseActive`, and `isOrbitalActive`.
 
 ### 6. Isolated Unit Testing
-- Expanded [`SkyDomeHooksAndPrimitives.test.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx) with tests for `useSunMeridianMath` and `useMoonMeridianMath` across temperate, polar singularity (90°N), sub-horizon, and nodal modes.
-- Expanded [`useCosmicEngine.test.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/hooks/useCosmicEngine.test.ts) with tests for `resolveActiveCategory`.
+- Expanded [`SkyDomeHooksAndPrimitives.test.tsx`](../../src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx) with tests for `useSunMeridianMath` and `useMoonMeridianMath` across temperate, polar singularity (90°N), sub-horizon, and nodal modes.
+- Expanded [`useCosmicEngine.test.ts`](../../src/hooks/useCosmicEngine.test.ts) with tests for `resolveActiveCategory`.
 
 ---
 

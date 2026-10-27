@@ -57,7 +57,7 @@ We designed and implemented a unified mathematical continuum and modernized the 
 - Conditioned `isOrbitalMode` in `ArmillaryTelemetryHud.tsx` on $\lambda \le 0.45$, smoothly transitioning to Astrolabe Horology & Chaldean Unequal Hours whenever $\lambda > 0.45$.
 
 ### 4. Structural Decomposition
-- **Interaction Hook**: Extracted ~220 lines of pointer capture, Euler delta damping, Free Rete spin deltas, non-passive wheel zoom listeners, and dynamic `viewBoxStr` calculations into [`useArmillaryInteractions.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/armillary/useArmillaryInteractions.ts), reducing `ArmillarySvgCanvas.tsx` to a clean declarative layer compositor (355 lines).
+- **Interaction Hook**: Extracted ~220 lines of pointer capture, Euler delta damping, Free Rete spin deltas, non-passive wheel zoom listeners, and dynamic `viewBoxStr` calculations into [`useArmillaryInteractions.ts`](../../src/components/widgets/armillary/useArmillaryInteractions.ts), reducing `ArmillarySvgCanvas.tsx` to a clean declarative layer compositor (355 lines).
 - **Controls Decomposition**: Modularized `ArmillaryHeaderControls.tsx` into `controls/` subcomponents:
   - `ArmillaryModePills.tsx`: 5-mode segmented pills.
   - `ArmillaryMorphRail.tsx`: Eccentricity toggle, Morph $\lambda$ slider, and Free Rete clock sync.

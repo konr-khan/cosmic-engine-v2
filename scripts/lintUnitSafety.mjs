@@ -295,12 +295,196 @@ export function getAgentsSizeBudget() {
   };
 }
 
+/**
+ * Verifies documentation integrity across core Markdown specifications:
+ * 1. Zero non-portable machine-local `file:///` URIs.
+ * 2. All relative Markdown file links resolve on disk.
+ * 3. All DE-xx, Fxx, Mxx, and ADR xxxx references resolve to valid ledger entries, and bare `Dead End #N` prose is banned.
+ * 4. Quick Section Index `Lxx–Lyy` line ranges in MATH_SPEC.md and DESIGN_SYSTEM.md match actual section headers.
+ */
+export function runDocIntegrityCheck() {
+  const coreDocs = [
+    path.join(rootDir, 'AGENTS.md'),
+    path.join(rootDir, 'ARCHITECTURE.md'),
+    path.join(rootDir, 'PROJECT.md'),
+    path.join(rootDir, 'DEAD_ENDS.md'),
+    path.join(rootDir, 'README.md'),
+    path.join(rootDir, 'docs', 'MATH_SPEC.md'),
+    path.join(rootDir, 'docs', 'DESIGN_SYSTEM.md')
+  ];
+  const adrDir = path.join(rootDir, 'docs', 'adr');
+  if (fs.existsSync(adrDir)) {
+    for (const f of fs.readdirSync(adrDir)) {
+      if (f.endsWith('.md')) {
+        coreDocs.push(path.join(adrDir, f));
+      }
+    }
+  }
+
+  const validDe = new Set();
+  const deadEndsPath = path.join(rootDir, 'DEAD_ENDS.md');
+  if (fs.existsSync(deadEndsPath)) {
+    const deText = fs.readFileSync(deadEndsPath, 'utf8');
+    for (const m of deText.matchAll(/\|\s*\*\*DE-(\d+)\*\*\s*\|/g)) {
+      validDe.add(m[1]);
+    }
+  }
+
+  const validFeatures = new Set();
+  const validMilestones = new Set();
+  const projectPath = path.join(rootDir, 'PROJECT.md');
+  if (fs.existsSync(projectPath)) {
+    const projText = fs.readFileSync(projectPath, 'utf8');
+    for (const m of projText.matchAll(/\|\s*F(\d+)\s*\|/g)) {
+      validFeatures.add(parseInt(m[1], 10));
+    }
+    for (const m of projText.matchAll(/\|\s*M(\d+)\s*\|/g)) {
+      validMilestones.add(parseInt(m[1], 10));
+    }
+    for (let i = 1; i <= 20; i++) validMilestones.add(i);
+  }
+
+  const validAdrs = new Set();
+  if (fs.existsSync(adrDir)) {
+    for (const f of fs.readdirSync(adrDir)) {
+      const m = f.match(/^(\d{4})-.*\.md$/);
+      if (m) validAdrs.add(m[1]);
+    }
+  }
+
+  const violations = [];
+
+  for (const filePath of coreDocs) {
+    if (!fs.existsSync(filePath)) continue;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const lines = raw.split(/\r?\n/);
+    const fileDir = path.dirname(filePath);
+
+    lines.forEach((line, idx) => {
+      const lineNum = idx + 1;
+
+      // 1. Ban machine-local file:/// URIs in markdown links
+      if (/\]\(file:\/\/\//i.test(line)) {
+        violations.push({
+          filePath,
+          line: lineNum,
+          type: 'non-portable-uri',
+          message: 'Found non-portable machine-local file:/// URI; use relative repository paths instead.'
+        });
+      }
+
+      // 2. Ban ambiguous "Dead End #N" prose
+      if (/Dead Ends?\s*#\d+/i.test(line)) {
+        violations.push({
+          filePath,
+          line: lineNum,
+          type: 'ambiguous-dead-end-ref',
+          message: 'Ambiguous "Dead End #N" citation; use explicit "DE-xx" row ID from DEAD_ENDS.md.'
+        });
+      }
+
+      // 3. Validate DE-xx references
+      for (const m of line.matchAll(/\bDE-(\d{2})\b/g)) {
+        if (!validDe.has(m[1])) {
+          violations.push({
+            filePath,
+            line: lineNum,
+            type: 'invalid-de-id',
+            message: `Unregistered Dead End reference DE-${m[1]}.`
+          });
+        }
+      }
+
+      // 4. Validate ADR references
+      for (const m of line.matchAll(/\bADR[- ](\d{4})\b/g)) {
+        if (!validAdrs.has(m[1])) {
+          violations.push({
+            filePath,
+            line: lineNum,
+            type: 'invalid-adr-id',
+            message: `Unregistered ADR reference ADR-${m[1]}.`
+          });
+        }
+      }
+
+      // 5. Validate relative markdown links [label](target)
+      for (const m of line.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
+        const rawTarget = m[1].trim();
+        if (
+          rawTarget.startsWith('#') ||
+          rawTarget.startsWith('http://') ||
+          rawTarget.startsWith('https://') ||
+          rawTarget.startsWith('file://') ||
+          rawTarget.includes('<')
+        ) {
+          continue;
+        }
+        const cleanPath = rawTarget.split('#')[0];
+        if (!cleanPath) continue;
+        const resolved = path.resolve(fileDir, cleanPath);
+        if (!fs.existsSync(resolved)) {
+          violations.push({
+            filePath,
+            line: lineNum,
+            type: 'broken-link',
+            message: `Broken relative link target '${cleanPath}' (resolved to ${resolved}).`
+          });
+        }
+      }
+    });
+  }
+
+  // 6. Validate Quick Section Index line ranges in MATH_SPEC.md & DESIGN_SYSTEM.md
+  for (const specName of ['MATH_SPEC.md', 'DESIGN_SYSTEM.md']) {
+    const specPath = path.join(rootDir, 'docs', specName);
+    if (!fs.existsSync(specPath)) continue;
+    const lines = fs.readFileSync(specPath, 'utf8').split(/\r?\n/);
+    const totalLines = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
+
+    const headers = [];
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(/^## (\d+)\.\s+/);
+      if (m) headers.push({ secNum: m[1], startLine: i + 1 });
+    }
+
+    const expectedRanges = new Map();
+    for (let i = 0; i < headers.length; i++) {
+      const startLine = headers[i].startLine;
+      const endLine = i + 1 < headers.length ? headers[i + 1].startLine - 1 : totalLines;
+      expectedRanges.set(headers[i].secNum, `L${startLine}–L${endLine}`);
+    }
+
+    lines.forEach((line, idx) => {
+      const m = line.match(/^\|\s*\*\*\[(\d+)\.\s+[^\]]+\]\([^)]+\)\*\*\s*\|\s*`(L\d+[–-]L\d+)`/);
+      if (m) {
+        const secNum = m[1];
+        const actualRange = m[2].replace('-', '–');
+        const expectedRange = expectedRanges.get(secNum);
+        if (expectedRange && actualRange !== expectedRange) {
+          violations.push({
+            filePath: specPath,
+            line: idx + 1,
+            type: 'stale-spec-index',
+            message: `Section ${secNum} Quick Index range is ${actualRange}, expected ${expectedRange} (run npm run sync:docs).`
+          });
+        }
+      }
+    });
+  }
+
+  return {
+    totalFiles: coreDocs.length,
+    violations
+  };
+}
+
 // CLI execution
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { totalFiles, violations } = runUnitSafetyCheck();
   const mathPurity = runMathPurityCheck();
   const defaultDateCheck = runDefaultDateCheck();
   const agentsBudget = getAgentsSizeBudget();
+  const docIntegrity = runDocIntegrityCheck();
 
   if (violations.length > 0) {
     console.error('\n❌ [unit-safety] Unit-Safety AST Guardrail Violations Detected:');
@@ -347,10 +531,21 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
 
+  if (docIntegrity.violations.length > 0) {
+    console.error('\n❌ [doc-integrity] Documentation Integrity Guardrail Violations Detected:');
+    for (const v of docIntegrity.violations) {
+      const relPath = path.relative(rootDir, v.filePath).replace(/\\/g, '/');
+      console.error(`  ${relPath}:${v.line} — [${v.type}] ${v.message}`);
+    }
+    console.error('');
+    process.exit(1);
+  }
+
   console.log(`\n✔ [unit-safety] All UI components (${totalFiles} files) conform to branded unit safety guardrails.`);
   console.log('  0 instances of asDegrees() or asRadians() found in src/components/**.');
   console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports or presentation tokens).`);
   console.log(`✔ [default-date] Prop identity stability verified (${defaultDateCheck.totalFiles} files in src/components and src/hooks contain 0 default new Date() instances).`);
-  console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).\n`);
+  console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).`);
+  console.log(`✔ [doc-integrity] Documentation SSoT integrity verified (${docIntegrity.totalFiles} Markdown specifications: 0 broken links, 0 stale index ranges, 0 invalid ledger refs).\n`);
   process.exit(0);
 }

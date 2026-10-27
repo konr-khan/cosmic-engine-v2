@@ -8,7 +8,7 @@ Accepted (Extended by ADR 0016, ADR 0017, and ADR 0022)
 > Note that culmination bearings were enhanced in [ADR 0016](0016-dynamic-sighting-aware-horizon-dome-and-tropical-culmination.md), the system expanded into a 4-Dome Quad view in [ADR 0017](0017-quad-view-celestial-meridian-profiles.md), and polar horizon baselines were rectified to longitudinal colures in [ADR 0022](0022-polar-directional-singularity-rectification.md).
 
 ## Context
-During user experience and visual inspection of the **Today's Sky Horizon Dome** widget ([`TodayWidget.tsx`](../../src/components/widgets/today/TodayWidget.tsx)), seven geometric, ergonomic, and physical discrepancies were identified between the Sun dome ([`SunElevationDome.tsx`](../../src/components/widgets/today/SunElevationDome.tsx)) and Moon dome ([`MoonElevationDome.tsx`](../../src/components/widgets/today/MoonElevationDome.tsx)):
+During user experience and visual inspection of the **Today's Sky Horizon Dome** widget ([`TodayWidget.tsx`](../../src/components/widgets/today/TodayHorizonView.tsx)), seven geometric, ergonomic, and physical discrepancies were identified between the Sun dome ([`SunElevationDome.tsx`](../../src/components/widgets/today/SunElevationDome.tsx)) and Moon dome ([`MoonElevationDome.tsx`](../../src/components/widgets/today/MoonElevationDome.tsx)):
 
 1. **Asymmetrical Viewport Geometry**:
    - The Sun Elevation Dome operated on `viewBox="0 0 260 120"`, while the Moon Elevation Dome operated on `viewBox="0 0 260 138"` to accommodate its monthly declination excursion range.
@@ -85,7 +85,7 @@ During user experience and visual inspection of the **Today's Sky Horizon Dome**
 * Prevents collision with waning phase dashed encoding while maintaining clear diurnal path continuity below the horizon line.
 
 ### 6. Strict 24-Hour Crossing Gate & Nearest Node Targeting
-* Replaced forward-only node tracking with bilateral nearest-node solver in [`calculateSkyDomeLunarNodes`](../../src/utils/cosmicMath/todaySky.ts):
+* Replaced forward-only node tracking with bilateral nearest-node solver in [`calculateSkyDomeLunarNodes`](../../src/utils/cosmicMath/today/index.ts):
   \[
   d_{\text{nearest}} = \min(t_{\text{next}}, t_{\text{prev}})
   \]

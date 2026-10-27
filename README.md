@@ -23,7 +23,7 @@ Rather than relying on informal conventions that drift across sessions, Cosmic E
 4. **Empirical Physics Conservation & Adversarial Stress Suites**:
    - Domain tests verify physical conservation laws directly—including Keplerian areal velocity invariance ($r^2\dot{\theta} = \text{const}$), vis-viva orbital energy conservation, 10,000-sample Monte Carlo stereographic ring invariants ($R_0\sec\epsilon$), and a strict **$< 0.8\text{ ms/frame}$ hot-loop latency budget** across 1,000 continuous frames.
 5. **Institutional Memory & Anti-Pattern Ledger ([`DEAD_ENDS.md`](./DEAD_ENDS.md) & [`docs/adr/`](./docs/adr/))**:
-   - Documents 43 Architecture Decision Records (`ADR 0001–0043`) and historical mathematical/rendering dead ends so future AI sessions never repeat discarded approaches.
+   - Documents 44 Architecture Decision Records (`ADR 0001–0044`) and 49 historical anti-patterns (`DE-01–DE-49`) and historical mathematical/rendering dead ends so future AI sessions never repeat discarded approaches.
 
 ---
 
@@ -62,8 +62,8 @@ To prevent documentation drift across AI pair-programming sessions, every archit
 | **[`docs/MATH_SPEC.md`](./docs/MATH_SPEC.md)** | **Astronomical Math Specification**: Jean Meeus equations, coordinate transformations, stereographic invariants, and syzygy shadow geometry |
 | **[`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)** | **Visual Tokens & Stroke Grammar**: Smallest Effective Difference (SED) principles, semantic colors (Sky Blue / Rose Red / Amber), and 2D/3D SVG stroke encodings |
 | **[`DEAD_ENDS.md`](./DEAD_ENDS.md)** | **Historical Anti-Pattern Log**: Critical post-mortems of failed geometric, projection, camera staging, and worker concurrency approaches |
-| **[`PROJECT.md`](./PROJECT.md)** | **Feature & Milestone Ledger**: Complete chronological inventory of completed features (`F1–F88`) and engineering milestones (`M1–M43`) |
-| **[`docs/adr/`](./docs/adr/)** | **Architecture Decision Records**: 43 immutable decision records (`ADR 0001–0043`) with evolutionary amendment tracking |
+| **[`PROJECT.md`](./PROJECT.md)** | **Feature & Milestone Ledger**: Complete chronological inventory of completed features (`F1–F89`) and engineering milestones (`M1–M44`) |
+| **[`docs/adr/`](./docs/adr/)** | **Architecture Decision Records**: 44 immutable decision records (`ADR 0001–0044`) with evolutionary amendment tracking |
 
 ---
 
@@ -75,7 +75,7 @@ To prevent documentation drift across AI pair-programming sessions, every archit
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`, `src/store/hoverStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 886 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 887 tests)
 
 ```bash
 # Install dependencies
@@ -102,7 +102,7 @@ npm run sync:dossier       # Compiles docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.m
 
 ## 🧪 Verification & Test Harness
 
-The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**886 tests**):
+The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**887 tests**):
 
 <details>
 <summary><strong>📊 Expand Full 59-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
@@ -122,7 +122,7 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **3D Scene Graph Math** | `src/utils/cosmicMath/scene/scene.test.ts` (34 tests) | 3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\circ$ inclined lunar orbit with continuous nodal precession $\Omega(t)$, and 3D syzygy shadow cones |
 | **Scene Cameras Stress** | `src/utils/cosmicMath/scene/cameras.stress.test.ts` (23 tests) | Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts |
 | **Scene Coordinate Adversarial** | `src/utils/cosmicMath/scene/m1_adversarial.test.ts` (18 tests) | Coordinate frame invariants, axial tilt matrix preservation ($23.439^\circ$) in inertial space, and singular polar viewing angles |
-| **Unit-Safety AST Guardrails** | `src/types/unitSafety.test.ts` (8 tests) | Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), and strict $\le 18\text{ KB}$ `AGENTS.md` kernel size budget |
+| **Unit-Safety AST Guardrails** | `src/types/unitSafety.test.ts` (9 tests) | Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), and strict $\le 18\text{ KB}$ `AGENTS.md` kernel size budget |
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` (13 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (23 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (5 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useCosmicScene` and `useHeliocentricScene`), and `shallowEqual` protection |
@@ -135,7 +135,7 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **Dashboard Window Layout** | `src/components/layout/DashboardWindow.test.tsx` (17 tests) | Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts |
 | **Layout & Chronometer Dock** | `src/components/layout/layout.test.tsx` (10 tests) | Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing |
 | **Ribbon Scrubber Hook** | `src/components/widgets/common/useRibbonScrubber.test.ts` (10 tests) | Bidirectional 2D coordinate scaling (dayToX, xToDay, timeToY, yToTime), synodic sub-window scaling, dragging state, and pointer capture lifecycle |
-| **SkyDomeBase Primitive** | `src/components/widgets/today/SkyDomeBase.test.tsx` (19 tests) | Shared 260x120 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors |
+| **SkyDomeBase Primitive** | `src/components/widgets/today/SkyDomeBase.test.tsx` (19 tests) | Shared 260x138 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors |
 | **Sky Dome Hooks & Primitives** | `src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx` (12 tests) | Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer |
 | **Today Horizon Widget** | `src/components/widgets/today/TodayWidget.test.tsx` (24 tests) | SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles |
 | **Meridian View-Model Config Helpers** | `src/components/widgets/today/hooks/meridianConfigHelpers.test.ts` (9 tests) | Strongly typed view-model builders for radial ticks, swaths, gate anchors, and peak targets deduplicating Sun and Moon meridian views |

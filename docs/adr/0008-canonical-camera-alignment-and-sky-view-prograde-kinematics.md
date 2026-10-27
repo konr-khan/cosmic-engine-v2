@@ -70,7 +70,7 @@ Following the completion of ADR 0007 (Eclipse Demonstrator Viewport Upsizing & P
   - **Rig 1 (Top-Down Heliocentric)**: $\Delta t = +5\text{ days} \implies \frac{d\theta}{dt} > 0$ (prograde counter-clockwise orbit in SVG).
   - **Rig 2 (Transverse Geocentric Profile)**: New Moon $\to$ Full Moon $\implies \frac{dX_{\text{screen}}}{dt} > 0$ (monotonic Left-to-Right motion from Sun to Shadow cone).
   - **Rig 3 (Axial Geocentric Sightline)**: Advancing time across solar eclipse $\implies \frac{dX_{\text{screen}}}{dt} < 0$ (monotonic Right-to-Left / West-to-East transit across the Sun).
-* Added automated unit test in [`widgets.test.ts`](../../src/components/widgets/widgets.test.ts) verifying prograde transit without bouncing in `SkyViewSimulator`.
+* Added automated unit test in [`widgets.test.ts`](../../src/components/widgets/eclipse/EclipseWidget.test.tsx) verifying prograde transit without bouncing in `SkyViewSimulator`.
 
 ---
 

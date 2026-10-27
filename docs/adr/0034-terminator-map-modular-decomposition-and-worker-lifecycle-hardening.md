@@ -6,11 +6,11 @@ Accepted
 ## Context
 Following Milestone 33 and an in-depth codebase audit, two architectural opportunities were identified:
 1. **Worker Concurrency Lifecycle & Cache Migration**:
-   [`EphemerisWorkerManager.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/workers/ephemerisWorkerManager.ts) registered anonymous window event listeners (`beforeunload`, `pagehide`) during construction, but never detached them inside [`terminate()`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/workers/ephemerisWorkerManager.ts#L788). In multi-instance test harnesses, listeners leaked onto `window`. Furthermore, although a generic [`LruCache`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/utils/lruCache.ts) utility existed with 14 unit tests, the manager still maintained internal caches as raw `Map` objects with legacy manual eviction code paths.
+   [`EphemerisWorkerManager.ts`](../../src/workers/ephemerisWorkerManager.ts) registered anonymous window event listeners (`beforeunload`, `pagehide`) during construction, but never detached them inside [`terminate()`](../../src/workers/ephemerisWorkerManager.ts#L788). In multi-instance test harnesses, listeners leaked onto `window`. Furthermore, although a generic [`LruCache`](../../src/utils/lruCache.ts) utility existed with 14 unit tests, the manager still maintained internal caches as raw `Map` objects with legacy manual eviction code paths.
 2. **Monolithic Terminator Map & Subsystem Asymmetry**:
-   While other observatory visualizers ([`SunElevationDome.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/SunElevationDome.tsx), [`MoonElevationDome.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/MoonElevationDome.tsx), [`SunMeridianDome.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/today/SunMeridianDome.tsx)) adhered strictly to the container/presenter hook paradigm (ADR-0025, ADR-0030), [`TerminatorMap.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/terminator/TerminatorMap.tsx) remained a 439-line monolith embedding ~110 lines of complex Keplerian scaling, polygon wrapping, twilight shadow generation, and diurnal track simulation inline with SVG presentation.
+   While other observatory visualizers ([`SunElevationDome.tsx`](../../src/components/widgets/today/SunElevationDome.tsx), [`MoonElevationDome.tsx`](../../src/components/widgets/today/MoonElevationDome.tsx), [`SunMeridianDome.tsx`](../../src/components/widgets/today/SunMeridianDome.tsx)) adhered strictly to the container/presenter hook paradigm (ADR-0025, ADR-0030), [`TerminatorMap.tsx`](../../src/components/widgets/terminator/TerminatorMap.tsx) remained a 439-line monolith embedding ~110 lines of complex Keplerian scaling, polygon wrapping, twilight shadow generation, and diurnal track simulation inline with SVG presentation.
 3. **React 19 SVG Namespace Warnings**:
-   In test harnesses using `renderToStaticMarkup` on isolated SVG `<g>` elements ([`LiveSyzygyView.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/eclipse/LiveSyzygyView.tsx)), React 19 defaulted to the HTML namespace, emitting casing warnings on camelCase SVG elements (`<clipPath>`, `<radialGradient>`).
+   In test harnesses using `renderToStaticMarkup` on isolated SVG `<g>` elements ([`LiveSyzygyView.tsx`](../../src/components/widgets/eclipse/LiveSyzygyView.tsx)), React 19 defaulted to the HTML namespace, emitting casing warnings on camelCase SVG elements (`<clipPath>`, `<radialGradient>`).
 
 ---
 
@@ -28,13 +28,13 @@ Following Milestone 33 and an in-depth codebase audit, two architectural opportu
   - Added unit test in `src/hooks/useEphemerisWorker.test.ts` verifying listener unregistration on `terminate()`.
 
 ### 2. Terminator Map Modular Decomposition (`src/components/widgets/terminator/`)
-* **[`hooks/useTerminatorMapMath.ts`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/terminator/hooks/useTerminatorMapMath.ts)**:
+* **[`hooks/useTerminatorMapMath.ts`](../../src/components/widgets/terminator/hooks/useTerminatorMapMath.ts)**:
   - Pure container hook isolating Keplerian Earth-Sun distance scaling, sublunar ephemeris coordinates, 24-hour diurnal ground tracks, Draconic nodal detection, and 4-tier spherical twilight shadow paths.
   - Accompanied by a dedicated unit test suite (`useTerminatorMapMath.test.ts`) covering 5 core mathematical domains.
-* **[`TerminatorLandmasses.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/terminator/TerminatorLandmasses.tsx)**:
+* **[`TerminatorLandmasses.tsx`](../../src/components/widgets/terminator/TerminatorLandmasses.tsx)**:
   - Extracted continent polygon paths with $[-360, 0, +360]$ antimeridian wrapping offsets.
   - Wrapped in `React.memo` keyed on `longitude` to eliminate polygon recalculations during timeline scrubbing.
-* **[`TerminatorGroundTracks.tsx`](file:///c:/Users/konrk/OneDrive/Documents/ProgrammingProjects/Cosmic%20Engine%20V2.0/src/components/widgets/terminator/TerminatorGroundTracks.tsx)**:
+* **[`TerminatorGroundTracks.tsx`](../../src/components/widgets/terminator/TerminatorGroundTracks.tsx)**:
   - Extracted 24-hour diurnal tracks for Sun and Moon (dotted past, dashed future) and the pulsing Draconic nodal marker.
 * **Declarative Orchestrator (`TerminatorMap.tsx`)**:
   - Reduced from **439 LOC to 195 LOC** (~55% reduction).

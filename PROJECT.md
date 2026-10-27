@@ -1,7 +1,7 @@
 # Project: Cosmic Engine V2.0 — Feature Inventory & Milestone Matrix
 
 > [!NOTE]
-> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F88`)** and **Milestone & Phase Matrix (`M1–M43`)**.
+> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F89`)** and **Milestone & Phase Matrix (`M1–M44`)**.
 
 ---
 
@@ -15,9 +15,9 @@
 | F5 | Scene Graph Math Tests | Unit tests in `src/utils/cosmicMath/scene/scene.test.ts` verifying coordinates, scale modes, shadow cones, and cameras | M1 | ORIGINAL_REQUEST §R1 |
 | F6 | `<MiniGlobe />` Component | Reusable SVG Earth mini-globe with $23.439^\circ$ inertial axial tilt, subsolar day/night terminator clipping, and equator/tropics | M2 | ORIGINAL_REQUEST §R2 |
 | F7 | MiniGlobe Component Tests | Comprehensive unit tests in `src/components/common/MiniGlobe.test.tsx` verifying view modes, illumination, and accessibility | M2 | ORIGINAL_REQUEST §R2 |
-| F8 | Reactive Scene Hook `useCosmicScene` | Memoized 60 FPS scene calculations and sub-hooks (`useHeliocentricScene`, `useEclipseScene`, `useArmillaryScene`) | M3 | ORIGINAL_REQUEST §R3 |
+| F8 | Reactive Scene Hook `useCosmicScene` | Memoized 60 FPS scene calculations and sub-hooks (`useHeliocentricScene`; `useEclipseScene` & `useArmillaryScene` later consolidated into `useCosmicScene` in M40) | M3 | ORIGINAL_REQUEST §R3 |
 | F9 | Macro Orbit Refactor | Migrate `MacroOrbitView` & `OrbitSvgCanvas` to `useHeliocentricScene()` and render `<MiniGlobe />` | M3 | ORIGINAL_REQUEST §R3 |
-| F10 | Eclipse Demonstrator Refactor | Migrate `EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer` to `useEclipseScene()` | M3 | ORIGINAL_REQUEST §R3 |
+| F10 | Eclipse Demonstrator Refactor | Migrate `EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer` to reactive 3D scene hook (`useCosmicScene()`) | M3 | ORIGINAL_REQUEST §R3 |
 | F11 | Reactive Scene Hook Tests | Unit tests in `src/hooks/useCosmicScene.test.ts` verifying memoization, subscriptions, and sub-hooks | M3 | ORIGINAL_REQUEST §R3 |
 | F12 | Armillary MiniGlobe Integration | Replace static central Earth bead in `ArmillaryBeadsLayer.tsx` with `<MiniGlobe />` | M4 | ORIGINAL_REQUEST §R4 |
 | F13 | Architecture Decision Record ADR-0004 | Document `docs/adr/0004-hierarchical-3d-scene-graph-and-camera-rigs.md` | M4 | ORIGINAL_REQUEST §R4 |
@@ -42,7 +42,7 @@
 | F32 | 3D Diurnal Colure Direction Cosines & Today's Diurnal Chord | 3D topocentric direction cosine projection (`calculateMeridianDiurnalPoint`) with invariant slope $\cot\phi$, and Today's Diurnal Chord (`calculateMeridianDiurnalChord`) touching dome tangentially at culmination | M17 | ADR-0017 |
 | F33 | Approach C Parked Ghost Anchors | Static observation gate anchors ($-18^\circ$ twilight gate for Sun, $0^\circ$ horizon gate for Moon) parking sub-horizon celestial bodies as ghost beads, eliminating deep-night reverse sliding | M17 | ADR-0017 |
 | F34 | Central Ribbon Architecture & Hoisted Unified Mode Toggles | Single hoisted toggle controls (`[Std | Twilight]` and `[Std | ☊ Nodes]`) controlling upper and lower domes in lockstep, 4-column summary metric panel (`grid-cols-4`), and flush lower cards | M17 | ADR-0017 |
-| F35 | Dedicated External Atomic `hoverStore` | React 19 `useSyncExternalStore` micro-store isolating high-frequency scrubber state (`hoveredDate`, `hoveredTime`, `hoverPosition`), eliminating 60 FPS re-render cascades | M18 | ADR-0018 |
+| F35 | Dedicated External Atomic `hoverStore` | React 19 `useSyncExternalStore` micro-store isolating high-frequency scrubber state (`hoverDate`, `hoverTime`; formerly `hoveredDate`, `hoveredTime`, `hoverPosition`), eliminating 60 FPS re-render cascades | M18 | ADR-0018 |
 | F36 | Ephemeris Worker Throttling & Monotonic Sequence Stamping | 100ms (~10 Hz) throttle interval on ephemeris worker dispatcher and monotonic integer request sequence stamping (`requestId` / `latestCompletedRequestId`) preventing stale frame overwrites | M18 | ADR-0018 |
 | F37 | Ephemeris Mathematical Consolidation & Sidereal Hoisting | Hoisted `calculateGMST` and `calculateLST` to `core.ts`, SSoT `calculateSolarPosition`, and centralized astronomical constants in `astroConstants.ts` | M18 | ADR-0018 |
 | F38 | Modular Decomposition of `todaySky.ts` | Decomposed 1,061-line monolith into focused submodules under `src/utils/cosmicMath/today/` (`elevation.ts`, `meridian.ts`, `draconic.ts`) with lightweight facade re-export | M18 | ADR-0018 |
@@ -79,7 +79,7 @@
 | F69 | Circular Dependency Elimination & Sub-Barrel Symmetry | Severed `formatters.ts` dependency on `core.ts` via local clamp, removed formatter re-exports from `core.ts`, and restored sub-barrel test symmetry in `TerminatorMap.test.tsx` | M37 | ADR-0037 |
 | F70 | Core Astro Math & Formatter Domain Decomposition | Consolidated `formatTime` into `formatters.ts`, extracted `getSectorPath` into `polarDialGeometry.ts`, establishing 100% pure Meeus domain math in `core.ts` | M37 | ADR-0037 |
 | F71 | Mathematical Domain Purity & AST Presentation Token Guardrail | Purged Tailwind classes/pixel offsets from `milestones.ts`, created `macroTokens.ts`, retired redundant `constants.ts`, derived 3D seasonal milestone coordinates analytically in `scene/generator.ts`, extended AST linter to protect domain math from presentation tokens | M38 | ADR-0038 |
-| F72 | Widget Sub-View Decoupling & Hook Standardization | Extracted `useTideMath` and `useNodalPlaneMath` hooks with dedicated barrel exports, decoupling math from `MicroTideView` and `NodalPlaneVisualizer` while strictly preserving Dead Ends #16 and #33 | M38 | ADR-0038 |
+| F72 | Widget Sub-View Decoupling & Hook Standardization | Extracted `useTideMath` and `useNodalPlaneMath` hooks with dedicated barrel exports, decoupling math from `MicroTideView` and `NodalPlaneVisualizer` while strictly preserving DE-12 and DE-29 | M38 | ADR-0038 |
 | F73 | Ticker Double-Precision Accumulator & 60 FPS Small-Delta Invariants | Removed `toFixed(4)` string quantization from `cosmicStore.tickTime()`; retained full IEEE-754 double precision for `timeOfDay`; verified continuous clock advancement over 600 frames at 60 FPS | M39 | ADR-0039 |
 | F74 | Deterministic UTC Temporal Invariance & Recurrence Titles | Standardized on `getUTCFullYear()` and canonical `getDayOfYear()`; added explicit UTC `timeZone` to eclipse recurrence titles and hover tooltips; preserved simulated year during orbital drag scrubbing | M39 | ADR-0039 |
 | F75 | Immutable `J2000_DATE` Prop Identity Stability & AST Guardrail | Replaced dynamic `= new Date()` default parameters across 19 components and hooks with immutable `J2000_DATE` constant; added automated AST linter gatekeeper in `lintUnitSafety.mjs` | M39 | ADR-0039 |
@@ -96,6 +96,7 @@
 | F86 | AST Linter Temporal Purity Gatekeeper & Dead Props Cleanup | Enforced temporal purity (`new Date()` ban in math modules) and reported parse errors in `lintUnitSafety.mjs`; purged dead props across `MiniGlobe`, `MicroTideView`, `ControlRing`, `SkyDomeBase`, `GyroArmillaryView` | M41 | ADR-0041 |
 | F87 | `ARCHITECTURE.md` SSoT Split, Prompt Kernel Slimming & Documentation Sweep | Extracted live system topology, runtime contracts, code layout, and task routing into `ARCHITECTURE.md`; slimmed `AGENTS.md` prompt kernel by 35.6% (`17.69 KB` $\to$ `11.40 KB`); synchronized `DESIGN_SYSTEM.md`, `README.md`, `PROJECT.md`, and `syncDocMetrics.mjs` | M42 | ADR-0042 |
 | F88 | Documentation Ecosystem Hardening & Automated Ledger Sync | Quick Section & Component/Module navigation indexes in `DESIGN_SYSTEM.md` and `MATH_SPEC.md`, SSoT contradiction reconciliation, explicit `#` and subsystem tagging across all 49 Dead Ends, dual-pipeline dataflow topology in `ARCHITECTURE.md`, ADR subsystem index, and automated ledger range validation in `syncDocMetrics.mjs` | M43 | ADR-0043 |
+| F89 | Living Specification In-Place Consolidation & Automated Documentation Integrity Linter | Consolidated split Armillary, MiniGlobe, and Meridian Dome specifications in `MATH_SPEC.md` and `DESIGN_SYSTEM.md`; reconciled `DE-xx` citations, `260x138` viewBox parity, and ADR milestone attributions; added `runDocIntegrityCheck()` in `lintUnitSafety.mjs` and `unitSafety.test.ts` validating Markdown links, `DE`/`F`/`M`/`ADR` references, and `Lxx–Lyy` Quick Index sync | M44 | ADR-0044 |
 
 ## 2. Milestones
 
@@ -107,7 +108,7 @@
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M43)
+### Recent Milestones (M21–M44)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -133,9 +134,10 @@
 | M41 | Priorities 4 & 5 UI Consolidation, Accessible Controls & AST Linter Hardening | `src/components/`, `src/hooks/`, `scripts/`, ADR-0041 | M1–M40 | DONE |
 | M42 | Documentation Sweep & `ARCHITECTURE.md` Token-Preservation SSoT Split | `ARCHITECTURE.md`, `AGENTS.md`, `PROJECT.md`, `README.md`, `docs/DESIGN_SYSTEM.md`, `scripts/syncDocMetrics.mjs`, ADR-0042 | M1–M41 | DONE |
 | M43 | Documentation Ecosystem Hardening & Automated Ledger Sync | `DESIGN_SYSTEM.md`, `MATH_SPEC.md`, `DEAD_ENDS.md`, `ARCHITECTURE.md`, `docs/adr/`, `scripts/syncDocMetrics.mjs`, ADR-0043 | M1–M42 | DONE |
+| M44 | Living Specification Consolidation & Automated Documentation Integrity Gatekeeper | `MATH_SPEC.md`, `DESIGN_SYSTEM.md`, `AGENTS.md`, `ARCHITECTURE.md`, `PROJECT.md`, `DEAD_ENDS.md`, `docs/adr/`, `scripts/lintUnitSafety.mjs`, `scripts/syncDocMetrics.mjs`, `unitSafety.test.ts`, ADR-0044 | M1–M43 | DONE |
 
 ---
 
 > [!TIP]
 > - **Architecture & Code Layout**: See [`ARCHITECTURE.md`](ARCHITECTURE.md) for interface contracts, canonical code layout, and the Subsystem Task Routing Matrix.
-> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0043`).
+> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0044`).

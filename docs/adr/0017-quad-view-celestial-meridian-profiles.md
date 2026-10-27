@@ -28,7 +28,7 @@ While diurnal paths depict altitude variations as a function of hour angle, they
   - **Right Column (Moon)**: `MoonElevationDome` (Diurnal East $\to$ West) stacked above `MoonMeridianDome` (Meridian South $\longleftrightarrow$ Zenith $\longleftrightarrow$ North).
 
 ### 2. Meridian Coordinate Projection & Polar Axis Geometry
-Implemented in [`src/utils/cosmicMath/todaySky.ts`](../../src/utils/cosmicMath/todaySky.ts):
+Implemented in [`src/utils/cosmicMath/todaySky.ts`](../../src/utils/cosmicMath/today/index.ts):
 - **Coordinate Mapping (`calculateMeridianPoint`)**:
   - Maps topocentric altitude $h$ and culmination bearing (South vs. North vs. Zenith) along the canonical $R=92$ semicircle:
     \[
