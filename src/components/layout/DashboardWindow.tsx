@@ -1,0 +1,270 @@
+import React, { useState, useRef, ReactNode, ComponentType, Suspense } from 'react';
+import { Move, Maximize2, Minimize2, Lock, Unlock, RefreshCw } from 'lucide-react';
+import { WindowErrorBoundary } from '../common/WindowErrorBoundary';
+import { WidgetSkeleton } from '../common/WidgetSkeleton';
+
+export interface DashboardWindowProps {
+  id: string;
+  title: string;
+  icon?: ComponentType<{ className?: string }>;
+  children: ReactNode;
+  colSpan?: number;
+  height?: number | string;
+  isLocked?: boolean;
+  onDragStart?: (e: React.DragEvent<HTMLElement>, id: string) => void;
+  onDragOver?: (e: React.DragEvent<HTMLElement>) => void;
+  onDrop?: (e: React.DragEvent<HTMLElement>, id: string) => void;
+  onResize?: (id: string, width: number, height: number | string) => void;
+  onToggleLock?: (id: string) => void;
+  onResetSize?: (id: string) => void;
+  onToggleColSpan?: (id: string) => void;
+}
+
+export const DashboardWindow: React.FC<DashboardWindowProps> = ({ 
+  id, 
+  title, 
+  icon: Icon, 
+  children, 
+  colSpan = 12, 
+  height = 'auto', 
+  isLocked = false,
+  onDragStart, 
+  onDragOver, 
+  onDrop,
+  onResize,
+  onToggleLock,
+  onResetSize,
+  onToggleColSpan
+}) => {
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [isDragOverTarget, setIsDragOverTarget] = useState(false);
+  const windowRef = useRef<HTMLDivElement>(null);
+  const canDragRef = useRef(false);
+
+  // Resize Pointer Event Handler using DOM Pointer Capture
+  const resizeRef = useRef<{ startY: number; initialHeight: number } | null>(null);
+
+  const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isLocked || !windowRef.current) return;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+
+    resizeRef.current = {
+      startY: e.clientY,
+      initialHeight: windowRef.current.offsetHeight
+    };
+  };
+
+  const handleResizePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!resizeRef.current) return;
+    const deltaY = e.clientY - resizeRef.current.startY;
+    const newHeight = Math.max(220, resizeRef.current.initialHeight + deltaY);
+
+    if (onResize) {
+      onResize(id, 0, newHeight);
+    }
+  };
+
+  const handleResizePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (resizeRef.current) {
+      try {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+      } catch {}
+      resizeRef.current = null;
+    }
+  };
+
+  const containerClasses = isMaximized 
+    ? "fixed inset-4 z-50 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/90 flex flex-col p-4 overflow-auto animate-in zoom-in-95 duration-200"
+    : `bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-lg border ${
+        isDragOverTarget ? 'border-indigo-500 ring-2 ring-indigo-500/80 shadow-2xl shadow-indigo-500/20' : 'border-slate-800/80 hover:border-slate-700/80'
+      } flex flex-col transition-all relative ${
+        colSpan === 12 
+          ? 'col-span-12' 
+          : colSpan === 6 
+          ? 'col-span-12 2xl:col-span-6' 
+          : colSpan === 4
+          ? 'col-span-12 md:col-span-6 lg:col-span-4'
+          : 'col-span-12'
+      }`;
+
+  return (
+    <div 
+      ref={windowRef}
+      id={id}
+      className={containerClasses}
+      style={{ 
+        height: isMinimized ? 'auto' : (typeof height === 'number' ? `${height}px` : height),
+        minHeight: isMinimized ? 'auto' : '280px'
+      }}
+      draggable={!isLocked && !isMaximized}
+      onDragStart={(e) => {
+        const target = e.target as HTMLElement;
+        const isHeader = canDragRef.current || (target && typeof target.closest === 'function' && target.closest('.window-header-bar'));
+        const isExcluded = target && typeof target.closest === 'function' && (target.closest('button') || target.closest('input') || target.closest('.window-body-content'));
+
+        if (!isHeader || isExcluded) {
+          e.preventDefault();
+          canDragRef.current = false;
+          return;
+        }
+
+        canDragRef.current = false;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', id);
+        if (onDragStart) onDragStart(e, id);
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        if (!isLocked) setIsDragOverTarget(true);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (onDragOver) onDragOver(e);
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setIsDragOverTarget(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOverTarget(false);
+        canDragRef.current = false;
+        if (onDrop) onDrop(e, id);
+      }}
+      onDragEnd={() => {
+        canDragRef.current = false;
+        setIsDragOverTarget(false);
+      }}
+    >
+      {/* WINDOW HEADER BAR */}
+      <div 
+        className="window-header-bar flex items-center justify-between px-4 py-2.5 border-b border-slate-800/80 bg-slate-950/40 rounded-t-2xl select-none cursor-grab active:cursor-grabbing"
+        onPointerDown={(e) => {
+          const target = e.target as HTMLElement;
+          if (!target.closest('button') && !target.closest('input')) {
+            canDragRef.current = true;
+          }
+        }}
+        onPointerUp={() => {
+          canDragRef.current = false;
+        }}
+      >
+        <div className="flex items-center space-x-2.5">
+          {!isLocked && (
+            <div className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 p-1 -ml-1 rounded transition-colors" title="Drag to reorder card">
+              <Move className="w-3.5 h-3.5" />
+            </div>
+          )}
+          {Icon && <Icon className="w-4 h-4 text-indigo-400 shrink-0" />}
+          <h3 className="text-sm font-semibold text-slate-200 tracking-wide flex items-center gap-2">
+            {title}
+            {isLocked && <span className="text-[10px] font-normal text-slate-500 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/50">Locked</span>}
+          </h3>
+        </div>
+
+        {/* HEADER CONTROLS */}
+        <div className="flex items-center space-x-1.5">
+          {/* Toggle 1-Col / 2-Col Width */}
+          {onToggleColSpan && !isLocked && !isMaximized && (
+            <button 
+              onClick={() => onToggleColSpan(id)}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors cursor-pointer border ${
+                colSpan === 12 
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30' 
+                  : 'text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+              title={colSpan === 12 ? "Switch to 1-Column width" : "Expand to 2-Column Panoramic width"}
+            >
+              {colSpan === 12 ? '2-Col' : '1-Col'}
+            </button>
+          )}
+
+          {/* Reset Dimensions */}
+          {onResetSize && !isLocked && (
+            <button 
+              onClick={() => onResetSize(id)}
+              className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Reset window size"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Toggle Lock */}
+          {onToggleLock && (
+            <button 
+              onClick={() => onToggleLock(id)}
+              className={`p-1 rounded-md transition-colors cursor-pointer ${
+                isLocked ? 'text-amber-400 hover:text-amber-300 bg-amber-950/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+              title={isLocked ? "Unlock window arrangement" : "Lock window layout"}
+            >
+              {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+            </button>
+          )}
+
+          {/* Minimize / Expand Body */}
+          <button 
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+            title={isMinimized ? "Expand window" : "Collapse window"}
+          >
+            <span className="text-xs font-bold leading-none select-none px-0.5">{isMinimized ? '+' : '−'}</span>
+          </button>
+
+          {/* Fullscreen Maximize */}
+          <button 
+            onClick={() => setIsMaximized(!isMaximized)}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+            title={isMaximized ? "Restore view" : "Maximize view"}
+          >
+            {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* WINDOW BODY */}
+      {!isMinimized && (
+        <div 
+          className="window-body-content flex-1 p-3 overflow-hidden relative flex flex-col"
+          draggable={false}
+          onDragStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <WindowErrorBoundary windowTitle={title} windowId={id}>
+            <Suspense fallback={<WidgetSkeleton id={id} />}>
+              {children}
+            </Suspense>
+          </WindowErrorBoundary>
+        </div>
+      )}
+
+      {/* RESIZE HANDLE THUMB (BOTTOM-RIGHT) */}
+      {!isLocked && !isMinimized && !isMaximized && (
+        <div 
+          onPointerDown={handleResizePointerDown}
+          onPointerMove={handleResizePointerMove}
+          onPointerUp={handleResizePointerUp}
+          onPointerCancel={handleResizePointerUp}
+          className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-1 group touch-none z-20"
+          title="Drag to resize card"
+        >
+          <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-slate-500 group-hover:border-indigo-400 transition-colors rounded-br-sm" />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DashboardWindow;

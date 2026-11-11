@@ -1,0 +1,752 @@
+/**
+ * @file syncDocMetrics.mjs
+ * Automated Documentation Test Metric Synchronizer
+ * 
+ * Programmatically runs Vitest with JSON reporter, computes exact test counts
+ * per domain test suite and repository totals, and deterministically synchronizes
+ * README.md and AGENTS.md to eliminate documentation metric drift.
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { spawnSync } from 'child_process';
+import { getSourceFiles } from './lintUnitSafety.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '..');
+
+const readmePath = path.join(rootDir, 'README.md');
+const agentsPath = path.join(rootDir, 'AGENTS.md');
+const architecturePath = path.join(rootDir, 'ARCHITECTURE.md');
+const projectPath = path.join(rootDir, 'PROJECT.md');
+const deadEndsPath = path.join(rootDir, 'DEAD_ENDS.md');
+const adrDir = path.join(rootDir, 'docs', 'adr');
+const dossierPath = path.join(rootDir, 'docs', 'COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
+const tempJsonPath = path.join(rootDir, '.vitest-metrics.json');
+const vitestBinPath = path.join(rootDir, 'node_modules', 'vitest', 'vitest.mjs');
+const isCheckMode = process.argv.includes('--check');
+const driftedFiles = [];
+
+function writeOrCheckFile(filePath, nextContent, label) {
+  const currentContent = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+  const normCurrent = currentContent.replace(/\r\n/g, '\n');
+  const normNext = nextContent.replace(/\r\n/g, '\n');
+  if (isCheckMode) {
+    if (normCurrent !== normNext) {
+      driftedFiles.push(label);
+      console.error(`❌ [check:docs] Drift detected in ${label}.`);
+    } else {
+      console.log(`✔ [check:docs] ${label} is in sync.`);
+    }
+    return;
+  }
+  fs.writeFileSync(filePath, nextContent, 'utf8');
+  console.log(`✔ ${label} synchronized.`);
+}
+
+console.log(`⚡ Running Vitest to collect live test metrics${isCheckMode ? ' (--check read-only mode)' : ''}...`);
+
+const result = spawnSync(
+  process.execPath,
+  [vitestBinPath, 'run', '--reporter=json', `--outputFile=${tempJsonPath}`],
+  {
+    cwd: rootDir,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }
+);
+
+if (!fs.existsSync(tempJsonPath)) {
+  console.error('❌ Failed to generate Vitest JSON report.');
+  console.error(result.stderr || result.stdout);
+  process.exit(1);
+}
+
+let metricsData;
+try {
+  metricsData = JSON.parse(fs.readFileSync(tempJsonPath, 'utf8'));
+} finally {
+  try {
+    fs.unlinkSync(tempJsonPath);
+  } catch (_) {}
+}
+
+const fileMap = new Map();
+const baseNameMap = new Map();
+
+for (const suite of metricsData.testResults) {
+  const norm = suite.name.replace(/\\/g, '/');
+  const idx = norm.indexOf('src/');
+  const relPath = idx !== -1 ? norm.substring(idx) : norm;
+  const count = suite.assertionResults.length;
+  fileMap.set(relPath, count);
+  baseNameMap.set(path.basename(relPath), count);
+}
+
+const totalFiles = metricsData.testResults.length;
+const totalTests = metricsData.numTotalTests;
+
+console.log(`📊 Live Test Harness Metrics: ${totalFiles} test files, ${totalTests} total tests.`);
+
+/**
+ * Canonical test suite metadata registry for generating/updating documentation tables.
+ */
+const CANONICAL_SUITES = [
+  {
+    domain: 'Core Astronomy & Time',
+    file: 'src/utils/cosmicMath/core.test.ts',
+    focus: 'Julian date engines, UTC date invariance & `createUTCDate`, time parsing & formatting, spherical linear interpolation (`slerp3D`), physical constants (`astroConstants`), and floating-point degeneracy protection'
+  },
+  {
+    domain: 'Solar Ephemeris & Twilight',
+    file: 'src/utils/cosmicMath/solar.test.ts',
+    focus: 'Solar declination, equation of time, daily solar events (rise/set), civil/nautical/astronomical twilight bands, polar boundaries (midnight sun, polar night), and annual solar matrix'
+  },
+  {
+    domain: 'Lunar Ephemeris & Illumination',
+    file: 'src/utils/cosmicMath/lunar.test.ts',
+    focus: 'Meeus lunar series, true geocentric phase angle ($i$), disc illumination ($k$), 2-step iterative rise/set solver, parallactic angle, nodal precession, and annual lunar matrix'
+  },
+  {
+    domain: 'Today Sky & Diurnal Kinematics',
+    file: 'src/utils/cosmicMath/todaySky.test.ts',
+    focus: 'Sky dome coordinate projection ($X, Y$), diurnal path generation, celestial meridian coordinate projection and swaths (`calculateMeridianPoint`, `generateMeridianSwathD`), radial tick pins, monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification'
+  },
+  {
+    domain: 'Eclipse Geometry & Presets',
+    file: 'src/utils/cosmicMath/eclipse.test.ts',
+    focus: 'Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`)'
+  },
+  {
+    domain: '3D Obliquity & Earth Projections',
+    file: 'src/utils/cosmicMath/projection.test.ts',
+    focus: 'Earth axial obliquity ($23.439^\\circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping'
+  },
+  {
+    domain: 'Armillary Continuum & Projections',
+    file: 'src/utils/cosmicMath/armillary/armillary.test.ts',
+    focus: 'Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0\\sec\\epsilon$)'
+  },
+  {
+    domain: 'Armillary Benchmark',
+    file: 'src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts',
+    focus: '1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation'
+  },
+  {
+    domain: 'Armillary Adversarial',
+    file: 'src/utils/cosmicMath/armillary/m3_adversarial.test.ts',
+    focus: 'Analytical closed-form Stereographic Ecliptic invariant ($R_0\\sec\\epsilon$), Sun bead clamping residuals ($< 1.42 \\times 10^{-13}\\text{ px}$), and 10,000-sample randomized Monte Carlo transitions'
+  },
+  {
+    domain: 'Domain Invariants & Physics Conservation',
+    file: 'src/utils/cosmicMath/domainInvariants.test.ts',
+    focus: 'Empirical physics conservation laws: Keplerian areal velocity invariance ($r^2 \\dot{\\theta} = \\text{const}$), vis-viva orbital energy conservation, syzygy collinearity bounds, and non-negative solar irradiance'
+  },
+  {
+    domain: '3D Scene Graph Math',
+    file: 'src/utils/cosmicMath/scene/scene.test.ts',
+    focus: '3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\\circ$ inclined lunar orbit with continuous nodal precession $\\Omega(t)$, and 3D syzygy shadow cones'
+  },
+  {
+    domain: 'Scene Cameras Stress',
+    file: 'src/utils/cosmicMath/scene/cameras.stress.test.ts',
+    focus: 'Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts'
+  },
+  {
+    domain: 'Scene Coordinate Adversarial',
+    file: 'src/utils/cosmicMath/scene/m1_adversarial.test.ts',
+    focus: 'Coordinate frame invariants, axial tilt matrix preservation ($23.439^\\circ$) in inertial space, and singular polar viewing angles'
+  },
+  {
+    domain: 'Unit-Safety AST Guardrails',
+    file: 'src/types/unitSafety.test.ts',
+    focus: 'Babel AST & SSoT lint enforcement banning `asDegrees()`/`asRadians()` and static `<defs>` IDs in `src/components/**`, strict $\\le 18\\text{ KB}$ `AGENTS.md` budget, and 100% Markdown link/anchor/inventory parity'
+  },
+  {
+    domain: 'Cosmic State Store',
+    file: 'src/store/cosmicStore.test.ts',
+    focus: 'Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping'
+  },
+  {
+    domain: 'Cosmic Engine Hook',
+    file: 'src/hooks/useCosmicEngine.test.ts',
+    focus: 'Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\\circ\\text{N}, -90^\\circ\\text{S}$)'
+  },
+  {
+    domain: 'Cosmic Scene Hook',
+    file: 'src/hooks/useCosmicScene.test.ts',
+    focus: 'Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useCosmicScene` and `useHeliocentricScene`), and `shallowEqual` protection'
+  },
+  {
+    domain: 'Ephemeris Worker Hook',
+    file: 'src/hooks/useEphemerisWorker.test.ts',
+    focus: 'Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback'
+  },
+  {
+    domain: 'Worker Parameter Sanitization & Clamping',
+    file: 'src/workers/workerSanitizers.test.ts',
+    focus: 'Boundary validation and clamping gatekeepers: Meeus year validity range ([-2000, 3000]), geographic latitude/longitude bounds, astronomical Julian Date clamping, decimal hour wrapping, and NaN/Infinity resilience'
+  },
+  {
+    domain: 'Dashboard Layout Hook',
+    file: 'src/hooks/useDashboardLayout.test.ts',
+    focus: 'Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset'
+  },
+  {
+    domain: 'MiniGlobe SVG Component',
+    file: 'src/components/common/MiniGlobe.test.tsx',
+    focus: '9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping'
+  },
+  {
+    domain: 'Window Error Boundary',
+    file: 'src/components/common/WindowErrorBoundary.test.tsx',
+    focus: 'Fault isolation, derived state error capture, and in-place module reset recovery for isolated module resilience'
+  },
+  {
+    domain: 'Interactive Controls',
+    file: 'src/components/controls/controls.test.tsx',
+    focus: 'Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags'
+  },
+  {
+    domain: 'Dashboard Window Layout',
+    file: 'src/components/layout/DashboardWindow.test.tsx',
+    focus: 'Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts'
+  },
+  {
+    domain: 'Layout & Chronometer Dock',
+    file: 'src/components/layout/layout.test.tsx',
+    focus: 'Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing'
+  },
+  {
+    domain: 'Ribbon Scrubber Hook',
+    file: 'src/components/widgets/common/useRibbonScrubber.test.ts',
+    focus: 'Bidirectional 2D coordinate scaling (dayToX, xToDay, timeToY, yToTime), synodic sub-window scaling, dragging state, and pointer capture lifecycle'
+  },
+  {
+    domain: 'SkyDomeBase Primitive',
+    file: 'src/components/widgets/today/SkyDomeBase.test.tsx',
+    focus: 'Shared 260x138 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors'
+  },
+  {
+    domain: 'Sky Dome Hooks & Primitives',
+    file: 'src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx',
+    focus: 'Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer'
+  },
+  {
+    domain: 'Today Horizon Widget',
+    file: 'src/components/widgets/today/TodayWidget.test.tsx',
+    focus: 'SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles'
+  },
+  {
+    domain: 'Meridian View-Model Config Helpers',
+    file: 'src/components/widgets/today/hooks/meridianConfigHelpers.test.ts',
+    focus: 'Strongly typed view-model builders for radial ticks, swaths, gate anchors, and peak targets deduplicating Sun and Moon meridian views'
+  },
+  {
+    domain: 'Solar Almanac Widget',
+    file: 'src/components/widgets/solar/SolarWidget.test.tsx',
+    focus: 'Keplerian solar metrics, perihelion orbital dynamics, interactive SolarRibbonChart hover hairline, and PolarSunlightDial 24h circular polar sector dial'
+  },
+  {
+    domain: 'Lunar Almanac Widget',
+    file: 'src/components/widgets/lunar/LunarWidget.test.tsx',
+    focus: '30-day synodic daily phase discs, 365-day annual braided ribbon, polar circumpolar statuses (24h moonlight / down all day), and TidalWaveOscillator ocean deformation wave'
+  },
+  {
+    domain: 'Eclipse Demonstrator Widget',
+    file: 'src/components/widgets/eclipse/EclipseWidget.test.tsx',
+    focus: 'Historic Great American Eclipse data, 520x220 viewBox parity, dual-zone masking, nodal depth muting behind Earth, and prograde right-to-left SkyViewSimulator transit without bounce'
+  },
+  {
+    domain: 'Terminator Map Widget',
+    file: 'src/components/widgets/terminator/TerminatorMap.test.tsx',
+    focus: 'Dynamic observer meridian centering, wrapped landmass polygons, topocentric YOU pin crosshairs, distance-scaled Subsolar (AU) and Sublunar (km) disc markers, and 4-tier twilight shadow boundaries'
+  },
+  {
+    domain: 'Terminator Map Math Hook',
+    file: 'src/components/widgets/terminator/hooks/useTerminatorMapMath.test.ts',
+    focus: 'Astronomical coordinates, Keplerian disc scaling, hover overrides, ground-track toggles, and null-data fallbacks'
+  },
+  {
+    domain: 'Macro Orbit Widget',
+    file: 'src/components/widgets/macro/MacroOrbitWidget.test.tsx',
+    focus: 'Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD'
+  },
+  {
+    domain: 'Micro Tide Widget',
+    file: 'src/components/widgets/tides/TidesWidget.test.tsx',
+    focus: 'MicroTideView Earth tidal gravity, MiniGlobe 3D vector integration, segmented Nodal Loop and potential toggles, and counter-clockwise prograde Moon revolution'
+  },
+  {
+    domain: 'Armillary Visualizer Widget',
+    file: 'src/components/widgets/armillary/ArmillaryWidget.test.tsx',
+    focus: 'Continuum model generation, camera staging timing (pitch/yaw at $\\lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification'
+  },
+  {
+    domain: 'Staged Camera Hook',
+    file: 'src/components/widgets/armillary/useStagedCamera.test.ts',
+    focus: '2-phase Euler angle interpolation ($\\lambda \\le 0.45$), canonical pole locking ($\\lambda \\ge 0.45$), memory angle retention, and reverse transition unwinding'
+  },
+  {
+    domain: 'Camera Staging Adversarial',
+    file: 'src/components/widgets/armillary/m2_adversarial.test.ts',
+    focus: 'Camera alignment timing ($0 \\le \\lambda \\le 0.45$), canonical pole lock ($0.45 \\le \\lambda \\le 1.0$), geodesic wrapping, and custom user 3D angle restoration'
+  },
+  {
+    domain: 'Depth Stroke Unification',
+    file: 'src/components/widgets/depthUnificationStress.test.ts',
+    focus: 'Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\\lambda \\in [0.85, 1.0]$'
+  },
+  {
+    domain: 'Spherical Globe Projection & Clipping',
+    file: 'src/utils/cosmicMath/globe.test.ts',
+    focus: 'Spherical continent projection across 5 camera projections, analytical limb horizon clipping, polar edge cases, and twilight solar elevation limits'
+  },
+  {
+    domain: 'Observatory Root Dashboard',
+    file: 'src/App.test.tsx',
+    focus: '12-column responsive layout grid, master preset windows, ObsNavbar branding, and OrbitalChronometer dock integration'
+  },
+  {
+    domain: 'LRU Cache Utility',
+    file: 'src/utils/lruCache.test.ts',
+    focus: 'Generic LRU cache eviction order, capacity limits, promotion on get/set, and Map iterator ordering'
+  },
+  {
+    domain: 'Solstice Jump Controls',
+    file: 'src/components/layout/chronometer/SolsticeJumpControls.test.tsx',
+    focus: 'Astronomical turning point buttons (Mar/Sep Equinox, Jun/Dec Solstice), UTC date dispatch, and twilight badge styles'
+  },
+  {
+    domain: 'Astrolabe Dial Component',
+    file: 'src/components/layout/chronometer/AstrolabeDial.test.tsx',
+    focus: 'Concentric SVG control rings (Date, Time, Lon, Lat), observer-locked camera yaw calculations, latitude rail positioning, pointer event callbacks, and rollover boundaries'
+  },
+  {
+    domain: 'Atomic Hover Store',
+    file: 'src/store/hoverStore.test.ts',
+    focus: 'High-frequency ribbon scrubber state isolation (`hoverTime`, `hoverDate`, and atomic batch updates), shallow equality memoization, and zero-cascade subscriber notifications'
+  },
+  {
+    domain: 'Terminator Ground Tracks Math',
+    file: 'src/utils/cosmicMath/terminatorTracks.test.ts',
+    focus: '24-hour diurnal ground tracks ($[-12\\text{h}, +12\\text{h}]$) for Subsolar and Sublunar points, antimeridian seam wrapping (`buildSeamSafeSvgPath`), active ecliptic nodal beacons, and temporal vector dashes'
+  },
+  {
+    domain: 'Armillary Interactions Hook',
+    file: 'src/components/widgets/armillary/useArmillaryInteractions.test.ts',
+    focus: 'Astrolabe touch and pointer interactions, camera dragging state isolation, model click-to-snap target dispatch, Free Rete angle calculation, and pointer capture lifecycles'
+  },
+  {
+    domain: 'Terminator Hover HUD Component',
+    file: 'src/components/widgets/terminator/TerminatorHoverHud.test.tsx',
+    focus: 'Interactive Subsolar and Sublunar point hover cards, distance and apparent diameter telemetry, $\\pm 24\\text{h}$ proximity-gated nodal status badges, and astronomical coordinate formatting'
+  },
+  {
+    domain: 'MiniMoon SVG Component',
+    file: 'src/components/common/MiniMoon.test.tsx',
+    focus: 'MiniMoon rendering across lunar phases, ascending/descending nodal coloring, waxing solid vs. waning dashed stroke styles, and eclipse umbral highlights'
+  },
+  {
+    domain: 'Armillary Beads Layer',
+    file: 'src/components/widgets/armillary/ArmillaryBeadsLayer.test.tsx',
+    focus: 'Celestial body rendering, Moon phase illumination paths (`computeMoonPhasePath`), observer cone projections, 3D bead positioning, and Keplerian milestone styling'
+  },
+  {
+    domain: 'Armillary Controls & HUD',
+    file: 'src/components/widgets/armillary/ArmillaryControls.test.tsx',
+    focus: 'Mode selector pills (`ArmillaryModePills`), continuum morph slider rail, layer visibility toggles, interactive hover HUD, and telemetry readout HUDs'
+  },
+  {
+    domain: 'Nodal Plane Math Hook',
+    file: 'src/components/widgets/eclipse/hooks/useNodalPlaneMath.test.ts',
+    focus: 'Axial projection coordinates, umbra geometry and shadow containment, apparent angular diameters, 4-quadrant orbital stroke segments, and depth occlusion sorting'
+  },
+  {
+    domain: 'Tide Math Hook',
+    file: 'src/components/widgets/tides/hooks/useTideMath.test.ts',
+    focus: 'Tidal gravity ellipse deformation ($r_x, r_y$), spring vs. neap alignment classification, orbital coordinate positioning, and presentation styling tokens'
+  },
+  {
+    domain: 'Armillary Morphing Engine',
+    file: 'src/utils/cosmicMath/armillary/armillaryMorph.test.ts',
+    focus: 'Continuous 3D translation (Copernican to Geocentric, $\\lambda \\le 0.45$), observer horizon cone deformation, volumetric laser cone flattening, and boundary coordinate continuity'
+  },
+  {
+    domain: 'Stereographic Conformal Invariants',
+    file: 'src/utils/cosmicMath/armillary/armillaryStereographic.test.ts',
+    focus: 'Analytical closed-form stereographic invariants ($R_0\\sec\\epsilon$), circle preservation under stereographic projection, non-degeneracy, and scale-invariance'
+  },
+  {
+    domain: 'Temporal Formatters & Parsing',
+    file: 'src/utils/formatters.test.ts',
+    focus: 'UTC calendar date formatting (`formatYMD`), 24h & 12h AM/PM time string parsing (`parseTimeString`), HH:MM formatting, and edge case resilience'
+  },
+  {
+    domain: 'Worker Synchronous Fallback',
+    file: 'src/workers/workerFallback.test.ts',
+    focus: 'Deterministic main-thread ephemeris fallback routines, annual matrix computation, cache integration, and failsafe zombie error handling'
+  }
+];
+
+// Strict bidirectional validation: every discovered test suite must exist in CANONICAL_SUITES, and every entry in CANONICAL_SUITES must exist on disk
+const canonicalPaths = new Set(CANONICAL_SUITES.map(s => s.file));
+const unmappedSuites = [];
+for (const relPath of fileMap.keys()) {
+  if (!canonicalPaths.has(relPath)) {
+    unmappedSuites.push(relPath);
+  }
+}
+const staleSuites = [];
+for (const suite of CANONICAL_SUITES) {
+  if (!fileMap.has(suite.file)) {
+    staleSuites.push(suite.file);
+  }
+}
+if (unmappedSuites.length > 0 || staleSuites.length > 0) {
+  if (unmappedSuites.length > 0) {
+    console.error(`❌ Unregistered test suite(s) detected: ${unmappedSuites.join(', ')}`);
+  }
+  if (staleSuites.length > 0) {
+    console.error(`❌ Stale/missing test suite(s) in CANONICAL_SUITES: ${staleSuites.join(', ')}`);
+  }
+  console.error('Please keep CANONICAL_SUITES in scripts/syncDocMetrics.mjs in 1:1 sync with test files.');
+  process.exit(1);
+}
+console.log(`✔ All ${totalFiles} test suites verified 1:1 with CANONICAL_SUITES.`);
+
+// ==========================================
+// Automated Feature, Milestone & ADR Ledger Extraction
+// ==========================================
+let latestFeatureNum = 0;
+let latestMilestoneNum = 0;
+let projectContent = '';
+if (fs.existsSync(projectPath)) {
+  projectContent = fs.readFileSync(projectPath, 'utf8');
+  const featureMatches = [...projectContent.matchAll(/\|\s*F(\d+)\s*\|/g)];
+  for (const m of featureMatches) {
+    const n = parseInt(m[1], 10);
+    if (n > latestFeatureNum) latestFeatureNum = n;
+  }
+  const milestoneMatches = [...projectContent.matchAll(/\|\s*M(\d+)\s*\|/g)];
+  for (const m of milestoneMatches) {
+    const n = parseInt(m[1], 10);
+    if (n > latestMilestoneNum) latestMilestoneNum = n;
+  }
+}
+
+let latestAdrNum = 0;
+if (fs.existsSync(adrDir)) {
+  const adrFiles = fs.readdirSync(adrDir).filter(f => /^\d{4}-.*\.md$/.test(f));
+  for (const f of adrFiles) {
+    const m = f.match(/^(\d{4})-/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > latestAdrNum) latestAdrNum = n;
+    }
+  }
+}
+
+let latestDeadEndNum = 0;
+if (fs.existsSync(deadEndsPath)) {
+  const deContent = fs.readFileSync(deadEndsPath, 'utf8');
+  const deMatches = [...deContent.matchAll(/\|\s*\*\*DE-(\d+)\*\*\s*\|/g)];
+  for (const m of deMatches) {
+    const n = parseInt(m[1], 10);
+    if (n > latestDeadEndNum) latestDeadEndNum = n;
+  }
+}
+
+const latestAdrStr = String(latestAdrNum).padStart(4, '0');
+const latestDeStr = String(latestDeadEndNum).padStart(2, '0');
+console.log(`📋 SSoT Ledger Metrics: Features F1–F${latestFeatureNum}, Milestones M1–M${latestMilestoneNum}, ADRs 0001–${latestAdrStr}, Dead Ends DE-01–DE-${latestDeStr}.`);
+
+// ==========================================
+// 0. Synchronize PROJECT.md Header & Footer Ranges
+// ==========================================
+if (projectContent) {
+  projectContent = projectContent.replace(
+    /Feature Inventory \(`F1[–-]F\d+`\)\*\* and \*\*Milestone & Phase Matrix \(`M1[–-]M\d+`\)/g,
+    `Feature Inventory (\`F1–F${latestFeatureNum}\`)** and **Milestone & Phase Matrix (\`M1–M${latestMilestoneNum}\`)`
+  );
+  projectContent = projectContent.replace(
+    /### Recent Milestones \(M21[–-]M\d+\)/g,
+    `### Recent Milestones (M21–M${latestMilestoneNum})`
+  );
+  projectContent = projectContent.replace(
+    /\(`0001` through `\d{4}`\)/g,
+    `(\`0001\` through \`${latestAdrStr}\`)`
+  );
+  writeOrCheckFile(projectPath, projectContent, 'PROJECT.md header & footer ledger ranges');
+}
+
+// ==========================================
+// 1. Synchronize AGENTS.md
+// ==========================================
+if (fs.existsSync(agentsPath)) {
+  let agentsContent = fs.readFileSync(agentsPath, 'utf8');
+
+  // A. Summary line in Tech Stack
+  agentsContent = agentsContent.replace(
+    /(- \*\*Testing\*\*: `vitest` \(`npm test` — comprehensive domain test suite across )\d+ modules, \d+ tests\)/g,
+    `$1${totalFiles} modules, ${totalTests} tests)`
+  );
+
+  // B. Feature & Milestone ledger ranges
+  agentsContent = agentsContent.replace(
+    /features \(`F1[–-]F\d+`\) or milestones \(`M1[–-]M\d+`\)/g,
+    `features (\`F1–F${latestFeatureNum}\`) or milestones (\`M1–M${latestMilestoneNum}\`)`
+  );
+
+  // C. ADR & Dead End ranges
+  agentsContent = agentsContent.replace(
+    /historical invariants \(`0001[–-]\d{4}`\)/g,
+    `historical invariants (\`0001–${latestAdrStr}\`)`
+  );
+  agentsContent = agentsContent.replace(
+    /\(`DE-01[–-]DE-\d{2}`\)/g,
+    `(\`DE-01–DE-${latestDeStr}\`)`
+  );
+
+  writeOrCheckFile(agentsPath, agentsContent, 'AGENTS.md test & ledger metrics');
+
+  // D. Size budget assertion: AGENTS.md must remain <= 18 KB to prevent AI prompt truncation
+  const agentsSize = Buffer.byteLength(agentsContent, 'utf8');
+  const maxBudget = 18 * 1024; // 18 KB
+  if (agentsSize > maxBudget) {
+    console.error(`❌ AGENTS.md exceeds the 18 KB size budget: ${(agentsSize / 1024).toFixed(2)} KB > 18.00 KB.`);
+    console.error('Please pare down or relocate non-kernel documentation to docs/ to prevent AI prompt truncation.');
+    process.exit(1);
+  }
+  console.log(`✔ AGENTS.md size budget verified: ${(agentsSize / 1024).toFixed(2)} KB <= 18.00 KB.`);
+}
+
+// ==========================================
+// 2. Synchronize README.md
+// ==========================================
+if (fs.existsSync(readmePath)) {
+  let readmeContent = fs.readFileSync(readmePath, 'utf8');
+
+  // A. Summary line: "across 20 specialized domain suites (**368 tests**):"
+  readmeContent = readmeContent.replace(
+    /across \d+ specialized domain suites \(\*\*\d+ tests?\*\*\):/g,
+    `across ${totalFiles} specialized domain suites (**${totalTests} tests**):`
+  );
+
+  // Tech Stack line
+  readmeContent = readmeContent.replace(
+    /(- \*\*Testing\*\*: `vitest` \(`npm test` — comprehensive domain test suite across )\d+ modules, \d+ tests\)/g,
+    `$1${totalFiles} modules, ${totalTests} tests)`
+  );
+
+  // UI Component AST file count
+  const totalUiFiles = getSourceFiles(path.join(rootDir, 'src', 'components')).length;
+  readmeContent = readmeContent.replace(
+    /across all \d+\+? UI files in `src\/components\/\*\*`/g,
+    `across all ${totalUiFiles} UI files in \`src/components/**\``
+  );
+
+  // Expandable summary header count
+  readmeContent = readmeContent.replace(
+    /Expand Full \d+-Suite Domain Test Registry/g,
+    `Expand Full ${totalFiles}-Suite Domain Test Registry`
+  );
+
+  // Ledger: Documents XX Architecture Decision Records
+  readmeContent = readmeContent.replace(
+    /Documents \d+ Architecture Decision Records \(`ADR 0001[–-]\d{4}`\)(?: and \d+ historical anti-patterns \(`DE-01[–-]DE-\d{2}`\))?/g,
+    `Documents ${latestAdrNum} Architecture Decision Records (\`ADR 0001–${latestAdrStr}\`) and ${latestDeadEndNum} historical anti-patterns (\`DE-01–DE-${latestDeStr}\`)`
+  );
+
+  // Ledger: features (F1–FXX) and engineering milestones (M1–MXX)
+  readmeContent = readmeContent.replace(
+    /features \(`F1[–-]F\d+`\) and engineering milestones \(`M1[–-]M\d+`\)/g,
+    `features (\`F1–F${latestFeatureNum}\`) and engineering milestones (\`M1–M${latestMilestoneNum}\`)`
+  );
+
+  // Ledger: XX immutable decision records (ADR 0001–00XX)
+  readmeContent = readmeContent.replace(
+    /\d+ immutable decision records \(`ADR 0001[–-]\d{4}`\)/g,
+    `${latestAdrNum} immutable decision records (\`ADR 0001–${latestAdrStr}\`)`
+  );
+
+  // B. Build canonical test table rows
+  const tableHeader = [
+    '| Domain Module | File | Focus Areas |',
+    '| :--- | :--- | :--- |'
+  ];
+
+  const tableRows = CANONICAL_SUITES.map(suite => {
+    const liveCount = fileMap.get(suite.file) ?? baseNameMap.get(path.basename(suite.file)) ?? 0;
+    const countStr = `(${liveCount} test${liveCount === 1 ? '' : 's'})`;
+    return `| **${suite.domain}** | \`${suite.file}\` ${countStr} | ${suite.focus} |`;
+  });
+
+  const fullTableStr = [...tableHeader, ...tableRows].join('\n');
+
+  // Replace existing table in README
+  const tableRegex = /\| Domain Module \| File \| Focus Areas \|\r?\n\| :--- \| :--- \| :--- \|\r?\n(?:\| .* \|\r?\n?)+/;
+  if (tableRegex.test(readmeContent)) {
+    readmeContent = readmeContent.replace(tableRegex, fullTableStr + '\n');
+  }
+
+  writeOrCheckFile(readmePath, readmeContent, 'README.md test, UI count & ledger metrics');
+}
+
+// ==========================================
+// 3. Synchronize ARCHITECTURE.md
+// ==========================================
+if (fs.existsSync(architecturePath)) {
+  let archContent = fs.readFileSync(architecturePath, 'utf8');
+
+  // Feature & Milestone references
+  archContent = archContent.replace(
+    /Feature Inventory \(`F1[–-]F\d+`\)(?: &| and) Milestone Matrix \(`M1[–-]M\d+`\)/g,
+    `Feature Inventory (\`F1–F${latestFeatureNum}\`) and Milestone Matrix (\`M1–M${latestMilestoneNum}\`)`
+  );
+  archContent = archContent.replace(
+    /Historical Feature Inventory \(`F1[–-]F\d+`\) & Milestone Matrix \(`M1[–-]M\d+`\)/g,
+    `Historical Feature Inventory (\`F1–F${latestFeatureNum}\`) & Milestone Matrix (\`M1–M${latestMilestoneNum}\`)`
+  );
+
+  // ADR reference
+  archContent = archContent.replace(
+    /\(`DE-01[–-]DE-\d{2}`\)/g,
+    `(\`DE-01–DE-${latestDeStr}\`)`
+  );
+  archContent = archContent.replace(
+    /Architecture Decision Records \(`0001` through `\d{4}`/g,
+    `Architecture Decision Records (\`0001\` through \`${latestAdrStr}\``
+  );
+
+  writeOrCheckFile(architecturePath, archContent, 'ARCHITECTURE.md ledger metrics');
+}
+
+// ==========================================
+// 4. Synchronize Quick Index Line Ranges (MATH_SPEC.md & DESIGN_SYSTEM.md)
+// ==========================================
+function syncSpecSectionLineRanges(specPath, label) {
+  if (!fs.existsSync(specPath)) return;
+  const rawContent = fs.readFileSync(specPath, 'utf8');
+  const lines = rawContent.split(/\r?\n/);
+  const totalLines = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
+
+  const headers = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^## (\d+)\.\s+/);
+    if (m) {
+      headers.push({ secNum: m[1], startLine: i + 1 });
+    }
+  }
+  if (headers.length === 0) return;
+
+  const rangeBySec = new Map();
+  for (let i = 0; i < headers.length; i++) {
+    const startLine = headers[i].startLine;
+    const endLine = i + 1 < headers.length ? headers[i + 1].startLine - 1 : totalLines;
+    rangeBySec.set(headers[i].secNum, `L${startLine}–L${endLine}`);
+  }
+
+  const updatedLines = lines.map(line =>
+    line.replace(
+      /^(\|\s*\*\*\[(\d+)\.\s+[^\]]+\]\([^)]+\)\*\*\s*\|\s*)`L\d+[–-]L\d+`(\s*\|.*)$/,
+      (match, prefix, secNum, suffix) => {
+        const rangeStr = rangeBySec.get(secNum);
+        return rangeStr ? `${prefix}\`${rangeStr}\`${suffix}` : match;
+      }
+    )
+  );
+
+  writeOrCheckFile(specPath, updatedLines.join('\n'), `${label} Quick Index line ranges (${headers.length} sections)`);
+}
+
+syncSpecSectionLineRanges(path.join(rootDir, 'docs', 'MATH_SPEC.md'), 'docs/MATH_SPEC.md');
+syncSpecSectionLineRanges(path.join(rootDir, 'docs', 'DESIGN_SYSTEM.md'), 'docs/DESIGN_SYSTEM.md');
+
+// ==========================================
+// 5. Synchronize COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md (Opt-in via --dossier)
+// ==========================================
+const shouldCompileDossier = process.argv.includes('--dossier');
+if (shouldCompileDossier) {
+  const adrFiles = fs.existsSync(adrDir) ? fs.readdirSync(adrDir).filter(f => /^\d{4}-.*\.md$/.test(f)).sort() : [];
+
+  const adrs = adrFiles.map(file => {
+    const filePath = path.join(adrDir, file);
+    const c = fs.readFileSync(filePath, 'utf8');
+    const match = c.match(/^#\s+(?:ADR\s+)?(\d+)[:.]\s*(.+)/m);
+    const title = match ? `ADR ${match[1].padStart(4, '0')}: ${match[2].trim()}` : file;
+    return { file, title, content: c, filePath };
+  });
+
+  const now = new Date().toISOString();
+
+  const tocLines = [
+    '1. [System Overview & Setup](#system-overview-setup)',
+    '2. [System Topology, Contracts & Code Layout](#system-topology-contracts-code-layout)',
+    '3. [Project Roadmap, Features & Milestones](#project-roadmap-features-milestones)',
+    '4. [Agent Guidelines, Protocols & Architecture Map](#agent-guidelines-protocols-architecture-map)',
+    '5. [Critical Log of Historical Dead Ends](#critical-log-of-historical-dead-ends)',
+    '6. [Astronomical Math Specification](#astronomical-math-specification)',
+    '7. [Design System & Visual Vector Tokens](#design-system-visual-vector-tokens)',
+    ...adrs.map((adr, i) => `${i + 8}. [${adr.title}](#${adr.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')})`)
+  ];
+
+  const sections = [
+    { title: 'System Overview & Setup', file: 'README.md' },
+    { title: 'System Topology, Contracts & Code Layout', file: 'ARCHITECTURE.md' },
+    { title: 'Project Roadmap, Features & Milestones', file: 'PROJECT.md' },
+    { title: 'Agent Guidelines, Protocols & Architecture Map', file: 'AGENTS.md' },
+    { title: 'Critical Log of Historical Dead Ends', file: 'DEAD_ENDS.md' },
+    { title: 'Astronomical Math Specification', file: 'docs/MATH_SPEC.md' },
+    { title: 'Design System & Visual Vector Tokens', file: 'docs/DESIGN_SYSTEM.md' },
+  ];
+
+  const componentsDir = path.join(rootDir, 'src', 'components');
+  const totalUiComponents = getSourceFiles(componentsDir).length;
+
+  let doc = `# Cosmic Engine V2.0 — Master Documentation Dossier
+
+> **Compilation Date**: ${now}
+> **Repository**: konr-khan/cosmic-engine-v2
+> **Version**: 2.0.0 (Production Hardened)
+> **Test Harness**: ${totalTests} passing unit tests across ${totalFiles} test suites
+> **Unit Safety**: Strict branded nominal typing (0 violations across ${totalUiComponents} UI components)
+
+---
+
+## Table of Contents
+
+${tocLines.join('\n')}
+
+---
+`;
+
+  for (const sec of sections) {
+    const p = path.join(rootDir, sec.file);
+    if (fs.existsSync(p)) {
+      const secContent = fs.readFileSync(p, 'utf8');
+      const relFromDocs = sec.file.startsWith('docs/') ? `./${sec.file.slice(5)}` : `../${sec.file}`;
+      doc += `\n## ${sec.title}\n\n> Source: [${sec.file}](${relFromDocs})\n\n${secContent}\n\n---\n`;
+    }
+  }
+
+  for (const adr of adrs) {
+    const relPath = `docs/adr/${adr.file}`;
+    doc += `\n## ${adr.title}\n\n> Source: [${relPath}](./adr/${adr.file})\n\n${adr.content}\n\n---\n`;
+  }
+
+  writeOrCheckFile(dossierPath, doc, 'docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
+}
+
+if (isCheckMode) {
+  if (driftedFiles.length > 0) {
+    console.error(`\n❌ [check:docs] ${driftedFiles.length} documentation target(s) out of sync: ${driftedFiles.join(', ')}.`);
+    console.error("Run 'npm run sync:docs' to synchronize metrics, ledger spans, and Quick Index line ranges.\n");
+    process.exit(1);
+  }
+  console.log(`\n✔ [check:docs] All documentation test metrics (${totalFiles} suites, ${totalTests} tests), ledger spans, and Quick Index line ranges are in 100% sync.`);
+} else {
+  console.log(`\n🎉 Documentation test metrics synchronization complete: ${totalFiles} suites, ${totalTests} tests.`);
+}

@@ -1,0 +1,308 @@
+import { Degrees, Latitude } from '../../../types/units';
+import { Vector2D, Vector3D } from '../../../types/coordinates';
+import { toRadians, toDegrees, clamp } from '../core';
+import { cartesian3DToEquatorial, equatorialToHorizontal, equatorialToHorizontalFast } from './coordinates';
+import { ArmillaryProjectionMode } from './types';
+
+const nz = (v: number): number => (v === 0 ? 0 : v);
+
+/**
+ * Stereographic Conformal Projection
+ * Projects from South Celestial Pole (0, -R0, 0) onto equatorial plane y = 0.
+ * Conformal property: preserves all circles and angles (MATH_SPEC.md Section 7.E.1).
+ * 
+ * Mathematical Invariants:
+ * - Celestial Equator (dec = 0°): Projects to concentric circle with radius R = R0.
+ * - Tropic of Cancer (dec = +eps): Projects to concentric circle with radius R = R0 * tan((90° - eps) / 2).
+ * - Tropic of Capricorn (dec = -eps): Projects to concentric circle with radius R = R0 * tan((90° + eps) / 2).
+ * - Ecliptic Great Circle (inclined by eps): Projects to eccentric circle with
+ *   Center (X_c, Y_c) = (0, -R0 * tan(eps)) and Radius R_ecl = R0 / cos(eps) = R0 * sec(eps).
+ * 
+ * Singularity Guard: Bounded finite clamping for points near South Pole (y -> -R0).
+ */
+export function projectStereographicConformal(p: Vector3D, r0: number = 100): Vector2D {
+  const denom = r0 + p.y;
+  const maxBound = r0 * 10;
+  if (Math.abs(denom) < 1e-6) {
+    const safeSign = denom >= 0 ? 1 : -1;
+    const xClamped = clamp(p.x * (r0 / (safeSign * 1e-6)), -maxBound, maxBound);
+    const yClamped = clamp(p.z * (r0 / (safeSign * 1e-6)), -maxBound, maxBound);
+    return {
+      x: nz(xClamped),
+      y: nz(yClamped)
+    };
+  }
+  const scale = r0 / denom;
+  const xClamped = clamp(p.x * scale, -maxBound, maxBound);
+  const yClamped = clamp(p.z * scale, -maxBound, maxBound);
+  return {
+    x: nz(xClamped),
+    y: nz(yClamped)
+  };
+}
+
+/**
+ * Universal Rojas Orthographic Projection
+ * Projects orthographically onto the solstitial colure plane (meridian z = 0).
+ * Historical property: Declinations map to parallel horizontal chords, hour circles to semi-ellipses.
+ */
+export function projectRojasOrthographic(p: Vector3D, _r0: number = 100): Vector2D {
+  return {
+    x: nz(p.x),
+    y: nz(p.y)
+  };
+}
+
+/**
+ * Topocentric Horizon Stereonet Projection
+ * Projected from Nadir (a = -90°) onto the horizon plane (a = 0°).
+ * Zenith (a = +90°) is at (0, 0), horizon is a circle of radius R0.
+ * Singularity Guard: Bounded finite clamping for points near Nadir (a -> -90°).
+ */
+export function projectTopocentricHorizon(altDeg: number, azDeg: number, r0: number = 100): Vector2D {
+  const clampedAlt = clamp(altDeg, -89.9, 90);
+  const rRaw = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+  const maxBound = r0 * 10;
+  const r = Math.min(rRaw, maxBound);
+  const azRad = toRadians(azDeg);
+
+  const xClamped = clamp(r * Math.sin(azRad), -maxBound, maxBound);
+  const yClamped = clamp(-r * Math.cos(azRad), -maxBound, maxBound);
+
+  return {
+    x: nz(xClamped),
+    y: nz(yClamped)
+  };
+}
+
+/**
+ * Projects a 3D point into a specified 2D historical astrolabe coordinate frame.
+ */
+export function computeProjection2D(
+  p3d: Vector3D,
+  mode: ArmillaryProjectionMode,
+  r0: number,
+  latitude: Latitude,
+  lstDeg: Degrees | number
+): Vector2D {
+  if (mode === 'stereographic') {
+    return projectStereographicConformal(p3d, r0);
+  } else if (mode === 'rojas') {
+    return projectRojasOrthographic(p3d, r0);
+  } else {
+    const { raDeg, decDeg } = cartesian3DToEquatorial(p3d);
+    const horiz = equatorialToHorizontal(raDeg, decDeg, latitude, lstDeg);
+    return projectTopocentricHorizon(horiz.altDeg, horiz.azDeg, r0);
+  }
+}
+
+function projectCartesianToTopocentricHorizon(
+  p: Vector3D,
+  sinLat: number,
+  cosLat: number,
+  cosLst: number,
+  sinLst: number,
+  r0: number
+): Vector2D {
+  const r = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  if (r < 1e-6) {
+    return projectTopocentricHorizon(0, 0, r0);
+  }
+  const sinDec = clamp(p.y / r, -1, 1);
+  const cosDec = Math.sqrt(Math.max(0, 1 - sinDec * sinDec));
+
+  const rXZ = Math.hypot(p.x, p.z);
+  let cosH: number;
+  let sinH: number;
+  if (rXZ < 1e-6) {
+    cosH = 1;
+    sinH = 0;
+  } else {
+    const cosRa = p.x / rXZ;
+    const sinRa = p.z / rXZ;
+    cosH = cosLst * cosRa + sinLst * sinRa;
+    sinH = sinLst * cosRa - cosLst * sinRa;
+  }
+
+  const sinAlt = sinLat * sinDec + cosLat * cosDec * cosH;
+  const altRad = Math.asin(clamp(sinAlt, -1, 1));
+  const altDeg = toDegrees(altRad);
+
+  let altVal: number;
+  let azVal: number;
+
+  if (Math.abs(altDeg - 90) < 1e-5) {
+    altVal = 90;
+    azVal = 0;
+  } else if (Math.abs(altDeg + 90) < 1e-5) {
+    altVal = -90;
+    azVal = 0;
+  } else {
+    const sinAz = -cosDec * sinH;
+    const cosAz = sinDec * cosLat - cosDec * sinLat * cosH;
+    const azRad = Math.atan2(sinAz, cosAz);
+    const azDeg = ((toDegrees(azRad) % 360) + 360) % 360;
+
+    altVal = Math.round(altDeg * 100) / 100;
+    azVal = Math.round(azDeg * 100) / 100;
+    altVal = nz(altVal);
+    if (azVal === 360 || nz(azVal) === 0) azVal = 0;
+  }
+
+  const clampedAlt = clamp(altVal, -89.9, 90);
+  const rRaw = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+  const maxBound = r0 * 10;
+  const rP = Math.min(rRaw, maxBound);
+  const azR = toRadians(azVal);
+
+  const xClamped = clamp(rP * Math.sin(azR), -maxBound, maxBound);
+  const yClamped = clamp(-rP * Math.cos(azR), -maxBound, maxBound);
+
+  return {
+    x: nz(xClamped),
+    y: nz(yClamped)
+  };
+}
+
+/**
+ * Creates a specialized 2D projection function for a given transition state.
+ * Pre-computes all mode branching, trig coefficients, and focal parameters once,
+ * returning a fast resolver (p3d: Vector3D) => Vector2D for batch vertex operations.
+ */
+export function createContinuousProjectionResolver(
+  fromMode: ArmillaryProjectionMode | undefined,
+  targetMode: ArmillaryProjectionMode,
+  transT: number = 1.0,
+  r0: number = 100,
+  latitude: Latitude = 47.06,
+  lstDeg: Degrees | number = 0
+): (p3d: Vector3D) => Vector2D {
+  const t = clamp(transT, 0, 1);
+
+  // If transitioning to a 3D mode (geocentric or heliocentric), anchor 2D projection basis to fromMode
+  if (targetMode === 'geocentric' || targetMode === 'heliocentric') {
+    if (fromMode && fromMode !== 'geocentric' && fromMode !== 'heliocentric') {
+      return createContinuousProjectionResolver(undefined, fromMode, 1.0, r0, latitude, lstDeg);
+    }
+    return (p3d: Vector3D) => projectStereographicConformal(p3d, r0);
+  }
+
+  if (!fromMode || fromMode === targetMode || t >= 1.0) {
+    if (targetMode === 'stereographic') {
+      return (p3d: Vector3D) => projectStereographicConformal(p3d, r0);
+    } else if (targetMode === 'rojas') {
+      return (p3d: Vector3D) => projectRojasOrthographic(p3d, r0);
+    } else {
+      const latRad = toRadians(latitude);
+      const sinLat = Math.sin(latRad);
+      const cosLat = Math.cos(latRad);
+      const lstRad = toRadians(lstDeg);
+      const cosLst = Math.cos(lstRad);
+      const sinLst = Math.sin(lstRad);
+      return (p3d: Vector3D) => projectCartesianToTopocentricHorizon(p3d, sinLat, cosLat, cosLst, sinLst, r0);
+    }
+  }
+
+  if (t <= 0.0) {
+    return createContinuousProjectionResolver(undefined, fromMode, 1.0, r0, latitude, lstDeg);
+  }
+
+  // 1. Stereographic <-> Horizon (Continuous Latitude Rotation on S^2 + Coordinate Alignment & Phase Bridge)
+  if (
+    (fromMode === 'stereographic' && targetMode === 'horizon') ||
+    (fromMode === 'horizon' && targetMode === 'stereographic')
+  ) {
+    const isToHorizon = targetMode === 'horizon';
+    const currentT = isToHorizon ? t : 1 - t; // 0.0 = Stereographic, 1.0 = Horizon
+    const effLat = 90 - (90 - latitude) * currentT;
+    const effLst = lstDeg * currentT;
+    const latRad = toRadians(effLat);
+    const sinLat = Math.sin(latRad);
+    const cosLat = Math.cos(latRad);
+    const lstRad = toRadians(effLst);
+    const cosLst = Math.cos(lstRad);
+    const sinLst = Math.sin(lstRad);
+
+    // Smooth C1 Hermite blend weight for coordinate phase bridge
+    const w = currentT * currentT * (3 - 2 * currentT);
+
+    return (p3d: Vector3D) => {
+      const pHoriz = projectCartesianToTopocentricHorizon(p3d, sinLat, cosLat, cosLst, sinLst, r0);
+      const pStereo = projectStereographicConformal(p3d, r0);
+
+      return {
+        x: w * pHoriz.x + (1 - w) * pStereo.x,
+        y: w * pHoriz.y + (1 - w) * pStereo.y
+      };
+    };
+  }
+
+  // 2. Stereographic <-> Rojas (Optical Focal Pull + Colure Plane Rotation)
+  if (
+    (fromMode === 'stereographic' && targetMode === 'rojas') ||
+    (fromMode === 'rojas' && targetMode === 'stereographic')
+  ) {
+    const isToRojas = targetMode === 'rojas';
+    const currentT = isToRojas ? t : 1 - t;
+
+    const thetaRad = currentT * (Math.PI / 2);
+    const cosT = Math.cos(thetaRad);
+    const sinT = Math.sin(thetaRad);
+    const stereoWeight = 1 - currentT;
+
+    return (p3d: Vector3D) => {
+      const yDepth = p3d.y * cosT - p3d.z * sinT;
+      const yTarget = p3d.z * cosT + p3d.y * sinT;
+      const denom = Math.max(0.1, r0 + yDepth * stereoWeight);
+      const focalScale = (r0 * stereoWeight + denom * (1 - stereoWeight)) / denom;
+      return { x: p3d.x * focalScale, y: yTarget * focalScale };
+    };
+  }
+
+  // 3. Rojas <-> Horizon (Composite continuous rotation & focal transition)
+  if (
+    (fromMode === 'rojas' && targetMode === 'horizon') ||
+    (fromMode === 'horizon' && targetMode === 'rojas')
+  ) {
+    const isToHorizon = targetMode === 'horizon';
+    const currentT = isToHorizon ? t : 1 - t;
+
+    if (currentT < 0.5) {
+      const subT = currentT * 2;
+      return createContinuousProjectionResolver('rojas', 'stereographic', subT, r0, latitude, lstDeg);
+    } else {
+      const subT = (currentT - 0.5) * 2;
+      return createContinuousProjectionResolver('stereographic', 'horizon', subT, r0, latitude, lstDeg);
+    }
+  }
+
+  // Default fallback for 3D modes
+  const p1Resolver = createContinuousProjectionResolver(undefined, fromMode, 1.0, r0, latitude, lstDeg);
+  const p2Resolver = createContinuousProjectionResolver(undefined, targetMode, 1.0, r0, latitude, lstDeg);
+  return (p3d: Vector3D) => {
+    const p1 = p1Resolver(p3d);
+    const p2 = p2Resolver(p3d);
+    return {
+      x: (1 - t) * p1.x + t * p2.x,
+      y: (1 - t) * p1.y + t * p2.y
+    };
+  };
+}
+
+/**
+ * Continuous, circle-preserving cross-projection interpolation between historical astrolabe models.
+ * Transitions between stereographic, rojas, and horizon frames using SO(3) coordinate rotation
+ * and continuous perspective focal scale u in [R0, infinity), preserving circles and conic contours.
+ */
+export function computeContinuousProjection2D(
+  p3d: Vector3D,
+  fromMode: ArmillaryProjectionMode | undefined,
+  targetMode: ArmillaryProjectionMode,
+  transT: number = 1.0,
+  r0: number = 100,
+  latitude: Latitude = 47.06,
+  lstDeg: Degrees | number = 0
+): Vector2D {
+  return createContinuousProjectionResolver(fromMode, targetMode, transT, r0, latitude, lstDeg)(p3d);
+}
+

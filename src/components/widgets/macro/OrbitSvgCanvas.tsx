@@ -1,0 +1,316 @@
+import React from 'react';
+import { MILESTONE_VISUAL_TOKENS, MACRO_THEME } from './macroTokens';
+import { EARTH_MILESTONES } from './milestones';
+import { OrbitSvgCanvasProps } from './types';
+import { MiniGlobe } from '../../common/MiniGlobe';
+import { MiniMoon } from '../../common/MiniMoon';
+
+export interface ExtendedOrbitSvgCanvasProps extends OrbitSvgCanvasProps {
+  sunLambdaDeg?: number;
+  latitude?: number;
+  longitude?: number;
+  timeOfDay?: number;
+  lunarOrbitRadius?: number;
+  lunarOrbitPath?: string;
+  zoom?: number;
+  onWheelZoom?: (e: React.WheelEvent<SVGSVGElement>) => void;
+}
+
+export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
+  renderSunX,
+  renderSunY,
+  renderEarthX,
+  renderEarthY,
+  renderMoonX,
+  renderMoonY,
+  orbitalRadius,
+  bRatio,
+  focus2X,
+  focus2Y = 0,
+  exaggerateEccentricity,
+  hoveredId,
+  onHover,
+  milestones = EARTH_MILESTONES,
+  sunLambdaDeg = 0,
+  latitude = 47.06,
+  longitude = -122.81,
+  timeOfDay = 12.0,
+  lunarOrbitRadius,
+  lunarOrbitPath,
+  zoom = 1.0,
+  onWheelZoom,
+  onDateScrub,
+  year
+}) => {
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
+  const [isDraggingEarth, setIsDraggingEarth] = React.useState(false);
+
+  // In-plane solar illumination angles pointing from Earth and Moon toward Sun
+  const sunAngleDeg = Math.atan2(renderSunY - renderEarthY, renderSunX - renderEarthX) * (180 / Math.PI);
+  const moonSunAngleDeg = Math.atan2(renderSunY - renderMoonY, renderSunX - renderMoonX) * (180 / Math.PI);
+
+  const handleEarthPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    if (!onDateScrub) return;
+    setIsDraggingEarth(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleEarthPointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingEarth || !onDateScrub || !svgRef.current) return;
+    const pt = svgRef.current.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const ctm = svgRef.current.getScreenCTM();
+    if (!ctm) return;
+    const svgP = pt.matrixTransform(ctm.inverse());
+
+    // In top-down heliocentric coordinates:
+    // Earth's position is: X = -dist * cos(sunLambda), Y = dist * bRatio * sin(sunLambda)
+    const effectiveBRatio = bRatio > 0 ? bRatio : 1;
+    const sunLambdaRad = Math.atan2(svgP.y / effectiveBRatio, -svgP.x);
+    const sunLambdaDegRaw = ((sunLambdaRad * 180) / Math.PI + 360) % 360;
+
+    // Map solar ecliptic longitude to day of year:
+    // Vernal Equinox (lambda = 0) occurs near March 20 (Day ~79.25)
+    const yearFrac = sunLambdaDegRaw / 360;
+    const totalDayOfYear = (((yearFrac * 365.25 + 79.25) % 365.25) + 365.25) % 365.25;
+    const dayInt = Math.max(1, Math.min(365, Math.floor(totalDayOfYear) + 1));
+    const dayFraction = totalDayOfYear - Math.floor(totalDayOfYear);
+    const scrubbedHour = parseFloat((dayFraction * 24).toFixed(3));
+
+    const effectiveYear = year ?? 2026;
+    const scrubbedDate = new Date(Date.UTC(effectiveYear, 0, dayInt, 12, 0, 0));
+    onDateScrub(scrubbedDate, scrubbedHour);
+  };
+
+  const handleEarthPointerUp = (e: React.PointerEvent) => {
+    if (isDraggingEarth) {
+      setIsDraggingEarth(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // pointer capture already released
+      }
+    }
+  };
+
+  // Dynamic zoom viewBox
+  const viewBoxStr = React.useMemo(() => {
+    if (zoom === 1.0) return "-290 -280 580 560";
+    const w = parseFloat((580 / zoom).toFixed(2));
+    const h = parseFloat((560 / zoom).toFixed(2));
+    return `${-w / 2} ${-h / 2} ${w} ${h}`;
+  }, [zoom]);
+
+  return (
+    <svg 
+      ref={svgRef}
+      viewBox={viewBoxStr} 
+      style={{ touchAction: 'none' }}
+      onWheel={onWheelZoom}
+      className="w-full h-full max-h-[380px] overflow-visible"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      {/* Faint Concentric Distance Reference Rings (0.5 AU, 1.0 AU, 1.25 AU) */}
+      <circle r="100" fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 3" strokeOpacity="0.4" className="pointer-events-none" />
+      <text x="0" y="-103" textAnchor="middle" className="text-[7px] font-mono fill-slate-500 select-none pointer-events-none">0.5 AU</text>
+
+      <circle r="200" fill="none" stroke="#334155" strokeWidth="0.75" strokeDasharray="4 4" strokeOpacity="0.6" className="pointer-events-none" />
+      <text x="-142" y="-142" textAnchor="middle" className="text-[8px] font-mono fill-slate-400 font-bold select-none pointer-events-none">1.0 AU (149.6M km)</text>
+
+      {/* Coordinate Crosshairs */}
+      <line x1="-260" y1="0" x2="260" y2="0" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.3" className="pointer-events-none" />
+      <line x1="0" y1="-260" x2="0" y2="260" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 2" strokeOpacity="0.3" className="pointer-events-none" />
+
+      {/* Major Orbit Ellipse */}
+      <ellipse 
+        cx="0" 
+        cy="0" 
+        rx={orbitalRadius} 
+        ry={orbitalRadius * bRatio} 
+        fill="none" 
+        stroke="#475569" 
+        strokeWidth="1.2" 
+        className="pointer-events-none"
+      />
+
+      {/* Kepler Empty Focus F2 indicator when exaggerated */}
+      {exaggerateEccentricity && (
+        <g transform={`translate(${focus2X}, ${focus2Y})`} className="pointer-events-none">
+          <circle r="3" fill="#64748b" stroke="#334155" strokeWidth="1" />
+          <text x="0" y="-6" textAnchor="middle" className="text-[7px] font-mono fill-slate-500">Focus F2 (Empty)</text>
+        </g>
+      )}
+
+      {/* Line connecting Sun (Focus F1) to Earth */}
+      <line 
+        x1={renderSunX} 
+        y1={renderSunY} 
+        x2={renderEarthX} 
+        y2={renderEarthY} 
+        stroke="#e2e8f0" 
+        strokeWidth="1" 
+        strokeDasharray="3 2" 
+        opacity="0.6" 
+        className="pointer-events-none"
+      />
+
+      {/* Key Astronomical Orbital Milestones */}
+      {milestones.map((m) => {
+        const token = MILESTONE_VISUAL_TOKENS[m.id];
+        const mx = 'x' in m && typeof m.x === 'number' ? m.x : (token?.rawX ?? ('rawX' in m ? (m as any).rawX : 0));
+        const my = 'y' in m && typeof m.y === 'number' ? m.y : ((token?.rawY ?? ('rawY' in m ? (m as any).rawY : 0)) * bRatio);
+        const isHovered = hoveredId === m.id;
+        const color = token?.color ?? ('color' in m && m.color ? m.color : '#38bdf8');
+        const fillColor = token?.fillColor ?? ('fillColor' in m && m.fillColor ? m.fillColor : 'fill-sky-400');
+        const textAnchor = token?.textAnchor ?? ('textAnchor' in m && m.textAnchor ? m.textAnchor : 'middle');
+        const textDx = token?.textDx ?? ('textDx' in m && typeof m.textDx === 'number' ? m.textDx : 0);
+        const textDy = token?.textDy ?? ('textDy' in m && typeof m.textDy === 'number' ? m.textDy : 0);
+        const subDy = token?.subDy ?? ('subDy' in m && typeof m.subDy === 'number' ? m.subDy : 0);
+        return (
+          <g key={m.id}>
+            {/* Persistent Translucent Glowing Halo Node (Expands on Hover) */}
+            <circle 
+              cx={mx} 
+              cy={my} 
+              r={isHovered ? 18 : 11} 
+              fill={color} 
+              opacity={isHovered ? 0.45 : 0.20} 
+              className={`pointer-events-none transition-[r,opacity] duration-200 ${isHovered ? 'animate-pulse' : ''}`} 
+            />
+            <circle 
+              cx={mx} 
+              cy={my} 
+              r={isHovered ? 8 : 5.5} 
+              fill={color} 
+              stroke="#ffffff" 
+              strokeWidth="1.5" 
+              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
+            />
+            
+            {/* Labels & Dates */}
+            <text 
+              x={mx + textDx} 
+              y={my + textDy} 
+              textAnchor={textAnchor} 
+              className={`text-xs font-mono font-bold ${fillColor} select-none pointer-events-none drop-shadow-sm`}
+            >
+              {m.label}
+            </text>
+            <text 
+              x={mx + textDx} 
+              y={my + subDy} 
+              textAnchor={textAnchor} 
+              className="text-[10px] font-mono fill-slate-400 font-bold select-none pointer-events-none"
+            >
+              {m.date}
+            </text>
+
+            {/* Generous hit target area that does not flicker */}
+            <circle
+              cx={mx}
+              cy={my}
+              r="20"
+              fill="transparent"
+              className="cursor-pointer"
+              onPointerEnter={() => onHover(m.id)}
+              onPointerLeave={() => onHover(null)}
+            />
+          </g>
+        );
+      })}
+
+      {/* Center Sun at Focus F1 */}
+      <g transform={`translate(${renderSunX}, ${renderSunY})`} className="pointer-events-none">
+        {/* Sun Corona Rays */}
+        <circle r="22" fill={MACRO_THEME.SUN_FILL} opacity="0.2" />
+        <circle r="15" fill={MACRO_THEME.SUN_FILL} stroke="#ffffff" strokeWidth="1.5" className="drop-shadow-lg" />
+        <text x="0" y="3" textAnchor="middle" className="text-[8px] font-black fill-amber-950 font-mono select-none">
+          SUN
+        </text>
+        {exaggerateEccentricity && (
+          <text x="0" y="24" textAnchor="middle" className="text-[7px] font-mono fill-amber-400 font-bold select-none">
+            Focus F1 (Sun)
+          </text>
+        )}
+      </g>
+
+      {/* Moon Orbit Ring around Earth */}
+      {lunarOrbitPath ? (
+        <path
+          d={lunarOrbitPath}
+          fill="none"
+          stroke="#475569"
+          strokeWidth="0.75"
+          strokeDasharray="2 2"
+          className="pointer-events-none"
+        />
+      ) : (
+        <circle 
+          cx={renderEarthX} 
+          cy={renderEarthY} 
+          r={lunarOrbitRadius ?? 28} 
+          fill="none" 
+          stroke="#475569" 
+          strokeWidth="0.75" 
+          strokeDasharray="2 2" 
+          className="pointer-events-none" 
+        />
+      )}
+
+      {/* High-Precision MiniGlobe with Sunward Terminator, 23.44° Axial Tilt & Parallels */}
+      <MiniGlobe
+        cx={renderEarthX}
+        cy={renderEarthY}
+        radius={11}
+        viewMode="topdown"
+        sunAngleDeg={sunAngleDeg}
+        sunLambdaDeg={sunLambdaDeg}
+        latitude={latitude}
+        longitude={longitude}
+        timeOfDay={timeOfDay}
+        showContinents={true}
+        showTerminator={true}
+        showParallels={true}
+        showPolarAxis={true}
+        showObserverPin={true}
+        showAtmosphereGlow={true}
+        showLabel={true}
+      />
+
+      {/* Interactive Drag & Hover Hitbox for Earth */}
+      <circle
+        cx={renderEarthX}
+        cy={renderEarthY}
+        r="16"
+        fill="transparent"
+        className={onDateScrub ? (isDraggingEarth ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-pointer'}
+        style={{ touchAction: 'none' }}
+        onPointerDown={handleEarthPointerDown}
+        onPointerMove={handleEarthPointerMove}
+        onPointerUp={handleEarthPointerUp}
+        onPointerCancel={handleEarthPointerUp}
+        onPointerEnter={() => onHover('earth')}
+        onPointerLeave={() => onHover(null)}
+      />
+      
+      {/* Moon Body */}
+      <MiniMoon
+        cx={renderMoonX}
+        cy={renderMoonY}
+        radius={4.5}
+        phase={0.25}
+        sunAngleDeg={moonSunAngleDeg}
+        fill="#020617"
+        fillOpacity={1}
+        stroke="#334155"
+        strokeWidth={1}
+        showCoronaGlow={false}
+        className="pointer-events-none"
+      />
+    </svg>
+  );
+};
+
+export default OrbitSvgCanvas;

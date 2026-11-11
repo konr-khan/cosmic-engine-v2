@@ -1,0 +1,255 @@
+import { 
+  Degrees, 
+  JulianDate, 
+  DayOfYear,
+  Longitude,
+  asDegrees, 
+  asJulianDate,
+  toRadians,
+  toDegrees
+} from '../../types/units';
+import { Vector3D } from '../../types/coordinates';
+import { J2000_JD } from './astroConstants';
+
+export { toRadians, toDegrees };
+
+/**
+ * Clamps a numerical value within [min, max] bounds.
+ * @param val - Input value
+ * @param min - Lower bound
+ * @param max - Upper bound
+ * @returns Clamped value
+ */
+export const clamp = (val: number, min: number, max: number): number => {
+  return Math.max(min, Math.min(max, val));
+};
+
+/**
+ * Creates a UTC Date representing the specified year, month (1..12), and day (1..31).
+ * Avoids local timezone offsets when instantiating astronomical calendar dates.
+ * @param year - 4-digit year (e.g., 2026)
+ * @param month - 1-indexed month (1 = January, 12 = December)
+ * @param day - 1-indexed day of month (1..31)
+ * @returns Date instance anchored to UTC midnight
+ */
+export const createUTCDate = (year: number, month: number, day: number): Date => {
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+/**
+ * Calculates the Astronomical Julian Date (JD) for a JavaScript Date and optional decimal hour.
+ * Evaluates calendar components in UTC to ensure timezone invariance.
+ * @param date - Calendar date
+ * @param timeOfDay - Time of day in decimal hours (0 to 24)
+ * @returns Julian Date (JD)
+ */
+export const getJulianDate = (date: Date, timeOfDay: number = 12): JulianDate => {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  const day = date.getUTCDate();
+  
+  let y = year;
+  let m = month;
+  if (m <= 2) {
+    y -= 1;
+    m += 12;
+  }
+  
+  const A = Math.floor(y / 100);
+  const B = 2 - A + Math.floor(A / 4);
+  const JD_midnight = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + B - 1524.5;
+  return asJulianDate(JD_midnight + (timeOfDay / 24.0));
+};
+
+/**
+ * Converts a JavaScript Date into an exact Astronomical Julian Date (JD) evaluated in UTC.
+ * @param date - JavaScript Date instance
+ * @returns Julian Date (JD)
+ */
+export const dateToJulianDate = (date: Date): JulianDate => {
+  const hours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600 + date.getUTCMilliseconds() / 3600000;
+  return getJulianDate(date, hours);
+};
+
+/**
+ * Converts an Astronomical Julian Date (JD) into a JavaScript Date anchored to UTC.
+ * Follows standard Meeus algorithm with integer calendar day extraction.
+ * @param jd - Julian Date
+ * @returns Date object in UTC
+ */
+export const julianDateToDate = (jd: JulianDate | number): Date => {
+  const z = Math.floor(jd + 0.5);
+  const f = (jd + 0.5) - z;
+  const alpha = Math.floor((z - 1867216.25) / 36524.25);
+  const a = z + 1 + alpha - Math.floor(alpha / 4);
+  const b = a + 1524;
+  const c = Math.floor((b - 122.1) / 365.25);
+  const d = Math.floor(365.25 * c);
+  const e = Math.floor((b - d) / 30.6001);
+  const day = b - d - Math.floor(30.6001 * e) + f;
+  const month = e < 14 ? e - 1 : e - 13;
+  const year = month > 2 ? c - 4716 : c - 4715;
+  const dayInt = Math.floor(day);
+  const dayFrac = day - dayInt;
+  const totalSecs = Math.round(dayFrac * 86400);
+  const hours = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  return new Date(Date.UTC(year, month - 1, dayInt, hours, mins, secs));
+};
+
+/**
+ * Determines whether a given year is a leap year.
+ * @param year - Four-digit year
+ * @returns True if leap year
+ */
+export const isLeapYear = (year: number): boolean => {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+};
+
+/**
+ * Returns total days in a given calendar year (365 or 366).
+ * @param year - Four-digit year
+ * @returns 366 for leap year, 365 otherwise
+ */
+export const getDaysInYear = (year: number): number => {
+  return isLeapYear(year) ? 366 : 365;
+};
+
+/**
+ * Returns day of the year (1..366) for a given Date, computed deterministically via UTC.
+ * @param date - JavaScript Date object
+ * @returns Day of year (1 to 366)
+ */
+export const getDayOfYear = (date: Date | null | undefined): DayOfYear => {
+  if (!date || isNaN(date.getTime())) return 1;
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth();
+  const d = date.getUTCDate();
+  const startOfYear = Date.UTC(y, 0, 1);
+  const currentDay = Date.UTC(y, m, d);
+  return Math.floor((currentDay - startOfYear) / 86400000) + 1;
+};
+
+/**
+ * Spherical Linear Interpolation (SLERP) for 3D Cartesian vectors.
+ * Smoothly interpolates direction along the shortest great-circle arc on S^2
+ * and linearly interpolates magnitude, preventing chord-cutting artifacts and
+ * keeping celestial bodies on their orbital spheres during model transitions.
+ *
+ * @param v1 - Starting 3D vector
+ * @param v2 - Target 3D vector
+ * @param t - Interpolation factor in [0, 1]
+ * @returns Interpolated 3D vector
+ */
+export const slerp3D = (v1: Vector3D, v2: Vector3D, t: number): Vector3D => {
+  const clampT = clamp(t, 0, 1);
+  if (clampT === 0) return { ...v1 };
+  if (clampT === 1) return { ...v2 };
+
+  const r1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+  const r2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z);
+
+  // If both vectors are at or near the origin, standard linear interpolation
+  if (r1 < 1e-6 && r2 < 1e-6) {
+    return {
+      x: (1 - clampT) * v1.x + clampT * v2.x,
+      y: (1 - clampT) * v1.y + clampT * v2.y,
+      z: (1 - clampT) * v1.z + clampT * v2.z
+    };
+  }
+
+  // If one vector is at origin, smoothly scale magnitude along the non-zero direction
+  if (r1 < 1e-6) {
+    return { x: v2.x * clampT, y: v2.y * clampT, z: v2.z * clampT };
+  }
+  if (r2 < 1e-6) {
+    const scale = 1 - clampT;
+    return { x: v1.x * scale, y: v1.y * scale, z: v1.z * scale };
+  }
+
+  // Normalized unit vectors
+  const u1 = { x: v1.x / r1, y: v1.y / r1, z: v1.z / r1 };
+  const u2 = { x: v2.x / r2, y: v2.y / r2, z: v2.z / r2 };
+
+  // Dot product and angle
+  let dot = u1.x * u2.x + u1.y * u2.y + u1.z * u2.z;
+  dot = clamp(dot, -1, 1);
+
+  // If vectors are nearly identical / collinear in same direction
+  if (dot > 0.99995) {
+    const rT = (1 - clampT) * r1 + clampT * r2;
+    const avgX = (1 - clampT) * u1.x + clampT * u2.x;
+    const avgY = (1 - clampT) * u1.y + clampT * u2.y;
+    const avgZ = (1 - clampT) * u1.z + clampT * u2.z;
+    const avgLen = Math.sqrt(avgX * avgX + avgY * avgY + avgZ * avgZ) || 1;
+    return {
+      x: (avgX / avgLen) * rT,
+      y: (avgY / avgLen) * rT,
+      z: (avgZ / avgLen) * rT
+    };
+  }
+
+  const theta = Math.acos(dot);
+  const sinTheta = Math.sin(theta);
+
+  // If vectors are nearly opposite (180 deg), choose a deterministic orthogonal axis to rotate around
+  if (sinTheta < 1e-5) {
+    const ortho = Math.abs(u1.y) < 0.99 
+      ? { x: -u1.z, y: 0, z: u1.x }
+      : { x: 0, y: -u1.z, z: u1.y };
+    const orthoLen = Math.sqrt(ortho.x * ortho.x + ortho.y * ortho.y + ortho.z * ortho.z) || 1;
+    const normOrtho = { x: ortho.x / orthoLen, y: ortho.y / orthoLen, z: ortho.z / orthoLen };
+    
+    const rotAngle = clampT * Math.PI;
+    const cosA = Math.cos(rotAngle);
+    const sinA = Math.sin(rotAngle);
+    
+    // Rodrigues rotation formula (normOrtho . u1 = 0)
+    const crossX = normOrtho.y * u1.z - normOrtho.z * u1.y;
+    const crossY = normOrtho.z * u1.x - normOrtho.x * u1.z;
+    const crossZ = normOrtho.x * u1.y - normOrtho.y * u1.x;
+
+    const rT = (1 - clampT) * r1 + clampT * r2;
+    return {
+      x: (u1.x * cosA + crossX * sinA) * rT,
+      y: (u1.y * cosA + crossY * sinA) * rT,
+      z: (u1.z * cosA + crossZ * sinA) * rT
+    };
+  }
+
+  // Standard Slerp formula on S^2
+  const w1 = Math.sin((1 - clampT) * theta) / sinTheta;
+  const w2 = Math.sin(clampT * theta) / sinTheta;
+
+  const ux = w1 * u1.x + w2 * u2.x;
+  const uy = w1 * u1.y + w2 * u2.y;
+  const uz = w1 * u1.z + w2 * u2.z;
+
+  const rT = (1 - clampT) * r1 + clampT * r2;
+
+  return {
+    x: ux * rT,
+    y: uy * rT,
+    z: uz * rT
+  };
+};
+
+/**
+ * Computes Greenwich Mean Sidereal Time (GMST) in degrees [0, 360).
+ */
+export function calculateGMST(julianDate: JulianDate | number): Degrees {
+  const d = Number(julianDate) - J2000_JD;
+  const gmst = (280.46061837 + 360.98564736629 * d) % 360;
+  return asDegrees(((gmst % 360) + 360) % 360);
+}
+
+/**
+ * Computes Local Sidereal Time (LST) in degrees [0, 360).
+ */
+export function calculateLST(julianDate: JulianDate | number, longitude: Longitude | number): Degrees {
+  const gmst = calculateGMST(julianDate);
+  const lst = (((gmst + longitude) % 360) + 360) % 360;
+  return asDegrees(lst);
+}
+

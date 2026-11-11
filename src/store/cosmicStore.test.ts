@@ -1,0 +1,286 @@
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+let mockRefs: { current: any }[] = [];
+let mockRefIndex = 0;
+
+vi.mock('react', async (importOriginal) => {
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    useRef: (initial: any) => {
+      if (!mockRefs[mockRefIndex]) {
+        mockRefs[mockRefIndex] = { current: initial };
+      }
+      return mockRefs[mockRefIndex++];
+    },
+    useCallback: (fn: any) => fn,
+    useSyncExternalStore: (_subscribe: any, getSnapshot: () => any) => getSnapshot()
+  };
+});
+
+import { 
+  cosmicStore, 
+  cosmicActions, 
+  shallowEqual, 
+  selectObserverLocation, 
+  selectDate, 
+  selectTimeOfDay, 
+  selectIsPlaying, 
+  selectSpeed,
+  useChronometerStore,
+  type CosmicStoreState
+} from './cosmicStore';
+
+describe('Cosmic Store & State Isolation Suite', () => {
+  beforeEach(() => {
+    cosmicActions.setDate(new Date(2026, 5, 21));
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setLatitude(47.06);
+    cosmicActions.setLongitude(-122.81);
+    cosmicActions.setSpeed(1);
+    cosmicActions.setIsPlaying(false);
+  });
+
+  it('initializes with default state properties', () => {
+    const state = cosmicStore.getState();
+    expect(state.latitude).toBe(47.06);
+    expect(state.longitude).toBe(-122.81);
+    expect(state.timeOfDay).toBe(12);
+  });
+
+  it('updates state slices and notifies subscribers', () => {
+    const listener = vi.fn();
+    const unsubscribe = cosmicStore.subscribe(listener);
+
+    cosmicActions.setTimeOfDay(14.5);
+    expect(cosmicStore.getState().timeOfDay).toBe(14.5);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    cosmicActions.setObserverLocation(35.68, 139.76);
+    expect(cosmicStore.getState().latitude).toBe(35.68);
+    expect(cosmicStore.getState().longitude).toBe(139.76);
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    unsubscribe();
+  });
+
+  it('performs tickTime calculations correctly across 24h day boundary', () => {
+    cosmicActions.setTimeOfDay(23.5);
+    const initialDate = new Date(2026, 5, 21);
+    cosmicActions.setDate(initialDate);
+
+    // Tick forward by 1 hour (3600 seconds)
+    cosmicActions.tickTime(3600);
+
+    const updatedState = cosmicStore.getState();
+    expect(updatedState.timeOfDay).toBeCloseTo(0.5, 3);
+    expect(updatedState.date.getDate()).toBe(22);
+  });
+
+  it('handles multi-day forward wrapping across year boundary', () => {
+    cosmicActions.setTimeOfDay(22.0);
+    cosmicActions.setDate(new Date(Date.UTC(2026, 11, 31)));
+
+    // Fast-forward 50 hours (22h + 50h = 72h = 3 full days => Jan 3)
+    cosmicActions.tickTime(50 * 3600);
+
+    const updatedState = cosmicStore.getState();
+    expect(updatedState.timeOfDay).toBeCloseTo(0.0, 3);
+    expect(updatedState.date.getUTCFullYear()).toBe(2027);
+    expect(updatedState.date.getUTCMonth()).toBe(0); // January
+    expect(updatedState.date.getUTCDate()).toBe(3);
+  });
+
+  it('handles reverse-time ticking across day boundary', () => {
+    cosmicActions.setTimeOfDay(0.5);
+    cosmicActions.setDate(new Date(Date.UTC(2026, 0, 1)));
+
+    // Tick backward by 2 hours (-7200 seconds)
+    cosmicActions.tickTime(-7200);
+
+    const updatedState = cosmicStore.getState();
+    expect(updatedState.timeOfDay).toBeCloseTo(22.5, 3);
+    expect(updatedState.date.getUTCFullYear()).toBe(2025);
+    expect(updatedState.date.getUTCMonth()).toBe(11); // December
+    expect(updatedState.date.getUTCDate()).toBe(31);
+  });
+
+  it('evaluates shallowEqual correctly for objects and primitives', () => {
+    expect(shallowEqual({ a: 1, b: 'x' }, { a: 1, b: 'x' })).toBe(true);
+    expect(shallowEqual({ a: 1, b: 'x' }, { a: 1, b: 'y' })).toBe(false);
+    expect(shallowEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(shallowEqual(42, 42)).toBe(true);
+    expect(shallowEqual(42, 43)).toBe(false);
+    expect(shallowEqual(new Date(1700000000000), new Date(1700000000000))).toBe(true);
+    expect(shallowEqual(new Date(1700000000000), new Date(1700000001000))).toBe(false);
+    expect(shallowEqual({ d: new Date(1700000000000) }, { d: new Date(1700000000000) })).toBe(true);
+    expect(shallowEqual({ d: new Date(1700000000000) }, { d: new Date(1700000001000) })).toBe(false);
+  });
+
+  it('clamps deltaMs to 500ms when resuming or catching up in animation frame ticker', () => {
+    let frameCallback: ((time: number) => void) | null = null;
+    vi.stubGlobal('requestAnimationFrame', (cb: (time: number) => void) => {
+      frameCallback = cb;
+      return 123;
+    });
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const nowMock = vi.spyOn(performance, 'now');
+    nowMock.mockReturnValue(1000);
+
+    cosmicActions.setSpeed(1);
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setIsPlaying(true);
+
+    // Simulate 5000ms leap in performance.now (e.g. inactive tab resuming)
+    nowMock.mockReturnValue(6000);
+    if (frameCallback) {
+      (frameCallback as (time: number) => void)(6000);
+    }
+
+    const updatedState = cosmicStore.getState();
+    // Delta should be clamped to 500ms = 0.5s => (12 + 0.5 / 3600) hours
+    expect(updatedState.timeOfDay).toBeCloseTo(12 + 0.5 / 3600, 4);
+
+    cosmicActions.setIsPlaying(false);
+    vi.unstubAllGlobals();
+    nowMock.mockRestore();
+  });
+
+  it('atomically updates date and timeOfDay in a single notification via setDateTime', () => {
+    const listener = vi.fn();
+    const unsubscribe = cosmicStore.subscribe(listener);
+
+    const targetDate = new Date(Date.UTC(2026, 2, 20));
+    cosmicActions.setDateTime(targetDate, 10.5);
+
+    const state = cosmicStore.getState();
+    expect(state.date.getTime()).toBe(targetDate.getTime());
+    expect(state.timeOfDay).toBe(10.5);
+    // Exactly 1 subscriber notification rather than 2 separate dispatches
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+  });
+
+  it('extracts granular slices accurately via static selectors', () => {
+    cosmicActions.setObserverLocation(51.5074, -0.1278);
+    cosmicActions.setTimeOfDay(16.75);
+    cosmicActions.setSpeed(10);
+
+    const state = cosmicStore.getState();
+    expect(selectObserverLocation(state)).toEqual({ latitude: 51.5074, longitude: -0.1278 });
+    expect(selectDate(state)).toBe(state.date);
+    expect(selectTimeOfDay(state)).toBe(16.75);
+    expect(selectIsPlaying(state)).toBe(false);
+    expect(selectSpeed(state)).toBe(10);
+  });
+
+  it('accumulates small delta increments accurately at 60 FPS over 600 frames without quantization loss', () => {
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setSpeed(1);
+
+    const frameDeltaSeconds = 1 / 60; // 16.66667 ms per frame
+    const totalFrames = 600; // 10 seconds of simulated 60 FPS playback
+
+    for (let i = 0; i < totalFrames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const expectedTime = 12 + 10 / 3600; // ~12.002778 hours
+    const actualTime = cosmicStore.getState().timeOfDay;
+
+    expect(actualTime).toBeCloseTo(expectedTime, 4);
+    expect(Math.abs(actualTime - expectedTime)).toBeLessThan(0.0001);
+  });
+
+  it('handles fractional speed and negative speed over multiple small frames accurately', () => {
+    // 1. Fractional speed (0.25x)
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setSpeed(0.25);
+    const frameDeltaSeconds = 1 / 60;
+    const frames = 300; // 5 seconds of real time => 1.25 simulated seconds
+
+    for (let i = 0; i < frames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const expectedFractionalTime = 12 + (5 * 0.25) / 3600;
+    expect(cosmicStore.getState().timeOfDay).toBeCloseTo(expectedFractionalTime, 5);
+
+    // 2. Negative speed (-1x)
+    cosmicActions.setTimeOfDay(12);
+    cosmicActions.setSpeed(-1);
+
+    for (let i = 0; i < frames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const expectedNegativeTime = 12 - 5 / 3600;
+    expect(cosmicStore.getState().timeOfDay).toBeCloseTo(expectedNegativeTime, 5);
+
+    // 3. Negative speed crossing midnight boundary over small frames
+    cosmicActions.setTimeOfDay(0.001); // 3.6 seconds after midnight
+    cosmicActions.setDate(new Date(Date.UTC(2026, 5, 21)));
+    cosmicActions.setSpeed(-1);
+
+    // Tick backward 300 frames (5 seconds = 5 / 3600 hours)
+    for (let i = 0; i < frames; i++) {
+      cosmicActions.tickTime(frameDeltaSeconds);
+    }
+
+    const state = cosmicStore.getState();
+    const expectedWrappedTime = 24 + 0.001 - 5 / 3600;
+    expect(state.timeOfDay).toBeCloseTo(expectedWrappedTime, 5);
+    expect(state.date.getUTCDate()).toBe(20); // Decremented from 21 to 20
+  });
+
+  it('safely catches errors thrown in subscriber callbacks without aborting notification loop', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const faultyListener = vi.fn().mockImplementation(() => {
+      throw new Error('Exploding subscriber');
+    });
+    const healthyListener = vi.fn();
+
+    const unsub1 = cosmicStore.subscribe(faultyListener);
+    const unsub2 = cosmicStore.subscribe(healthyListener);
+
+    cosmicActions.setTimeOfDay(15);
+
+    expect(faultyListener).toHaveBeenCalled();
+    expect(healthyListener).toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith('Error in CosmicStore subscriber:', expect.any(Error));
+
+    unsub1();
+    unsub2();
+    errorSpy.mockRestore();
+  });
+
+  it('re-evaluates snapshot when selector changes while chronometer is paused', () => {
+    mockRefs = [];
+    mockRefIndex = 0;
+
+    // 1. Initial render with selector returning { date: null }
+    const selectorA = (_s: CosmicStoreState) => ({ date: null });
+    const result1 = useChronometerStore(selectorA);
+    expect(result1.date).toBeNull();
+
+    // 2. Chronometer remains paused (cosmicStore state reference unchanged).
+    // Component re-renders with new selector returning live { date: s.date }
+    mockRefIndex = 0;
+    const selectorB = (s: CosmicStoreState) => ({ date: s.date });
+    const result2 = useChronometerStore(selectorB);
+
+    // Should return live date, NOT the stale cached { date: null }!
+    expect(result2.date).not.toBeNull();
+    expect(result2.date?.getTime()).toBe(cosmicStore.getState().date.getTime());
+
+    // 3. Third render with same selectorB (still paused): returns memoized reference
+    mockRefIndex = 0;
+    const result3 = useChronometerStore(selectorB);
+    expect(result3).toBe(result2);
+  });
+});
+
+

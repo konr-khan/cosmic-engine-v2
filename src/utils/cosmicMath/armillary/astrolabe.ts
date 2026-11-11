@@ -1,0 +1,198 @@
+import { Degrees, Latitude, HoursDecimal, asDegrees } from '../../../types/units';
+import { toRadians, clamp } from '../core';
+import { AlmucantarCircleData, ArmillaryProjectionMode } from './types';
+import { CHALDEAN_PLANETS } from './constants';
+
+/**
+ * Calculates the analytical stereographic Almucantar (Altitude circle) center and radius for a given latitude.
+ */
+export function calculateAlmucantarCircle(altDeg: Degrees | number, latitude: Latitude, r0: number = 100): AlmucantarCircleData {
+  const latRad = toRadians(latitude);
+  const altRad = toRadians(altDeg);
+
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+  const sinAlt = Math.sin(altRad);
+  const cosAlt = Math.cos(altRad);
+
+  const denom = sinLat + sinAlt;
+  const maxRadius = r0 * 25; // 2500px finite limit preventing SVG GPU clipping issues
+  if (Math.abs(denom) < 1e-4) {
+    return {
+      altitude: asDegrees(altDeg),
+      centerY: 0,
+      radius: maxRadius,
+      isHorizon: Math.abs(altDeg) < 0.1
+    };
+  }
+
+  const rawCenterY = r0 * (cosLat / denom);
+  const rawRadius = Math.abs(r0 * (cosAlt / denom));
+
+  const centerY = clamp(rawCenterY, -maxRadius, maxRadius);
+  const radius = clamp(rawRadius, 0.1, maxRadius);
+
+  const roundedY = Math.round(centerY * 100) / 100;
+  const roundedRadius = Math.round(radius * 100) / 100;
+
+  return {
+    altitude: asDegrees(altDeg),
+    centerY: Object.is(roundedY, -0) ? 0 : roundedY,
+    radius: roundedRadius,
+    isHorizon: Math.abs(altDeg) < 0.1
+  };
+}
+
+/**
+ * Generates the set of Almucantar elevation circles (every stepDeg degrees) for the Tympan plate.
+ */
+export function generateAlmucantars(latitude: Latitude, stepDeg: number = 15, r0: number = 100): AlmucantarCircleData[] {
+  const list: AlmucantarCircleData[] = [];
+  for (let alt = 0; alt <= 85; alt += stepDeg) {
+    list.push(calculateAlmucantarCircle(alt, latitude, r0));
+  }
+  return list;
+}
+
+const almucantarsCache = new Map<string, AlmucantarCircleData[]>();
+
+/**
+ * Generates continuous Almucantars for Stereographic, Horizon, or cross-transitioning plates.
+ */
+export function generateContinuousAlmucantars(
+  latitude: Latitude,
+  projectionMode: ArmillaryProjectionMode,
+  fromProjectionMode: ArmillaryProjectionMode | undefined,
+  transT: number = 1.0,
+  stepDeg: number = 15,
+  r0: number = 100
+): AlmucantarCircleData[] {
+  const isHorizonTarget = projectionMode === 'horizon';
+  const isHorizonSource = fromProjectionMode === 'horizon';
+  const isTransitioning = fromProjectionMode && fromProjectionMode !== projectionMode && transT < 1.0;
+
+  if (!isTransitioning) {
+    const cacheKey = `${latitude}_${r0}_${stepDeg}_${isHorizonTarget}`;
+    const cached = almucantarsCache.get(cacheKey);
+    if (cached) return cached;
+
+    const list: AlmucantarCircleData[] = [];
+    for (let alt = 0; alt <= 85; alt += stepDeg) {
+      if (isHorizonTarget) {
+        const clampedAlt = clamp(alt, -89.9, 90);
+        const horizonRadius = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+        list.push({
+          altitude: asDegrees(alt),
+          centerY: 0,
+          radius: Math.round(horizonRadius * 100) / 100,
+          isHorizon: Math.abs(alt) < 0.1
+        });
+      } else {
+        list.push(calculateAlmucantarCircle(alt, latitude, r0));
+      }
+    }
+    almucantarsCache.set(cacheKey, list);
+    return list;
+  }
+
+  const list: AlmucantarCircleData[] = [];
+  for (let alt = 0; alt <= 85; alt += stepDeg) {
+    const stereoCircle = calculateAlmucantarCircle(alt, latitude, r0);
+    const clampedAlt = clamp(alt, -89.9, 90);
+    const horizonRadius = r0 * Math.tan(toRadians((90 - clampedAlt) / 2));
+    const horizonCircle: AlmucantarCircleData = {
+      altitude: asDegrees(alt),
+      centerY: 0,
+      radius: Math.round(horizonRadius * 100) / 100,
+      isHorizon: Math.abs(alt) < 0.1
+    };
+
+    const sourceCircle = isHorizonSource ? horizonCircle : stereoCircle;
+    const targetCircle = isHorizonTarget ? horizonCircle : stereoCircle;
+    const t = clamp(transT, 0, 1);
+    const blendedY = Math.round(((1 - t) * sourceCircle.centerY + t * targetCircle.centerY) * 100) / 100;
+    const blendedR = Math.round(((1 - t) * sourceCircle.radius + t * targetCircle.radius) * 100) / 100;
+    list.push({
+      altitude: asDegrees(alt),
+      centerY: blendedY === 0 ? 0 : blendedY,
+      radius: blendedR,
+      isHorizon: Math.abs(alt) < 0.1
+    });
+  }
+  return list;
+}
+
+/**
+ * Solves the Historical 12 Unequal (Planetary) Hours and current ruling planet.
+ */
+export function calculatePlanetaryHour(
+  currentTime: HoursDecimal,
+  sunrise: HoursDecimal,
+  sunset: HoursDecimal,
+  dayOfWeek: number // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+): { hourNumber: number; isDay: boolean; rulingPlanet: string; label: string; progressPercent: number } {
+  const curTime = ((currentTime % 24) + 24) % 24;
+  let isDay = false;
+  let hourNumber = 1;
+  let progressPercent = 0;
+
+  // Planetary day rulers (Sun starts Sunday, Moon Monday, Mars Tuesday, Mercury Wednesday, Jupiter Thursday, Venus Friday, Saturn Saturday)
+  const DAY_RULERS = [3, 6, 2, 5, 1, 4, 0]; // Index in CHALDEAN_PLANETS: Sun=3, Moon=6, Mars=2, Mercury=5, Jupiter=1, Venus=4, Saturn=0
+  const dayRulerIndex = DAY_RULERS[((dayOfWeek % 7) + 7) % 7];
+
+  const rawDayLength = ((sunset - sunrise) % 24 + 24) % 24;
+  const dayLength = rawDayLength > 0.01 && rawDayLength < 23.99 ? rawDayLength : 12;
+  const nightLength = Math.max(0.1, 24 - dayLength);
+
+  if (curTime >= sunrise && curTime < sunset) {
+    isDay = true;
+    const elapsed = curTime - sunrise;
+    const fraction = Math.max(0, Math.min(1, elapsed / dayLength));
+    const hourFraction = fraction * 12;
+    hourNumber = Math.min(12, Math.floor(hourFraction) + 1);
+    progressPercent = Math.round((hourFraction - Math.floor(hourFraction)) * 100);
+  } else {
+    isDay = false;
+    const elapsed = (curTime - sunset + 24) % 24;
+    const fraction = Math.max(0, Math.min(1, elapsed / nightLength));
+    const hourFraction = fraction * 12;
+    hourNumber = Math.min(12, Math.floor(hourFraction) + 1);
+    progressPercent = Math.round((hourFraction - Math.floor(hourFraction)) * 100);
+  }
+
+  // Chaldean rotation of hours: ruler advances by 1 in Chaldean sequence every unequal hour
+  const totalHoursElapsed = isDay ? (hourNumber - 1) : (12 + hourNumber - 1);
+  const currentRulerIndex = ((dayRulerIndex + totalHoursElapsed) % 7 + 7) % 7;
+  const rulingPlanet = CHALDEAN_PLANETS[currentRulerIndex];
+
+  const ordinalSuffix = hourNumber === 1 ? '1st' : hourNumber === 2 ? '2nd' : hourNumber === 3 ? '3rd' : `${hourNumber}th`;
+  const label = `${ordinalSuffix} Hour of ${isDay ? 'Day' : 'Night'} (${rulingPlanet})`;
+
+  return {
+    hourNumber,
+    isDay,
+    rulingPlanet,
+    label,
+    progressPercent: clamp(progressPercent, 0, 100)
+  };
+}
+
+/**
+ * Solves the Apparent Local Sidereal Time and Solar Time when the user manually spins the Rete.
+ * In classical astrolabes, matching a star's pointer to its current altitude solves the local time.
+ */
+export function calculateReteAngleToLST(
+  reteAngleDeg: number,
+  sunRaDeg: number
+): { apparentLSTDeg: number; apparentSolarHours: number } {
+  const apparentLSTDeg = ((reteAngleDeg % 360) + 360) % 360;
+  // Hour angle of the Sun: H = LST - RA_sun
+  const sunHourAngleDeg = ((apparentLSTDeg - sunRaDeg + 540) % 360) - 180;
+  // Solar time: T = (H / 15) + 12
+  const apparentSolarHours = ((((sunHourAngleDeg / 15) + 12) % 24) + 24) % 24;
+
+  return {
+    apparentLSTDeg: Math.round(apparentLSTDeg * 10) / 10,
+    apparentSolarHours: Math.round(apparentSolarHours * 100) / 100
+  };
+}

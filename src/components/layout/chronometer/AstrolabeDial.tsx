@@ -1,0 +1,409 @@
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { toDegrees, toRadians, getDaysInYear, getDayOfYear } from '../../../utils/cosmicMath';
+import { ControlRing } from '../../controls/ControlRing';
+import { ArmillaryRail } from '../../controls/ArmillaryRail';
+import { MiniGlobe } from '../../common/MiniGlobe';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
+
+export interface AstrolabeDialProps {
+  date: Date;
+  timeOfDay: number;
+  latitude: number;
+  longitude: number;
+  declination?: number;
+  onDateChange?: (date: Date) => void;
+  onTimeChange?: (time: number) => void;
+  onLatChange?: (lat: number) => void;
+  onLonChange?: (lon: number) => void;
+}
+
+const THEME = {
+  date: "#10b981", // Outer: Emerald (Date)
+  time: "#38bdf8", // 3rd: Sky Blue (Time)
+  lon: "#f59e0b",  // 2nd: Amber (Longitude)
+  lat: "#f43f5e"   // Innermost: Rose (Latitude Armillary Rail)
+};
+
+const getAngle = (clientX: number, clientY: number, rect: DOMRect): number => {
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const dx = clientX - cx;
+  const dy = clientY - cy;
+  let angle = toDegrees(Math.atan2(dy, dx)) + 90; 
+  if (angle < 0) angle += 360;
+  return angle;
+};
+
+export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
+  date,
+  timeOfDay,
+  latitude,
+  longitude,
+  declination = 0,
+  onDateChange,
+  onTimeChange,
+  onLatChange,
+  onLonChange
+}) => {
+  const hubGlowId = useSafeSvgId('hubGlow');
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [activeRing, setActiveRing] = useState<'date' | 'time' | 'lon' | 'lat' | null>(null);
+  const [hoveredRing, setHoveredRing] = useState<'date' | 'time' | 'lon' | 'lat' | null>(null);
+
+  // References to track previous drag values for boundary crossing/rollover detection
+  const prevTimeRef = useRef(timeOfDay);
+  const prevDayRef = useRef(1);
+
+  const totalDays = getDaysInYear(date.getUTCFullYear());
+  const dayOfYear = getDayOfYear(date);
+
+  // Observer-locked camera: azimuthal yaw locks the observer's geographic meridian to the central vertical axis (X = 0).
+  // Eliminates timeOfDay from the continents' frame (lonDeg - longitude), keeping Earth stationary relative to the viewer
+  // while allowing the daylight/night terminator (sCam) to sweep smoothly from East to West across the globe.
+  const hourAngleDeg = ((timeOfDay - 12) * 15) + longitude;
+  const globeCamera = useMemo(() => ({
+    pitch: 0,
+    yaw: -hourAngleDeg,
+    roll: 0
+  }), [hourAngleDeg]);
+
+  // Observer latitude targeting: maps geographic latitude phi to vertical position Y on the sphere
+  const latRad = toRadians(latitude);
+  const yObs = -45 * Math.sin(latRad);
+  const latChordHalfWidth = 45 * Math.cos(latRad);
+
+  useEffect(() => {
+    prevTimeRef.current = timeOfDay;
+  }, [timeOfDay]);
+
+  useEffect(() => {
+    prevDayRef.current = dayOfYear;
+  }, [dayOfYear]);
+
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    if (!svgRef.current) return;
+    
+    const rect = svgRef.current.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const dx = e.clientX - (rect.left + cx);
+    const dy = e.clientY - (rect.top + cy);
+    const r = Math.sqrt(dx * dx + dy * dy);
+
+    // Dynamic radial threshold scaling based on current render size (viewBox radius = 135)
+    const scale = rect.width / 270;
+    const scaledR = r / scale;
+
+    if (scaledR > 115 && scaledR <= 135) setActiveRing('date');
+    else if (scaledR > 90 && scaledR <= 115) setActiveRing('time');
+    else if (scaledR > 65 && scaledR <= 90) setActiveRing('lon');
+    else if (scaledR > 45 && scaledR <= 65 && dx < 10) setActiveRing('lat'); // Left half for Armillary Rail
+
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const dx = e.clientX - (rect.left + cx);
+    const dy = e.clientY - (rect.top + cy);
+    const r = Math.sqrt(dx * dx + dy * dy);
+    const scale = rect.width / 270;
+    const scaledR = r / scale;
+
+    // Update hovered ring when not dragging
+    if (!activeRing) {
+      if (scaledR > 115 && scaledR <= 135) setHoveredRing('date');
+      else if (scaledR > 90 && scaledR <= 115) setHoveredRing('time');
+      else if (scaledR > 65 && scaledR <= 90) setHoveredRing('lon');
+      else if (scaledR > 45 && scaledR <= 65 && dx < 10) setHoveredRing('lat');
+      else setHoveredRing(null);
+    }
+
+    if (!activeRing) return;
+    const angle = getAngle(e.clientX, e.clientY, rect);
+
+    if (activeRing === 'date' && onDateChange) {
+      const newDay = Math.max(1, Math.min(totalDays, Math.round((angle / 360) * totalDays) || 1));
+      const prevDay = prevDayRef.current;
+      if (newDay !== prevDay) {
+        const currentYear = date.getUTCFullYear();
+
+        // Year rollover detection when dragging across Jan 1 / Dec 31 boundary
+        if (prevDay >= totalDays - 15 && newDay <= 15) {
+          const nextYear = currentYear + 1;
+          const nextTotalDays = getDaysInYear(nextYear);
+          const adjustedDay = Math.min(newDay, nextTotalDays);
+          prevDayRef.current = adjustedDay;
+          onDateChange(new Date(Date.UTC(nextYear, 0, adjustedDay)));
+        } else if (prevDay <= 15 && newDay >= totalDays - 15) {
+          const prevYear = currentYear - 1;
+          const prevTotalDays = getDaysInYear(prevYear);
+          const adjustedDay = Math.min(newDay, prevTotalDays);
+          prevDayRef.current = adjustedDay;
+          onDateChange(new Date(Date.UTC(prevYear, 0, adjustedDay)));
+        } else {
+          prevDayRef.current = newDay;
+          onDateChange(new Date(Date.UTC(currentYear, 0, newDay)));
+        }
+      }
+    } 
+    else if (activeRing === 'time' && onTimeChange) {
+      const newTime = parseFloat(((angle / 360) * 24).toFixed(3));
+      const prevTime = prevTimeRef.current;
+      const isForwardRollover = prevTime >= 22 && newTime <= 2;
+      const isBackwardRollover = prevTime <= 2 && newTime >= 22;
+      const hasDelta = Math.abs(newTime - prevTime) >= 0.01;
+
+      if (hasDelta || isForwardRollover || isBackwardRollover) {
+        // Day rollover detection when dragging across 00:00 / 24:00 boundary
+        if (onDateChange) {
+          if (isForwardRollover) {
+            const nextDate = new Date(date.getTime() + 86400000);
+            onDateChange(nextDate);
+          } else if (isBackwardRollover) {
+            const prevDate = new Date(date.getTime() - 86400000);
+            onDateChange(prevDate);
+          }
+        }
+
+        prevTimeRef.current = newTime;
+        onTimeChange(newTime);
+      }
+    } 
+    else if (activeRing === 'lon' && onLonChange) {
+      // Longitude: 0° Top (Greenwich), 90° East (Right), -90° West (Left), ±180° Bottom (IDL)
+      let lon = angle;
+      if (lon > 180) lon -= 360;
+      const roundedLon = Math.round(lon);
+      if (roundedLon !== Math.round(longitude)) {
+        onLonChange(roundedLon);
+      }
+    } 
+    else if (activeRing === 'lat' && onLatChange) {
+      // Latitude Armillary Rail on Left side (-90 to +90)
+      const latY = dy / scale;
+      const normalizedLat = -latY / 54;
+      const targetLat = Math.max(-90, Math.min(90, Math.round(normalizedLat * 90)));
+      if (targetLat !== Math.round(latitude)) {
+        onLatChange(targetLat);
+      }
+    }
+  }, [activeRing, totalDays, date, longitude, latitude, onDateChange, onTimeChange, onLonChange, onLatChange]);
+
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    setActiveRing(null);
+    try {
+      (e.target as Element).releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignore if pointer capture was already released
+    }
+  };
+
+  const handlePointerLeave = () => {
+    if (!activeRing) setHoveredRing(null);
+  };
+
+  const formatDate = (d: number): string => {
+    const tempDate = new Date(Date.UTC(date.getUTCFullYear(), 0, d));
+    return tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  };
+  const formatLat = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'N') : 'S'}`;
+  const formatLon = (l: number): string => `${Math.abs(l)}°${l >= 0 ? (l === 0 ? '' : 'E') : 'W'}`;
+  const formatTimeStr = (t: number): string => {
+    const h = Math.floor(t);
+    const m = Math.floor((t - h) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}Z`;
+  };
+
+  const currentDisplayRing = activeRing || hoveredRing;
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!onTimeChange) return;
+    let delta = 0;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') delta = -0.25;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') delta = 0.25;
+    else if (e.key === 'PageDown') delta = -1;
+    else if (e.key === 'PageUp') delta = 1;
+    else if (e.key === 'Home') {
+      e.preventDefault();
+      onTimeChange(0);
+      return;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      onTimeChange(24);
+      return;
+    }
+    if (delta !== 0) {
+      e.preventDefault();
+      const newTime = parseFloat(Math.max(0, Math.min(24, timeOfDay + delta)).toFixed(2));
+      onTimeChange(newTime);
+    }
+  };
+
+  return (
+    <div 
+      role="slider"
+      tabIndex={0}
+      aria-label="Observation Time of Day"
+      aria-valuenow={timeOfDay}
+      aria-valuemin={0}
+      aria-valuemax={24}
+      onKeyDown={handleKeyDown}
+      className="relative w-full aspect-square max-w-[270px] mx-auto select-none touch-none rounded-full focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none"
+    >
+      <svg 
+        ref={svgRef}
+        viewBox="-135 -135 270 270" 
+        className={`w-full h-full drop-shadow-2xl overflow-visible ${activeRing ? 'cursor-grabbing' : 'cursor-grab'}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
+      >
+        <defs>
+          <radialGradient id={hubGlowId} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#1e1b4b" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#0f172a" stopOpacity="1" />
+          </radialGradient>
+        </defs>
+
+        {/* Outer Bezel Base with Precision Hairlines */}
+        <circle cx="0" cy="0" r="134" fill="none" stroke="#334155" strokeWidth="0.75" strokeOpacity="0.5" />
+        <circle cx="0" cy="0" r="132.5" fill="none" stroke="#0f172a" strokeWidth="1.5" />
+        <circle cx="0" cy="0" r="45" fill={`url(#${hubGlowId})`} />
+
+        {/* 1. OUTER RING (R=125): DATE / DAY-OF-YEAR (Emerald) */}
+        <ControlRing 
+          radius={125} 
+          width={14} 
+          value={dayOfYear} 
+          max={totalDays} 
+          color={THEME.date} 
+        />
+
+        {/* 2. SECOND RING (R=102): TIME OF DAY (Blue) */}
+        <ControlRing 
+          radius={102} 
+          width={14} 
+          value={timeOfDay} 
+          max={24} 
+          color={THEME.time} 
+        />
+
+        {/* 3. THIRD RING (R=78): LONGITUDE (Amber, 0° top, +90° right, -90° left) */}
+        <ControlRing 
+          radius={78} 
+          width={14} 
+          value={longitude} 
+          max={360} 
+          color={THEME.lon} 
+        />
+
+        {/* 4. FOURTH RING (R=54): LATITUDE ARMILLARY RAIL (Rose) */}
+        <ArmillaryRail 
+          radius={54} 
+          width={14} 
+          latitude={latitude} 
+          color={THEME.lat} 
+        />
+
+        {/* Central Living Earth Globe Hub (R=45) */}
+        <MiniGlobe 
+          cx={0}
+          cy={0}
+          radius={45} 
+          viewMode="euler3d"
+          camera={globeCamera}
+          declination={declination} 
+          latitude={latitude}
+          longitude={longitude} 
+          timeOfDay={timeOfDay} 
+          showContinents={true}
+          showTerminator={true}
+          showTwilightBands={true}
+          showParallels={true}
+          showPolarAxis={true}
+          showObserverPin={true}
+          observerPinScale={1.2}
+          showAtmosphereGlow={true}
+        />
+
+        {/* Meridian Sighting Line (North-South, X = 0, Gold matching Longitude selector) */}
+        <line 
+          x1="0" 
+          y1="-45" 
+          x2="0" 
+          y2="45" 
+          stroke={THEME.lon} 
+          strokeWidth="0.75" 
+          strokeDasharray="2.5 1.5" 
+          opacity="0.65" 
+          pointerEvents="none" 
+        />
+
+        {/* Equator Reference Chord (Subtle, Y = 0) */}
+        <line 
+          x1="-45" 
+          y1="0" 
+          x2="45" 
+          y2="0" 
+          stroke="#38bdf8" 
+          strokeWidth="0.5" 
+          strokeDasharray="2 2" 
+          opacity="0.25" 
+          pointerEvents="none" 
+        />
+
+        {/* Dynamic Latitude Armillary Reticle (Rose, tracking observer pin at yObs) */}
+        {Math.abs(latitude) > 0.5 && (
+          <line 
+            x1={-latChordHalfWidth} 
+            y1={yObs} 
+            x2={latChordHalfWidth} 
+            y2={yObs} 
+            stroke={THEME.lat} 
+            strokeWidth="0.8" 
+            strokeDasharray="3 1.5" 
+            opacity="0.8" 
+            pointerEvents="none" 
+          />
+        )}
+
+        {/* TOP-LEVEL FLOATING TOOLTIP (Highest z-index in SVG to prevent occlusion) */}
+        {currentDisplayRing && (
+          <g transform="translate(0, 118)" pointerEvents="none" className="animate-in fade-in zoom-in-90 duration-150">
+            <rect 
+              x="-55" 
+              y="-12" 
+              width="110" 
+              height="22" 
+              rx="7" 
+              fill="#020617" 
+              fillOpacity="0.95"
+              stroke={THEME[currentDisplayRing]} 
+              strokeWidth="1.5" 
+              className="drop-shadow-2xl"
+            />
+            <text 
+              x="0" 
+              y="3" 
+              textAnchor="middle" 
+              className="text-[10px] font-mono font-bold fill-white"
+            >
+              {currentDisplayRing === 'date' && formatDate(dayOfYear)}
+              {currentDisplayRing === 'time' && formatTimeStr(timeOfDay)}
+              {currentDisplayRing === 'lon' && formatLon(longitude)}
+              {currentDisplayRing === 'lat' && formatLat(latitude)}
+            </text>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+};
+
+export default AstrolabeDial;

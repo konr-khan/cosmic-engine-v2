@@ -1,0 +1,277 @@
+/**
+ * @file astronomy.ts
+ * Astronomical data structures for solar almanac, lunar ephemeris, syzygy eclipse geometry, and tidal vectors.
+ */
+
+import { Degrees, HoursDecimal, JulianDate, Latitude, Longitude } from './units';
+import { OrbitalAngles } from './coordinates';
+
+/**
+ * High-performance immutable snapshot of instantaneous solar, lunar, and coordinate ephemeris.
+ * Flat structure optimized for shallow equality checks (shallowEqual) in React 19 external store subscriptions.
+ */
+export interface EphemerisFrame {
+  julianDate: JulianDate;
+  gmst: Degrees;
+  lst: Degrees;
+  solarPos: SolarPositionFull;
+  lunarPos: LunarPositionFull;
+  subsolarPoint: { lat: Latitude; lon: Longitude };
+  sublunarPoint: { lat: Latitude; lon: Longitude };
+  solarNoon: HoursDecimal;
+  declination: Degrees;
+  equationOfTime: number;
+  dayLength: HoursDecimal;
+  sunrise: HoursDecimal;
+  sunset: HoursDecimal;
+  noonElevation: Degrees;
+  isPolarNight: boolean;
+  isMidnightSun: boolean;
+}
+
+/** Instantaneous solar position parameters */
+export interface SolarPosition {
+  declination: Degrees | number;
+  equationOfTime: number;
+  n: number;
+  lambda: Degrees | number;
+}
+
+/** Comprehensive Solar Almanac computation output */
+export interface SolarAlmanacData {
+  dayLength: number;
+  civil: number;
+  nautical: number;
+  astronomical: number;
+  sunrise: number;
+  sunset: number;
+  solarNoon: number;
+  equationOfTime: number;
+  daysSinceEpoch: number;
+  noonElevation: Degrees | number;
+  declination: Degrees | number;
+  lambda: Degrees | number;
+  eclipticLongitude: Degrees | number;
+  isPolarNight: boolean;
+  isMidnightSun: boolean;
+  /** Earth-Sun orbital distance in Astronomical Units (AU) */
+  distanceAU?: number;
+  /** Earth-Sun distance in kilometers */
+  distanceKm?: number;
+  /** Orbital velocity in km/s */
+  orbitalSpeedKms?: number;
+  /** Solar irradiance percentage relative to 1 AU */
+  solarIrradiancePercent?: number;
+  /** Apparent solar angular diameter in arcminutes */
+  sunAngularDiameterArcmin?: number;
+  /** Whether Earth is near perihelion (<0.985 AU) */
+  isPerihelion?: boolean;
+  /** Whether Earth is near aphelion (>1.015 AU) */
+  isAphelion?: boolean;
+}
+
+/** Full instantaneous solar position & Earth orbital dynamics */
+export interface SolarPositionFull extends SolarPosition {
+  rightAscension: number;
+  distanceAU: number;
+  distanceKm: number;
+  orbitalSpeedKms: number;
+  solarIrradianceWm2: number;
+  solarIrradiancePercent: number;
+  sunAngularDiameterArcmin: number;
+  sunAngularRadiusDeg: number;
+  isPerihelion: boolean;
+  isAphelion: boolean;
+  meanAnomaly: number;
+  eclipticLongitude: number;
+}
+
+/** Single-day record in the 365-day annual solar matrix */
+export interface AnnualSolarMatrixItem {
+  day: number;
+  declination: Degrees | number;
+  equationOfTime: number;
+  solarNoon: number;
+  sunrise: number;
+  sunset: number;
+  civilDawn: number;
+  civilDusk: number;
+  nauticalDawn: number;
+  nauticalDusk: number;
+  astroDawn: number;
+  astroDusk: number;
+  dayLength: number;
+}
+
+/** Lunar phase classification names */
+export type LunarPhaseName = 
+  | 'New Moon'
+  | 'Waxing Crescent'
+  | 'First Quarter'
+  | 'Waxing Gibbous'
+  | 'Full Moon'
+  | 'Waning Gibbous'
+  | 'Last Quarter'
+  | 'Waning Crescent';
+
+/** Meeus analytical lunar ephemeris output */
+export interface LunarPosition {
+  /** Right Ascension in degrees [0..360) */
+  rightAscension: Degrees;
+  declination: Degrees | number;
+  distanceKm: number;
+  distanceEarthRadii?: number;
+  /** Normalized phase fraction [0.0..1.0] along mean elongation (0.0 = New Moon, 0.5 = Full Moon) */
+  phase: number;
+  phaseName: LunarPhaseName;
+  /** Mean elongation of the Moon from the Sun (D) in degrees [0..360) */
+  elongation: Degrees | number;
+  /** Geocentric lunar phase angle i in degrees [0..180] (Meeus Ch. 48) */
+  phaseAngleDeg?: number;
+  /** Physical disc illuminated fraction k in [0.0..1.0] (Meeus Ch. 48) */
+  illuminationFraction?: number;
+  /** 
+   * Topocentric parallactic angle relative to observer zenith (0 in pure geocentric ephemeris;
+   * computed topocentrically in calculateLunarEvents with observer lat/lon).
+   */
+  parallacticAngle: Degrees | number;
+  nodeLongitude: Degrees | number;
+  descendingNodeLongitude: Degrees | number;
+  lambda: Degrees | number;
+  eclipticLongitude?: Degrees | number;
+  beta: Degrees | number;
+  eclipticLatitude?: Degrees | number;
+  angularRadiusDeg?: number;
+  parallaxDeg?: number;
+  argumentOfLatitude?: number;
+}
+
+/** Full lunar position solver output with extended angular metrics */
+export interface LunarPositionFull extends LunarPosition {
+  distanceEarthRadii: number;
+  angularRadiusDeg: number;
+  parallaxDeg: number;
+  argumentOfLatitude: number;
+  phaseAngleDeg: number;
+  illuminationFraction: number;
+}
+
+/** Lunar calendar events, transit timings & apsides metrics */
+export interface LunarEvents {
+  moonrise: number | null;
+  transit: number;
+  moonset: number | null;
+  distanceKm: number;
+  distanceEarthRadii: number;
+  isPerigee: boolean;
+  isApogee: boolean;
+  declination: Degrees | number;
+  parallacticAngle: number;
+  polarState?: 'circumpolar_up' | 'circumpolar_down' | 'regular';
+}
+
+/** Alias for lunar event metrics */
+export type LunarEventMetrics = LunarEvents;
+
+/** Single-day record in the 365-day annual lunar matrix */
+export interface AnnualLunarMatrixItem {
+  day: number;
+  moonrise: number | null;
+  transit: number;
+  moonset: number | null;
+  phaseValue: number;
+  isPerigee: boolean;
+  isApogee: boolean;
+  distanceKm: number;
+  polarState?: 'circumpolar_up' | 'circumpolar_down' | 'regular';
+}
+
+/** Gravitational tidal classification */
+export type TideType = 'Spring Tide' | 'Neap Tide' | 'Transitional';
+
+/** Gravitational tidal vector parameters */
+export interface TidalVectors {
+  rx: number;
+  ry: number;
+  type: TideType;
+  alignment: number;
+}
+
+/** Eclipse geometrical classifications */
+export type EclipseType = 
+  | 'TOTAL_SOLAR' 
+  | 'ANNULAR_SOLAR' 
+  | 'PARTIAL_SOLAR' 
+  | 'TOTAL_LUNAR' 
+  | 'PARTIAL_LUNAR' 
+  | 'PENUMBRAL_LUNAR' 
+  | 'NONE';
+
+/** Syzygy eclipse analysis metrics */
+export interface EclipseData {
+  type: EclipseType;
+  category: 'SOLAR' | 'LUNAR' | 'NO_ECLIPSE';
+  label: string;
+  obscuration: number;
+  beta: number;
+  nodeProximityDeg: number;
+  alignmentPercent: number;
+  isEclipseActive: boolean;
+  distanceKm: number;
+  umbraRadiusKm: number;
+  penumbraRadiusKm: number;
+  raDiff: number;
+  elongation: number;
+  phaseValue: number;
+  nodeAngleDeg?: number;
+  argumentOfLatitude?: number;
+  isAscendingHemisphere?: boolean;
+  nodeLongitude?: number;
+  descendingNodeLongitude?: number;
+}
+
+/** Historical or future eclipse scanner preset */
+export interface EclipseScannerPreset {
+  id: string;
+  name: string;
+  date: string | Date;
+  timeOfDay: number;
+  latitude: number;
+  longitude: number;
+  description: string;
+  type: EclipseType;
+}
+
+/** Orbital simulation data package */
+export interface OrbitalData {
+  angles: OrbitalAngles;
+  nodeLongitude: number;
+  descendingNodeLongitude: number;
+  lunarPos: LunarPosition;
+  phase: { value: number; name: LunarPhaseName };
+  tides: TidalVectors;
+  localTideStatus: 'High Tide' | 'Low Tide';
+  lunarEvents: LunarEvents | null;
+  eclipse: EclipseData | null;
+}
+
+/** Root output returned by useCosmicEngine */
+export interface CosmicEngineData {
+  solarData: SolarAlmanacData;
+  orbitalData: OrbitalData | null;
+  julianDate: JulianDate | number;
+}
+
+/** Active widget visibility filter map */
+export interface ActiveWidgetsFilter {
+  today?: boolean;
+  solarAlmanac?: boolean;
+  sunClock?: boolean;
+  lunarAlmanac?: boolean;
+  armillary?: boolean;
+  eclipse?: boolean;
+  terminator?: boolean;
+  macroOrbit?: boolean;
+  microTides?: boolean;
+  [key: string]: boolean | undefined;
+}

@@ -1,0 +1,73 @@
+/**
+ * @file units.ts
+ * Core astronomical and physical unit types with branded nominal typing for
+ * high-risk angular and temporal values.
+ */
+
+// Branded Nominal Unit Identifiers
+declare const DegreesBrand: unique symbol;
+declare const RadiansBrand: unique symbol;
+declare const JulianDateBrand: unique symbol;
+declare const JulianCenturiesBrand: unique symbol;
+
+/** Angle measured in decimal degrees [0..360) or [-90..90] */
+export type Degrees = number & { readonly [DegreesBrand]: true };
+
+/** Angle measured in radians [0..2pi) or [-pi..pi] */
+export type Radians = number & { readonly [RadiansBrand]: true };
+
+/** Astronomical Julian Date epoch (days since Jan 1, 4713 BC 12:00 UTC) */
+export type JulianDate = number & { readonly [JulianDateBrand]: true };
+
+/** Julian Centuries elapsed since standard epoch J2000.0 (36,525 ephemeris days) */
+export type JulianCenturies = number & { readonly [JulianCenturiesBrand]: true };
+
+// Ergonomic Type Aliases (Frictionless Primitives for UI & Controls)
+export type Latitude = number;
+export type Longitude = number;
+export type HoursDecimal = number;
+export type DayOfYear = number;
+export type SpeedMultiplier = number;
+
+// Nominal Type Casting & Constructor Helpers
+export const asDegrees = (val: number): Degrees => val as Degrees;
+export const asRadians = (val: number): Radians => val as Radians;
+export const asJulianDate = (val: number): JulianDate => val as JulianDate;
+export const asJulianCenturies = (val: number): JulianCenturies => val as JulianCenturies;
+
+/** Forbidden brand intersections preventing accidental cross-assignment between degrees and radians */
+export type NotRadians = number & { readonly [RadiansBrand]?: never };
+export type NotDegrees = number & { readonly [DegreesBrand]?: never };
+
+/**
+ * Converts decimal degrees to radians.
+ * Acts as a verified conversion gatekeeper between degree and radian domain models.
+ * Rejects branded Radians at compile time via NotRadians brand guard.
+ */
+export const toRadians = (deg: (Degrees | number) & NotRadians): Radians => {
+  return asRadians((deg as number) * (Math.PI / 180));
+};
+
+/**
+ * Converts radians to decimal degrees.
+ * Rejects branded Degrees at compile time via NotDegrees brand guard.
+ */
+export const toDegrees = (rad: (Radians | number) & NotDegrees): Degrees => {
+  return asDegrees((rad as number) * (180 / Math.PI));
+};
+
+/**
+ * Converts a Julian Date to Julian Centuries elapsed since J2000.0 (JD 2451545.0).
+ */
+export const julianDateToCenturies = (jd: JulianDate | number): JulianCenturies => {
+  return asJulianCenturies((jd - 2451545.0) / 36525.0);
+};
+
+/**
+ * Verified boundary conversion gatekeepers between presentation coordinates and nominal branded radians.
+ */
+export const latToRadians = (lat: Latitude): Radians => toRadians(asDegrees(lat));
+export const lonToRadians = (lon: Longitude): Radians => toRadians(asDegrees(lon));
+export const radiansToLat = (rad: Radians): Latitude => toDegrees(rad) as Latitude;
+export const radiansToLon = (rad: Radians): Longitude => toDegrees(rad) as Longitude;
+

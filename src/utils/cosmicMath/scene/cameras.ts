@@ -1,0 +1,586 @@
+/**
+ * @file cameras.ts
+ * Canonical camera projection pipelines for the Unified 3D Astronomical Scene Graph.
+ * 
+ * Implements:
+ * 1. projectHeliocentricTopDown: Top-down orthographic projection on Ecliptic plane (X, Y)
+ * 2. projectGeocentricTransverse: Side-on ecliptic transverse profile with shadow cones
+ * 3. projectGeocentricAxial: Down-the-barrel Sun-Earth sightline through Earth
+ * 4. projectEulerCamera: Generalized 3D Euler camera with Pitch, Yaw, Roll and depth sorting
+ */
+
+import { Degrees, asDegrees, toRadians, toDegrees } from '../../../types/units';
+import { Vector3D } from '../../../types/coordinates';
+import { 
+  CosmicScene3D, 
+  ProjectedScene2D, 
+  CameraViewport, 
+  ProjectedBody2D, 
+  ProjectedEarth2D, 
+  ProjectedMilestone2D, 
+  LunarOrbitSegment2D, 
+  ProjectedShadowCones2D 
+} from './types';
+import { createEulerRotationMatrix } from './transforms';
+import { generateOrbitalSegments } from '../projection';
+import { EARTH_ECCENTRICITY_TRUE, EARTH_ECCENTRICITY_EXAGGERATED } from '../astroConstants';
+import { calculateNodalOrbitalAngles } from '../eclipse';
+
+/** Canonical lunar orbit segment design tokens */
+const LUNAR_NODE_ASC_STROKE = '#38bdf8';
+const LUNAR_NODE_DESC_STROKE = '#f43f5e';
+const LUNAR_NODE_WANING_DASHARRAY = '4 3';
+
+/** Options for standard 2D camera viewport configuration */
+export interface CameraOptions {
+  width: number;
+  height: number;
+  scale?: number;
+  centerX?: number;
+  centerY?: number;
+}
+
+/** Options for generalized 3D Euler camera rig */
+export interface EulerCameraOptions extends CameraOptions {
+  pitch?: Degrees | number;
+  yaw?: Degrees | number;
+  roll?: Degrees | number;
+  isPerspective?: boolean;
+  focalDistance?: number;
+}
+
+/**
+ * Helper to normalize camera options or discrete viewport arguments.
+ */
+function resolveViewport(
+  options?: Partial<CameraOptions> | number,
+  heightArg?: number,
+  scaleArg?: number,
+  defaultWidth: number = 500,
+  defaultHeight: number = 500,
+  defaultCenterX?: number,
+  defaultCenterY?: number
+): CameraViewport {
+  if (typeof options === 'number') {
+    const w = options;
+    const h = heightArg ?? w;
+    const s = scaleArg !== undefined ? scaleArg : 1.0;
+    return {
+      width: w,
+      height: h,
+      scale: s,
+      centerX: defaultCenterX ?? w / 2,
+      centerY: defaultCenterY ?? h / 2
+    };
+  }
+
+  const w = options?.width ?? defaultWidth;
+  const h = options?.height ?? defaultHeight;
+  const s = options?.scale !== undefined ? options.scale : 1.0;
+  return {
+    width: w,
+    height: h,
+    scale: s,
+    centerX: options?.centerX ?? (defaultCenterX !== undefined ? defaultCenterX : w / 2),
+    centerY: options?.centerY ?? (defaultCenterY !== undefined ? defaultCenterY : h / 2)
+  };
+}
+
+/**
+ * Pipeline 1: Top-down orthographic projection onto Heliocentric Ecliptic plane (X, Y).
+ * 
+ * Maps Sun at focus F1, Earth on Keplerian ellipse, 6 seasonal milestone nodes,
+ * and circular lunar orbit around Earth.
+ * 
+ * @param scene - Active CosmicScene3D state
+ * @param options - Viewport dimensions or options object
+ * @param height - Viewport height (if options is number)
+ * @param scale - Viewport scale factor (if options is number)
+ * @returns ProjectedScene2D model
+ */
+export function projectHeliocentricTopDown(
+  scene: CosmicScene3D,
+  options?: Partial<CameraOptions> | number,
+  height?: number,
+  scale?: number
+): ProjectedScene2D {
+  // Default to Macro Orbit View canvas dimensions (viewBox="-290 -280 580 560")
+  const vp = resolveViewport(options, height, scale, 580, 560, 0, 0);
+  const s = vp.scale;
+  const cx = vp.centerX;
+  const cy = vp.centerY;
+
+  // 1. Keplerian Orbit Parameters & SVG Path
+  const a = 200; // display semi-major axis
+  const e = scene.scaleMode === 'exaggerated' ? EARTH_ECCENTRICITY_EXAGGERATED : EARTH_ECCENTRICITY_TRUE;
+  const b = a * Math.sqrt(Math.max(0, 1 - e * e));
+
+  const rx = a * s;
+  const ry = b * s;
+
+  // Closed elliptical SVG path centered at (cx, cy)
+  const orbitPath = `M ${cx - rx} ${cy} a ${rx} ${ry} 0 1 0 ${2 * rx} 0 a ${rx} ${ry} 0 1 0 ${-2 * rx} 0 Z`;
+
+  // Position scaling: In true scale mode, 3D scene coordinates are in Astronomical Units (AU ~ 1.0),
+  // so multiply by a = 200 to map 1 AU -> 200px display orbit. In exaggerated mode, coordinates are already in pixels.
+  const posScale = scene.scaleMode === 'true' ? a * s : s;
+
+  // 2. Projected Sun Element (at focus F1)
+  const sunX = cx + scene.sun.position.x * posScale;
+  const sunY = cy + scene.sun.position.y * posScale;
+  const sun: ProjectedBody2D = {
+    x: sunX,
+    y: sunY,
+    r: 15 * s,
+    visible: true,
+    depth: scene.sun.position.z
+  };
+
+  // 3. Projected Earth Element (on Keplerian ellipse)
+  const earthX = cx + scene.earth.position.x * posScale;
+  const earthY = cy + scene.earth.position.y * posScale;
+  const earth: ProjectedEarth2D = {
+    x: earthX,
+    y: earthY,
+    r: 10 * s,
+    visible: true,
+    depth: scene.earth.position.z,
+    // In top-down view looking from +Z (NEP), Earth's North pole tilts along the solstitial colure +Y (90 deg)
+    axialTiltAngle2D: 90.0
+  };
+
+  // 4. Projected Moon Element & Circular Orbit Path (locked to visible 28px lunar orbit ring)
+  const moonOrbitRadius = 28 * s;
+  const dxRel = scene.moon.position.x - scene.earth.position.x;
+  const dyRel = scene.moon.position.y - scene.earth.position.y;
+  const distRel = Math.hypot(dxRel, dyRel) || 1;
+  const moonX = earthX + (dxRel / distRel) * moonOrbitRadius;
+  const moonY = earthY + (dyRel / distRel) * moonOrbitRadius;
+  const moon: ProjectedBody2D = {
+    x: moonX,
+    y: moonY,
+    r: 4 * s,
+    visible: true,
+    depth: scene.moon.position.z
+  };
+  const lunarOrbitPath = `M ${earthX - moonOrbitRadius} ${earthY} a ${moonOrbitRadius} ${moonOrbitRadius} 0 1 0 ${2 * moonOrbitRadius} 0 a ${moonOrbitRadius} ${moonOrbitRadius} 0 1 0 ${-2 * moonOrbitRadius} 0 Z`;
+
+  // 5. Projected Seasonal Milestone Nodes
+  const milestones: ProjectedMilestone2D[] = scene.milestones.map((m) => ({
+    id: m.id,
+    label: m.label,
+    date: m.date,
+    x: cx + m.position.x * posScale,
+    y: cy + m.position.y * posScale,
+    visible: true
+  }));
+
+  return {
+    camera: {
+      name: 'topdown',
+      viewport: vp
+    },
+    elements: {
+      sun,
+      earth,
+      moon,
+      orbitPath,
+      lunarOrbitPath,
+      milestones
+    }
+  };
+}
+
+/**
+ * Pipeline 2: Side-on ecliptic transverse profile projection.
+ * 
+ * Maps Sun on left (X=50), Earth at center (X=310, Y=110), 3D shadow cones projecting rightward,
+ * 4-quadrant inclined lunar orbit paths, and 23.439° Earth axial tilt.
+ * 
+ * @param scene - Active CosmicScene3D state
+ * @param options - Viewport dimensions or options object
+ * @param height - Viewport height (if options is number)
+ * @param scale - Viewport scale factor (if options is number)
+ * @returns ProjectedScene2D model
+ */
+export function projectGeocentricTransverse(
+  scene: CosmicScene3D,
+  options?: Partial<CameraOptions> | number,
+  height?: number,
+  scale?: number
+): ProjectedScene2D {
+  // Default to LiveSyzygyView canvas dimensions (viewBox="0 0 520 220")
+  const vp = resolveViewport(options, height, scale, 520, 220, 310, 110);
+  const s = vp.scale;
+  const cx = vp.centerX;
+  const cy = vp.centerY;
+
+  const sunX = 50 * s;
+  const sunY = cy;
+  const earthX = cx;
+  const earthY = cy;
+
+  // 1. Sun Element (Left)
+  const sun: ProjectedBody2D = {
+    x: sunX,
+    y: sunY,
+    r: 28 * s,
+    visible: true,
+    depth: -100
+  };
+
+  // 2. Earth Projected Axial Tilt
+  // Obliquity tilt projected in side-on view: thetaSide = eps * sin(sunLambda)
+  const epsRad = scene.earth.obliquity;
+  const sunLambdaDeg = scene.earth.heliocentricLongitude !== undefined
+    ? (((scene.earth.heliocentricLongitude + 180) % 360 + 360) % 360) 
+    : 0;
+  const sunLambdaRad = toRadians(sunLambdaDeg);
+  const thetaSideRad = epsRad * Math.sin(sunLambdaRad);
+  const axialTiltAngle2D = toDegrees(thetaSideRad);
+
+  const earth: ProjectedEarth2D = {
+    x: earthX,
+    y: earthY,
+    r: 18 * s,
+    visible: true,
+    depth: 0,
+    axialTiltAngle2D
+  };
+
+  // 3. Moon Position along inclined orbit
+  const beta = scene.moon.eclipticLatitude;
+  const phaseVal = scene.moon.phase ?? 0;
+  const phaseRad = phaseVal * 2 * Math.PI;
+  const liveOrbitalRx = 85 * s;
+  const scalePxPerDeg = 8.5 * s;
+
+  const moonX = earthX - Math.cos(phaseRad) * liveOrbitalRx;
+  const moonY = earthY - beta * scalePxPerDeg;
+  const moon: ProjectedBody2D = {
+    x: moonX,
+    y: moonY,
+    r: 7.5 * s,
+    visible: true,
+    depth: Math.sin(phaseRad) * liveOrbitalRx
+  };
+
+  // 4. 4-Quadrant Segmented Lunar Orbit Paths
+  const nodeAngleRad = toRadians(
+    scene.moon.ascendingNodeLongitude !== undefined
+      ? ((sunLambdaDeg - scene.moon.ascendingNodeLongitude) % 360 + 360) % 360
+      : 0
+  );
+
+  const orbitalSegments = generateOrbitalSegments(
+    earthX,
+    earthY,
+    liveOrbitalRx,
+    scalePxPerDeg,
+    nodeAngleRad,
+    'side',
+    72
+  );
+  const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
+
+  const lunarOrbitSegments: LunarOrbitSegment2D[] = [
+    { path: waxAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, isFront: true, isAscending: true },
+    { path: waxDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, isFront: true, isAscending: false },
+    { path: wanAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: true },
+    { path: wanDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: false }
+  ].filter(seg => seg.path.length > 0);
+
+  // 5. Projected Syzygy Shadow Cones
+  const umbraApexX = earthX + 180 * s;
+  const penumbraRightX = earthX + 200 * s;
+  const earthTopY = earthY - 18 * s;
+  const earthBottomY = earthY + 18 * s;
+
+  const shadowCones: ProjectedShadowCones2D = {
+    umbraPath: `M ${earthX} ${earthTopY} L ${umbraApexX} ${earthY} L ${earthX} ${earthBottomY} Z`,
+    penumbraPath: `M ${earthX} ${earthTopY} L ${penumbraRightX} ${earthY - 45 * s} L ${penumbraRightX} ${earthY + 45 * s} L ${earthX} ${earthBottomY} Z`,
+    axisLine: {
+      x1: sunX,
+      y1: sunY,
+      x2: penumbraRightX,
+      y2: earthY
+    }
+  };
+
+  // 6. Node Markers (where transverse orbital loop crosses horizontal ecliptic plane cy)
+  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
+  const ascNodeX = earthX - Math.cos(tAsc) * liveOrbitalRx;
+  const descNodeX = earthX - Math.cos(tDesc) * liveOrbitalRx;
+
+  return {
+    camera: {
+      name: 'transverse',
+      viewport: vp
+    },
+    elements: {
+      sun,
+      earth,
+      moon,
+      orbitPath: `M 10 ${earthY} L 510 ${earthY}`, // Ecliptic reference centerline
+      lunarOrbitSegments,
+      orbitalSegments,
+      shadowCones,
+      nodeMarkers: {
+        asc: { x: ascNodeX, y: earthY, label: '☊ Node' },
+        desc: { x: descNodeX, y: earthY, label: '☋ Node' }
+      },
+      milestones: []
+    }
+  };
+}
+
+/**
+ * Pipeline 3: Down-the-barrel geocentric axial sightline projection.
+ * 
+ * Maps background Sun at (cx, cy), foreground Earth at (cx, cy), transverse elongation (X)
+ * vs ecliptic latitude beta (Y) showing above/below miss geometry, and 3D projected axial tilt.
+ * 
+ * @param scene - Active CosmicScene3D state
+ * @param options - Viewport dimensions or options object
+ * @param height - Viewport height (if options is number)
+ * @param scale - Viewport scale factor (if options is number)
+ * @returns ProjectedScene2D model
+ */
+export function projectGeocentricAxial(
+  scene: CosmicScene3D,
+  options?: Partial<CameraOptions> | number,
+  height?: number,
+  scale?: number
+): ProjectedScene2D {
+  // Default to NodalPlaneVisualizer canvas dimensions (viewBox="0 0 520 220")
+  const vp = resolveViewport(options, height, scale, 520, 220, 260, 110);
+  const s = vp.scale;
+  const cx = vp.centerX;
+  const cy = vp.centerY;
+
+  // 1. Background Sun Body (depth = -1000)
+  const sun: ProjectedBody2D = {
+    x: cx,
+    y: cy,
+    r: 46 * s,
+    visible: true,
+    depth: -1000
+  };
+
+  // 2. Foreground Earth Body with 3D Projected Axial Tilt
+  const epsRad = scene.earth.obliquity;
+  const sunLambdaDeg = scene.earth.heliocentricLongitude !== undefined
+    ? (((scene.earth.heliocentricLongitude + 180) % 360 + 360) % 360) 
+    : 0;
+  const sunLambdaRad = toRadians(sunLambdaDeg);
+
+  // Projected angle of North pole on axial screen plane
+  const nx = -Math.sin(epsRad) * Math.cos(sunLambdaRad);
+  const ny = Math.cos(epsRad);
+  const axialTiltAngle2D = Math.atan2(-nx, ny) * (180 / Math.PI);
+
+  const earth: ProjectedEarth2D = {
+    x: cx,
+    y: cy,
+    r: 24 * s,
+    visible: true,
+    depth: 0,
+    axialTiltAngle2D
+  };
+
+  // 3. Moon Position (Transverse elongation along X, Ecliptic latitude along Y)
+  const beta = scene.moon.eclipticLatitude;
+  const phaseVal = scene.moon.phase ?? 0;
+  const phaseRad = phaseVal * 2 * Math.PI;
+  const orbitalRx = 150 * s;
+  const scalePxPerDeg = 10.5 * s;
+
+  // Prograde West-to-East orbit: Waxing moves East (left, -X), Waning moves West (right, +X)
+  const moonX = cx - Math.sin(phaseRad) * orbitalRx;
+  const moonY = cy - beta * scalePxPerDeg;
+  const moon: ProjectedBody2D = {
+    x: moonX,
+    y: moonY,
+    r: 10.5 * s,
+    visible: true,
+    depth: -Math.cos(phaseRad) * orbitalRx
+  };
+
+  // 4. 4-Quadrant Axial Lunar Orbit Loop
+  const nodeAngleRad = toRadians(
+    scene.moon.ascendingNodeLongitude !== undefined
+      ? ((sunLambdaDeg - scene.moon.ascendingNodeLongitude) % 360 + 360) % 360
+      : 0
+  );
+
+  const orbitalSegments = generateOrbitalSegments(
+    cx,
+    cy,
+    orbitalRx,
+    scalePxPerDeg,
+    nodeAngleRad,
+    'axial',
+    72
+  );
+  const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
+
+  const lunarOrbitSegments: LunarOrbitSegment2D[] = [
+    { path: waxAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, isFront: true, isAscending: true },
+    { path: waxDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, isFront: true, isAscending: false },
+    { path: wanAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: true },
+    { path: wanDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: false }
+  ].filter(seg => seg.path.length > 0);
+
+  // 5. Node Markers (where orbital loop crosses horizontal ecliptic plane cy)
+  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
+  const ascNodeX = cx - Math.sin(tAsc) * orbitalRx;
+  const descNodeX = cx - Math.sin(tDesc) * orbitalRx;
+
+  return {
+    camera: {
+      name: 'axial',
+      viewport: vp
+    },
+    elements: {
+      sun,
+      earth,
+      moon,
+      orbitPath: `M 20 ${cy} L 500 ${cy}`, // Horizontal ecliptic plane (0 deg)
+      lunarOrbitSegments,
+      orbitalSegments,
+      nodeMarkers: {
+        asc: { x: ascNodeX, y: cy, label: '☊ Node' },
+        desc: { x: descNodeX, y: cy, label: '☋ Node' }
+      },
+      milestones: []
+    }
+  };
+}
+
+/**
+ * Pipeline 4: Generalized 3D Euler Camera Projection.
+ * 
+ * Maps arbitrary 3D celestial bodies and rings through SO(3) Euler rotations
+ * (Pitch, Yaw, Roll) with perspective or orthographic mapping and depth sorting.
+ * 
+ * @param scene - Active CosmicScene3D state
+ * @param pitch - Camera pitch angle in degrees
+ * @param yaw - Camera yaw angle in degrees
+ * @param options - Viewport dimensions or options object
+ * @param height - Viewport height (if options is number)
+ * @param scale - Viewport scale factor (if options is number)
+ * @returns ProjectedScene2D model
+ */
+export function projectEulerCamera(
+  scene: CosmicScene3D,
+  pitch: Degrees | number,
+  yaw: Degrees | number,
+  options?: Partial<EulerCameraOptions> | number,
+  height?: number,
+  scale?: number
+): ProjectedScene2D {
+  const pitchDeg = typeof pitch === 'number' ? pitch : (pitch as number);
+  const yawDeg = typeof yaw === 'number' ? yaw : (yaw as number);
+
+  let rollDeg = 0;
+  let isPerspective = false;
+  let focalDistance = 500;
+
+  if (typeof options === 'object' && options !== null) {
+    rollDeg = options.roll ?? 0;
+    isPerspective = options.isPerspective ?? false;
+    focalDistance = options.focalDistance ?? 500;
+  }
+
+  const vp = resolveViewport(options, height, scale, 500, 500);
+  const s = vp.scale;
+  const cx = vp.centerX;
+  const cy = vp.centerY;
+
+  // Precompute Euler rotation matrix once for all camera points
+  const rotM = createEulerRotationMatrix(pitchDeg, yawDeg, rollDeg);
+  const m00 = rotM[0][0], m01 = rotM[0][1], m02 = rotM[0][2];
+  const m10 = rotM[1][0], m11 = rotM[1][1], m12 = rotM[1][2];
+  const m20 = rotM[2][0], m21 = rotM[2][1], m22 = rotM[2][2];
+
+  // Project a 3D point into screen space
+  const project3D = (p3d: Vector3D, radius: number = 0): { x: number; y: number; r: number; depth: number } => {
+    const camX = m00 * p3d.x + m01 * p3d.y + m02 * p3d.z;
+    const camY = m10 * p3d.x + m11 * p3d.y + m12 * p3d.z;
+    const camZ = m20 * p3d.x + m21 * p3d.y + m22 * p3d.z;
+
+    if (isPerspective) {
+      const denom = Math.max(10, focalDistance + camZ);
+      const factor = focalDistance / denom;
+      return {
+        x: cx + camX * factor * s,
+        y: cy - camY * factor * s,
+        r: radius * factor * s,
+        depth: camZ
+      };
+    }
+    return {
+      x: cx + camX * s,
+      y: cy - camY * s,
+      r: radius * s,
+      depth: camZ
+    };
+  };
+
+  const sunProj = project3D(scene.sun.position, 15);
+  const sun: ProjectedBody2D = {
+    x: sunProj.x,
+    y: sunProj.y,
+    r: sunProj.r,
+    visible: true,
+    depth: sunProj.depth
+  };
+
+  const earthProj = project3D(scene.earth.position, 10);
+  const earth: ProjectedEarth2D = {
+    x: earthProj.x,
+    y: earthProj.y,
+    r: earthProj.r,
+    visible: true,
+    depth: earthProj.depth,
+    axialTiltAngle2D: 90 - pitchDeg
+  };
+
+  const moonProj = project3D(scene.moon.position, 4);
+  const moon: ProjectedBody2D = {
+    x: moonProj.x,
+    y: moonProj.y,
+    r: moonProj.r,
+    visible: true,
+    depth: moonProj.depth
+  };
+
+  const milestones: ProjectedMilestone2D[] = scene.milestones.map(m => {
+    const proj = project3D(m.position);
+    return {
+      id: m.id,
+      label: m.label,
+      date: m.date,
+      x: proj.x,
+      y: proj.y,
+      visible: true
+    };
+  });
+
+  return {
+    camera: {
+      name: 'euler3d',
+      viewport: vp,
+      pitch: asDegrees(pitchDeg),
+      yaw: asDegrees(yawDeg),
+      roll: asDegrees(rollDeg)
+    },
+    elements: {
+      sun,
+      earth,
+      moon,
+      orbitPath: '',
+      milestones
+    }
+  };
+}

@@ -1,0 +1,1122 @@
+/**
+ * @file armillary.test.ts
+ * Domain test suite for Gyro-Morph Armillary & Astrolabe mathematical engine, coordinate conversions, and plate projections.
+ */
+
+import { describe, it, expect } from "vitest";
+import {
+  equatorialToCartesian3D,
+  cartesian3DToEquatorial,
+  equatorialToHorizontal,
+  projectStereographicConformal,
+  projectRojasOrthographic,
+  projectTopocentricHorizon,
+  calculateAlmucantarCircle,
+  generateAlmucantars,
+  generateContinuousAlmucantars,
+  calculatePlanetaryHour,
+  generateArmillaryModel,
+  computeRawModeGeometry,
+  computeArmillaryLunarNodes,
+  computeProjection2D,
+  computeContinuousProjection2D,
+  calculateReteAngleToLST,
+  generateProjectionFocalBeacon,
+  calculateAlidadeSighting
+} from "./index";
+import { ASTROLABE_STARS, ZODIAC_SIGNS } from "./constants";
+import { ArmillaryProjectionMode } from "./types";
+import { clamp, calculateGMST, calculateLST } from "../core";
+import { Vector3D, Degrees, Latitude, Longitude, HoursDecimal } from "../../../types";
+describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
+    it('calculates accurate GMST and Local Sidereal Time (LST)', () => {
+      const gmstEpoch = calculateGMST(2451545.0); // Epoch J2000.0 (Jan 1, 2000 12h TT)
+      expect(gmstEpoch).toBeCloseTo(280.46, 1);
+
+      const lstOlympia = calculateLST(2451545.0, -122.81);
+      expect(lstOlympia).toBeGreaterThanOrEqual(0);
+      expect(lstOlympia).toBeLessThan(360);
+      expect(lstOlympia).toBeCloseTo((280.4606 - 122.81 + 360) % 360, 1);
+    });
+
+    it('transforms equatorial coordinates to 3D Cartesian coordinates and back (+X Vernal Equinox)', () => {
+      // North Pole (RA = 0, Dec = 90) -> (0, 100, 0)
+      const pNorthPole = equatorialToCartesian3D(0, 90, 100);
+      expect(pNorthPole.x).toBeCloseTo(0);
+      expect(pNorthPole.y).toBeCloseTo(100);
+      expect(pNorthPole.z).toBeCloseTo(0);
+
+      const eqBack = cartesian3DToEquatorial(pNorthPole);
+      expect(eqBack.decDeg).toBeCloseTo(90);
+
+      // Vernal Equinox (RA = 0, Dec = 0) -> (+X: 100, 0, 0)
+      const pEquinox = equatorialToCartesian3D(0, 0, 100);
+      expect(pEquinox.x).toBeCloseTo(100);
+      expect(pEquinox.y).toBeCloseTo(0);
+      expect(pEquinox.z).toBeCloseTo(0);
+
+      const eqBack2 = cartesian3DToEquatorial(pEquinox);
+      expect(eqBack2.raDeg).toBeCloseTo(0);
+      expect(eqBack2.decDeg).toBeCloseTo(0);
+
+      // RA = 90°, Dec = 0° -> (+Z: 0, 0, 100)
+      const pRA90 = equatorialToCartesian3D(90, 0, 100);
+      expect(pRA90.x).toBeCloseTo(0);
+      expect(pRA90.y).toBeCloseTo(0);
+      expect(pRA90.z).toBeCloseTo(100);
+
+      const eqBack3 = cartesian3DToEquatorial(pRA90);
+      expect(eqBack3.raDeg).toBeCloseTo(90);
+      expect(eqBack3.decDeg).toBeCloseTo(0);
+    });
+
+    it('projects stereographic conformal coordinates preserving equator, circles, and singularity bounds', () => {
+      // Equator point at Vernal Equinox (100, 0, 0) -> (100, 0)
+      const pEq = { x: 100, y: 0, z: 0 };
+      const projEq = projectStereographicConformal(pEq, 100);
+      expect(projEq.x).toBeCloseTo(100);
+      expect(projEq.y).toBeCloseTo(0);
+
+      // Equator point at RA = 90 (0, 0, 100) -> (0, 100)
+      const pEq90 = { x: 0, y: 0, z: 100 };
+      const projEq90 = projectStereographicConformal(pEq90, 100);
+      expect(projEq90.x).toBeCloseTo(0);
+      expect(projEq90.y).toBeCloseTo(100);
+
+      // North Pole (0, 100, 0) -> (0, 0)
+      const pNP = { x: 0, y: 100, z: 0 };
+      const projNP = projectStereographicConformal(pNP, 100);
+      expect(projNP.x).toBeCloseTo(0);
+      expect(projNP.y).toBeCloseTo(0);
+
+      // South Celestial Pole singularity guard (y -> -100)
+      const pSP = { x: 10, y: -100, z: 10 };
+      const projSP = projectStereographicConformal(pSP, 100);
+      expect(Number.isFinite(projSP.x)).toBe(true);
+      expect(Number.isFinite(projSP.y)).toBe(true);
+      expect(Math.abs(projSP.x)).toBeLessThanOrEqual(1000);
+      expect(Math.abs(projSP.y)).toBeLessThanOrEqual(1000);
+    });
+
+    it('projects universal Rojas orthographic coordinates', () => {
+      const p = { x: 50, y: 80, z: 30 };
+      const rojas = projectRojasOrthographic(p, 100);
+      expect(rojas.x).toBe(50);
+      expect(rojas.y).toBe(80);
+    });
+
+    it('projects topocentric horizon stereonet coordinates', () => {
+      // Zenith (Alt = 90) -> (0, 0)
+      const zen = projectTopocentricHorizon(90, 0, 100);
+      expect(zen.x).toBeCloseTo(0);
+      expect(zen.y).toBeCloseTo(0);
+
+      // Horizon North (Alt = 0, Az = 0) -> (0, -100)
+      const horizN = projectTopocentricHorizon(0, 0, 100);
+      expect(horizN.x).toBeCloseTo(0);
+      expect(horizN.y).toBeCloseTo(-100);
+
+      // Horizon East (Alt = 0, Az = 90) -> (100, 0)
+      const horizE = projectTopocentricHorizon(0, 90, 100);
+      expect(horizE.x).toBeCloseTo(100);
+      expect(horizE.y).toBeCloseTo(0);
+    });
+
+    it('computes topocentric horizontal coordinates via 2-argument atan2', () => {
+      // Meridian transit due South: lat = 45, dec = 0, lst = 0, ra = 0 -> alt = 45, az = 180 (South)
+      const southTransit = equatorialToHorizontal(0, 0, 45, 0);
+      expect(southTransit.altDeg).toBeCloseTo(45, 1);
+      expect(southTransit.azDeg).toBeCloseTo(180, 1);
+
+      // North Star: lat = 47.06, dec = 90, lst = 0, ra = 0 -> alt = 47.06, az = 0 (North)
+      const polaris = equatorialToHorizontal(0, 90, 47.06, 0);
+      expect(polaris.altDeg).toBeCloseTo(47.06, 1);
+      expect(polaris.azDeg).toBeCloseTo(0, 1);
+    });
+
+    it('calculates analytical Almucantar elevation circles for astrolabe tympan', () => {
+      const horizon = calculateAlmucantarCircle(0, 45, 100);
+      expect(horizon.isHorizon).toBe(true);
+      expect(horizon.centerY).toBeCloseTo(100); // 100 * cot(45) = 100
+      expect(horizon.radius).toBeCloseTo(141.42, 1); // 100 * csc(45) = 141.42
+
+      const almucantars = generateAlmucantars(47.06, 15, 100);
+      expect(almucantars.length).toBeGreaterThanOrEqual(6);
+      expect(almucantars[0].altitude).toBe(0);
+
+      // Continuous Almucantar interpolation between stereographic (eccentric) and horizon (concentric)
+      const stereoAlm = generateContinuousAlmucantars(47.06, 'stereographic', undefined, 1.0, 15, 100);
+      const horizonAlm = generateContinuousAlmucantars(47.06, 'horizon', undefined, 1.0, 15, 100);
+      const midAlm = generateContinuousAlmucantars(47.06, 'horizon', 'stereographic', 0.5, 15, 100);
+
+      expect(stereoAlm.length).toBe(horizonAlm.length);
+      expect(horizonAlm.every(a => a.centerY === 0)).toBe(true); // Horizon is strictly concentric
+      expect(midAlm[0].centerY).toBeCloseTo(stereoAlm[0].centerY * 0.5, 1);
+    });
+
+    it('calculates historical unequal planetary hours and Chaldean ruler', () => {
+      const midMorningHour = calculatePlanetaryHour(11.5, 6, 18, 0); // 11:30 AM (6th hour of day)
+      expect(midMorningHour.isDay).toBe(true);
+      expect(midMorningHour.hourNumber).toBe(6);
+      expect(midMorningHour.rulingPlanet).toBeDefined();
+
+      const noonHour = calculatePlanetaryHour(12, 6, 18, 0); // 12:00 PM (starts 7th hour of day)
+      expect(noonHour.isDay).toBe(true);
+      expect(noonHour.hourNumber).toBe(7);
+
+      const midnightHour = calculatePlanetaryHour(0, 6, 18, 0); // Midnight (starts 7th hour of night)
+      expect(midnightHour.isDay).toBe(false);
+      expect(midnightHour.hourNumber).toBe(7);
+    });
+
+    it('contains all 12 classical astrolabe navigational stars and 12 zodiac signs', () => {
+      expect(ASTROLABE_STARS.length).toBe(12);
+      expect(ASTROLABE_STARS.some(s => s.name === 'Sirius')).toBe(true);
+      expect(ASTROLABE_STARS.some(s => s.name === 'Vega')).toBe(true);
+      expect(ASTROLABE_STARS.some(s => s.name === 'Arcturus')).toBe(true);
+
+      expect(ZODIAC_SIGNS.length).toBe(12);
+      expect(ZODIAC_SIGNS[0].name).toBe('Aries');
+      expect(ZODIAC_SIGNS[11].name).toBe('Pisces');
+    });
+
+    it('derives raw mode geometry and lunar nodes via decomposed sub-generators', () => {
+      const geomParams = {
+        r0: 100,
+        obliquity: 23.439,
+        sunLambdaDeg: 90,
+        moonLambdaDeg: 180,
+        moonRaDeg: 180,
+        moonDecDeg: 0,
+        exaggerateEccentricity: false,
+        reteOffset: 0,
+        lambdaClamp: 0
+      };
+
+      const helioGeom = computeRawModeGeometry('heliocentric', geomParams);
+      expect(helioGeom.celestialRingsOpacity).toBe(0.0);
+      expect(helioGeom.orbitRingOpacity).toBe(1.0);
+      expect(helioGeom.milestones3D.length).toBe(6);
+
+      const geoGeom = computeRawModeGeometry('geocentric', geomParams);
+      expect(geoGeom.celestialRingsOpacity).toBe(0.85);
+      expect(geoGeom.earth3D).toEqual({ x: 0, y: 0, z: 0 });
+
+      const stereoGeom = computeRawModeGeometry('stereographic', { ...geomParams, lambdaClamp: 1.0 });
+      expect(stereoGeom.celestialRingsOpacity).toBe(1.0);
+      expect(stereoGeom.bezelOpacity).toBe(1.0);
+
+      const dummyVertex = (p: Vector3D) => ({
+        p3d: p,
+        pCam: p,
+        pProj: { x: p.x, y: p.y },
+        screenPos: { x: p.x, y: p.y },
+        isFront: true
+      });
+      const nodes = computeArmillaryLunarNodes({
+        isHelioMode: true,
+        blendedEarth3D: { x: 100, y: 0, z: 0 },
+        transformVertex: dummyVertex
+      });
+      expect(nodes.ascendingNode.screenPos.x).toBe(116);
+      expect(nodes.descendingNode.screenPos.x).toBe(84);
+    });
+
+    it('generates full dynamic Gyro-Morph Armillary Model across 3D and 2D morph factors', () => {
+      const jd = 2451545.0;
+      const model3D = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0, // 3D Armillary
+        projectionMode: 'stereographic',
+        cameraPitch: 25,
+        cameraYaw: 45,
+        r0: 100
+      });
+
+      expect(model3D.rings.length).toBe(8);
+      expect(model3D.stars.length).toBe(12);
+      expect(model3D.sun.screenPos).toBeDefined();
+      expect(model3D.moon.screenPos).toBeDefined();
+      expect(model3D.planetaryHour.label).toBeDefined();
+
+      const model2D = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0, // 2D Stereographic Plate
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(model2D.rings.length).toBe(8);
+      expect(model2D.stars.length).toBe(12);
+      // In 2D stereographic, equator is a 100px radius circle
+      const eqRing = model2D.rings.find(r => r.id === 'equator');
+      expect(eqRing).toBeDefined();
+    });
+
+    it('interpolates dynamically between two 2D projections during cross-morph transitions', () => {
+      const jd = 2451545.0;
+      const p3d = { x: 50, y: 30, z: 80 };
+      const stereo2D = computeProjection2D(p3d, 'stereographic', 100, 47.06, 0);
+      const rojas2D = computeProjection2D(p3d, 'rojas', 100, 47.06, 0);
+
+      // Verify continuous projection endpoints & zero endpoint snapping (t -> 1.0-)
+      const projStart = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 0.0, 100, 47.06, 0);
+      const projNearEnd = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 0.999, 100, 47.06, 0);
+      const projEnd = computeContinuousProjection2D(p3d, 'stereographic', 'rojas', 1.0, 100, 47.06, 0);
+      expect(projStart.x).toBeCloseTo(stereo2D.x, 3);
+      expect(projStart.y).toBeCloseTo(stereo2D.y, 3);
+      expect(projNearEnd.x).toBeCloseTo(rojas2D.x, 0);
+      expect(projNearEnd.y).toBeCloseTo(rojas2D.y, 0);
+      expect(projEnd.x).toBeCloseTo(rojas2D.x, 3);
+      expect(projEnd.y).toBeCloseTo(rojas2D.y, 3);
+
+      // Verify smooth intermediate projection & zero endpoint snap between stereographic and horizon
+      const horizon2D = computeProjection2D(p3d, 'horizon', 100, 47.06, 0);
+
+      // Stereographic -> Horizon
+      const projStereoStart = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.0, 100, 47.06, 0);
+      const projStereoMid = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.5, 100, 47.06, 0);
+      const projStereoNearEnd = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 0.999, 100, 47.06, 0);
+      const projStereoEnd = computeContinuousProjection2D(p3d, 'stereographic', 'horizon', 1.0, 100, 47.06, 0);
+
+      expect(projStereoStart.x).toBeCloseTo(stereo2D.x, 3);
+      expect(projStereoStart.y).toBeCloseTo(stereo2D.y, 3);
+      expect(typeof projStereoMid.x).toBe('number');
+      expect(typeof projStereoMid.y).toBe('number');
+      expect(projStereoNearEnd.x).toBeCloseTo(horizon2D.x, 1);
+      expect(projStereoNearEnd.y).toBeCloseTo(horizon2D.y, 1);
+      expect(projStereoEnd.x).toBeCloseTo(horizon2D.x, 3);
+      expect(projStereoEnd.y).toBeCloseTo(horizon2D.y, 3);
+
+      // Horizon -> Stereographic (Zero 90° snap at t -> 1.0)
+      const projHorizonStart = computeContinuousProjection2D(p3d, 'horizon', 'stereographic', 0.0, 100, 47.06, 0);
+      const projHorizonNearEnd = computeContinuousProjection2D(p3d, 'horizon', 'stereographic', 0.999, 100, 47.06, 0);
+      const projHorizonEnd = computeContinuousProjection2D(p3d, 'horizon', 'stereographic', 1.0, 100, 47.06, 0);
+
+      expect(projHorizonStart.x).toBeCloseTo(horizon2D.x, 3);
+      expect(projHorizonStart.y).toBeCloseTo(horizon2D.y, 3);
+      expect(projHorizonNearEnd.x).toBeCloseTo(stereo2D.x, 1);
+      expect(projHorizonNearEnd.y).toBeCloseTo(stereo2D.y, 1);
+      expect(projHorizonEnd.x).toBeCloseTo(stereo2D.x, 3);
+      expect(projHorizonEnd.y).toBeCloseTo(stereo2D.y, 3);
+
+      // Halfway transition between stereographic and rojas
+      const modelCross = generateArmillaryModel({
+        julianDate: jd,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0, // Full 2D
+        projectionMode: 'rojas',
+        fromProjectionMode: 'stereographic',
+        projectionTransitionT: 0.5, // 50% transition
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(modelCross.rings.length).toBe(8);
+      const eqVertex = modelCross.rings[0].vertices[0];
+      expect(eqVertex.screenPos).toBeDefined();
+      expect(typeof eqVertex.screenPos.x).toBe('number');
+      expect(typeof eqVertex.screenPos.y).toBe('number');
+
+      // Verify lunar orbit ring is generated
+      const lunarOrbit = modelCross.rings.find((r) => r.id === 'lunar_orbit');
+      expect(lunarOrbit).toBeDefined();
+      expect(lunarOrbit?.label).toContain('Lunar Orbit');
+
+      // Verify muted palette for Tropic rings
+      const cancerRing = modelCross.rings.find((r) => r.id === 'tropic_cancer');
+      const capricornRing = modelCross.rings.find((r) => r.id === 'tropic_capricorn');
+      expect(cancerRing?.color).toBe('#d97706'); // Muted Antique Brass
+      expect(capricornRing?.color).toBe('#94a3b8'); // Muted Slate
+    });
+
+    it('generates topocentric observer FOV sky cone and lunar nodes in orbital modes', () => {
+      const helioModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Observer FOV Sky Cone
+      expect(helioModel.observerCone).toBeDefined();
+      expect(helioModel.observerCone?.observerScreenPos).toBeDefined();
+      expect(helioModel.observerCone?.zenithScreenPos).toBeDefined();
+      expect(helioModel.observerCone?.horizonDiscPathD).toMatch(/^M\s.+Z$/);
+      expect(helioModel.observerCone?.conePathD).toMatch(/^M\s.+Z$/);
+      expect(typeof helioModel.observerCone?.sunElevationDeg).toBe('number');
+      expect(typeof helioModel.observerCone?.isDaytime).toBe('boolean');
+
+      // Lunar Nodes (Ascending & Descending)
+      expect(helioModel.lunarNodes).toBeDefined();
+      expect(helioModel.lunarNodes?.ascendingNode.screenPos).toBeDefined();
+      expect(helioModel.lunarNodes?.descendingNode.screenPos).toBeDefined();
+    });
+
+    it('solves apparent local sidereal and solar time from free Rete angles', () => {
+      // Sun at RA 180°
+      const noon = calculateReteAngleToLST(180, 180);
+      expect(noon.apparentLSTDeg).toBe(180);
+      expect(noon.apparentSolarHours).toBe(12);
+
+      // Sun at RA 180°, Rete rotated to 270° (6 hours later -> 18:00)
+      const dusk = calculateReteAngleToLST(270, 180);
+      expect(dusk.apparentLSTDeg).toBe(270);
+      expect(dusk.apparentSolarHours).toBe(18);
+    });
+
+    it('generates volumetric projection focal beacons and laser ray paths', () => {
+      const beaconStereo = generateProjectionFocalBeacon('stereographic', 100, 25, 35, 0.0);
+      expect(beaconStereo.focal3D.y).toBe(-100);
+      expect(beaconStereo.laserRays.length).toBe(8);
+      expect(beaconStereo.conePathD).toContain('M ');
+      expect(beaconStereo.laserRays[0].start).toBeDefined();
+      expect(beaconStereo.laserRays[0].end).toBeDefined();
+
+      const beaconRojas = generateProjectionFocalBeacon('rojas', 100, 0, 0, 1.0);
+      expect(beaconRojas.focal3D.z).toBe(150);
+      expect(beaconRojas.laserRays.length).toBe(8);
+    });
+
+    it('calculates Alidade sighting coordinates and target detection', () => {
+      const testStars = [
+        { name: 'Sirius', screenPos: { x: 0, y: -80 }, altDeg: 35, azDeg: 180, magnitude: -1.46, raDeg: 101, decDeg: -16.7 }
+      ];
+      const testSun = { screenPos: { x: 80, y: 0 }, altDeg: 45, azDeg: 90, raDeg: 0, decDeg: 0 };
+      const testMoon = { screenPos: { x: -80, y: 0 }, altDeg: 10, azDeg: 270, raDeg: 180, decDeg: 0 };
+
+      // Sighting arm pointing North (0°)
+      const sighting = calculateAlidadeSighting(0, 47.06, 100, testStars, testSun, testMoon);
+      expect(sighting.ruleAngleDeg).toBe(0);
+      expect(sighting.rightAscensionDeg).toBe(0);
+      expect(sighting.rightAscensionHours).toBe(0);
+      expect(typeof sighting.localAltitudeDeg).toBe('number');
+      expect(typeof sighting.localAzimuthDeg).toBe('number');
+
+      // Sighting arm aligned with Sirius at (0, -80) -> angle 0°
+      const sightingSirius = calculateAlidadeSighting(0, 47.06, 100, testStars, testSun, testMoon);
+      expect(sightingSirius.nearestTarget).toBeDefined();
+      expect(sightingSirius.nearestTarget?.name).toBe('Sirius');
+    });
+
+    it('supports Free Rete mode in generateArmillaryModel with apparent solar time solver', () => {
+      const model = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        isFreeReteMode: true,
+        freeReteOffsetDeg: 45
+      });
+
+      expect(model.isFreeRete).toBe(true);
+      expect(typeof model.apparentSolarHours).toBe('number');
+      expect(model.focalBeacon).toBeDefined();
+      expect(model.focalBeacon?.laserRays.length).toBe(8);
+      // Continuous 360° closed cone polygon
+      expect(model.focalBeacon?.conePathD).toMatch(/^M\s.+Z$/);
+    });
+
+    it('rotates Ecliptic Rete and Stars when freeReteOffsetDeg is applied', () => {
+      const baseModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        isFreeReteMode: false
+      });
+
+      const rotatedModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 0,
+        sunDecDeg: 0,
+        sunLambdaDeg: 0,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        isFreeReteMode: true,
+        freeReteOffsetDeg: 90
+      });
+
+      // Sun bead was rotated 90 degrees around center
+      expect(rotatedModel.sun.p3d.x).not.toBeCloseTo(baseModel.sun.p3d.x, 1);
+      // Star positions rotated
+      expect(rotatedModel.stars[0].p3d.x).not.toBeCloseTo(baseModel.stars[0].p3d.x, 1);
+    });
+
+    it('generates Heliocentric model with Sun at origin, Earth at Keplerian orbit, and milestone nodes', () => {
+      const helioModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Sun at origin (0, 0, 0)
+      expect(helioModel.sun.p3d.x).toBeCloseTo(0, 2);
+      expect(helioModel.sun.p3d.y).toBeCloseTo(0, 2);
+      expect(helioModel.sun.p3d.z).toBeCloseTo(0, 2);
+
+      // Earth at non-zero orbital radius
+      const earthDist = Math.hypot(helioModel.earth.p3d.x, helioModel.earth.p3d.z);
+      expect(earthDist).toBeGreaterThan(90);
+
+      // Orbital path ring present
+      const orbitRing = helioModel.rings.find(r => r.id === 'orbit_path');
+      expect(orbitRing).toBeDefined();
+
+      // 6 Seasonal milestone nodes present
+      expect(helioModel.milestones.length).toBe(6);
+      expect(helioModel.milestones[0].label).toBe('Perihelion');
+      expect(helioModel.milestones[3].label).toBe('Aphelion');
+
+      // Physics telemetry populated
+      expect(helioModel.physics).toBeDefined();
+      expect(helioModel.physics?.distanceAU).toBeGreaterThan(0.95);
+      expect(helioModel.physics?.orbitalSpeedKms).toBeGreaterThan(28);
+
+      // Opacity contracts
+      expect(helioModel.celestialRingsOpacity).toBe(0.0);
+      expect(helioModel.orbitRingOpacity).toBe(1.0);
+      expect(helioModel.milestonesOpacity).toBe(1.0);
+    });
+
+    it('generates Geocentric model with Earth at origin and Sun revolving along apparent Ecliptic loop', () => {
+      const geoModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'geocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Earth at origin (0, 0, 0)
+      expect(geoModel.earth.p3d.x).toBeCloseTo(0, 2);
+      expect(geoModel.earth.p3d.y).toBeCloseTo(0, 2);
+      expect(geoModel.earth.p3d.z).toBeCloseTo(0, 2);
+
+      // Sun revolving around Earth at radius ~ 110px
+      const sunDist = Math.hypot(geoModel.sun.p3d.x, geoModel.sun.p3d.y, geoModel.sun.p3d.z);
+      expect(sunDist).toBeGreaterThan(90);
+
+      // Opacity contracts in unified Geocentric mode
+      expect(geoModel.celestialRingsOpacity).toBeCloseTo(0.85, 2);
+      expect(geoModel.orbitRingOpacity).toBe(1.0);
+    });
+
+    it('clamps Sun bead strictly to the Ecliptic track across seasons and Rete rotation', () => {
+      const sunLambda = 120; // 120° Ecliptic Longitude (Leo/Cancer)
+      const obliquity = 23.439;
+      const epsRad = (obliquity * Math.PI) / 180;
+      const lambdaRad = (sunLambda * Math.PI) / 180;
+      const r0 = 100;
+
+      const model = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 122,
+        sunDecDeg: 20,
+        sunLambdaDeg: sunLambda,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 1.0,
+        projectionMode: 'stereographic',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0
+      });
+
+      // Theoretical 3D position on Ecliptic circle
+      const expectedX = r0 * Math.cos(lambdaRad);
+      const expectedY = r0 * Math.sin(lambdaRad) * Math.sin(epsRad);
+      const expectedZ = r0 * Math.sin(lambdaRad) * Math.cos(epsRad);
+
+      expect(model.sun.p3d.x).toBeCloseTo(expectedX, 1);
+      expect(model.sun.p3d.y).toBeCloseTo(expectedY, 1);
+      expect(model.sun.p3d.z).toBeCloseTo(expectedZ, 1);
+
+      // Distance from origin must equal r0
+      const dist = Math.hypot(model.sun.p3d.x, model.sun.p3d.y, model.sun.p3d.z);
+      expect(dist).toBeCloseTo(r0, 1);
+    });
+
+    it('implements staged morph choreography with progressive plate materialization', () => {
+      const baseParams = {
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        projectionMode: 'stereographic' as const,
+        cameraPitch: 25,
+        cameraYaw: 35,
+        r0: 100
+      };
+
+      // Stage 1: lambda = 0.0 (3D Celestial Sphere, no flat plate decorations)
+      const stage0 = generateArmillaryModel({ ...baseParams, morphLambda: 0.0 });
+      expect(stage0.bezelOpacity).toBe(0.0);
+      expect(stage0.alidadeOpacity).toBe(0.0);
+      expect(stage0.celestialRingsOpacity).toBe(1.0);
+
+      // Stage 2: lambda = 0.5 (Mid-morph, bezel and alidade materializing)
+      const stageMid = generateArmillaryModel({ ...baseParams, morphLambda: 0.5 });
+      expect(stageMid.bezelOpacity).toBeGreaterThan(0.0);
+      expect(stageMid.bezelOpacity).toBeLessThan(1.0);
+
+      // Stage 3: lambda = 1.0 (Full 2D plate, full opacity)
+      const stageFull = generateArmillaryModel({ ...baseParams, morphLambda: 1.0 });
+      expect(stageFull.bezelOpacity).toBe(1.0);
+      expect(stageFull.alidadeOpacity).toBe(1.0);
+    });
+
+    it('supports full 5-mode continuum seamlessly', () => {
+      const modes: Array<'heliocentric' | 'geocentric' | 'stereographic' | 'rojas' | 'horizon'> = [
+        'heliocentric',
+        'geocentric',
+        'stereographic',
+        'rojas',
+        'horizon'
+      ];
+
+      for (const mode of modes) {
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunRaDeg: 280,
+          sunDecDeg: -23,
+          sunLambdaDeg: 280,
+          moonRaDeg: 120,
+          moonDecDeg: 15,
+          moonLambdaDeg: 120,
+          moonPhase: 0.5,
+          morphLambda: mode === 'heliocentric' || mode === 'geocentric' ? 0.0 : 1.0,
+          projectionMode: mode,
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        expect(model.rings.length).toBeGreaterThan(0);
+        expect(model.stars.length).toBe(12);
+        expect(model.sun.screenPos).toBeDefined();
+        expect(model.moon.screenPos).toBeDefined();
+        expect(model.earth.screenPos).toBeDefined();
+      }
+    });
+
+    it('smoothly interpolates any-to-any transitions between Heliocentric and Stereographic modes', () => {
+      const midModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.5,
+        fromProjectionMode: 'heliocentric',
+        projectionMode: 'stereographic',
+        projectionTransitionT: 0.5,
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Opacities are smoothly blended at T = 0.5
+      expect(midModel.celestialRingsOpacity).toBeCloseTo(0.5, 2);
+      expect(midModel.orbitRingOpacity).toBeCloseTo(0.5, 2);
+      expect(midModel.milestonesOpacity).toBeCloseTo(0.5, 2);
+    });
+
+    it('smoothly executes symmetric reverse 3D transitions from 2D Stereographic plate to 3D Geocentric', () => {
+      // Halfway through Phase B reverse (lambda = 0.725)
+      const reverseMid = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.725,
+        fromProjectionMode: 'stereographic',
+        projectionMode: 'geocentric',
+        projectionTransitionT: 0.5,
+        cameraPitch: 90,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      // Opacities blend smoothly between 2D plate and 3D Apparent
+      expect(reverseMid.bezelOpacity).toBeGreaterThan(0);
+      expect(reverseMid.orbitRingOpacity).toBeCloseTo(0.5, 1);
+      expect(reverseMid.milestonesOpacity).toBeCloseTo(0.5, 1);
+      expect(reverseMid.rings.length).toBeGreaterThanOrEqual(6);
+      expect(reverseMid.sun.screenPos.x).not.toBeNaN();
+    });
+
+    it('handles exaggerated eccentricity in Heliocentric mode with Sun displaced to focal point', () => {
+      const exagModel = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        sunRaDeg: 280,
+        sunDecDeg: -23,
+        sunLambdaDeg: 280,
+        moonRaDeg: 120,
+        moonDecDeg: 15,
+        moonLambdaDeg: 120,
+        moonPhase: 0.5,
+        morphLambda: 0.0,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100,
+        exaggerateEccentricity: true
+      });
+
+      // Sun is displaced by focal distance c = a * e = 110 * 0.25 = 27.5
+      expect(exagModel.sun.p3d.x).toBeLessThan(-20);
+    });
+
+
+  // =========================================================================
+  // Phase 1 Mathematical Hardening & Singularity Safeguards
+  // =========================================================================
+  describe('Phase 1 Mathematical Hardening & Singularity Safeguards', () => {
+    // 1. Polar Observers (+/- 90 deg)
+    it('produces finite, valid models for extreme polar observers (North and South Poles)', () => {
+      const poles: Latitude[] = [90 as Latitude, -90 as Latitude, 89.99 as Latitude, -89.99 as Latitude];
+      const modes: ArmillaryProjectionMode[] = ['heliocentric', 'geocentric', 'stereographic', 'rojas', 'horizon'];
+
+      for (const lat of poles) {
+        for (const mode of modes) {
+          const model = generateArmillaryModel({
+            julianDate: 2451545.0,
+            latitude: lat,
+            longitude: 0 as Longitude,
+            timeOfDay: 12 as HoursDecimal,
+            sunRaDeg: 0 as Degrees,
+            sunDecDeg: 0 as Degrees,
+            sunLambdaDeg: 0 as Degrees,
+            moonRaDeg: 90 as Degrees,
+            moonDecDeg: 5 as Degrees,
+            moonLambdaDeg: 90 as Degrees,
+            moonPhase: 0.5,
+            morphLambda: 0.5,
+            projectionMode: mode,
+            cameraPitch: 45,
+            cameraYaw: 45,
+            r0: 100
+          });
+
+          expect(Number.isFinite(model.sun.screenPos.x)).toBe(true);
+          expect(Number.isFinite(model.sun.screenPos.y)).toBe(true);
+          expect(Number.isFinite(model.moon.screenPos.x)).toBe(true);
+          expect(Number.isFinite(model.moon.screenPos.y)).toBe(true);
+          expect(Number.isFinite(model.earth.screenPos.x)).toBe(true);
+          expect(Number.isFinite(model.earth.screenPos.y)).toBe(true);
+          expect(model.rings.length).toBeGreaterThanOrEqual(6);
+
+          for (const ring of model.rings) {
+            expect(ring.fullPathD).not.toContain('NaN');
+            expect(ring.fullPathD).not.toContain('Infinity');
+          }
+        }
+      }
+    });
+
+    // 2. Equatorial Observers (0 deg)
+    it('generates consistent Almucantar circles and horizontal coordinates at the Equator', () => {
+      const almucantars = generateAlmucantars(0 as Latitude, 15, 100);
+      expect(almucantars.length).toBe(6);
+      for (const a of almucantars) {
+        expect(Number.isFinite(a.centerY)).toBe(true);
+        expect(Number.isFinite(a.radius)).toBe(true);
+        expect(a.radius).toBeLessThanOrEqual(2500);
+      }
+    });
+
+    // 3. Southern Hemisphere Almucantar singularity guards
+    it('strictly bounds Almucantar radius and center coordinates in Southern Hemisphere latitudes (alt ~ -lat)', () => {
+      // Testing exact potential zero denominators sin(lat) + sin(alt) = 0
+      const southernLats: Latitude[] = [-30 as Latitude, -45 as Latitude, -60 as Latitude, -15 as Latitude];
+      for (const lat of southernLats) {
+        const matchingAlt = Math.abs(lat);
+        const circle = calculateAlmucantarCircle(matchingAlt, lat, 100);
+        expect(Number.isFinite(circle.radius)).toBe(true);
+        expect(Number.isFinite(circle.centerY)).toBe(true);
+        expect(circle.radius).toBeLessThanOrEqual(2500);
+        expect(Math.abs(circle.centerY)).toBeLessThanOrEqual(2500);
+
+        // Perturbed latitude (near-singularity)
+        const perturbedLat = (lat + 0.001) as Latitude;
+        const perturbedCircle = calculateAlmucantarCircle(matchingAlt, perturbedLat, 100);
+        expect(Number.isFinite(perturbedCircle.radius)).toBe(true);
+        expect(perturbedCircle.radius).toBeLessThanOrEqual(2500);
+      }
+    });
+
+    // 4. Nadir Sinking Boundary Guard in projectTopocentricHorizon
+    it('clamps runaway radial coordinates when celestial beads sink toward Nadir (alt -> -90°)', () => {
+      const r0 = 100;
+      const nadirAlts = [-89.9, -89.99, -90, -120];
+      for (const alt of nadirAlts) {
+        const proj = projectTopocentricHorizon(alt, 45, r0);
+        expect(Number.isFinite(proj.x)).toBe(true);
+        expect(Number.isFinite(proj.y)).toBe(true);
+        expect(Math.abs(proj.x)).toBeLessThanOrEqual(r0 * 10);
+        expect(Math.abs(proj.y)).toBeLessThanOrEqual(r0 * 10);
+      }
+    });
+
+    // 5. Circumpolar & Polar Day/Night Robustness in calculatePlanetaryHour
+    it('reliably solves unequal planetary hours during midnight sun, polar night, and out-of-range hours', () => {
+      // Polar Day (midnight sun: 24h daylight)
+      const polarDay = calculatePlanetaryHour(14 as HoursDecimal, 0 as HoursDecimal, 24 as HoursDecimal, 0);
+      expect(polarDay.isDay).toBe(true);
+      expect(polarDay.hourNumber).toBeGreaterThanOrEqual(1);
+      expect(polarDay.hourNumber).toBeLessThanOrEqual(12);
+      expect(polarDay.progressPercent).toBeGreaterThanOrEqual(0);
+      expect(polarDay.progressPercent).toBeLessThanOrEqual(100);
+
+      // Polar Night (24h darkness)
+      const polarNight = calculatePlanetaryHour(3 as HoursDecimal, 12 as HoursDecimal, 12 as HoursDecimal, 1);
+      expect(polarNight.isDay).toBe(false);
+      expect(polarNight.hourNumber).toBeGreaterThanOrEqual(1);
+      expect(polarNight.hourNumber).toBeLessThanOrEqual(12);
+
+      // Negative hour wrapping (e.g. -5h UTC -> 19h local)
+      const wrappedNeg = calculatePlanetaryHour(-5 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 2);
+      const wrappedEquivalent = calculatePlanetaryHour(19 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 2);
+      expect(wrappedNeg.hourNumber).toBe(wrappedEquivalent.hourNumber);
+      expect(wrappedNeg.isDay).toBe(wrappedEquivalent.isDay);
+      expect(wrappedNeg.rulingPlanet).toBe(wrappedEquivalent.rulingPlanet);
+
+      // Overflow hour wrapping (28h -> 4h)
+      const wrappedOver = calculatePlanetaryHour(28 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 3);
+      const wrappedOverEq = calculatePlanetaryHour(4 as HoursDecimal, 6 as HoursDecimal, 18 as HoursDecimal, 3);
+      expect(wrappedOver.hourNumber).toBe(wrappedOverEq.hourNumber);
+    });
+
+    // 6. Negative Zero Normalization
+    it('normalizes negative zeroes across equatorial, horizontal, and 2D projections', () => {
+      const eq = cartesian3DToEquatorial({ x: 0, y: 0, z: 0 });
+      expect(Object.is(eq.raDeg, -0)).toBe(false);
+      expect(Object.is(eq.decDeg, -0)).toBe(false);
+
+      const horizZenith = equatorialToHorizontal(0 as Degrees, 90 as Degrees, 90 as Latitude, 0 as Degrees);
+      expect(Object.is(horizZenith.altDeg, -0)).toBe(false);
+      expect(Object.is(horizZenith.azDeg, -0)).toBe(false);
+
+      const projRojas = projectRojasOrthographic({ x: -0, y: -0, z: 0 }, 100);
+      expect(Object.is(projRojas.x, -0)).toBe(false);
+      expect(Object.is(projRojas.y, -0)).toBe(false);
+    });
+
+    // 7. Milestone Orbital Radius Preservation via slerp3D (No Chord-Cutting)
+    it('preserves milestone orbital radius via slerp3D without chord-cutting collapse across lambda in [0.0, 0.45]', () => {
+      const lambdas = [0.0, 0.05, 0.1, 0.15, 0.2, 0.225, 0.25, 0.3, 0.35, 0.4, 0.45];
+      for (const morphLambda of lambdas) {
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          timeOfDay: 12 as HoursDecimal,
+          sunRaDeg: 0 as Degrees,
+          sunDecDeg: 0 as Degrees,
+          sunLambdaDeg: 0 as Degrees,
+          moonRaDeg: 120 as Degrees,
+          moonDecDeg: 15 as Degrees,
+          moonLambdaDeg: 120 as Degrees,
+          moonPhase: 0.5,
+          morphLambda,
+          projectionMode: 'heliocentric',
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        expect(model.milestones.length).toBeGreaterThan(0);
+        for (const m of model.milestones) {
+          const dist = Math.hypot(m.p3d.x, m.p3d.y, m.p3d.z);
+          // Without slerp3D, milestones collapse to radius ~0 at lambda = 0.225.
+          // With slerp3D, the radius is strictly preserved along the geodesic arc > 100px.
+          expect(dist).toBeGreaterThan(100);
+          expect(dist).toBeLessThan(120);
+        }
+      }
+    });
+
+    // 8. Negative Zero Normalization at Phase A End (lambda = 0.45)
+    it('normalizes negative zeroes for celestial bodies in heliocentric mode at lambda = 0.45', () => {
+      // sunLambdaDeg = 0 results in helioEarth.x < 0, so (1 - phaseAT) * helioEarth.x could evaluate to -0
+      const model = generateArmillaryModel({
+        julianDate: 2451545.0,
+        latitude: 47.06 as Latitude,
+        longitude: -122.81 as Longitude,
+        timeOfDay: 12 as HoursDecimal,
+        sunRaDeg: 0 as Degrees,
+        sunDecDeg: 0 as Degrees,
+        sunLambdaDeg: 0 as Degrees,
+        moonRaDeg: 120 as Degrees,
+        moonDecDeg: 15 as Degrees,
+        moonLambdaDeg: 120 as Degrees,
+        moonPhase: 0.5,
+        morphLambda: 0.45,
+        projectionMode: 'heliocentric',
+        cameraPitch: 0,
+        cameraYaw: 0,
+        r0: 100
+      });
+
+      expect(Object.is(model.earth.p3d.x, -0)).toBe(false);
+      expect(Object.is(model.earth.p3d.y, -0)).toBe(false);
+      expect(Object.is(model.earth.p3d.z, -0)).toBe(false);
+      expect(model.earth.p3d.x).toBe(0);
+      expect(model.earth.p3d.y).toBe(0);
+      expect(model.earth.p3d.z).toBe(0);
+
+      expect(Object.is(model.sun.p3d.x, -0)).toBe(false);
+      expect(Object.is(model.sun.p3d.y, -0)).toBe(false);
+      expect(Object.is(model.sun.p3d.z, -0)).toBe(false);
+
+      expect(Object.is(model.moon.p3d.x, -0)).toBe(false);
+      expect(Object.is(model.moon.p3d.y, -0)).toBe(false);
+      expect(Object.is(model.moon.p3d.z, -0)).toBe(false);
+    });
+
+    // 9. Lunar Orbit Ring Radius and Node Pins Lockstep Expansion
+    it('expands lunar orbit ring radius and node pins from 16px to 26px in lockstep with the Moon bead in heliocentric mode', () => {
+      const lambdas = [0.0, 0.15, 0.3, 0.45];
+
+      for (const morphLambda of lambdas) {
+        const phaseAT = morphLambda / 0.45;
+        const expectedDist = 16 + 10 * phaseAT;
+
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          timeOfDay: 12 as HoursDecimal,
+          sunRaDeg: 0 as Degrees,
+          sunDecDeg: 0 as Degrees,
+          sunLambdaDeg: 0 as Degrees,
+          moonRaDeg: 0 as Degrees,
+          moonDecDeg: 0 as Degrees,
+          moonLambdaDeg: 0 as Degrees,
+          moonPhase: 0.5,
+          moonNodeLonDeg: 0,
+          morphLambda,
+          projectionMode: 'heliocentric',
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        // 1. Lunar Orbit ring radius
+        const lunarOrbit = model.rings.find((r) => r.id === 'lunar_orbit');
+        expect(lunarOrbit).toBeDefined();
+        for (const v of lunarOrbit!.vertices) {
+          const rRing = Math.hypot(
+            v.p3d.x - model.earth.p3d.x,
+            v.p3d.y - model.earth.p3d.y,
+            v.p3d.z - model.earth.p3d.z
+          );
+          expect(rRing).toBeCloseTo(expectedDist, 3);
+        }
+
+        // 2. Lunar node pins distance from Earth
+        expect(model.lunarNodes).toBeDefined();
+        const ascDist = Math.hypot(
+          model.lunarNodes!.ascendingNode.screenPos.x - model.earth.screenPos.x,
+          model.lunarNodes!.ascendingNode.screenPos.y - model.earth.screenPos.y
+        );
+        expect(ascDist).toBeCloseTo(expectedDist, 3);
+
+        const descDist = Math.hypot(
+          model.lunarNodes!.descendingNode.screenPos.x - model.earth.screenPos.x,
+          model.lunarNodes!.descendingNode.screenPos.y - model.earth.screenPos.y
+        );
+        expect(descDist).toBeCloseTo(expectedDist, 3);
+
+        // 3. Moon bead distance relative to Earth in lockstep
+        const moonRelDist = Math.hypot(
+          model.moon.p3d.x - model.earth.p3d.x,
+          model.moon.p3d.y - model.earth.p3d.y,
+          model.moon.p3d.z - model.earth.p3d.z
+        );
+        expect(moonRelDist).toBeCloseTo(expectedDist, 3);
+      }
+    });
+
+    // 10. Celestial Ring Radius Blooming Expansion
+    it('blooms celestial ring radius rBloom from 14px to 100px as lambda transitions from 0.0 to 0.45', () => {
+      const lambdas = [0.0, 0.15, 0.225, 0.3, 0.45];
+
+      for (const morphLambda of lambdas) {
+        const phaseAT = morphLambda / 0.45;
+        const expectedRadius = (1 - phaseAT) * 14 + phaseAT * 100;
+
+        const model = generateArmillaryModel({
+          julianDate: 2451545.0,
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          timeOfDay: 12 as HoursDecimal,
+          sunRaDeg: 0 as Degrees,
+          sunDecDeg: 0 as Degrees,
+          sunLambdaDeg: 0 as Degrees,
+          moonRaDeg: 120 as Degrees,
+          moonDecDeg: 15 as Degrees,
+          moonLambdaDeg: 120 as Degrees,
+          moonPhase: 0.5,
+          morphLambda,
+          projectionMode: 'heliocentric',
+          cameraPitch: 0,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        // Check Equator ring radius relative to bloom center
+        const equator = model.rings.find((r) => r.id === 'equator');
+        expect(equator).toBeDefined();
+
+        // cBloom is (1 - tGeo) * blendedEarth3D
+        const cBloomX = (1 - phaseAT) * model.earth.p3d.x;
+        const cBloomY = (1 - phaseAT) * model.earth.p3d.y;
+        const cBloomZ = (1 - phaseAT) * model.earth.p3d.z;
+
+        for (const v of equator!.vertices) {
+          const rRing = Math.hypot(
+            v.p3d.x - cBloomX,
+            v.p3d.y - cBloomY,
+            v.p3d.z - cBloomZ
+          );
+          expect(rRing).toBeCloseTo(expectedRadius, 3);
+        }
+      }
+    });
+  });
+});

@@ -1,0 +1,360 @@
+/**
+ * @file MiniGlobe.test.tsx
+ * Unit test suite for <MiniGlobe /> component and 3D rotational vector continent projections.
+ */
+
+import React from 'react';
+import { describe, it, expect } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { MiniGlobe, projectContinentLandmasses } from './MiniGlobe';
+import {
+  buildTopdownGlobeGeometry,
+  buildTransverseGlobeGeometry,
+  buildAxialGlobeGeometry,
+  buildEulerGlobeGeometry,
+} from './miniglobe/globeGeometry';
+import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
+import { toRadians } from '../../utils/cosmicMath/core';
+
+describe('projectContinentLandmasses', () => {
+  const epsRad = toRadians(23.439281);
+
+  it('returns empty array when radius <= 0 or in flat viewMode', () => {
+    expect(projectContinentLandmasses(WORLD_LANDMASSES, 0, 'euler3d', 12, epsRad, 0)).toEqual([]);
+    expect(projectContinentLandmasses(WORLD_LANDMASSES, 12, 'flat', 12, epsRad, 0)).toEqual([]);
+  });
+
+  it('generates valid SVG path strings in euler3d mode without NaN', () => {
+    const paths = projectContinentLandmasses(WORLD_LANDMASSES, 14, 'euler3d', 12, epsRad, 0, { pitch: 25, yaw: 35, roll: 0 });
+    expect(paths.length).toBeGreaterThan(0);
+    for (const d of paths) {
+      expect(d).not.toContain('NaN');
+      expect(d.startsWith('M ')).toBe(true);
+      expect(d.endsWith('Z')).toBe(true);
+    }
+  });
+
+  it('generates valid SVG path strings in topdown mode without NaN', () => {
+    const paths = projectContinentLandmasses(WORLD_LANDMASSES, 14, 'topdown', 12, epsRad, 0);
+    expect(paths.length).toBeGreaterThan(0);
+    for (const d of paths) {
+      expect(d).not.toContain('NaN');
+      expect(d.startsWith('M ')).toBe(true);
+      expect(d.endsWith('Z')).toBe(true);
+    }
+  });
+
+  it('generates valid SVG path strings in transverse and axial modes', () => {
+    const transversePaths = projectContinentLandmasses(WORLD_LANDMASSES, 12, 'transverse', 12, epsRad, 90);
+    expect(transversePaths.length).toBeGreaterThan(0);
+    for (const d of transversePaths) {
+      expect(d).not.toContain('NaN');
+    }
+
+    const axialPaths = projectContinentLandmasses(WORLD_LANDMASSES, 12, 'axial', 12, epsRad, 90);
+    expect(axialPaths.length).toBeGreaterThan(0);
+    for (const d of axialPaths) {
+      expect(d).not.toContain('NaN');
+    }
+  });
+
+  it('rotates continents continuously as timeOfDay advances', () => {
+    const pathsNoon = projectContinentLandmasses(WORLD_LANDMASSES, 14, 'euler3d', 12, epsRad, 0, { pitch: 0, yaw: 0, roll: 0 });
+    const pathsMidnight = projectContinentLandmasses(WORLD_LANDMASSES, 14, 'euler3d', 0, epsRad, 0, { pitch: 0, yaw: 0, roll: 0 });
+    expect(pathsNoon).not.toEqual(pathsMidnight);
+  });
+
+  it('correctly maps northern latitudes to negative Y (upward) and eastern longitudes to positive X (rightward)', () => {
+    // Single test polygon with high northern latitude (Arctic, lat: 70°N, lon: 0°E) at noon
+    const testArcticPoly: [number, number][][] = [
+      [[0, 70], [10, 70], [5, 75], [0, 70]]
+    ];
+    const paths = projectContinentLandmasses(testArcticPoly, 100, 'euler3d', 12, epsRad, 0, { pitch: 0, yaw: 0, roll: 0 });
+    expect(paths.length).toBe(1);
+    // Northern latitude should project to negative Y in SVG (top of globe)
+    // Points at lat 70°N should have Y around -100 * sin(70°) ≈ -94
+    const firstPointMatch = paths[0].match(/M ([\d.-]+) ([\d.-]+)/);
+    expect(firstPointMatch).not.toBeNull();
+    if (firstPointMatch) {
+      const yVal = parseFloat(firstPointMatch[2]);
+      expect(yVal).toBeLessThan(-80); // well above equator
+    }
+  });
+});
+
+describe('<MiniGlobe /> Component', () => {
+  it('renders SVG root with role="img" and accessible title', () => {
+    const html = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={14} viewMode="topdown" label="EARTH" />
+      </svg>
+    );
+
+    expect(html).toContain('role="img"');
+    expect(html).toContain('aria-label="EARTH Mini Globe"');
+    expect(html).toContain('<title>EARTH');
+  });
+
+  it('renders continent layer when showContinents is true', () => {
+    const html = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={14} viewMode="topdown" showContinents={true} />
+      </svg>
+    );
+
+    expect(html).toContain('class="miniglobe-continents');
+  });
+
+  it('hides continent layer when showContinents is false or in flat mode', () => {
+    const htmlNoContinents = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={14} viewMode="topdown" showContinents={false} />
+      </svg>
+    );
+    expect(htmlNoContinents).not.toContain('miniglobe-continents');
+
+    const htmlFlat = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={14} viewMode="flat" showContinents={true} />
+      </svg>
+    );
+    expect(htmlFlat).not.toContain('miniglobe-continents');
+  });
+
+  it('renders correctly across all 5 view modes without errors', () => {
+    const modes = ['topdown', 'transverse', 'axial', 'euler3d', 'flat'] as const;
+    for (const mode of modes) {
+      const html = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe cx={0} cy={0} radius={12} viewMode={mode} />
+        </svg>
+      );
+      expect(html).toContain('miniglobe-root');
+    }
+  });
+
+  it('renders solid observer pin in daylight and hollow observer pin at night (conforming across modes)', () => {
+    // Transverse Mode (Syzygy Profile): Daylight at noon (Solid Sky Blue + pulsing halo)
+    const htmlTransverseNoon = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={24} viewMode="transverse" latitude={47.06} longitude={-122.81} timeOfDay={20} showObserverPin={true} />
+      </svg>
+    );
+    expect(htmlTransverseNoon).toContain('class="miniglobe-observer-pin');
+    expect(htmlTransverseNoon).toContain('fill="#38bdf8"');
+    expect(htmlTransverseNoon).toContain('class="animate-pulse"');
+
+    // Transverse Mode (Syzygy Profile): Night at midnight (Hollow fill="none" stroke="#94a3b8")
+    const htmlTransverseMidnight = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={24} viewMode="transverse" latitude={47.06} longitude={-122.81} timeOfDay={8} showObserverPin={true} />
+      </svg>
+    );
+    expect(htmlTransverseMidnight).toContain('class="miniglobe-observer-pin');
+    expect(htmlTransverseMidnight).toContain('fill="none"');
+    expect(htmlTransverseMidnight).toContain('stroke="#94a3b8"');
+
+    // Axial Mode (Looking at Sun through Earth): Midnight in Olympia, WA (~08:00 UTC) -> Night face visible (Hollow)
+    const htmlAxialMidnight = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={24} viewMode="axial" latitude={47.06} longitude={-122.81} timeOfDay={8} showObserverPin={true} />
+      </svg>
+    );
+    expect(htmlAxialMidnight).toContain('class="miniglobe-observer-pin');
+    expect(htmlAxialMidnight).toContain('fill="none"');
+    expect(htmlAxialMidnight).toContain('stroke="#94a3b8"');
+    expect(htmlAxialMidnight).not.toContain('animate-pulse');
+
+    // Axial Mode (Looking at Sun through Earth): Noon in Olympia, WA (~20:00 UTC) -> Daylight on far side (Restored visibility as solid pulsing pin)
+    const htmlAxialNoon = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe cx={0} cy={0} radius={24} viewMode="axial" latitude={47.06} longitude={-122.81} timeOfDay={20} showObserverPin={true} />
+      </svg>
+    );
+    expect(htmlAxialNoon).toContain('class="miniglobe-observer-pin');
+    expect(htmlAxialNoon).toContain('fill="#38bdf8"');
+    expect(htmlAxialNoon).toContain('class="animate-pulse"');
+  });
+
+  it('renders 0° Greenwich Prime Meridian and 180° Antimeridian matching equator style and omits static polar axis in euler3d mode', () => {
+    const htmlNoon = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe
+          cx={0}
+          cy={0}
+          radius={50}
+          viewMode="euler3d"
+          camera={{ pitch: 20, yaw: 30, roll: 0 }}
+          timeOfDay={12}
+          showParallels={true}
+          showPolarAxis={true}
+        />
+      </svg>
+    );
+
+    // Assert 0° Prime Meridian and 180° Antimeridian are rendered in Sky Blue matching Equator parallel
+    expect(htmlNoon).toContain('0° Prime Meridian (Greenwich)');
+    expect(htmlNoon).toContain('180° Antimeridian');
+    expect(htmlNoon).toContain('stroke="#38bdf8"');
+
+    // Assert static bifurcating polar axis line is omitted in euler3d mode
+    expect(htmlNoon).not.toContain('miniglobe-polar-axis');
+
+    // Diurnal rotation test: at 12:00 vs 00:00 UTC, the meridian paths update
+    const htmlMidnight = renderToStaticMarkup(
+      <svg>
+        <MiniGlobe
+          cx={0}
+          cy={0}
+          radius={50}
+          viewMode="euler3d"
+          camera={{ pitch: 20, yaw: 30, roll: 0 }}
+          timeOfDay={0}
+          showParallels={true}
+        />
+      </svg>
+    );
+    expect(htmlMidnight).not.toEqual(htmlNoon);
+    expect(htmlMidnight).toContain('0° Prime Meridian (Greenwich)');
+    expect(htmlMidnight).toContain('180° Antimeridian');
+  });
+
+  describe('diurnal solar illumination & observer pin daylight status', () => {
+    it('accurately indicates DAYLIGHT at 23:30z on 9/23/2026 for N47.06 W122.81 in topdown and euler3d modes', () => {
+      // 23:30z on Autumnal Equinox afternoon (~3:30 PM PDT)
+      const lat = 47.06;
+      const lon = -122.81;
+      const timeOfDay = 23.5;
+      const sunLambdaDeg = 180.8;
+
+      // 1. Topdown mode (Macro Orbit & Micro Tide views)
+      const topdownHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="topdown"
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(topdownHtml).toContain('class="animate-pulse"');
+      expect(topdownHtml).toContain('fill="#38bdf8"');
+
+      // 2. Euler3D mode (Living Marble Inset, Orbit view, Apparent view)
+      const eulerHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="euler3d"
+            camera={{ pitch: 0, yaw: 0, roll: 0 }}
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            declination={-0.3}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(eulerHtml).toContain('class="animate-pulse"');
+      expect(eulerHtml).toContain('fill="#38bdf8"');
+    });
+
+    it('accurately indicates NIGHT at 08:20z on 9/24/2026 for N47.06 W122.81 in topdown and euler3d modes', () => {
+      // 08:20z (~1:20 AM PDT local midnight)
+      const lat = 47.06;
+      const lon = -122.81;
+      const timeOfDay = 8 + 20 / 60;
+      const sunLambdaDeg = 181.2;
+
+      // 1. Topdown mode (Macro Orbit & Micro Tide views)
+      const topdownHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="topdown"
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(topdownHtml).not.toContain('class="animate-pulse"');
+      expect(topdownHtml).toContain('stroke="#94a3b8"');
+
+      // 2. Euler3D mode (Living Marble Inset, Orbit view, Apparent view)
+      const eulerHtml = renderToStaticMarkup(
+        <svg>
+          <MiniGlobe
+            cx={0}
+            cy={0}
+            radius={24}
+            viewMode="euler3d"
+            camera={{ pitch: 0, yaw: 180, roll: 0 }}
+            latitude={lat}
+            longitude={lon}
+            timeOfDay={timeOfDay}
+            sunLambdaDeg={sunLambdaDeg}
+            declination={-0.6}
+            showObserverPin={true}
+          />
+        </svg>
+      );
+      expect(eulerHtml).not.toContain('class="animate-pulse"');
+      expect(eulerHtml).toContain('stroke="#94a3b8"');
+    });
+  });
+
+  describe('globeGeometry pure view-mode builders', () => {
+    const epsRad = toRadians(23.439281);
+
+    it('computes topdown, transverse, axial, and euler3d geometry deterministically', () => {
+      const topdown = buildTopdownGlobeGeometry({
+        safeRadius: 24,
+        sunLambdaVal: 90,
+        epsRad,
+        latVal: 47.06,
+        lonVal: 0,
+        todVal: 12,
+      });
+      expect(topdown.dayPath).toContain('A 24 24');
+      expect(topdown.isDaylight).toBe(true);
+      expect(topdown.eqRy).toBeCloseTo(24 * Math.cos(epsRad), 4);
+
+      const transverse = buildTransverseGlobeGeometry(24, 90, 47.06, 12, 0);
+      expect(transverse.dayPath).toBe('M 0 -24 A 24 24 0 0 0 0 24 Z');
+      expect(transverse.sideGeom.isDaylight).toBe(true);
+
+      const axial = buildAxialGlobeGeometry(24, 90, 47.06, 12, 0);
+      expect(axial.isDaylight).toBe(true);
+
+      const euler = buildEulerGlobeGeometry({
+        safeRadius: 24,
+        camera: { pitch: 20, yaw: 0, roll: 0 },
+        declination: 23.44,
+        sunLambdaVal: 90,
+        showTwilightBands: true,
+        latVal: 47.06,
+        lonVal: 0,
+        todVal: 12,
+      });
+      expect(euler.dayPath.length).toBeGreaterThan(0);
+      expect(euler.civilPath.length).toBeGreaterThan(0);
+      expect(euler.primeMeridianPath?.startsWith('M ')).toBe(true);
+      expect(euler.antimeridianPath?.startsWith('M ')).toBe(true);
+      expect(euler.isObsDay).toBe(true);
+    });
+  });
+});

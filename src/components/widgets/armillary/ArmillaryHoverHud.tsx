@@ -1,0 +1,202 @@
+import React from 'react';
+import { HoveredStarInfo, AlidadeSightingInfo, ArmillaryModelOutput, ArmillaryMilestoneNode, ArmillaryLunarNodes } from './types';
+
+export interface ArmillaryHoverHudProps {
+  hoveredStar: HoveredStarInfo | null;
+  hoveredBead: 'sun' | 'moon' | 'earth' | 'observer' | null;
+  hoveredMilestone: ArmillaryMilestoneNode | null;
+  hoveredNode?: 'asc' | 'desc' | null;
+  lunarNodes?: ArmillaryLunarNodes;
+  showRule: boolean;
+  sightingInfo: AlidadeSightingInfo | null;
+  sun: ArmillaryModelOutput['sun'];
+  moon: ArmillaryModelOutput['moon'];
+  earth?: ArmillaryModelOutput['earth'];
+  physics?: ArmillaryModelOutput['physics'];
+  observerCone?: ArmillaryModelOutput['observerCone'];
+  latitude?: number;
+  longitude?: number;
+}
+
+export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
+  hoveredStar,
+  hoveredBead,
+  hoveredMilestone,
+  hoveredNode,
+  lunarNodes,
+  showRule,
+  sightingInfo,
+  sun,
+  moon,
+  earth,
+  physics,
+  observerCone,
+  latitude = 47.06,
+  longitude = 15.44
+}) => {
+  return (
+    <>
+      {/* Floating Sighting HUD (When Alidade Rule Active) */}
+      {showRule && sightingInfo && (
+        <div className="absolute bottom-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-amber-500/60 px-3 py-2 rounded-xl shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150 flex items-center gap-3">
+          <div>
+            <div className="text-[10px] uppercase text-amber-400 font-bold flex items-center gap-1">
+              <span>⌖ Alidade Sighting</span>
+              {sightingInfo.nearestTarget && (
+                <span className="text-emerald-400 font-normal">
+                  — Locked: {sightingInfo.nearestTarget.name} ({sightingInfo.nearestTarget.angularDiffDeg.toFixed(1)}°)
+                </span>
+              )}
+            </div>
+            <div className="text-[11px] text-slate-300">
+              Angle: <strong className="text-white">{sightingInfo.ruleAngleDeg.toFixed(1)}°</strong> | 
+              RA (α): <strong className="text-amber-300">{sightingInfo.rightAscensionHours.toFixed(2)}h</strong> | 
+              Alt (a): <strong className={sightingInfo.localAltitudeDeg >= 0 ? 'text-emerald-400' : 'text-slate-500'}>{sightingInfo.localAltitudeDeg >= 0 ? `+${sightingInfo.localAltitudeDeg}°` : `${sightingInfo.localAltitudeDeg}°`}</strong>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Glassmorphic Star Hover HUD Popover */}
+      {hoveredStar && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
+            <strong className="text-amber-400 font-bold">{hoveredStar.name}</strong>
+            <span className="text-[10px] text-slate-400 font-normal">{hoveredStar.bayer}</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Constellation: <strong className="text-white">{hoveredStar.constellation}</strong></div>
+            <div>Visual Mag: <strong className="text-amber-300">{hoveredStar.magnitude}</strong></div>
+            <div>RA (α): <strong className="text-white">{hoveredStar.raDeg.toFixed(1)}°</strong> | Dec (δ): <strong className="text-white">{hoveredStar.decDeg >= 0 ? `+${hoveredStar.decDeg.toFixed(1)}°` : `${hoveredStar.decDeg.toFixed(1)}°`}</strong></div>
+            <div>Local Alt: <strong className={hoveredStar.altDeg >= 0 ? 'text-emerald-400' : 'text-slate-500'}>{hoveredStar.altDeg >= 0 ? `+${hoveredStar.altDeg}°` : `${hoveredStar.altDeg}°`}</strong> | Az: <strong className="text-slate-300">{hoveredStar.azDeg}°</strong></div>
+          </div>
+          <div className="mt-1 pt-1 border-t border-slate-800 text-[10px] text-amber-400/80">
+            Click star to snap Alidade sighting arm
+          </div>
+        </div>
+      )}
+
+      {/* Floating Glassmorphic Milestone Hover HUD Popover */}
+      {hoveredMilestone && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5" style={{ color: hoveredMilestone.color }}>
+            <strong className="font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: hoveredMilestone.color }} />
+              {hoveredMilestone.label}
+            </strong>
+            <span className="text-[10px] text-slate-400 font-normal">{hoveredMilestone.date}</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Heliocentric Dist: <strong className="text-white">{hoveredMilestone.distanceAU.toFixed(3)} AU</strong> ({Math.round(hoveredMilestone.distanceKm).toLocaleString()} km)</div>
+            <div>Orbital Velocity: <strong className="text-emerald-400">{hoveredMilestone.speedKms.toFixed(1)} km/s</strong></div>
+            <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
+              {hoveredMilestone.description}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Sun Hover Popover */}
+      {hoveredBead === 'sun' && (
+        <div className="absolute top-4 right-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-amber-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-amber-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span>☉ Celestial Sun (Sol)</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Ecliptic Longitude (λ): <strong className="text-white">{sun.lambdaDeg.toFixed(1)}°</strong></div>
+            <div>Right Ascension (α): <strong className="text-white">{sun.raDeg.toFixed(1)}°</strong></div>
+            <div>Declination (δ): <strong className="text-amber-400">{sun.decDeg >= 0 ? `+${sun.decDeg.toFixed(1)}°` : `${sun.decDeg.toFixed(1)}°`}</strong></div>
+            <div>Local Elevation: <strong className={sun.altDeg >= 0 ? 'text-amber-400' : 'text-slate-500'}>{sun.altDeg >= 0 ? `+${sun.altDeg}°` : `${sun.altDeg}°`}</strong></div>
+          </div>
+          <div className="mt-1 pt-1 border-t border-slate-800 text-[10px] text-amber-400/80">
+            Click Sun to snap Alidade sighting arm
+          </div>
+        </div>
+      )}
+
+      {/* Floating Moon Hover Popover */}
+      {hoveredBead === 'moon' && (
+        <div className="absolute top-4 right-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-slate-700/80 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-slate-200 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span>☽ Celestial Moon (Luna)</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Right Ascension (α): <strong className="text-white">{moon.raDeg.toFixed(1)}°</strong></div>
+            <div>Declination (δ): <strong className="text-slate-300">{moon.decDeg >= 0 ? `+${moon.decDeg.toFixed(1)}°` : `${moon.decDeg.toFixed(1)}°`}</strong></div>
+            <div>Local Elevation: <strong className={moon.altDeg >= 0 ? 'text-slate-200' : 'text-slate-500'}>{moon.altDeg >= 0 ? `+${moon.altDeg}°` : `${moon.altDeg}°`}</strong></div>
+          </div>
+          <div className="mt-1 pt-1 border-t border-slate-800 text-[10px] text-slate-400">
+            Click Moon to snap Alidade sighting arm
+          </div>
+        </div>
+      )}
+
+      {/* Floating Earth Hover Popover (Heliocentric / Geocentric) */}
+      {hoveredBead === 'earth' && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-sky-500/50 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-sky-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span>⊕ Earth (Terra)</span>
+            <span className="text-[10px] text-slate-400 font-normal">Orbiter</span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Axial Tilt (ε): <strong className="text-sky-300">23.44°</strong></div>
+            {physics && (
+              <>
+                <div>Heliocentric Dist: <strong className="text-white">{physics.distanceAU.toFixed(3)} AU</strong></div>
+                <div>Orbital Velocity: <strong className="text-emerald-400">{physics.orbitalSpeedKms.toFixed(1)} km/s</strong></div>
+                <div>Solar Irradiance: <strong className="text-amber-300">{physics.solarIrradiancePercent.toFixed(1)}%</strong></div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Observer Sky Cone Hover Popover */}
+      {hoveredBead === 'observer' && observerCone && (
+        <div className="absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border border-sky-400/60 p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+          <div className="text-sky-400 font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+              Observer Sky Cone ("YOU")
+            </span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${observerCone.isDaytime ? 'bg-amber-500/20 text-amber-300' : 'bg-indigo-500/20 text-indigo-300'}`}>
+              {observerCone.isDaytime ? '☀️ DAYLIGHT' : '🌌 NIGHT'}
+            </span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Coordinates: <strong className="text-white">{latitude >= 0 ? `${latitude.toFixed(2)}°N` : `${Math.abs(latitude).toFixed(2)}°S`}, {longitude >= 0 ? `${longitude.toFixed(2)}°E` : `${Math.abs(longitude).toFixed(2)}°W`}</strong></div>
+            <div>Sun Elevation: <strong className={observerCone.sunElevationDeg >= 0 ? 'text-amber-300' : 'text-slate-400'}>{observerCone.sunElevationDeg >= 0 ? `+${observerCone.sunElevationDeg}°` : `${observerCone.sunElevationDeg}°`}</strong></div>
+            <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
+              Cone projects observer's visible sky hemisphere (Alt &gt; 0°) rotating with Earth's 24h diurnal cycle.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Lunar Node Hover Popover (Ascending ☊ / Descending ☋) */}
+      {hoveredNode && (
+        <div className={`absolute top-4 left-4 z-40 bg-slate-950/90 backdrop-blur-xl border ${hoveredNode === 'asc' ? 'border-sky-400/60' : 'border-rose-400/60'} p-3 rounded-xl max-w-xs shadow-2xl font-mono text-xs text-slate-200 pointer-events-none animate-in fade-in zoom-in-95 duration-150`}>
+          <div className={`${hoveredNode === 'asc' ? 'text-sky-400' : 'text-rose-400'} font-bold border-b border-slate-800 pb-1 mb-1.5 flex items-center justify-between`}>
+            <span className="flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${hoveredNode === 'asc' ? 'bg-sky-400' : 'bg-rose-400'} animate-ping`} />
+              {hoveredNode === 'asc' ? '☊ Ascending Node (Caput)' : '☋ Descending Node (Cauda)'}
+            </span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${hoveredNode === 'asc' ? 'bg-sky-500/20 text-sky-300' : 'bg-rose-500/20 text-rose-300'}`}>
+              {hoveredNode === 'asc' ? 'NORTHBOUND' : 'SOUTHBOUND'}
+            </span>
+          </div>
+          <div className="space-y-0.5 text-[11px]">
+            <div>Crossing: <strong className="text-white">{hoveredNode === 'asc' ? 'South → North of Ecliptic' : 'North → South of Ecliptic'}</strong></div>
+            <div>Ecliptic Lat (β): <strong className="text-emerald-400">0.00°</strong></div>
+            {lunarNodes && (
+              <div>Ecliptic Lon (λ): <strong className="text-amber-300">{(hoveredNode === 'asc' ? lunarNodes.ascendingNode.lonDeg : lunarNodes.descendingNode.lonDeg).toFixed(2)}°</strong></div>
+            )}
+            <div className="text-[10px] text-slate-400 mt-1 pt-1 border-t border-slate-800 leading-relaxed">
+              Orbital plane intersection with ecliptic (i = 5.14°). Eclipses can only occur when Sun and Moon align near these nodal points.
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};

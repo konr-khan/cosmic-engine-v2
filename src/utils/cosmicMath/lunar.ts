@@ -1,0 +1,516 @@
+import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear, calculateLST } from './core';
+import { 
+  J2000_JD,
+  ASTRONOMICAL_UNIT_KM,
+  EARTH_RADIUS_WGS84_KM,
+  EARTH_RADIUS_MEAN_KM,
+  MOON_RADIUS_MEAN_KM,
+  MOON_MEAN_DISTANCE_KM,
+  calculateEarthObliquity,
+  LUNAR_PERIGEE_THRESHOLD_KM, 
+  LUNAR_APOGEE_THRESHOLD_KM,
+  DRACONIC_PERIOD_DAYS
+} from './astroConstants';
+import { calculateSolarPosition } from './solar';
+import { JulianDate, Latitude, Longitude, Degrees, asDegrees, asJulianDate, HoursDecimal, julianDateToCenturies } from '../../types/units';
+import { 
+  LunarPhaseName, 
+  LunarPositionFull, 
+  LunarPosition,
+  SolarPosition,
+  SolarPositionFull,
+  LunarEventMetrics, 
+  AnnualLunarMatrixItem 
+} from '../../types/astronomy';
+
+export type { LunarPositionFull, LunarEventMetrics, AnnualLunarMatrixItem };
+
+/**
+ * High-precision Lunar Ephemeris Solver based on Meeus truncated series.
+ * @param julianDate - Julian Date
+ * @returns Lunar position and coordinates
+ */
+export const calculateLunarPosition = (
+  julianDate: JulianDate | number,
+  precomputedSolar?: SolarPositionFull | SolarPosition
+): LunarPositionFull => {
+  const T = julianDateToCenturies(julianDate);
+  
+  let L_prime = (218.3164477 + 481267.88123421 * T) % 360;
+  if (L_prime < 0) L_prime += 360;
+
+  let D = (297.8501921 + 445267.1114034 * T) % 360;
+  if (D < 0) D += 360;
+
+  let M = (357.5291092 + 35999.0502909 * T) % 360;
+  if (M < 0) M += 360;
+
+  let M_prime = (134.9633964 + 477198.8675055 * T) % 360;
+  if (M_prime < 0) M_prime += 360;
+
+  let F = (93.2720950 + 483202.0175233 * T) % 360;
+  if (F < 0) F += 360;
+
+  const dRad = toRadians(D);
+  const mRad = toRadians(M);
+  const mpRad = toRadians(M_prime);
+  const fRad = toRadians(F);
+
+  const lambda = L_prime 
+    + 6.2886 * Math.sin(mpRad)
+    + 1.2740 * Math.sin(2 * dRad - mpRad)
+    + 0.6583 * Math.sin(2 * dRad)
+    + 0.2136 * Math.sin(2 * mpRad)
+    - 0.1856 * Math.sin(mRad)
+    - 0.1143 * Math.sin(2 * fRad);
+
+  const beta = 5.1282 * Math.sin(fRad)
+    + 0.2806 * Math.sin(mpRad + fRad)
+    + 0.2777 * Math.sin(mpRad - fRad)
+    + 0.1732 * Math.sin(2 * dRad - fRad);
+
+  const distanceKm = 385001
+    - 20905 * Math.cos(mpRad)
+    - 3699 * Math.cos(2 * dRad - mpRad)
+    - 2956 * Math.cos(2 * dRad)
+    - 569 * Math.cos(2 * mpRad);
+
+  const epsilon = calculateEarthObliquity(julianDate);
+  const epsRad = toRadians(epsilon);
+  const lRad = toRadians(lambda);
+  const bRad = toRadians(beta);
+
+  const sinDec = Math.sin(bRad) * Math.cos(epsRad) + Math.cos(bRad) * Math.sin(epsRad) * Math.sin(lRad);
+  const declination = toDegrees(Math.asin(clamp(sinDec, -1, 1)));
+
+  const raRad = Math.atan2(
+    Math.sin(lRad) * Math.cos(epsRad) - Math.tan(bRad) * Math.sin(epsRad),
+    Math.cos(lRad)
+  );
+  let rightAscension = toDegrees(raRad);
+  if (rightAscension < 0) rightAscension = asDegrees(rightAscension + 360);
+
+  const normLambda = ((lambda % 360) + 360) % 360;
+  const nodeLongitude = calculateMeanLunarNodeLongitude(julianDate);
+  const descendingNodeLongitude = asDegrees(((Number(nodeLongitude) + 180) % 360 + 360) % 360);
+  const safeDistanceKm = Math.max(1e-6, distanceKm);
+  const angularRadiusDeg = toDegrees(Math.asin(clamp(MOON_RADIUS_MEAN_KM / safeDistanceKm, -1, 1)));
+  const parallaxDeg = toDegrees(Math.asin(clamp(EARTH_RADIUS_WGS84_KM / safeDistanceKm, -1, 1)));
+
+  // --- Meeus Ch. 48 Geocentric Phase Angle (i) & True Illumination Fraction (k) ---
+  const solarPos = precomputedSolar ?? calculateSolarPosition(julianDate);
+  const solarLambda = Number(solarPos.lambda);
+  const solarLambdaRad = toRadians(solarLambda);
+  const solarDistKm = ('distanceKm' in solarPos && typeof solarPos.distanceKm === 'number' && solarPos.distanceKm > 0) ? solarPos.distanceKm : ASTRONOMICAL_UNIT_KM;
+
+  // Geocentric elongation psi: cos(psi) = cos(beta) * cos(lambda - lambda_sun)
+  const cosPsi = Math.cos(bRad) * Math.cos(lRad - solarLambdaRad);
+  const psiRad = Math.acos(clamp(cosPsi, -1, 1));
+  const sinPsi = Math.sin(psiRad);
+
+  // Phase angle i: tan(i) = (R * sin(psi)) / (Delta - R * cos(psi))
+  const phaseAngleRad = Math.atan2(solarDistKm * sinPsi, distanceKm - solarDistKm * cosPsi);
+  const phaseAngleDeg = Math.abs(toDegrees(phaseAngleRad));
+  const illuminationFraction = (1 + Math.cos(phaseAngleRad)) / 2;
+
+  const phase0to1 = ((D % 360) + 360) % 360 / 360;
+  const phaseName = getPhaseName(phase0to1);
+
+  return { 
+    lambda: asDegrees(parseFloat(normLambda.toFixed(4))), 
+    eclipticLongitude: asDegrees(parseFloat(normLambda.toFixed(4))),
+    beta: asDegrees(parseFloat(beta.toFixed(4))), 
+    eclipticLatitude: asDegrees(parseFloat(beta.toFixed(4))),
+    declination, 
+    rightAscension, 
+    distanceKm, 
+    distanceEarthRadii: distanceKm / EARTH_RADIUS_MEAN_KM,
+    phase: phase0to1,
+    phaseName,
+    elongation: D,
+    phaseAngleDeg,
+    illuminationFraction,
+    parallacticAngle: 0,
+    nodeLongitude,
+    descendingNodeLongitude,
+    angularRadiusDeg,
+    parallaxDeg,
+    argumentOfLatitude: F
+  };
+};
+
+/**
+ * Calculates the mean longitude of the ascending lunar node (Omega) for a given epoch.
+ * Conforms to Jean Meeus, Astronomical Algorithms, Chapter 47.
+ * 
+ * @param jd - Astronomical Julian Date epoch
+ * @returns Mean lunar ascending node longitude in degrees [0, 360)
+ */
+export const calculateMeanLunarNodeLongitude = (jd: JulianDate | number): Degrees => {
+  const T = julianDateToCenturies(jd);
+  return asDegrees(((125.04452 - 1934.136261 * T) % 360 + 360) % 360);
+};
+
+export interface TrueLunarNodeCrossing {
+  jd: JulianDate;
+  daysOffset: number;
+  type: 'ascending' | 'descending';
+  isAscending: boolean;
+  betaDeg: number;
+}
+
+export interface TrueLunarNodeEventsResult {
+  daysToNextNode: number;
+  daysSincePrevNode: number;
+  upcomingNodeType: 'ascending' | 'descending';
+  prevNodeType: 'ascending' | 'descending';
+  nearestNodeType: 'ascending' | 'descending';
+  nearestNodeDistDays: number;
+  isApproachingNearestNode: boolean;
+  isNearNode: boolean;
+  allCrossings: TrueLunarNodeCrossing[];
+}
+
+/**
+ * Solves the exact Julian Date when the Moon's true ecliptic latitude crosses 0° (true nodal passage)
+ * starting from an approximate JD (e.g. from the mean argument of latitude F).
+ * Uses Newton-Raphson iteration with central finite differences on beta(t) = 0.
+ *
+ * @param approxJD - Initial approximate Julian Date
+ * @returns Converged crossing JD, crossing type (ascending or descending), and residual beta
+ */
+export const findTrueLunarNodeCrossing = (
+  approxJD: JulianDate | number
+): { jd: JulianDate; type: 'ascending' | 'descending'; isAscending: boolean; betaDeg: number } => {
+  let jd = Number(approxJD);
+  const h = 0.005; // 7.2 minutes finite-difference step
+  for (let iter = 0; iter < 8; iter++) {
+    const b = Number(calculateLunarPosition(jd).beta);
+    const bPlus = Number(calculateLunarPosition(jd + h).beta);
+    const bMinus = Number(calculateLunarPosition(jd - h).beta);
+    const dBetaDt = (bPlus - bMinus) / (2 * h);
+    if (Math.abs(dBetaDt) < 1e-7) break;
+    const step = b / dBetaDt;
+    jd -= step;
+    if (Math.abs(step) < 0.00001) break; // < 0.86 seconds precision
+  }
+  const posAtJd = calculateLunarPosition(jd);
+  const posPlus = calculateLunarPosition(jd + h);
+  const isAscending = Number(posPlus.beta) > Number(posAtJd.beta);
+  return {
+    jd: asJulianDate(jd),
+    type: isAscending ? 'ascending' : 'descending',
+    isAscending,
+    betaDeg: parseFloat(Number(posAtJd.beta).toFixed(6))
+  };
+};
+
+const trueLunarNodeCache = new Map<string, TrueLunarNodeEventsResult>();
+const MAX_TRUE_LUNAR_NODE_CACHE = 128;
+
+/**
+ * Calculates all true lunar node crossings (where true ecliptic latitude beta = 0)
+ * within a specified time window centered on targetJD.
+ *
+ * @param targetJD - Evaluation epoch Julian Date
+ * @param windowDays - Window span in days around targetJD (default 16 days to cover +-15d)
+ * @returns True node events result
+ */
+export const calculateTrueLunarNodeEvents = (
+  targetJD: JulianDate | number,
+  windowDays: number = 16
+): TrueLunarNodeEventsResult => {
+  const cacheKey = `${Math.round(Number(targetJD) * 24)}_${windowDays}`;
+  const cached = trueLunarNodeCache.get(cacheKey);
+  if (cached) return cached;
+
+  const currentJD = Number(targetJD);
+  const currentPos = calculateLunarPosition(currentJD);
+  const currentF = Number(currentPos.argumentOfLatitude ?? 0);
+  const normF = ((currentF % 360) + 360) % 360;
+
+  // Find candidate mean node offsets k within [-windowDays - 14, +windowDays + 14]
+  // Node crossings occur every ~180° in F (approx every 13.6 days)
+  const crossingsMap = new Map<number, TrueLunarNodeCrossing>();
+
+  // Offset to mean ascending node (F = 0 or 360):
+  const dAsc = normF <= 180 ? -normF : (360 - normF);
+  const tMeanAsc = currentJD + (dAsc / 360) * DRACONIC_PERIOD_DAYS;
+
+  // Scan k dynamically based on windowDays (+4 day buffer for crossing resolution):
+  const kRange = Math.max(1, Math.ceil((windowDays + 4) / (DRACONIC_PERIOD_DAYS / 2)));
+  for (let k = -kRange; k <= kRange; k++) {
+    const approxJD = tMeanAsc + (k * DRACONIC_PERIOD_DAYS) / 2;
+    const solved = findTrueLunarNodeCrossing(approxJD);
+    const key = Math.round(Number(solved.jd) * 100);
+    if (!crossingsMap.has(key)) {
+      crossingsMap.set(key, {
+        jd: solved.jd,
+        daysOffset: Number(solved.jd) - currentJD,
+        type: solved.type,
+        isAscending: solved.isAscending,
+        betaDeg: solved.betaDeg
+      });
+    }
+  }
+
+  const allCrossings = Array.from(crossingsMap.values()).sort((a, b) => Number(a.jd) - Number(b.jd));
+
+  // Identify most recent past node (daysOffset <= 0) and upcoming node (daysOffset > 0)
+  const pastCrossings = allCrossings.filter((c) => c.daysOffset <= 0.0001);
+  const futureCrossings = allCrossings.filter((c) => c.daysOffset > 0.0001);
+
+  const prevNode = pastCrossings.length > 0 
+    ? pastCrossings[pastCrossings.length - 1] 
+    : allCrossings[0];
+  const nextNode = futureCrossings.length > 0 
+    ? futureCrossings[0] 
+    : allCrossings[allCrossings.length - 1];
+
+  const daysToNextNode = Math.max(0, parseFloat((Number(nextNode.jd) - currentJD).toFixed(1)));
+  const daysSincePrevNode = Math.max(0, parseFloat((currentJD - Number(prevNode.jd)).toFixed(1)));
+
+  const isApproachingNearestNode = daysToNextNode <= daysSincePrevNode;
+  const nearestNodeType = isApproachingNearestNode ? nextNode.type : prevNode.type;
+  const nearestNodeDistDays = Math.min(daysToNextNode, daysSincePrevNode);
+  const isNearNode = nearestNodeDistDays <= 1.0;
+
+  const result: TrueLunarNodeEventsResult = {
+    daysToNextNode,
+    daysSincePrevNode,
+    upcomingNodeType: nextNode.type,
+    prevNodeType: prevNode.type,
+    nearestNodeType,
+    nearestNodeDistDays,
+    isApproachingNearestNode,
+    isNearNode,
+    allCrossings
+  };
+
+  if (trueLunarNodeCache.size >= MAX_TRUE_LUNAR_NODE_CACHE) {
+    trueLunarNodeCache.clear();
+  }
+  trueLunarNodeCache.set(cacheKey, result);
+
+  return result;
+};
+
+/**
+ * Computes Astronomical Parallactic Angle (tilt of Moon relative to local zenith).
+ * @param lat - Observer latitude in degrees
+ * @param lon - Observer longitude in degrees
+ * @param julianDate - Julian Date
+ * @param decDeg - Declination in degrees
+ * @param raDeg - Right Ascension in degrees
+ * @returns Parallactic angle in degrees
+ */
+export const calculateParallacticAngle = (
+  lat: Latitude | number, 
+  lon: Longitude | number, 
+  julianDate: JulianDate | number, 
+  decDeg: Degrees | number, 
+  raDeg: Degrees | HoursDecimal | number
+): number => {
+  const lst = calculateLST(julianDate, lon);
+  let H = (((lst - (raDeg as number)) % 360) + 360) % 360;
+
+  const latRad = toRadians(clamp(lat as number, -89.9, 89.9));
+  const decRad = toRadians(decDeg);
+  const hRad = toRadians(H);
+
+  const num = Math.sin(hRad);
+  const den = Math.tan(latRad) * Math.cos(decRad) - Math.sin(decRad) * Math.cos(hRad);
+  
+  let eta = toDegrees(Math.atan2(num, den));
+  return eta;
+};
+
+/**
+ * Refines a candidate lunar rise or set event timestamp using topocentric coordinate recalculation.
+ */
+function refineLunarEventHour(
+  julianDate: number,
+  estHour: number,
+  transitUTC: number,
+  sinAlt: number,
+  sinLat: number,
+  cosLat: number,
+  isRise: boolean
+): number | null {
+  const jdEvent = julianDate + (estHour / 24.0);
+  const lunarPos = calculateLunarPosition(jdEvent);
+  const decRad = toRadians(lunarPos.declination);
+  const denom = cosLat * Math.cos(decRad);
+  if (Math.abs(denom) < 1e-9) return null;
+  const cosH = (sinAlt - sinLat * Math.sin(decRad)) / denom;
+
+  if (cosH >= -1 && cosH <= 1) {
+    const halfDayHours = (toDegrees(Math.acos(clamp(cosH, -1, 1))) / 15) * 1.035;
+    return isRise
+      ? (transitUTC - halfDayHours + 24) % 24
+      : (transitUTC + halfDayHours + 24) % 24;
+  }
+  return null;
+}
+
+/**
+ * Calculates Moonrise, Transit, Moonset, Perigee/Apogee, and Parallactic Angle.
+ * Implements 2-step iterative refinement for sub-minute accuracy across mid & polar latitudes.
+ * @param lat - Observer latitude
+ * @param lon - Observer longitude
+ * @param julianDate - Julian Date (typically midnight)
+ * @param timeOfDay - Decimal hour of day
+ * @returns Lunar event metrics
+ */
+export const calculateLunarEvents = (
+  lat: Latitude, 
+  lon: Longitude, 
+  julianDate: JulianDate | number, 
+  timeOfDay: HoursDecimal = 12,
+  precomputedLunarNoon?: LunarPositionFull | LunarPosition
+): LunarEventMetrics => {
+  const julianDateExact = julianDate + (timeOfDay / 24.0);
+  const lunarNow = precomputedLunarNoon ? (precomputedLunarNoon as LunarPositionFull) : calculateLunarPosition(julianDateExact);
+  const solarNoon = calculateSolarPosition(julianDateExact);
+
+  let transitUTC = 12 - (lon / 15) - ((solarNoon.equationOfTime ?? 0) / 60);
+  const solarRA = solarNoon.rightAscension ?? 0;
+  const raDiffDeg = ((lunarNow.rightAscension - solarRA) % 360 + 360) % 360;
+  const phaseDiffHours = raDiffDeg / 15;
+  transitUTC = (transitUTC + phaseDiffHours + 24) % 24;
+
+  const latRad = toRadians(clamp(lat, -89.9, 89.9));
+  const altRad = toRadians(0.125);
+  const sinAlt = Math.sin(altRad);
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+
+  // Step 1: Initial estimate using transit declination
+  const decRadTransit = toRadians(lunarNow.declination);
+  const denom0 = cosLat * Math.cos(decRadTransit);
+  const cosH0 = Math.abs(denom0) < 1e-9
+    ? (sinAlt >= sinLat * Math.sin(decRadTransit) ? 2 : -2)
+    : (sinAlt - sinLat * Math.sin(decRadTransit)) / denom0;
+
+  let moonriseUTC: number | null = null;
+  let moonsetUTC: number | null = null;
+  let polarState: 'circumpolar_up' | 'circumpolar_down' | 'regular' = 'regular';
+
+  if (cosH0 >= -1 && cosH0 <= 1) {
+    const halfDayHours0 = (toDegrees(Math.acos(clamp(cosH0, -1, 1))) / 15) * 1.035;
+    const estRise = (transitUTC - halfDayHours0 + 24) % 24;
+    const estSet = (transitUTC + halfDayHours0 + 24) % 24;
+
+    // Step 2: Refine candidate rise and set times using lunar coordinates at estimated events
+    moonriseUTC = refineLunarEventHour(julianDate, estRise, transitUTC, sinAlt, sinLat, cosLat, true);
+    moonsetUTC = refineLunarEventHour(julianDate, estSet, transitUTC, sinAlt, sinLat, cosLat, false);
+    polarState = 'regular';
+  } else if (cosH0 < -1) {
+    // Moon is circumpolar: continuously above horizon all day (24h continuous moonlight)
+    polarState = 'circumpolar_up';
+    moonriseUTC = 0;
+    moonsetUTC = 24;
+  } else {
+    // Moon is continuously below horizon all day
+    polarState = 'circumpolar_down';
+    moonriseUTC = null;
+    moonsetUTC = null;
+  }
+
+  const isPerigee = lunarNow.distanceKm < LUNAR_PERIGEE_THRESHOLD_KM;
+  const isApogee = lunarNow.distanceKm > LUNAR_APOGEE_THRESHOLD_KM;
+
+  // Calculate parallactic angle for current time & location
+  const parallacticAngle = calculateParallacticAngle(lat, lon, julianDateExact, lunarNow.declination, lunarNow.rightAscension);
+
+  return {
+    moonrise: moonriseUTC,
+    transit: transitUTC,
+    moonset: moonsetUTC,
+    distanceKm: Math.round(lunarNow.distanceKm),
+    distanceEarthRadii: parseFloat(lunarNow.distanceEarthRadii.toFixed(1)),
+    isPerigee,
+    isApogee,
+    declination: lunarNow.declination,
+    parallacticAngle: parseFloat(parallacticAngle.toFixed(1)),
+    polarState
+  };
+};
+
+/**
+ * Calculates physical lunar disc illumination fraction (0% to 100%).
+ * Supports normalized phase value (0.0 = New Moon, 0.5 = Full Moon) or
+ * precise 2D ecliptic latitude for exact Meeus Chapter 48 precision.
+ * @param phase - Normalized lunar phase value (0.0 to 1.0)
+ * @param beta - Optional lunar ecliptic latitude in degrees
+ * @returns Illumination percentage (0 to 100)
+ */
+export const calculateLunarIllumination = (phase: number, beta?: number): number => {
+  if (beta !== undefined) {
+    const dRad = toRadians(phase * 360);
+    const bRad = toRadians(beta);
+    const cosPsi = Math.cos(bRad) * Math.cos(dRad);
+    const psiRad = Math.acos(clamp(cosPsi, -1, 1));
+    const sinPsi = Math.sin(psiRad);
+    const ratioDeltaR = MOON_MEAN_DISTANCE_KM / ASTRONOMICAL_UNIT_KM; // ~0.00257
+    const phaseAngleRad = Math.atan2(sinPsi, ratioDeltaR - cosPsi);
+    return Math.round(((1 + Math.cos(phaseAngleRad)) / 2) * 100);
+  }
+  const normPhase = ((phase % 1) + 1) % 1;
+  const rad = normPhase * 2 * Math.PI;
+  return Math.round(((1 - Math.cos(rad)) / 2) * 100);
+};
+
+/**
+ * Returns human-readable lunar phase name from a 0.0 to 1.0 phase fraction.
+ * @param phase - Lunar phase value (0 = New Moon, 0.5 = Full Moon)
+ * @returns Name of moon phase
+ */
+export const getPhaseName = (phase: number): LunarPhaseName => {
+  if (phase < 0.03 || phase > 0.97) return "New Moon";
+  if (phase < 0.22) return "Waxing Crescent";
+  if (phase < 0.28) return "First Quarter";
+  if (phase < 0.47) return "Waxing Gibbous";
+  if (phase < 0.53) return "Full Moon";
+  if (phase < 0.72) return "Waning Gibbous";
+  if (phase < 0.78) return "Last Quarter";
+  return "Waning Crescent";
+};
+
+/**
+ * Calculates the full annual matrix (365 or 366 days for leap years) of daily lunar events.
+ * @param year - Calendar year (e.g., 2026)
+ * @param latitude - Observer latitude in degrees (-90 to +90)
+ * @param longitude - Observer longitude in degrees (-180 to +180)
+ * @returns Annual lunar matrix array
+ */
+export const calculateAnnualLunarMatrix = (
+  year: number, 
+  latitude: Latitude, 
+  longitude: Longitude
+): AnnualLunarMatrixItem[] => {
+  const totalDays = getDaysInYear(year);
+  const list: AnnualLunarMatrixItem[] = [];
+  for (let day = 1; day <= totalDays; day++) {
+    const d = new Date(Date.UTC(year, 0, day));
+    const jd0 = getJulianDate(d, 0);
+    const jd = getJulianDate(d, 12);
+    const lunarPos = calculateLunarPosition(jd);
+    const events = calculateLunarEvents(latitude, longitude, jd0, 12, lunarPos);
+    
+    const phaseVal = Number(lunarPos.phase ?? 0);
+
+    list.push({
+      day,
+      moonrise: events.moonrise,
+      transit: events.transit,
+      moonset: events.moonset,
+      phaseValue: phaseVal,
+      isPerigee: events.isPerigee,
+      isApogee: events.isApogee,
+      distanceKm: events.distanceKm,
+      polarState: events.polarState
+    });
+  }
+  return list;
+};
