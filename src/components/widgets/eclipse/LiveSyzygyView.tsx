@@ -1,9 +1,9 @@
 import React from 'react';
 import { EclipseData } from '../../../types';
-import { generateOrbitalSegments, toRadians, calculateNodalOrbitalAngles } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { MiniMoon } from '../../common/MiniMoon';
 import { useSafeSvgId } from '../../common/useSafeSvgId';
+import { useSyzygyMath } from './hooks/useSyzygyMath';
 
 export interface SyzygyDefsIds {
   umbraGrad: string;
@@ -38,57 +38,28 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
   const sunGlowId = defsIds?.sunGlow ?? `syzygySunGlow-${fallbackUid}`;
   const earthClipId = defsIds?.earthClip ?? `syzygyEarthClip-${fallbackUid}`;
   const outsideEarthMaskId = defsIds?.outsideEarthMask ?? `syzygyOutsideEarth-${fallbackUid}`;
-  const beta = eclipse.beta;
-  const phaseVal = eclipse.phaseValue || 0;
-  const phaseRad = phaseVal * 2 * Math.PI;
-  const phaseDeg = Math.round(phaseVal * 360);
-  const scalePxPerDeg = 8.5;
-  const isAscending = eclipse.isAscendingHemisphere ?? (beta >= 0);
-  const isWaxing = phaseVal < 0.5;
 
-  const liveEarthX = 310;
-  const liveEarthY = 110;
-  const liveOrbitalRx = 85;
-
-  const nodeAngleRad = toRadians(eclipse.nodeAngleDeg ?? (eclipse.nodeProximityDeg || 0));
-  const liveMoonX = liveEarthX - (Math.cos(phaseRad) * liveOrbitalRx);
-  const liveMoonY = liveEarthY - (beta * scalePxPerDeg);
-
-  const { waxAsc, waxDesc, wanAsc, wanDesc } = generateOrbitalSegments(
+  const {
+    phaseVal,
+    phaseDeg,
+    isAscending,
+    isWaxing,
     liveEarthX,
     liveEarthY,
-    liveOrbitalRx,
-    scalePxPerDeg,
-    nodeAngleRad,
-    'side',
-    72
-  );
-
-  const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);
-  const ascNodeX = liveEarthX - (Math.cos(tAsc) * liveOrbitalRx);
-  const ascNodeY = liveEarthY;
-  const descNodeX = liveEarthX - (Math.cos(tDesc) * liveOrbitalRx);
-  const descNodeY = liveEarthY;
-
-  // Node 3D Depth along viewing axis (sin(t) * rx in side view: Z > 0 is viewer-side/waxing, Z <= 0 is far-side/waning)
-  const ascNodeDepth = Math.sin(tAsc) * liveOrbitalRx;
-  const descNodeDepth = Math.sin(tDesc) * liveOrbitalRx;
-  const isAscBehindEarth = ascNodeDepth <= 0 && Math.abs(ascNodeX - liveEarthX) <= 18;
-  const isDescBehindEarth = descNodeDepth <= 0 && Math.abs(descNodeX - liveEarthX) <= 18;
-
-  // Normalized Sun vector in camera space for 3D analytical lunar terminator
-  // Sun is at (50, 110, 0), Earth at (liveEarthX=310, liveEarthY=110, 0)
-  // Moon 3D coordinates: (liveMoonX, liveMoonY, Z_moon) where Z_moon = sin(phaseRad) * liveOrbitalRx
-  const moonSubsolarVector = React.useMemo(() => {
-    const dx = 50 - liveMoonX;
-    const dy = 110 - liveMoonY;
-    const dz = -(Math.sin(phaseRad) * liveOrbitalRx);
-    const vx = dx;
-    const vy = -dy;
-    const vz = -dz;
-    const len = Math.hypot(vx, vy, vz) || 1;
-    return { x: vx / len, y: vy / len, z: vz / len };
-  }, [liveMoonX, liveMoonY, phaseRad, liveOrbitalRx]);
+    liveMoonX,
+    liveMoonY,
+    waxAsc,
+    waxDesc,
+    wanAsc,
+    wanDesc,
+    ascNodeX,
+    ascNodeY,
+    descNodeX,
+    descNodeY,
+    isAscBehindEarth,
+    isDescBehindEarth,
+    moonSubsolarVector
+  } = useSyzygyMath(eclipse);
 
   return (
     <g>

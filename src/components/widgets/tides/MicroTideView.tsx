@@ -3,6 +3,7 @@ import { TidalVectors } from "../../../types";
 import { OrbitalAngles } from "../../../types/coordinates";
 import { TidalWaveOscillator } from "../lunar/TidalWaveOscillator";
 import { MiniGlobe } from "../../common/MiniGlobe";
+import { MiniMoon } from "../../common/MiniMoon";
 import { useTideMath } from "./hooks";
 
 export interface MicroTideViewProps {
@@ -304,15 +305,16 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
                   className="animate-pulse"
                 />
               )}
-              <circle 
-                r="6" 
-                fill="#020617" 
-                stroke={orbitViewMode === 'nodal' ? (isMoonAsc ? "#38bdf8" : "#f43f5e") : "#334155"} 
-                strokeWidth={orbitViewMode === 'nodal' ? "1" : "0.75"} 
+              <MiniMoon
+                radius={6}
+                phase={0.25}
+                sunAngleDeg={sunAngleDeg}
+                fill="#020617"
+                fillOpacity={1}
+                stroke={orbitViewMode === 'nodal' ? (isMoonAsc ? "#38bdf8" : "#f43f5e") : "#334155"}
+                strokeWidth={orbitViewMode === 'nodal' ? 1 : 0.75}
+                showCoronaGlow={false}
               />
-              <g transform={`rotate(${sunAngleDeg})`}>
-                <path d="M 0,-6 A 6,6 0 0,1 0,6 Z" fill="#f8fafc" />
-              </g>
             </g>
           </svg>
         </div>

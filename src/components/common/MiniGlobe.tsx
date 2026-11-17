@@ -11,10 +11,8 @@
  */
 
 import React, { useMemo } from 'react';
-import { Degrees, Latitude, Longitude, HoursDecimal, toRadians, toDegrees } from '../../types/units';
+import { Degrees, Latitude, Longitude, HoursDecimal, toRadians } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
-import { calculateEarthSideGeometry, calculateEarthAxialGeometry } from '../../utils/cosmicMath/projection';
-import { rotateEuler3D } from '../../utils/cosmicMath/armillary/coordinates';
 import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
 import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../../utils/cosmicMath';
 import { 
@@ -26,6 +24,12 @@ import {
 import { useSafeSvgId } from './useSafeSvgId';
 import { MiniGlobeFlat } from './miniglobe/MiniGlobeFlat';
 import { MiniGlobeSphere } from './miniglobe/MiniGlobeSphere';
+import {
+  buildTopdownGlobeGeometry,
+  buildTransverseGlobeGeometry,
+  buildAxialGlobeGeometry,
+  buildEulerGlobeGeometry
+} from './miniglobe/globeGeometry';
 import { 
   TopdownGlobeGeometry, 
   TransverseGlobeGeometry, 
@@ -127,7 +131,6 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   onPointerLeave,
   onClick
 }) => {
-  // Unique SVG IDs using React useId() (sanitized) to prevent DOM collisions across multiple instances
   const safeId = useSafeSvgId();
   const uid = id ? `${id}-${safeId}` : `globe-${safeId}`;
 
@@ -142,200 +145,46 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   const latVal = Number.isFinite(Number(latitude)) ? Number(latitude) : 0;
   const lonVal = Number.isFinite(Number(longitude)) ? Number(longitude) : 0;
   const todVal = Number.isFinite(Number(timeOfDay)) ? Number(timeOfDay) : 12;
+  const sunAngleNum = sunAngleDeg !== undefined && Number.isFinite(Number(sunAngleDeg)) ? Number(sunAngleDeg) : undefined;
+  const declinationNum = Number.isFinite(Number(declination)) ? Number(declination) : undefined;
 
-  // -------------------------------------------------------------
-  // Geometry Derivations per View Mode
-  // -------------------------------------------------------------
-
-  // 1. TOPDOWN MODE
   const topdownGeometry = useMemo<TopdownGlobeGeometry | null>(() => {
     if (viewMode !== 'topdown') return null;
+    return buildTopdownGlobeGeometry({
+      safeRadius,
+      sunAngleDeg: sunAngleNum,
+      sunLambdaVal,
+      epsRad,
+      latVal,
+      lonVal,
+      todVal
+    });
+  }, [viewMode, safeRadius, sunAngleNum, sunLambdaVal, epsRad, latVal, lonVal, todVal]);
 
-    const angleDeg = sunAngleDeg !== undefined && Number.isFinite(Number(sunAngleDeg))
-      ? Number(sunAngleDeg) 
-      : ((180 - sunLambdaVal) % 360);
-    const angleRad = toRadians(angleDeg);
-
-    // Semicircular daylight path rotated by angleDeg
-    const a1 = angleRad - Math.PI / 2;
-    const a2 = angleRad + Math.PI / 2;
-    const x1 = safeRadius * Math.cos(a1);
-    const y1 = safeRadius * Math.sin(a1);
-    const x2 = safeRadius * Math.cos(a2);
-    const y2 = safeRadius * Math.sin(a2);
-
-    const dayPath = safeRadius > 0
-      ? `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${safeRadius} ${safeRadius} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`
-      : '';
-
-    // Equator and Tropics in Top-Down (ellipses tilted by obliquity along Y)
-    const eqRy = safeRadius * Math.cos(epsRad);
-    const tropRy = safeRadius * Math.cos(epsRad) * Math.cos(epsRad);
-    const tropShiftY = safeRadius * Math.sin(epsRad) * Math.cos(epsRad);
-
-    // Observer Pin in Top-Down (Sun-aligned diurnal frame)
-    const latRad = toRadians(latVal);
-    const hourAngleDeg = ((todVal - 12) * 15) + lonVal;
-    const hRad = toRadians(hourAngleDeg);
-    const theta = angleRad - hRad;
-
-    const cosLat = Math.cos(latRad);
-    const sinLat = Math.sin(latRad);
-
-    const xEq = cosLat * Math.cos(theta);
-    const yEq = cosLat * Math.sin(theta);
-    const zEq = sinLat;
-
-    const xecl = xEq;
-    const yecl = -yEq * Math.cos(epsRad) + zEq * Math.sin(epsRad);
-    const zecl = yEq * Math.sin(epsRad) + zEq * Math.cos(epsRad);
-
-    const obsPx = safeRadius * xecl;
-    const obsPy = -safeRadius * yecl;
-    const isDaylight = safeRadius > 0 
-      ? (obsPx * Math.cos(angleRad) + obsPy * Math.sin(angleRad)) > 0
-      : false;
-
-    return {
-      dayPath,
-      eqRy,
-      tropRy,
-      tropShiftY,
-      obsPx,
-      obsPy,
-      isDaylight,
-      isFrontVisible: zecl >= -0.2
-    };
-  }, [viewMode, safeRadius, sunAngleDeg, sunLambdaVal, epsRad, latVal, lonVal, todVal]);
-
-  // 2. TRANSVERSE MODE (Eclipse Left Pane)
   const transverseGeometry = useMemo<TransverseGlobeGeometry | null>(() => {
     if (viewMode !== 'transverse') return null;
-    const sideGeom = calculateEarthSideGeometry(0, 0, safeRadius, sunLambdaVal, latVal, todVal, lonVal);
-    const dayPath = safeRadius > 0 ? `M 0 -${safeRadius} A ${safeRadius} ${safeRadius} 0 0 0 0 ${safeRadius} Z` : '';
-
-    return {
-      sideGeom,
-      dayPath
-    };
+    return buildTransverseGlobeGeometry(safeRadius, sunLambdaVal, latVal, todVal, lonVal);
   }, [viewMode, safeRadius, sunLambdaVal, latVal, todVal, lonVal]);
 
-  // 3. AXIAL MODE (Eclipse Right Pane)
   const axialGeometry = useMemo<AxialGlobeGeometry | null>(() => {
     if (viewMode !== 'axial') return null;
-    return calculateEarthAxialGeometry(0, 0, safeRadius, sunLambdaVal, latVal, todVal, lonVal);
+    return buildAxialGlobeGeometry(safeRadius, sunLambdaVal, latVal, todVal, lonVal);
   }, [viewMode, safeRadius, sunLambdaVal, latVal, todVal, lonVal]);
 
-  // 4. EULER3D MODE (Armillary 3D Apparent Mode & Living Marble)
   const eulerGeometry = useMemo<EulerGlobeGeometry | null>(() => {
     if (viewMode !== 'euler3d') return null;
+    return buildEulerGlobeGeometry({
+      safeRadius,
+      camera,
+      declination: declinationNum,
+      sunLambdaVal,
+      showTwilightBands,
+      latVal,
+      lonVal,
+      todVal
+    });
+  }, [viewMode, camera, declinationNum, safeRadius, showTwilightBands, latVal, lonVal, todVal, sunLambdaVal]);
 
-    const pitch = Number.isFinite(Number(camera?.pitch)) ? Number(camera?.pitch) : 0;
-    const yaw = Number.isFinite(Number(camera?.yaw)) ? Number(camera?.yaw) : 0;
-    const roll = Number.isFinite(Number(camera?.roll)) ? Number(camera?.roll) : 0;
-
-    // Rotated Polar Axis (North Pole is at Y = +1 in Earth equatorial frame)
-    const poleCam = rotateEuler3D({ x: 0, y: 1, z: 0 }, pitch, yaw, roll);
-    const poleLen = Math.hypot(poleCam.x, poleCam.y);
-    const polePx = poleLen > 1e-4 ? (poleCam.x / poleLen) * safeRadius : 0;
-    const polePy = poleLen > 1e-4 ? -(poleCam.y / poleLen) * safeRadius : -safeRadius;
-
-    // Subsolar vector in camera coordinates
-    const decVal = Number.isFinite(Number(declination))
-      ? Number(declination)
-      : (sunLambdaVal ? toDegrees(Math.asin(Math.sin(toRadians(Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG))) * Math.sin(toRadians(sunLambdaVal)))) : 0);
-    const decRad = toRadians(decVal);
-    const sEq: Vector3D = {
-      x: 0,
-      y: Math.sin(decRad),
-      z: Math.cos(decRad)
-    };
-    const sCam = rotateEuler3D(sEq, pitch, yaw, roll);
-
-    const dayPath = generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, 0);
-    const civilPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -6) : '';
-    const nauticalPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -12) : '';
-    const astroPath = showTwilightBands ? generateAnalyticalLimbPath(safeRadius, sCam.x, sCam.y, sCam.z, -18) : '';
-
-    // Observer Pin in camera coordinates (matching continents in body frame)
-    const latRad = toRadians(latVal);
-    const hourAngleDeg = ((todVal - 12) * 15) + lonVal;
-    const hRad = toRadians(hourAngleDeg);
-    const sinLat = Math.sin(latRad);
-    const cosLat = Math.cos(latRad);
-    const sinH = Math.sin(hRad);
-    const cosH = Math.cos(hRad);
-
-    const pObsCam = rotateEuler3D({
-      x: cosLat * sinH,
-      y: sinLat,
-      z: cosLat * cosH
-    }, pitch, yaw, roll);
-
-    const obsPx = safeRadius * pObsCam.x;
-    const obsPy = -safeRadius * pObsCam.y;
-    const isObsDay = (Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hRad)) > 0;
-
-    // 0° Prime Meridian (Greenwich) & 180° Antimeridian Curves
-    const h0Rad = toRadians((todVal - 12) * 15);
-    const sinH0 = Math.sin(h0Rad);
-    const cosH0 = Math.cos(h0Rad);
-    const NUM_MERIDIAN_SAMPLES = 48;
-
-    // 0° Prime Meridian (-90° South Pole to +90° North Pole)
-    let primeMeridianPath = '';
-    for (let i = 0; i <= NUM_MERIDIAN_SAMPLES; i++) {
-      const latDeg = -90 + (i / NUM_MERIDIAN_SAMPLES) * 180;
-      const phiRad = toRadians(latDeg);
-      const sinPhi = Math.sin(phiRad);
-      const cosPhi = Math.cos(phiRad);
-      const ptCam = rotateEuler3D({
-        x: cosPhi * sinH0,
-        y: sinPhi,
-        z: cosPhi * cosH0
-      }, pitch, yaw, roll);
-      const px = (safeRadius * ptCam.x).toFixed(2);
-      const py = (-safeRadius * ptCam.y).toFixed(2);
-      primeMeridianPath += (i === 0 ? `M ${px} ${py}` : ` L ${px} ${py}`);
-    }
-
-    // 180° Antimeridian (+90° North Pole to -90° South Pole)
-    const h180Rad = h0Rad + Math.PI;
-    const sinH180 = Math.sin(h180Rad);
-    const cosH180 = Math.cos(h180Rad);
-    let antimeridianPath = '';
-    for (let i = 0; i <= NUM_MERIDIAN_SAMPLES; i++) {
-      const latDeg = 90 - (i / NUM_MERIDIAN_SAMPLES) * 180;
-      const phiRad = toRadians(latDeg);
-      const sinPhi = Math.sin(phiRad);
-      const cosPhi = Math.cos(phiRad);
-      const ptCam = rotateEuler3D({
-        x: cosPhi * sinH180,
-        y: sinPhi,
-        z: cosPhi * cosH180
-      }, pitch, yaw, roll);
-      const px = (safeRadius * ptCam.x).toFixed(2);
-      const py = (-safeRadius * ptCam.y).toFixed(2);
-      antimeridianPath += (i === 0 ? `M ${px} ${py}` : ` L ${px} ${py}`);
-    }
-
-    return {
-      dayPath,
-      civilPath,
-      nauticalPath,
-      astroPath,
-      polePx,
-      polePy,
-      obsPx,
-      obsPy,
-      isObsDay,
-      isObsVisible: pObsCam.z >= 0,
-      primeMeridianPath: primeMeridianPath.trim(),
-      antimeridianPath: antimeridianPath.trim()
-    };
-  }, [viewMode, camera, declination, safeRadius, showTwilightBands, latVal, lonVal, todVal, sunLambdaVal]);
-
-  // 5. 3D Rotational Vector World Continents (Living Marble Earth)
   const continentPaths = useMemo(() => {
     if (!showContinents || safeRadius <= 0 || viewMode === 'flat') return [];
     return projectContinentLandmasses(
@@ -361,14 +210,12 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
       <title>{`${label} — View: ${viewMode}, Obliquity: ${safeObliquity.toFixed(2)}°, Observer: ${latVal.toFixed(1)}°N ${lonVal.toFixed(1)}°E`}</title>
 
       <defs>
-        {/* Unique Clip Path per Instance */}
         {safeRadius > 0 && (
           <clipPath id={clipPathId}>
             <circle cx="0" cy="0" r={safeRadius} />
           </clipPath>
         )}
 
-        {/* Outer Atmospheric Radial Gradient */}
         {showAtmosphereGlow && viewMode !== 'flat' && safeRadius > 0 && (
           <radialGradient id={atmoGradId} cx="50%" cy="50%" r="50%">
             <stop offset="65%" stopColor="#38bdf8" stopOpacity="0.35" />
@@ -377,7 +224,6 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
           </radialGradient>
         )}
 
-        {/* Daylight Core Radial Gradient */}
         {showTerminator && safeRadius > 0 && (
           <radialGradient id={dayGradId} cx="40%" cy="40%" r="60%">
             <stop offset="0%" stopColor="#60a5fa" stopOpacity="1" />
@@ -387,7 +233,6 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
         )}
       </defs>
 
-      {/* Layer 1: Outer Cyan Atmospheric Glow Halo */}
       {showAtmosphereGlow && viewMode !== 'flat' && safeRadius > 0 && (
         <circle 
           cx="0" 
@@ -398,7 +243,6 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
         />
       )}
 
-      {/* Mode Sub-Renderers */}
       {viewMode === 'flat' ? (
         <MiniGlobeFlat safeRadius={safeRadius} />
       ) : (
@@ -424,7 +268,6 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
         />
       )}
 
-      {/* Layer 8: Text Label */}
       {showLabel && (
         <text 
           x="0" 
@@ -440,7 +283,6 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
         </text>
       )}
 
-      {/* Layer 9: Stable Enlarged Touch/Pointer Hit Target */}
       <circle 
         cx="0" 
         cy="0" 

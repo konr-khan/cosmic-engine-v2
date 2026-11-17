@@ -7,6 +7,12 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MiniGlobe, projectContinentLandmasses } from './MiniGlobe';
+import {
+  buildTopdownGlobeGeometry,
+  buildTransverseGlobeGeometry,
+  buildAxialGlobeGeometry,
+  buildEulerGlobeGeometry,
+} from './miniglobe/globeGeometry';
 import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
 import { toRadians } from '../../utils/cosmicMath/core';
 
@@ -308,6 +314,47 @@ describe('<MiniGlobe /> Component', () => {
       );
       expect(eulerHtml).not.toContain('class="animate-pulse"');
       expect(eulerHtml).toContain('stroke="#94a3b8"');
+    });
+  });
+
+  describe('globeGeometry pure view-mode builders', () => {
+    const epsRad = toRadians(23.439281);
+
+    it('computes topdown, transverse, axial, and euler3d geometry deterministically', () => {
+      const topdown = buildTopdownGlobeGeometry({
+        safeRadius: 24,
+        sunLambdaVal: 90,
+        epsRad,
+        latVal: 47.06,
+        lonVal: 0,
+        todVal: 12,
+      });
+      expect(topdown.dayPath).toContain('A 24 24');
+      expect(topdown.isDaylight).toBe(true);
+      expect(topdown.eqRy).toBeCloseTo(24 * Math.cos(epsRad), 4);
+
+      const transverse = buildTransverseGlobeGeometry(24, 90, 47.06, 12, 0);
+      expect(transverse.dayPath).toBe('M 0 -24 A 24 24 0 0 0 0 24 Z');
+      expect(transverse.sideGeom.isDaylight).toBe(true);
+
+      const axial = buildAxialGlobeGeometry(24, 90, 47.06, 12, 0);
+      expect(axial.isDaylight).toBe(true);
+
+      const euler = buildEulerGlobeGeometry({
+        safeRadius: 24,
+        camera: { pitch: 20, yaw: 0, roll: 0 },
+        declination: 23.44,
+        sunLambdaVal: 90,
+        showTwilightBands: true,
+        latVal: 47.06,
+        lonVal: 0,
+        todVal: 12,
+      });
+      expect(euler.dayPath.length).toBeGreaterThan(0);
+      expect(euler.civilPath.length).toBeGreaterThan(0);
+      expect(euler.primeMeridianPath?.startsWith('M ')).toBe(true);
+      expect(euler.antimeridianPath?.startsWith('M ')).toBe(true);
+      expect(euler.isObsDay).toBe(true);
     });
   });
 });

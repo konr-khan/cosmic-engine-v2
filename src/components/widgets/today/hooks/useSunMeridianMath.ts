@@ -39,10 +39,11 @@ import {
   MeridianDiurnalChordConfig,
 } from '../MeridianDomeBase';
 import {
-  createMeridianRadialTickConfig,
-  createMeridianSwathConfig,
   createMeridianGateAnchorConfig,
   createMeridianPeakTargetConfig,
+  getSolarTwilightTier,
+  buildSunMeridianSwaths,
+  buildSunMeridianRadialTicks,
 } from './meridianConfigHelpers';
 
 export interface UseSunMeridianMathParams {
@@ -55,13 +56,7 @@ export interface UseSunMeridianMathParams {
 
 export const OBLIQUITY = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
 
-export const getTwilightTier = (alt: number): string => {
-  if (alt >= 0) return 'Daylight';
-  if (alt >= -6) return 'Civil Twilight';
-  if (alt >= -12) return 'Nautical Twilight';
-  if (alt >= -18) return 'Astro Twilight';
-  return 'Polar Night';
-};
+export const getTwilightTier = getSolarTwilightTier;
 
 export const useSunMeridianMath = ({
   solarData,
@@ -112,8 +107,7 @@ export const useSunMeridianMath = ({
     [latitude]
   );
 
-  const absLat = Math.abs(latitude);
-  const isTropical = absLat <= OBLIQUITY;
+  const isTropical = Math.abs(latitude) <= OBLIQUITY;
   const polarColureInfo: PolarColureInfo = useMemo(
     () => getPolarColureInfo(latitude),
     [latitude]
@@ -168,7 +162,7 @@ export const useSunMeridianMath = ({
     [todayPeakPoint.thetaDeg, decemberPoint.thetaDeg]
   );
 
-  // Annual seasonal migration direction:
+  // Annual seasonal migration direction
   const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
   const isApproachingJune = useMemo(() => {
     if (sunLambda !== undefined) {
@@ -185,22 +179,6 @@ export const useSunMeridianMath = ({
 
   const showJuneTick = juneNoon >= 0 || (isTwilightModeActive && juneNoon >= -18);
   const showDecemberTick = decemberNoon >= 0 || (isTwilightModeActive && decemberNoon >= -18);
-
-  const juneTickTitle = juneNoon >= 0
-    ? `June Solstice Noon Peak (+23.4°): ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}`
-    : `June Solstice Noon Peak (+23.4°): ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag} (${getTwilightTier(juneNoon)})`;
-
-  const decemberTickTitle = decemberNoon >= 0
-    ? `December Solstice Noon Peak (−23.4°): ${decemberNoon.toFixed(1)}° ${decemberSolstice.shortTag}`
-    : `December Solstice Noon Peak (−23.4°): ${decemberNoon.toFixed(1)}° ${decemberSolstice.shortTag} (${getTwilightTier(decemberNoon)})`;
-
-  const juneSwathTitle = juneNoon >= -18
-    ? `June Solstice Arc (+23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${juneNoon.toFixed(1)}° ${juneSolstice.shortTag}${juneNoon < 0 ? ` (${getTwilightTier(juneNoon)})` : ''}${isApproachingJune ? ' (Approaching Milestone)' : ''}`
-    : `June Solstice Arc (+23.4°): Plunges below −18° Astro Twilight (Polar Night)${isApproachingJune ? ' (Approaching Milestone)' : ''}`;
-
-  const decemberSwathTitle = decemberNoon >= -18
-    ? `December Solstice Arc (−23.4°): ${todayCulmination.altitude.toFixed(1)}° ${todayCulmination.shortTag} ↔ ${decemberNoon.toFixed(1)}° ${decemberSolstice.shortTag}${decemberNoon < 0 ? ` (${getTwilightTier(decemberNoon)})` : ''}${!isApproachingJune ? ' (Approaching Milestone)' : ''}`
-    : `December Solstice Arc (−23.4°): Plunges below −18° Astro Twilight (Polar Night)${!isApproachingJune ? ' (Approaching Milestone)' : ''}`;
 
   // --- Perpendicular Radial Tick Pins ---
   const juneTick = useMemo(
@@ -250,183 +228,96 @@ export const useSunMeridianMath = ({
   // Solstice Span in declination: 2 * 23.439° = 46.88°
   const solsticeSpanDeg = 2 * OBLIQUITY;
 
-  const elevationSubtitle = currentSunElevation >= 0
-    ? 'Daylight'
-    : currentSunElevation >= -6
-    ? 'Civil Twilight'
-    : currentSunElevation >= -12
-    ? 'Nautical Twilight'
-    : currentSunElevation >= -18
-    ? 'Astro Twilight'
+  const elevationSubtitle = currentSunElevation >= -18
+    ? getSolarTwilightTier(currentSunElevation)
     : 'Night';
 
   const showPolarSummerChord = Boolean(isPolar && polarSummerCounterpart && (isNorth ? showJuneTick : showDecemberTick));
   const showPolarWinterChord = Boolean(isPolar && polarWinterCounterpart && (isNorth ? showDecemberTick : showJuneTick));
 
   // --- Swaths configuration model ---
-  const swaths = useMemo<MeridianSwathConfig[]>(() => [
-    ...(juneSwathD
-      ? [
-          createMeridianSwathConfig(
-            'solstice-swath-june',
-            juneSwathD,
-            '#fbbf24',
-            juneSwathTitle,
-            {
-              strokeWidth: isApproachingJune ? 1.25 : 0.9,
-              strokeDasharray: '3 2',
-              strokeOpacity: isApproachingJune ? 0.85 : 0.40,
-              glow: true,
-              glowWidth: 4,
-              glowOpacity: isApproachingJune ? 0.25 : 0.10,
-            }
-          ),
-        ]
-      : []),
-    ...(decemberSwathD
-      ? [
-          createMeridianSwathConfig(
-            'solstice-swath-december',
-            decemberSwathD,
-            '#d97706',
-            decemberSwathTitle,
-            {
-              strokeWidth: !isApproachingJune ? 1.25 : 0.9,
-              strokeDasharray: '3 2',
-              strokeOpacity: !isApproachingJune ? 0.85 : 0.40,
-              glow: true,
-              glowWidth: 4,
-              glowOpacity: !isApproachingJune ? 0.25 : 0.10,
-            }
-          ),
-        ]
-      : []),
-    ...(isPolar && polarSummerCounterpartSwathD && (isNorth ? showJuneTick : showDecemberTick)
-      ? [
-          createMeridianSwathConfig(
-            'polar-counterpart-summer-swath',
-            polarSummerCounterpartSwathD,
-            summerSolsticeColor,
-            `Polar Summer Solstice Antimeridian Arc (180°): ${summerNoon.toFixed(1)}° (${isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
-            {
-              strokeWidth: isApproachingSummer ? 1.25 : 0.9,
-              strokeDasharray: '3 2',
-              strokeOpacity: isApproachingSummer ? 0.85 : 0.40,
-              glow: true,
-              glowWidth: 4,
-              glowOpacity: isApproachingSummer ? 0.25 : 0.10,
-            }
-          ),
-        ]
-      : []),
-    ...(isPolar && polarWinterCounterpartSwathD && (isNorth ? showDecemberTick : showJuneTick)
-      ? [
-          createMeridianSwathConfig(
-            'polar-counterpart-winter-swath',
-            polarWinterCounterpartSwathD,
-            winterSolsticeColor,
-            `Polar Winter Solstice Antimeridian Arc (180°): ${winterNoon.toFixed(1)}° (${!isApproachingSummer ? 'Approaching Milestone' : 'Receding'})`,
-            {
-              strokeWidth: !isApproachingSummer ? 1.25 : 0.9,
-              strokeDasharray: '3 2',
-              strokeOpacity: !isApproachingSummer ? 0.85 : 0.40,
-              glow: true,
-              glowWidth: 4,
-              glowOpacity: !isApproachingSummer ? 0.25 : 0.10,
-            }
-          ),
-        ]
-      : []),
-  ], [
-    juneSwathD,
-    isApproachingJune,
-    juneSwathTitle,
-    decemberSwathD,
-    decemberSwathTitle,
-    isPolar,
-    polarSummerCounterpartSwathD,
-    isNorth,
-    showJuneTick,
-    showDecemberTick,
-    summerSolsticeColor,
-    isApproachingSummer,
-    summerNoon,
-    polarWinterCounterpartSwathD,
-    winterSolsticeColor,
-    winterNoon,
-  ]);
+  const swaths = useMemo<MeridianSwathConfig[]>(
+    () =>
+      buildSunMeridianSwaths({
+        juneSwathD,
+        decemberSwathD,
+        todayCulmination,
+        juneSolstice,
+        decemberSolstice,
+        isApproachingJune,
+        isApproachingSummer,
+        isPolar,
+        isNorth,
+        showJuneTick,
+        showDecemberTick,
+        polarSummerCounterpartSwathD,
+        polarWinterCounterpartSwathD,
+        summerSolsticeColor,
+        winterSolsticeColor,
+        summerNoon,
+        winterNoon,
+      }),
+    [
+      juneSwathD,
+      decemberSwathD,
+      todayCulmination,
+      juneSolstice,
+      decemberSolstice,
+      isApproachingJune,
+      isApproachingSummer,
+      isPolar,
+      isNorth,
+      showJuneTick,
+      showDecemberTick,
+      polarSummerCounterpartSwathD,
+      polarWinterCounterpartSwathD,
+      summerSolsticeColor,
+      winterSolsticeColor,
+      summerNoon,
+      winterNoon,
+    ]
+  );
 
   // --- Radial ticks configuration model ---
-  const radialTicks = useMemo<MeridianRadialTickConfig[]>(() => [
-    ...(showJuneTick
-      ? [
-          createMeridianRadialTickConfig(
-            'summer-solstice-tick',
-            juneTick,
-            '#fbbf24',
-            juneTickTitle,
-            1.4
-          ),
-        ]
-      : []),
-    ...(showDecemberTick
-      ? [
-          createMeridianRadialTickConfig(
-            'winter-solstice-tick',
-            decemberTick,
-            '#d97706',
-            decemberTickTitle,
-            1.4
-          ),
-        ]
-      : []),
-    createMeridianRadialTickConfig(
-      'equinox-tick',
+  const radialTicks = useMemo<MeridianRadialTickConfig[]>(
+    () =>
+      buildSunMeridianRadialTicks({
+        showJuneTick,
+        showDecemberTick,
+        juneTick,
+        decemberTick,
+        equinoxTick,
+        juneSolstice,
+        decemberSolstice,
+        equinoxCulmination,
+        isPolar,
+        isNorth,
+        polarSummerCounterpart,
+        polarWinterCounterpart,
+        summerSolsticeColor,
+        winterSolsticeColor,
+        summerNoon,
+        winterNoon,
+      }),
+    [
+      showJuneTick,
+      showDecemberTick,
+      juneTick,
+      decemberTick,
       equinoxTick,
-      '#64748b',
-      `Equinox Noon Peak: ${equinoxCulmination.altitude.toFixed(1)}° ${equinoxCulmination.shortTag}`,
-      1.0
-    ),
-    ...(isPolar && polarSummerCounterpart && (isNorth ? showJuneTick : showDecemberTick)
-      ? [
-          createMeridianRadialTickConfig(
-            'polar-counterpart-summer-tick',
-            polarSummerCounterpart.oppositeTick,
-            summerSolsticeColor,
-            `Summer Solstice 24h Antimeridian (180°) Culmination: ${summerNoon.toFixed(1)}° (Midnight Sun)`,
-            1.4
-          ),
-        ]
-      : []),
-    ...(isPolar && polarWinterCounterpart && (isNorth ? showDecemberTick : showJuneTick)
-      ? [
-          createMeridianRadialTickConfig(
-            'polar-counterpart-winter-tick',
-            polarWinterCounterpart.oppositeTick,
-            winterSolsticeColor,
-            `Winter Solstice 24h Antimeridian (180°) Culmination: ${winterNoon.toFixed(1)}° (${getTwilightTier(winterNoon)})`,
-            1.4
-          ),
-        ]
-      : []),
-  ], [
-    showJuneTick,
-    juneTick,
-    juneTickTitle,
-    showDecemberTick,
-    decemberTick,
-    decemberTickTitle,
-    equinoxTick,
-    equinoxCulmination,
-    isPolar,
-    polarSummerCounterpart,
-    isNorth,
-    summerSolsticeColor,
-    summerNoon,
-    polarWinterCounterpart,
-    winterSolsticeColor,
-    winterNoon,
-  ]);
+      juneSolstice,
+      decemberSolstice,
+      equinoxCulmination,
+      isPolar,
+      isNorth,
+      polarSummerCounterpart,
+      polarWinterCounterpart,
+      summerSolsticeColor,
+      winterSolsticeColor,
+      summerNoon,
+      winterNoon,
+    ]
+  );
 
   // --- Today Diurnal Chord Configuration Model ---
   const todayChordConfig = useMemo<MeridianDiurnalChordConfig>(() => ({
@@ -473,50 +364,22 @@ export const useSunMeridianMath = ({
     currentSunElevation,
     elevationSubtitle,
     activeSunPoint,
-    todayChord,
     todayCulmination,
     peakAlt,
-    solsticeCulminations,
-    equinoxCulmination,
-    absLat,
-    isTropical,
-    polarColureInfo,
     isPolar,
-    isNorth,
-    juneSolstice,
-    decemberSolstice,
-    juneNoon,
-    decemberNoon,
+    isTropical,
     summerSolstice,
     winterSolstice,
     summerNoon,
     winterNoon,
-    todayPeakPoint,
-    junePoint,
-    decemberPoint,
-    equinoxPoint,
-    juneSwathD,
-    decemberSwathD,
-    isApproachingJune,
-    isApproachingSummer,
-    summerSolsticeColor,
-    winterSolsticeColor,
-    showJuneTick,
-    showDecemberTick,
-    juneTickTitle,
-    decemberTickTitle,
-    juneSwathTitle,
-    decemberSwathTitle,
-    juneTick,
-    decemberTick,
-    equinoxTick,
+    solsticeSpanDeg,
     polarSummerCounterpart,
     polarWinterCounterpart,
-    polarSummerCounterpartSwathD,
-    polarWinterCounterpartSwathD,
     showPolarSummerChord,
     showPolarWinterChord,
-    solsticeSpanDeg,
+    summerSolsticeColor,
+    winterSolsticeColor,
+    showDecemberTick,
     swaths,
     radialTicks,
     todayChordConfig,

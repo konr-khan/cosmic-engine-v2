@@ -3,6 +3,7 @@ import { MILESTONE_VISUAL_TOKENS, MACRO_THEME } from './macroTokens';
 import { EARTH_MILESTONES } from './milestones';
 import { OrbitSvgCanvasProps } from './types';
 import { MiniGlobe } from '../../common/MiniGlobe';
+import { MiniMoon } from '../../common/MiniMoon';
 
 export interface ExtendedOrbitSvgCanvasProps extends OrbitSvgCanvasProps {
   sunLambdaDeg?: number;
@@ -44,8 +45,9 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   const svgRef = React.useRef<SVGSVGElement | null>(null);
   const [isDraggingEarth, setIsDraggingEarth] = React.useState(false);
 
-  // In-plane solar illumination angle pointing from Earth toward Sun
+  // In-plane solar illumination angles pointing from Earth and Moon toward Sun
   const sunAngleDeg = Math.atan2(renderSunY - renderEarthY, renderSunX - renderEarthX) * (180 / Math.PI);
+  const moonSunAngleDeg = Math.atan2(renderSunY - renderMoonY, renderSunX - renderMoonX) * (180 / Math.PI);
 
   const handleEarthPointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -175,7 +177,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
               r={isHovered ? 18 : 11} 
               fill={color} 
               opacity={isHovered ? 0.45 : 0.20} 
-              className={`pointer-events-none transition-all duration-200 ${isHovered ? 'animate-pulse' : ''}`} 
+              className={`pointer-events-none transition-[r,opacity] duration-200 ${isHovered ? 'animate-pulse' : ''}`} 
             />
             <circle 
               cx={mx} 
@@ -184,7 +186,7 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
               fill={color} 
               stroke="#ffffff" 
               strokeWidth="1.5" 
-              className="pointer-events-none transition-all duration-150 drop-shadow-md"
+              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
             />
             
             {/* Labels & Dates */}
@@ -294,14 +296,18 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
       />
       
       {/* Moon Body */}
-      <circle 
-        cx={renderMoonX} 
-        cy={renderMoonY} 
-        r="4.5" 
-        fill="#f8fafc" 
-        stroke="#334155" 
-        strokeWidth="1" 
-        className="drop-shadow pointer-events-none" 
+      <MiniMoon
+        cx={renderMoonX}
+        cy={renderMoonY}
+        radius={4.5}
+        phase={0.25}
+        sunAngleDeg={moonSunAngleDeg}
+        fill="#020617"
+        fillOpacity={1}
+        stroke="#334155"
+        strokeWidth={1}
+        showCoronaGlow={false}
+        className="pointer-events-none"
       />
     </svg>
   );

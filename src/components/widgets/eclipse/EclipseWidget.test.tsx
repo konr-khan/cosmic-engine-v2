@@ -9,7 +9,9 @@ import {
   LiveSyzygyView,
   NodalPlaneVisualizer, 
   SkyViewSimulator, 
-  EclipseScanner
+  EclipseScanner,
+  useSyzygyMath,
+  UseSyzygyMathResult
 } from './index';
 import { calculateEclipseData, getJulianDate, dateToJulianDate } from '../../../utils/cosmicMath';
 import { EclipseData } from '../../../types';
@@ -421,6 +423,29 @@ describe('Eclipse Demonstrator Subsystem', () => {
     expect(axialHtml).toContain('stroke="#38bdf8"');
     expect(axialHtml).toContain('r="1.5"'); // Center sightline pin dot
     expect(axialHtml).toContain('fill="#0f172a"');
+  });
+
+  it('memoizes syzygy orbital geometry and normalized subsolar vector in useSyzygyMath', () => {
+    const jd = getJulianDate(new Date(2026, 2, 20), 12);
+    const eclipse = calculateEclipseData(jd);
+    let math!: UseSyzygyMathResult;
+
+    const Harness: React.FC = () => {
+      math = useSyzygyMath(eclipse);
+      return null;
+    };
+    renderToStaticMarkup(React.createElement(Harness));
+
+    expect(math.liveEarthX).toBe(310);
+    expect(math.liveEarthY).toBe(110);
+    expect(math.waxAsc.length + math.waxDesc.length).toBeGreaterThan(0);
+    expect(math.wanAsc.length + math.wanDesc.length).toBeGreaterThan(0);
+    const vecNorm = Math.hypot(
+      math.moonSubsolarVector.x,
+      math.moonSubsolarVector.y,
+      math.moonSubsolarVector.z
+    );
+    expect(vecNorm).toBeCloseTo(1, 4);
   });
 
   it('produces globally unique SVG defs IDs across co-mounted ShadowRayDiagram and NodalPlaneVisualizer instances', () => {

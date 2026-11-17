@@ -32,7 +32,7 @@ export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
         return (
           <g 
             key={star.id}
-            className="cursor-pointer transition-all"
+            className="cursor-pointer transition-opacity"
             style={{ touchAction: 'none' }}
             onClick={(e) => {
               e.stopPropagation();
