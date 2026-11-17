@@ -82,6 +82,7 @@ export class EphemerisWorkerManager {
   public ephemerisThrottleTimer: ReturnType<typeof setTimeout> | null;
   public pendingThrottledEntries: Map<string, PendingThrottledEphemerisEntry>;
   private readonly _boundOnUnload: () => void;
+  private _hasUnloadListeners: boolean;
 
   constructor() {
     this.worker = null;
@@ -97,11 +98,27 @@ export class EphemerisWorkerManager {
     this.ephemerisThrottleTimer = null;
     this.pendingThrottledEntries = new Map();
     this._boundOnUnload = () => this.terminate();
+    this._hasUnloadListeners = false;
 
+    this._ensureUnloadListeners();
+  }
+
+  private _ensureUnloadListeners(): void {
+    if (this._hasUnloadListeners) return;
     if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
       window.addEventListener('beforeunload', this._boundOnUnload);
       window.addEventListener('pagehide', this._boundOnUnload);
+      this._hasUnloadListeners = true;
     }
+  }
+
+  private _removeUnloadListeners(): void {
+    if (!this._hasUnloadListeners) return;
+    if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+      window.removeEventListener('beforeunload', this._boundOnUnload);
+      window.removeEventListener('pagehide', this._boundOnUnload);
+    }
+    this._hasUnloadListeners = false;
   }
 
   /**
@@ -154,11 +171,112 @@ export class EphemerisWorkerManager {
     }
   }
 
+  private _notifyCallbacks<TPayload>(
+    callbacks: Set<(payload: TPayload) => void>,
+    payload: TPayload,
+    label: string
+  ): void {
+    callbacks.forEach((cb) => {
+      try {
+        cb(payload);
+      } catch (e) {
+        console.error(`${label} callback error:`, e);
+      }
+    });
+  }
+
+  private _createUnsubscribe<TCallback>(
+    requestId: number,
+    signature: string,
+    callbacks: Set<TCallback>,
+    callback: TCallback
+  ): () => void {
+    return () => {
+      callbacks.delete(callback);
+      if (callbacks.size === 0) {
+        this._clearRequestTimeout(requestId);
+        this.pendingRequests.delete(requestId);
+        this.signatureToRequestId.delete(signature);
+      }
+    };
+  }
+
+  private _registerAndPost(
+    worker: Worker,
+    requestEntry: PendingRequestEntry,
+    requestType: EphemerisWorkerRequest['type']
+  ): number {
+    const requestId = ++this.nextRequestId;
+    this.pendingRequests.set(requestId, requestEntry);
+    this.signatureToRequestId.set(requestEntry.signature, requestId);
+    this._setRequestTimeout(requestId, requestEntry);
+
+    try {
+      const message = {
+        type: requestType,
+        id: requestId,
+        payload: requestEntry.params
+      } as EphemerisWorkerRequest;
+      worker.postMessage(message);
+    } catch (error) {
+      this._handleWorkerFailure(error);
+    }
+
+    return requestId;
+  }
+
+  private _handleWorkerMessage(response: EphemerisWorkerResponse): void {
+    if (!response) return;
+    const { type, id } = response;
+    if (typeof id === 'number') {
+      this._clearRequestTimeout(id);
+    }
+
+    const requestEntry = this.pendingRequests.get(id);
+    if (!requestEntry) return;
+
+    if (type === 'EPHEMERIS_SUCCESS' && requestEntry.type === 'EPHEMERIS') {
+      this.pendingRequests.delete(id);
+      this.signatureToRequestId.delete(requestEntry.signature);
+
+      // Discard stale responses that completed out of order
+      if (id < this.latestProcessedEphemerisId) {
+        return;
+      }
+      this.latestProcessedEphemerisId = id;
+      this._notifyCallbacks(requestEntry.callbacks, response.payload, 'Ephemeris');
+    } else if (type === 'ANNUAL_SOLAR_SUCCESS' && requestEntry.type === 'ANNUAL_SOLAR') {
+      this.pendingRequests.delete(id);
+      this.signatureToRequestId.delete(requestEntry.signature);
+      if (response.payload?.annualSolar) {
+        this._setInAnnualCache(this.annualSolarCache, requestEntry.signature, response.payload.annualSolar);
+      }
+      this._notifyCallbacks(requestEntry.callbacks, response.payload, 'Annual solar');
+    } else if (type === 'ANNUAL_LUNAR_SUCCESS' && requestEntry.type === 'ANNUAL_LUNAR') {
+      this.pendingRequests.delete(id);
+      this.signatureToRequestId.delete(requestEntry.signature);
+      if (response.payload?.annualLunar) {
+        this._setInAnnualCache(this.annualLunarCache, requestEntry.signature, response.payload.annualLunar);
+      }
+      this._notifyCallbacks(requestEntry.callbacks, response.payload, 'Annual lunar');
+    } else if (
+      type === 'EPHEMERIS_ERROR' ||
+      type === 'ANNUAL_SOLAR_ERROR' ||
+      type === 'ANNUAL_LUNAR_ERROR'
+    ) {
+      this.pendingRequests.delete(id);
+      this.signatureToRequestId.delete(requestEntry.signature);
+      if (type !== 'EPHEMERIS_ERROR' || id >= this.latestProcessedEphemerisId) {
+        this._executeSyncFallbackForEntry(requestEntry);
+      }
+    }
+  }
+
   /**
    * Handles unexpected worker failure (onerror / postMessage failure) by notifying pending requests
    * via synchronous fallback calculations and safely clearing the worker instance.
    */
-  public _handleWorkerFailure(error?: unknown): void {
+  public _handleWorkerFailure(_error?: unknown): void {
     this._isAvailable = false;
     if (this.ephemerisThrottleTimer) {
       clearTimeout(this.ephemerisThrottleTimer);
@@ -214,94 +332,14 @@ export class EphemerisWorkerManager {
 
     if (!this.worker) {
       try {
+        this._ensureUnloadListeners();
         this.worker = new Worker(
           new URL('./ephemerisWorker.ts', import.meta.url),
           { type: 'module' }
         );
 
         this.worker.onmessage = (event: MessageEvent<EphemerisWorkerResponse>) => {
-          const response = event.data;
-          if (!response) return;
-          const { type, id } = response;
-          if (typeof id === 'number') {
-            this._clearRequestTimeout(id);
-          }
-          if (type === 'EPHEMERIS_SUCCESS') {
-            const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry && requestEntry.type === 'EPHEMERIS') {
-              this.pendingRequests.delete(id);
-              this.signatureToRequestId.delete(requestEntry.signature);
-
-              // Discard stale responses that completed out of order
-              if (id < this.latestProcessedEphemerisId) {
-                return;
-              }
-              this.latestProcessedEphemerisId = id;
-
-              requestEntry.callbacks.forEach((cb) => {
-                try {
-                  cb(response.payload);
-                } catch (e) {
-                  console.error('Ephemeris callback error:', e);
-                }
-              });
-            }
-          } else if (type === 'EPHEMERIS_ERROR') {
-            const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry) {
-              this.pendingRequests.delete(id);
-              this.signatureToRequestId.delete(requestEntry.signature);
-              if (id >= this.latestProcessedEphemerisId) {
-                this._executeSyncFallbackForEntry(requestEntry);
-              }
-            }
-          } else if (type === 'ANNUAL_SOLAR_SUCCESS') {
-            const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry && requestEntry.type === 'ANNUAL_SOLAR') {
-              this.pendingRequests.delete(id);
-              this.signatureToRequestId.delete(requestEntry.signature);
-              if (response.payload?.annualSolar) {
-                this._setInAnnualCache(this.annualSolarCache, requestEntry.signature, response.payload.annualSolar);
-              }
-              requestEntry.callbacks.forEach((cb) => {
-                try {
-                  cb(response.payload);
-                } catch (e) {
-                  console.error('Annual solar callback error:', e);
-                }
-              });
-            }
-          } else if (type === 'ANNUAL_SOLAR_ERROR') {
-            const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry) {
-              this.pendingRequests.delete(id);
-              this.signatureToRequestId.delete(requestEntry.signature);
-              this._executeSyncFallbackForEntry(requestEntry);
-            }
-          } else if (type === 'ANNUAL_LUNAR_SUCCESS') {
-            const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry && requestEntry.type === 'ANNUAL_LUNAR') {
-              this.pendingRequests.delete(id);
-              this.signatureToRequestId.delete(requestEntry.signature);
-              if (response.payload?.annualLunar) {
-                this._setInAnnualCache(this.annualLunarCache, requestEntry.signature, response.payload.annualLunar);
-              }
-              requestEntry.callbacks.forEach((cb) => {
-                try {
-                  cb(response.payload);
-                } catch (e) {
-                  console.error('Annual lunar callback error:', e);
-                }
-              });
-            }
-          } else if (type === 'ANNUAL_LUNAR_ERROR') {
-            const requestEntry = this.pendingRequests.get(id);
-            if (requestEntry) {
-              this.pendingRequests.delete(id);
-              this.signatureToRequestId.delete(requestEntry.signature);
-              this._executeSyncFallbackForEntry(requestEntry);
-            }
-          }
+          this._handleWorkerMessage(event.data);
         };
 
         this.worker.onerror = (error) => {
@@ -332,7 +370,6 @@ export class EphemerisWorkerManager {
       return () => {};
     }
 
-    const requestId = ++this.nextRequestId;
     const requestEntry: PendingEphemerisEntry = {
       type: 'EPHEMERIS',
       signature,
@@ -347,29 +384,8 @@ export class EphemerisWorkerManager {
       }
     };
 
-    this.pendingRequests.set(requestId, requestEntry);
-    this.signatureToRequestId.set(signature, requestId);
-    this._setRequestTimeout(requestId, requestEntry);
-
-    try {
-      const message: EphemerisWorkerRequest = {
-        type: 'CALCULATE_EPHEMERIS',
-        id: requestId,
-        payload: requestEntry.params
-      };
-      worker.postMessage(message);
-    } catch (error) {
-      this._handleWorkerFailure(error);
-    }
-
-    return () => {
-      requestEntry.callbacks.delete(onResult);
-      if (requestEntry.callbacks.size === 0) {
-        this._clearRequestTimeout(requestId);
-        this.pendingRequests.delete(requestId);
-        this.signatureToRequestId.delete(signature);
-      }
-    };
+    const requestId = this._registerAndPost(worker, requestEntry, 'CALCULATE_EPHEMERIS');
+    return this._createUnsubscribe(requestId, signature, requestEntry.callbacks, onResult);
   }
 
   /**
@@ -391,7 +407,6 @@ export class EphemerisWorkerManager {
     for (const entry of entries) {
       if (entry.callbacks.size === 0) continue;
 
-      const requestId = ++this.nextRequestId;
       const requestEntry: PendingEphemerisEntry = {
         type: 'EPHEMERIS',
         signature: entry.signature,
@@ -407,20 +422,7 @@ export class EphemerisWorkerManager {
       };
 
       entry.dispatchedEntry = requestEntry;
-      this.pendingRequests.set(requestId, requestEntry);
-      this.signatureToRequestId.set(entry.signature, requestId);
-      this._setRequestTimeout(requestId, requestEntry);
-
-      try {
-        const message: EphemerisWorkerRequest = {
-          type: 'CALCULATE_EPHEMERIS',
-          id: requestId,
-          payload: requestEntry.params
-        };
-        worker.postMessage(message);
-      } catch (error) {
-        this._handleWorkerFailure(error);
-      }
+      this._registerAndPost(worker, requestEntry, 'CALCULATE_EPHEMERIS');
     }
   }
 
@@ -454,14 +456,7 @@ export class EphemerisWorkerManager {
       const existingEntry = this.pendingRequests.get(existingId);
       if (existingEntry && existingEntry.type === 'EPHEMERIS') {
         existingEntry.callbacks.add(onResult);
-        return () => {
-          existingEntry.callbacks.delete(onResult);
-          if (existingEntry.callbacks.size === 0) {
-            this._clearRequestTimeout(existingId);
-            this.pendingRequests.delete(existingId);
-            this.signatureToRequestId.delete(signature);
-          }
-        };
+        return this._createUnsubscribe(existingId, signature, existingEntry.callbacks, onResult);
       }
     }
 
@@ -573,14 +568,7 @@ export class EphemerisWorkerManager {
         const entry = existingEntry as PendingAnnualCalculationEntry<K>;
         const callbacks = entry.callbacks as Set<(result: AnnualCalculationPayloadMap[K]) => void>;
         callbacks.add(onResult);
-        return () => {
-          callbacks.delete(onResult);
-          if (callbacks.size === 0) {
-            this._clearRequestTimeout(existingId);
-            this.pendingRequests.delete(existingId);
-            this.signatureToRequestId.delete(signature);
-          }
-        };
+        return this._createUnsubscribe(existingId, signature, callbacks, onResult);
       }
     }
 
@@ -591,7 +579,6 @@ export class EphemerisWorkerManager {
       return () => {};
     }
 
-    const requestId = ++this.nextRequestId;
     const callbacks = new Set<(result: AnnualCalculationPayloadMap[K]) => void>([onResult]);
     const requestEntry = {
       type: entryType,
@@ -600,29 +587,8 @@ export class EphemerisWorkerManager {
       params
     } as PendingAnnualCalculationEntry<K>;
 
-    this.pendingRequests.set(requestId, requestEntry);
-    this.signatureToRequestId.set(signature, requestId);
-    this._setRequestTimeout(requestId, requestEntry);
-
-    try {
-      const message = {
-        type: requestType,
-        id: requestId,
-        payload: params
-      } as EphemerisWorkerRequest;
-      worker.postMessage(message);
-    } catch (error) {
-      this._handleWorkerFailure(error);
-    }
-
-    return () => {
-      callbacks.delete(onResult);
-      if (callbacks.size === 0) {
-        this._clearRequestTimeout(requestId);
-        this.pendingRequests.delete(requestId);
-        this.signatureToRequestId.delete(signature);
-      }
-    };
+    const requestId = this._registerAndPost(worker, requestEntry, requestType);
+    return this._createUnsubscribe(requestId, signature, callbacks, onResult);
   }
 
   /**
@@ -714,10 +680,7 @@ export class EphemerisWorkerManager {
    * Terminates the active singleton worker instance and resets pending requests and caches.
    */
   terminate(): void {
-    if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
-      window.removeEventListener('beforeunload', this._boundOnUnload);
-      window.removeEventListener('pagehide', this._boundOnUnload);
-    }
+    this._removeUnloadListeners();
     if (this.ephemerisThrottleTimer) {
       clearTimeout(this.ephemerisThrottleTimer);
       this.ephemerisThrottleTimer = null;

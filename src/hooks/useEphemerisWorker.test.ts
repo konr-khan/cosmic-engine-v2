@@ -1,16 +1,28 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useEphemerisWorker, useAnnualSolarWorker, useAnnualLunarWorker } from './useEphemerisWorker';
-import { EphemerisWorkerManager, ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
+import {
+  EphemerisWorkerManager,
+  ephemerisWorkerManager,
+  PendingRequestEntry,
+} from '../workers/ephemerisWorkerManager';
+import { MockWorker, installMockWorker } from '../workers/mockWorkerFixture';
+import { Latitude, Longitude, JulianDate } from '../types/units';
+import { EclipseData, LunarEvents } from '../types/astronomy';
 
 // Mock React's hooks to execute synchronously in pure unit test environment
 vi.mock('react', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('react')>();
   return {
     ...actual,
-    useMemo: (factory: () => any) => factory(),
-    useEffect: (effect: () => any) => effect(),
-    useState: (initial: any) => [typeof initial === 'function' ? initial() : initial, vi.fn()],
-    useRef: (initial: any) => ({ current: initial })
+    useMemo: <T>(factory: () => T): T => factory(),
+    useEffect: (effect: () => void | (() => void)): void => {
+      effect();
+    },
+    useState: <T>(initial: T | (() => T)): [T, ReturnType<typeof vi.fn>] => [
+      typeof initial === 'function' ? (initial as () => T)() : initial,
+      vi.fn(),
+    ],
+    useRef: <T>(initial: T): { current: T } => ({ current: initial }),
   };
 });
 
@@ -23,7 +35,7 @@ describe('useEphemerisWorker Hook Suite', () => {
       timeOfDay: 12,
       isLunarActive: true,
       isEclipseActive: true,
-      isOrbitalActive: true
+      isOrbitalActive: true,
     });
 
     expect(result.isWorkerActive).toBe(false);
@@ -40,7 +52,7 @@ describe('useEphemerisWorker Hook Suite', () => {
       timeOfDay: 12,
       isLunarActive: false,
       isEclipseActive: true,
-      isOrbitalActive: true
+      isOrbitalActive: true,
     });
 
     expect(noLunar.lunarEvents).toBeNull();
@@ -53,7 +65,7 @@ describe('useEphemerisWorker Hook Suite', () => {
       timeOfDay: 12,
       isLunarActive: true,
       isEclipseActive: true,
-      isOrbitalActive: false
+      isOrbitalActive: false,
     });
 
     expect(noOrbital.lunarEvents).toBeNull();
@@ -63,7 +75,7 @@ describe('useEphemerisWorker Hook Suite', () => {
   it('returns valid annual solar matrix via synchronous fallback when Worker is unavailable', () => {
     const solarData = useAnnualSolarWorker({
       year: 2026,
-      latitude: 47.06
+      latitude: 47.06,
     });
 
     expect(solarData).toHaveLength(365);
@@ -76,7 +88,7 @@ describe('useEphemerisWorker Hook Suite', () => {
     const lunarData = useAnnualLunarWorker({
       year: 2026,
       latitude: 47.06,
-      longitude: -122.81
+      longitude: -122.81,
     });
 
     expect(lunarData).toHaveLength(365);
@@ -86,7 +98,6 @@ describe('useEphemerisWorker Hook Suite', () => {
   });
 
   it('correctly handles initial render state and worker payload integration', () => {
-    // When worker is available and returns payload
     const result = useEphemerisWorker({
       latitude: 47.06,
       longitude: -122.81,
@@ -94,7 +105,7 @@ describe('useEphemerisWorker Hook Suite', () => {
       timeOfDay: 12,
       isLunarActive: true,
       isEclipseActive: true,
-      isOrbitalActive: true
+      isOrbitalActive: true,
     });
 
     expect(result).toBeDefined();
@@ -105,26 +116,35 @@ describe('useEphemerisWorker Hook Suite', () => {
 describe('EphemerisWorkerManager Singleton Suite', () => {
   const originalWorker = globalThis.Worker;
 
+  const getActiveMockWorker = (manager: EphemerisWorkerManager): MockWorker => {
+    expect(manager.worker).not.toBeNull();
+    return manager.worker as unknown as MockWorker;
+  };
+
   afterEach(() => {
     globalThis.Worker = originalWorker;
+    MockWorker.reset();
     ephemerisWorkerManager.terminate();
   });
 
   it('handles environment where Worker is undefined', () => {
-    delete (globalThis as any).Worker;
+    Reflect.deleteProperty(globalThis, 'Worker');
     const manager = new EphemerisWorkerManager();
 
     expect(manager.isAvailable()).toBe(false);
 
     const onResult = vi.fn();
-    const unsubscribe = manager.requestCalculation({
-      latitude: 45,
-      longitude: -120,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, onResult);
+    const unsubscribe = manager.requestCalculation(
+      {
+        latitude: 45,
+        longitude: -120,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      onResult
+    );
 
     expect(typeof unsubscribe).toBe('function');
     unsubscribe();
@@ -132,23 +152,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('multiplexes multiple requests through a single Worker instance', () => {
-    let workerInstanceCount = 0;
-
-    class MockWorker {
-      url: any;
-      options: any;
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-      constructor(url?: any, options?: any) {
-        workerInstanceCount++;
-        this.url = url;
-        this.options = options;
-      }
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     expect(manager.isAvailable()).toBe(true);
@@ -156,28 +160,35 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     const cb1 = vi.fn();
     const cb2 = vi.fn();
 
-    const unsub1 = manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, cb1);
+    const unsub1 = manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      cb1
+    );
 
-    const unsub2 = manager.requestCalculation({
-      latitude: 35.68,
-      longitude: 139.76,
-      julianDate: 2451545.0,
-      timeOfDay: 18,
-      calculateLunar: true,
-      calculateEclipse: false
-    }, cb2);
+    const unsub2 = manager.requestCalculation(
+      {
+        latitude: 35.68,
+        longitude: 139.76,
+        julianDate: 2451545.0,
+        timeOfDay: 18,
+        calculateLunar: true,
+        calculateEclipse: false,
+      },
+      cb2
+    );
 
     // Exactly 1 worker instance should be created
-    expect(workerInstanceCount).toBe(1);
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
-    expect((manager.worker as any).postMessage).toHaveBeenNthCalledWith(1, {
+    expect(MockWorker.instances).toHaveLength(1);
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(2);
+    expect(worker.postMessage).toHaveBeenNthCalledWith(1, {
       type: 'CALCULATE_EPHEMERIS',
       id: 1,
       payload: {
@@ -186,10 +197,10 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
         julianDate: 2451545.0,
         timeOfDay: 12,
         calculateLunar: true,
-        calculateEclipse: true
-      }
+        calculateEclipse: true,
+      },
     });
-    expect((manager.worker as any).postMessage).toHaveBeenNthCalledWith(2, {
+    expect(worker.postMessage).toHaveBeenNthCalledWith(2, {
       type: 'CALCULATE_EPHEMERIS',
       id: 2,
       payload: {
@@ -198,17 +209,15 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
         julianDate: 2451545.0,
         timeOfDay: 18,
         calculateLunar: true,
-        calculateEclipse: false
-      }
+        calculateEclipse: false,
+      },
     });
 
     // Simulate worker response for request 1
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 1,
-        payload: { lunarEvents: { test: 1 }, eclipse: null, timestamp: 100 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 1,
+      payload: { lunarEvents: { test: 1 }, eclipse: null, timestamp: 100 },
     });
 
     expect(cb1).toHaveBeenCalledWith({ lunarEvents: { test: 1 }, eclipse: null, timestamp: 100 });
@@ -217,12 +226,10 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     // Test unsubscribe before response for request 2
     unsub2();
 
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 2,
-        payload: { lunarEvents: { test: 2 }, eclipse: null, timestamp: 200 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 2,
+      payload: { lunarEvents: { test: 2 }, eclipse: null, timestamp: 200 },
     });
     expect(cb2).not.toHaveBeenCalled();
 
@@ -230,14 +237,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('coalesces concurrent requests with identical parameters into a single worker postMessage call', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
@@ -248,37 +248,26 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       julianDate: 2451545.0,
       timeOfDay: 12,
       calculateLunar: true,
-      calculateEclipse: true
+      calculateEclipse: true,
     };
 
-    // Dispatch 2 requests with identical parameters
     manager.requestCalculation(identicalParams, cb1);
     manager.requestCalculation(identicalParams, cb2);
 
-    // Should only have posted 1 message to the worker thread
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
-    // When worker responds, both callbacks must receive the payload
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 1,
-        payload: { lunarEvents: { distanceKm: 384400 }, eclipse: { type: 'NONE' }, timestamp: 500 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 1,
+      payload: { lunarEvents: { distanceKm: 384400 }, eclipse: { type: 'NONE' }, timestamp: 500 },
     });
     expect(cb1).toHaveBeenCalledWith({ lunarEvents: { distanceKm: 384400 }, eclipse: { type: 'NONE' }, timestamp: 500 });
     expect(cb2).toHaveBeenCalledWith({ lunarEvents: { distanceKm: 384400 }, eclipse: { type: 'NONE' }, timestamp: 500 });
   });
 
   it('deduplicates and coalesces identical in-flight requests without sending duplicate messages', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
@@ -290,25 +279,21 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       julianDate: 2451545.0,
       timeOfDay: 12,
       calculateLunar: true,
-      calculateEclipse: true
+      calculateEclipse: true,
     };
 
     const unsub1 = manager.requestCalculation(params, cb1);
     const unsub2 = manager.requestCalculation(params, cb2);
 
-    // Only 1 message should be sent to worker despite 2 subscribers
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
-    // Simulate successful worker response
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 1,
-        payload: { lunarEvents: { distanceKm: 384400 }, eclipse: null, timestamp: 12345 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 1,
+      payload: { lunarEvents: { distanceKm: 384400 }, eclipse: null, timestamp: 12345 },
     });
 
-    // Both subscribers should receive the payload
     expect(cb1).toHaveBeenCalledTimes(1);
     expect(cb2).toHaveBeenCalledTimes(1);
     expect(cb1).toHaveBeenCalledWith({ lunarEvents: { distanceKm: 384400 }, eclipse: null, timestamp: 12345 });
@@ -319,30 +304,24 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('handles worker errors gracefully and dispatches fallback calculations to pending callbacks', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, cb);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      cb
+    );
 
-    expect(manager.worker).not.toBeNull();
-
-    // Trigger worker error
-    (manager.worker as any).onerror(new Error('Worker script load failure'));
+    const worker = getActiveMockWorker(manager);
+    worker.emitError(new Error('Worker script load failure'));
 
     expect(manager.isAvailable()).toBe(false);
     expect(manager.worker).toBeNull();
@@ -353,32 +332,26 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('dispatches synchronous fallback calculations on EPHEMERIS_ERROR message', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, cb);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      cb
+    );
 
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_ERROR',
-        id: 1,
-        error: 'Calculation error'
-      }
+    getActiveMockWorker(manager).emitMessage({
+      type: 'EPHEMERIS_ERROR',
+      id: 1,
+      error: 'Calculation error',
     });
 
     expect(cb).toHaveBeenCalledTimes(1);
@@ -388,38 +361,29 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('handles annual solar calculation dispatch, result delivery, and deduplication', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
     const cb2 = vi.fn();
+    const lat = 47.06 as Latitude;
 
-    // Coalesced in-flight requests
-    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb1);
-    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb2);
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: lat }, cb1);
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: lat }, cb2);
 
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
-    expect((manager.worker as any).postMessage).toHaveBeenCalledWith({
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).toHaveBeenCalledWith({
       type: 'CALCULATE_ANNUAL_SOLAR',
       id: 1,
-      payload: { year: 2026, latitude: 47.06 }
+      payload: { year: 2026, latitude: 47.06 },
     });
 
-    // Simulate worker success response
     const mockSolar = [{ day: 1, sunrise: 7.5, sunset: 16.5 }];
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'ANNUAL_SOLAR_SUCCESS',
-        id: 1,
-        payload: { annualSolar: mockSolar }
-      }
+    worker.emitMessage({
+      type: 'ANNUAL_SOLAR_SUCCESS',
+      id: 1,
+      payload: { annualSolar: mockSolar },
     });
 
     expect(cb1).toHaveBeenCalledWith({ annualSolar: mockSolar });
@@ -427,31 +391,22 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
     // Subsequent request should hit cache directly without posting to worker
     const cb3 = vi.fn();
-    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb3);
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1); // Still 1
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: lat }, cb3);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
     expect(cb3).toHaveBeenCalledWith({ annualSolar: mockSolar });
   });
 
   it('handles annual solar fallback on ANNUAL_SOLAR_ERROR', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
-    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 }, cb);
+    manager.requestAnnualSolarCalculation({ year: 2026, latitude: 47.06 as Latitude }, cb);
 
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'ANNUAL_SOLAR_ERROR',
-        id: 1,
-        error: 'Failed'
-      }
+    getActiveMockWorker(manager).emitMessage({
+      type: 'ANNUAL_SOLAR_ERROR',
+      id: 1,
+      error: 'Failed',
     });
 
     expect(cb).toHaveBeenCalledTimes(1);
@@ -460,70 +415,55 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('handles annual lunar calculation dispatch, result delivery, and deduplication', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
     const cb2 = vi.fn();
+    const lat = 47.06 as Latitude;
+    const lon = -122.81 as Longitude;
 
-    // Coalesced in-flight requests
-    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb1);
-    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb2);
+    manager.requestAnnualLunarCalculation({ year: 2026, latitude: lat, longitude: lon }, cb1);
+    manager.requestAnnualLunarCalculation({ year: 2026, latitude: lat, longitude: lon }, cb2);
 
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
-    expect((manager.worker as any).postMessage).toHaveBeenCalledWith({
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).toHaveBeenCalledWith({
       type: 'CALCULATE_ANNUAL_LUNAR',
       id: 1,
-      payload: { year: 2026, latitude: 47.06, longitude: -122.81 }
+      payload: { year: 2026, latitude: 47.06, longitude: -122.81 },
     });
 
-    // Simulate worker success response
     const mockLunar = [{ day: 1, moonrise: 10, moonset: 22, distanceKm: 384400 }];
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'ANNUAL_LUNAR_SUCCESS',
-        id: 1,
-        payload: { annualLunar: mockLunar }
-      }
+    worker.emitMessage({
+      type: 'ANNUAL_LUNAR_SUCCESS',
+      id: 1,
+      payload: { annualLunar: mockLunar },
     });
 
     expect(cb1).toHaveBeenCalledWith({ annualLunar: mockLunar });
     expect(cb2).toHaveBeenCalledWith({ annualLunar: mockLunar });
 
-    // Subsequent request should hit cache directly without posting to worker
     const cb3 = vi.fn();
-    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb3);
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1); // Still 1
+    manager.requestAnnualLunarCalculation({ year: 2026, latitude: lat, longitude: lon }, cb3);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
     expect(cb3).toHaveBeenCalledWith({ annualLunar: mockLunar });
   });
 
   it('handles annual lunar fallback on ANNUAL_LUNAR_ERROR', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
-    manager.requestAnnualLunarCalculation({ year: 2026, latitude: 47.06, longitude: -122.81 }, cb);
+    manager.requestAnnualLunarCalculation(
+      { year: 2026, latitude: 47.06 as Latitude, longitude: -122.81 as Longitude },
+      cb
+    );
 
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'ANNUAL_LUNAR_ERROR',
-        id: 1,
-        error: 'Failed'
-      }
+    getActiveMockWorker(manager).emitMessage({
+      type: 'ANNUAL_LUNAR_ERROR',
+      id: 1,
+      error: 'Failed',
     });
 
     expect(cb).toHaveBeenCalledTimes(1);
@@ -532,28 +472,23 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('terminates active worker and clears pending requests on terminate()', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb = vi.fn();
-    manager.requestCalculation({
-      latitude: 0,
-      longitude: 0,
-      julianDate: 2451545.0,
-      timeOfDay: 0,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, cb);
+    manager.requestCalculation(
+      {
+        latitude: 0,
+        longitude: 0,
+        julianDate: 2451545.0,
+        timeOfDay: 0,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      cb
+    );
 
-    const workerInstance = manager.worker as any;
-    expect(workerInstance).not.toBeNull();
+    const workerInstance = getActiveMockWorker(manager);
 
     manager.terminate();
     expect(workerInstance.terminate).toHaveBeenCalled();
@@ -564,23 +499,20 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
   });
 
   it('triggers terminate() on window beforeunload and pagehide events', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
-    const listeners: Record<string, Function[]> = {};
+    installMockWorker();
+    const listeners: Record<string, Array<(ev?: unknown) => void>> = {};
     const originalWindow = globalThis.window;
-    (globalThis as any).window = {
-      addEventListener: (event: string, handler: Function) => {
-        listeners[event] = listeners[event] || [];
-        listeners[event].push(handler);
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: {
+        addEventListener: (event: string, handler: (ev?: unknown) => void) => {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        },
+        removeEventListener: vi.fn(),
       },
-      removeEventListener: vi.fn()
-    };
+    });
 
     const manager = new EphemerisWorkerManager();
     const terminateSpy = vi.spyOn(manager, 'terminate');
@@ -588,29 +520,38 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     expect(listeners['beforeunload']).toBeDefined();
     expect(listeners['pagehide']).toBeDefined();
 
-    listeners['beforeunload'][0]({} as any);
+    listeners['beforeunload'][0]();
     expect(terminateSpy).toHaveBeenCalledTimes(1);
 
-    listeners['pagehide'][0]({} as any);
+    listeners['pagehide'][0]();
     expect(terminateSpy).toHaveBeenCalledTimes(2);
 
-    (globalThis as any).window = originalWindow;
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: originalWindow,
+    });
   });
 
-  it('unregisters beforeunload and pagehide listeners on terminate()', () => {
+  it('unregisters beforeunload and pagehide listeners on terminate() and re-registers on lazy worker re-creation', () => {
+    installMockWorker();
     const originalWindow = globalThis.window;
-    const removed: Record<string, Function[]> = {};
-    const listeners: Record<string, Function[]> = {};
-    (globalThis as any).window = {
-      addEventListener: vi.fn((event: string, handler: Function) => {
-        listeners[event] = listeners[event] || [];
-        listeners[event].push(handler);
-      }),
-      removeEventListener: vi.fn((event: string, handler: Function) => {
-        removed[event] = removed[event] || [];
-        removed[event].push(handler);
-      })
-    };
+    const removed: Record<string, Array<(ev?: unknown) => void>> = {};
+    const listeners: Record<string, Array<(ev?: unknown) => void>> = {};
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: {
+        addEventListener: vi.fn((event: string, handler: (ev?: unknown) => void) => {
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(handler);
+        }),
+        removeEventListener: vi.fn((event: string, handler: (ev?: unknown) => void) => {
+          removed[event] = removed[event] || [];
+          removed[event].push(handler);
+        }),
+      },
+    });
 
     const manager = new EphemerisWorkerManager();
     expect(listeners['beforeunload']).toHaveLength(1);
@@ -622,85 +563,100 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     expect(removed['beforeunload'][0]).toBe(listeners['beforeunload'][0]);
     expect(removed['pagehide'][0]).toBe(listeners['pagehide'][0]);
 
-    (globalThis as any).window = originalWindow;
+    // Subsequent calculation lazily spawns a fresh worker and re-attaches unload listeners
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      vi.fn()
+    );
+    expect(MockWorker.instances).toHaveLength(1);
+    expect(listeners['beforeunload']).toHaveLength(2);
+    expect(listeners['pagehide']).toHaveLength(2);
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: originalWindow,
+    });
   });
 
   it('discards stale out-of-order ephemeris worker responses via monotonic sequence stamping', () => {
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
     const cb2 = vi.fn();
     const cb3 = vi.fn();
 
-    // Dispatch request 1 and 2
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, cb1);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      cb1
+    );
 
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451546.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, cb2);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451546.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      cb2
+    );
 
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(2);
 
     // Simulate response 2 arriving BEFORE response 1 (out-of-order completion)
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 2,
-        payload: { lunarEvents: { day: 2 }, eclipse: null, timestamp: 200 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 2,
+      payload: { lunarEvents: { day: 2 }, eclipse: null, timestamp: 200 },
     });
 
     expect(cb2).toHaveBeenCalledWith({ lunarEvents: { day: 2 }, eclipse: null, timestamp: 200 });
     expect(manager.latestProcessedEphemerisId).toBe(2);
 
     // Response 1 arrives later (stale sequence id: 1 < 2)
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 1,
-        payload: { lunarEvents: { day: 1 }, eclipse: null, timestamp: 100 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 1,
+      payload: { lunarEvents: { day: 1 }, eclipse: null, timestamp: 100 },
     });
 
-    // cb1 should be discarded and NOT called
     expect(cb1).not.toHaveBeenCalled();
 
     // Now dispatch request 3 (id: 3)
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451547.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true
-    }, cb3);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451547.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+      },
+      cb3
+    );
 
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 3,
-        payload: { lunarEvents: { day: 3 }, eclipse: null, timestamp: 300 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 3,
+      payload: { lunarEvents: { day: 3 }, eclipse: null, timestamp: 300 },
     });
 
     expect(cb3).toHaveBeenCalledWith({ lunarEvents: { day: 3 }, eclipse: null, timestamp: 300 });
@@ -709,85 +665,75 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('throttles rapid calculation requests and coalesces them into trailing worker calls', () => {
     vi.useFakeTimers();
-
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
     const cb2 = vi.fn();
     const cb3 = vi.fn();
 
-    // 1. Initial request with throttleMs: 100 fires immediately (leading-edge)
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      throttleMs: 100
-    }, cb1);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        throttleMs: 100,
+      },
+      cb1
+    );
 
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
-    expect((manager.worker as any).postMessage).toHaveBeenLastCalledWith({
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).toHaveBeenLastCalledWith({
       type: 'CALCULATE_EPHEMERIS',
       id: 1,
-      payload: expect.objectContaining({ julianDate: 2451545.0 })
+      payload: expect.objectContaining({ julianDate: 2451545.0 }),
     });
 
-    // Advance 20ms: inside the 100ms throttle window
     vi.advanceTimersByTime(20);
 
-    // 2. Second request during throttle window is queued
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.02,
-      timeOfDay: 12.5,
-      throttleMs: 100
-    }, cb2);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.02,
+        timeOfDay: 12.5,
+        throttleMs: 100,
+      },
+      cb2
+    );
 
-    // Still only 1 message posted
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
-    // Advance another 20ms (now 40ms from start)
     vi.advanceTimersByTime(20);
 
-    // 3. Third request updates the pending throttled entry with newest frame
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.04,
-      timeOfDay: 13.0,
-      throttleMs: 100
-    }, cb3);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.04,
+        timeOfDay: 13.0,
+        throttleMs: 100,
+      },
+      cb3
+    );
 
-    // Still only 1 message posted
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
-    // Advance timers to elapse the remaining 60ms (total 100ms)
     vi.advanceTimersByTime(60);
 
-    // Trailing timer should have fired, flushing pending requests (id: 2 and id: 3)
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(3);
-    expect((manager.worker as any).postMessage).toHaveBeenLastCalledWith({
+    expect(worker.postMessage).toHaveBeenCalledTimes(3);
+    expect(worker.postMessage).toHaveBeenLastCalledWith({
       type: 'CALCULATE_EPHEMERIS',
       id: 3,
-      payload: expect.objectContaining({ julianDate: 2451545.04, timeOfDay: 13.0 })
+      payload: expect.objectContaining({ julianDate: 2451545.04, timeOfDay: 13.0 }),
     });
 
-    // Simulate worker response for request 3
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 3,
-        payload: { lunarEvents: { day: 3 }, eclipse: null, timestamp: 999 }
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 3,
+      payload: { lunarEvents: { day: 3 }, eclipse: null, timestamp: 999 },
     });
 
     expect(cb3).toHaveBeenCalledWith({ lunarEvents: { day: 3 }, eclipse: null, timestamp: 999 });
@@ -797,93 +743,84 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('coalesces concurrent throttled calls with identical coordinates and merges different active flags', () => {
     vi.useFakeTimers();
-
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cbLeading = vi.fn();
     const cbLunarOnly = vi.fn();
     const cbEclipseOnly = vi.fn();
 
-    // 1. Initial leading-edge request (t = 0)
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      calculateLunar: true,
-      calculateEclipse: true,
-      throttleMs: 100
-    }, cbLeading);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        calculateLunar: true,
+        calculateEclipse: true,
+        throttleMs: 100,
+      },
+      cbLeading
+    );
 
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
-    // Advance 20ms into throttle window
     vi.advanceTimersByTime(20);
 
-    // 2. Widget A calls with calculateLunar: true, calculateEclipse: false
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.04,
-      timeOfDay: 13.0,
-      calculateLunar: true,
-      calculateEclipse: false,
-      throttleMs: 100
-    }, cbLunarOnly);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.04,
+        timeOfDay: 13.0,
+        calculateLunar: true,
+        calculateEclipse: false,
+        throttleMs: 100,
+      },
+      cbLunarOnly
+    );
 
-    // 3. Widget B calls with calculateLunar: false, calculateEclipse: true (same coord tuple!)
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.04,
-      timeOfDay: 13.0,
-      calculateLunar: false,
-      calculateEclipse: true,
-      throttleMs: 100
-    }, cbEclipseOnly);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.04,
+        timeOfDay: 13.0,
+        calculateLunar: false,
+        calculateEclipse: true,
+        throttleMs: 100,
+      },
+      cbEclipseOnly
+    );
 
-    // Still only 1 message posted while inside throttle window
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
-    // Advance remaining 80ms to elapse 100ms throttle timer
     vi.advanceTimersByTime(80);
 
-    // Trailing timer fires: single merged request dispatched with BOTH flags true
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(2);
-    expect((manager.worker as any).postMessage).toHaveBeenLastCalledWith({
+    expect(worker.postMessage).toHaveBeenCalledTimes(2);
+    expect(worker.postMessage).toHaveBeenLastCalledWith({
       type: 'CALCULATE_EPHEMERIS',
       id: 2,
       payload: expect.objectContaining({
         julianDate: 2451545.04,
         timeOfDay: 13.0,
         calculateLunar: true,
-        calculateEclipse: true
-      })
+        calculateEclipse: true,
+      }),
     });
 
-    // Simulate worker response for request 2
     const mockPayload = {
-      lunarEvents: { day: 4 } as any,
-      eclipse: { type: 'PARTIAL' } as any,
-      timestamp: 1000
+      lunarEvents: { distanceKm: 384400 } as unknown as LunarEvents,
+      eclipse: { type: 'PARTIAL_SOLAR' } as unknown as EclipseData,
+      timestamp: 1000,
     };
-    (manager.worker as any).onmessage({
-      data: {
-        type: 'EPHEMERIS_SUCCESS',
-        id: 2,
-        payload: mockPayload
-      }
+    worker.emitMessage({
+      type: 'EPHEMERIS_SUCCESS',
+      id: 2,
+      payload: mockPayload,
     });
 
-    // Both widget callbacks must receive the complete response without flag starvation
     expect(cbLunarOnly).toHaveBeenCalledWith(mockPayload);
     expect(cbEclipseOnly).toHaveBeenCalledWith(mockPayload);
 
@@ -892,98 +829,84 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   it('safely drops throttled request when unsubscribed before timer fires', () => {
     vi.useFakeTimers();
-
-    class MockWorker {
-      postMessage: any = vi.fn();
-      terminate: any = vi.fn();
-      onmessage: any = null;
-      onerror: any = null;
-    }
-
-    globalThis.Worker = MockWorker as any;
+    installMockWorker();
     const manager = new EphemerisWorkerManager();
 
     const cb1 = vi.fn();
     const cb2 = vi.fn();
 
-    // Leading request
-    manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.0,
-      timeOfDay: 12,
-      throttleMs: 100
-    }, cb1);
+    manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.0,
+        timeOfDay: 12,
+        throttleMs: 100,
+      },
+      cb1
+    );
 
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    const worker = getActiveMockWorker(manager);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
     vi.advanceTimersByTime(20);
 
-    // Throttled request that gets unsubscribed
-    const unsubscribe2 = manager.requestCalculation({
-      latitude: 47.06,
-      longitude: -122.81,
-      julianDate: 2451545.02,
-      timeOfDay: 12.5,
-      throttleMs: 100
-    }, cb2);
+    const unsubscribe2 = manager.requestCalculation(
+      {
+        latitude: 47.06,
+        longitude: -122.81,
+        julianDate: 2451545.02,
+        timeOfDay: 12.5,
+        throttleMs: 100,
+      },
+      cb2
+    );
 
     unsubscribe2();
 
-    // Advance timers beyond 100ms
     vi.advanceTimersByTime(100);
 
-    // No second message should be posted since callbacks became empty
-    expect((manager.worker as any).postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
     vi.useRealTimers();
   });
 
-  describe("Annual Matrix LRU Cache Policy", () => {
-    it("evicts the oldest entry when cache size exceeds MAX_ANNUAL_CACHE_SIZE (16)", () => {
+  describe('Annual Matrix LRU Cache Policy', () => {
+    it('evicts the oldest entry when cache size exceeds MAX_ANNUAL_CACHE_SIZE (16)', () => {
       const manager = new EphemerisWorkerManager();
       manager._isAvailable = false;
 
       for (let i = 0; i < 17; i++) {
-        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as any }, () => {});
+        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as Latitude }, () => {});
       }
 
       expect(manager.annualSolarCache.size).toBe(16);
-      expect(manager.annualSolarCache.has("SOLAR_2026_10")).toBe(false);
-      expect(manager.annualSolarCache.has("SOLAR_2026_26")).toBe(true);
+      expect(manager.annualSolarCache.has('SOLAR_2026_10')).toBe(false);
+      expect(manager.annualSolarCache.has('SOLAR_2026_26')).toBe(true);
     });
 
-    it("promotes accessed cache entry to most recently used on cache hit", () => {
+    it('promotes accessed cache entry to most recently used on cache hit', () => {
       const manager = new EphemerisWorkerManager();
       manager._isAvailable = false;
 
       for (let i = 0; i < 16; i++) {
-        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as any }, () => {});
+        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as Latitude }, () => {});
       }
 
       // Access key 10 to refresh recency
-      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 10 as any }, () => {});
+      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 10 as Latitude }, () => {});
 
       // Add a 17th entry (lat 26)
-      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 26 as any }, () => {});
+      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 26 as Latitude }, () => {});
 
-      // Key 10 should still be retained
-      expect(manager.annualSolarCache.has("SOLAR_2026_10")).toBe(true);
-      // Key 11 was the oldest non-refreshed entry, so it was evicted
-      expect(manager.annualSolarCache.has("SOLAR_2026_11")).toBe(false);
+      expect(manager.annualSolarCache.has('SOLAR_2026_10')).toBe(true);
+      expect(manager.annualSolarCache.has('SOLAR_2026_11')).toBe(false);
     });
 
-    it("invokes synchronous fallback when worker request times out", () => {
+    it('invokes synchronous fallback when worker request times out', () => {
       vi.useFakeTimers();
       try {
-        class HangingWorker {
-          postMessage: any = vi.fn();
-          terminate: any = vi.fn();
-          onmessage: any = null;
-          onerror: any = null;
-        }
-
-        globalThis.Worker = HangingWorker as any;
+        installMockWorker();
         const manager = new EphemerisWorkerManager();
 
         const cb = vi.fn();
@@ -994,7 +917,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
             julianDate: 2451545.0,
             timeOfDay: 12,
             calculateLunar: true,
-            calculateEclipse: true
+            calculateEclipse: true,
           },
           cb
         );
@@ -1002,7 +925,6 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
         expect(manager.pendingRequests.size).toBe(1);
         expect(cb).not.toHaveBeenCalled();
 
-        // Advance timers by 5000ms to trigger timeout
         vi.advanceTimersByTime(5000);
 
         expect(cb).toHaveBeenCalledTimes(1);
@@ -1016,17 +938,17 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     });
   });
 
-  describe("Synchronous Fallback Hardening & Pathological Input Resilience", () => {
-    it("handles NaN coordinates and non-finite Julian Date in useEphemerisWorker without throwing", () => {
+  describe('Synchronous Fallback Hardening & Pathological Input Resilience', () => {
+    it('handles NaN coordinates and non-finite Julian Date in useEphemerisWorker without throwing', () => {
       expect(() => {
         const result = useEphemerisWorker({
-          latitude: NaN as any,
-          longitude: NaN as any,
-          julianDate: NaN as any,
-          timeOfDay: NaN as any,
+          latitude: NaN as Latitude,
+          longitude: NaN as Longitude,
+          julianDate: NaN as JulianDate,
+          timeOfDay: NaN,
           isLunarActive: true,
           isEclipseActive: true,
-          isOrbitalActive: true
+          isOrbitalActive: true,
         });
         expect(result).toBeDefined();
         expect(result.isWorkerActive).toBe(false);
@@ -1035,15 +957,15 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       }).not.toThrow();
     });
 
-    it("handles extreme out-of-range coordinates in useEphemerisWorker gracefully", () => {
+    it('handles extreme out-of-range coordinates in useEphemerisWorker gracefully', () => {
       const result = useEphemerisWorker({
-        latitude: 999 as any,
-        longitude: -5000 as any,
-        julianDate: 2451545.0,
-        timeOfDay: 35 as any,
+        latitude: 999 as Latitude,
+        longitude: -5000 as Longitude,
+        julianDate: 2451545.0 as JulianDate,
+        timeOfDay: 35,
         isLunarActive: true,
         isEclipseActive: true,
-        isOrbitalActive: true
+        isOrbitalActive: true,
       });
 
       expect(result).toBeDefined();
@@ -1051,10 +973,10 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       expect(result.eclipse).not.toBeNull();
     });
 
-    it("handles NaN and extreme years in useAnnualSolarWorker without throwing", () => {
+    it('handles NaN and extreme years in useAnnualSolarWorker without throwing', () => {
       const nanSolar = useAnnualSolarWorker({
         year: NaN,
-        latitude: 47.06
+        latitude: 47.06,
       });
       expect(nanSolar).toBeDefined();
       expect(Array.isArray(nanSolar)).toBe(true);
@@ -1062,17 +984,17 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
       const extremeSolar = useAnnualSolarWorker({
         year: 999999,
-        latitude: 47.06
+        latitude: 47.06,
       });
       expect(extremeSolar).toBeDefined();
       expect(extremeSolar.length).toBeGreaterThan(0);
     });
 
-    it("handles NaN and extreme years in useAnnualLunarWorker without throwing", () => {
+    it('handles NaN and extreme years in useAnnualLunarWorker without throwing', () => {
       const nanLunar = useAnnualLunarWorker({
         year: NaN,
         latitude: 47.06,
-        longitude: -122.81
+        longitude: -122.81,
       });
       expect(nanLunar).toBeDefined();
       expect(Array.isArray(nanLunar)).toBe(true);
@@ -1081,42 +1003,45 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       const extremeLunar = useAnnualLunarWorker({
         year: 999999,
         latitude: 47.06,
-        longitude: -122.81
+        longitude: -122.81,
       });
       expect(extremeLunar).toBeDefined();
       expect(extremeLunar.length).toBeGreaterThan(0);
     });
 
-    it("guarantees callback delivery in EphemerisWorkerManager fallback even under simulated calculation error", () => {
+    it('guarantees callback delivery in EphemerisWorkerManager fallback even under simulated calculation error', () => {
       const manager = new EphemerisWorkerManager();
       manager._isAvailable = false;
 
       const solarCb = vi.fn();
-      manager.requestAnnualSolarCalculation({ year: NaN, latitude: NaN as any }, solarCb);
+      manager.requestAnnualSolarCalculation({ year: NaN, latitude: NaN as Latitude }, solarCb);
       expect(solarCb).toHaveBeenCalledTimes(1);
       expect(solarCb.mock.calls[0][0].annualSolar).toBeDefined();
 
       const lunarCb = vi.fn();
-      manager.requestAnnualLunarCalculation({ year: NaN, latitude: NaN as any, longitude: NaN as any }, lunarCb);
+      manager.requestAnnualLunarCalculation(
+        { year: NaN, latitude: NaN as Latitude, longitude: NaN as Longitude },
+        lunarCb
+      );
       expect(lunarCb).toHaveBeenCalledTimes(1);
       expect(lunarCb.mock.calls[0][0].annualLunar).toBeDefined();
     });
 
-    it("guarantees callback dispatch with safe empty payloads in _executeSyncFallbackForEntry when error occurs", () => {
+    it('guarantees callback dispatch with safe empty payloads in _executeSyncFallbackForEntry when error occurs', () => {
       const manager = new EphemerisWorkerManager();
       const solarCb = vi.fn();
 
-      const brokenSolarEntry: any = {
-        type: 'ANNUAL_SOLAR',
+      const brokenSolarEntry = {
+        type: 'ANNUAL_SOLAR' as const,
         signature: 'BROKEN_SOLAR',
         callbacks: new Set([solarCb]),
         params: {
-          get year() {
+          get year(): number {
             throw new Error('Simulated property accessor failure');
           },
-          latitude: 45
-        }
-      };
+          latitude: 45 as Latitude,
+        },
+      } satisfies PendingRequestEntry;
 
       expect(() => {
         manager._executeSyncFallbackForEntry(brokenSolarEntry);
@@ -1125,18 +1050,18 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       expect(solarCb).toHaveBeenCalledWith({ annualSolar: [] });
 
       const lunarCb = vi.fn();
-      const brokenLunarEntry: any = {
-        type: 'ANNUAL_LUNAR',
+      const brokenLunarEntry = {
+        type: 'ANNUAL_LUNAR' as const,
         signature: 'BROKEN_LUNAR',
         callbacks: new Set([lunarCb]),
         params: {
-          get year() {
+          get year(): number {
             throw new Error('Simulated property accessor failure');
           },
-          latitude: 45,
-          longitude: 0
-        }
-      };
+          latitude: 45 as Latitude,
+          longitude: 0 as Longitude,
+        },
+      } satisfies PendingRequestEntry;
 
       expect(() => {
         manager._executeSyncFallbackForEntry(brokenLunarEntry);
@@ -1145,32 +1070,32 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       expect(lunarCb).toHaveBeenCalledWith({ annualLunar: [] });
 
       const ephemerisCb = vi.fn();
-      const brokenEphemerisEntry: any = {
-        type: 'EPHEMERIS',
+      const brokenEphemerisEntry = {
+        type: 'EPHEMERIS' as const,
         signature: 'BROKEN_EPHEMERIS',
         callbacks: new Set([ephemerisCb]),
         params: {
-          get latitude() {
+          get latitude(): Latitude {
             throw new Error('Simulated property accessor failure');
           },
-          longitude: 0,
-          julianDate: 2451545.0,
+          longitude: 0 as Longitude,
+          julianDate: 2451545.0 as JulianDate,
           timeOfDay: 12,
           calculateLunar: true,
-          calculateEclipse: true
-        }
-      };
+          calculateEclipse: true,
+        },
+      } satisfies PendingRequestEntry;
 
       expect(() => {
         manager._executeSyncFallbackForEntry(brokenEphemerisEntry);
       }).not.toThrow();
 
-      expect(ephemerisCb).toHaveBeenCalledWith(expect.objectContaining({
-        lunarEvents: null,
-        eclipse: null
-      }));
+      expect(ephemerisCb).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lunarEvents: null,
+          eclipse: null,
+        })
+      );
     });
   });
 });
-
-

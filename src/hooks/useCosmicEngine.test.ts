@@ -3,15 +3,21 @@ import { useCosmicEngine, resolveActiveCategory } from './useCosmicEngine';
 
 // Mock React hooks to execute immediately in pure unit test environment
 vi.mock('react', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('react')>();
   return {
     ...actual,
-    useMemo: (factory: () => any) => factory(),
-    useState: (initial: any) => [typeof initial === 'function' ? initial() : initial, () => {}],
-    useEffect: (effect: () => any) => { effect(); },
-    useRef: (initial: any) => ({ current: initial }),
-    useCallback: (fn: any) => fn,
-    useSyncExternalStore: (subscribe: any, getSnapshot: () => any) => getSnapshot()
+    useMemo: <T>(factory: () => T): T => factory(),
+    useState: <T>(initial: T | (() => T)): [T, () => void] => [
+      typeof initial === 'function' ? (initial as () => T)() : initial,
+      () => {},
+    ],
+    useEffect: (effect: () => void | (() => void)): void => {
+      effect();
+    },
+    useRef: <T>(initial: T): { current: T } => ({ current: initial }),
+    useCallback: <T extends (...args: never[]) => unknown>(fn: T): T => fn,
+    useSyncExternalStore: <T>(_subscribe: (onStoreChange: () => void) => () => void, getSnapshot: () => T): T =>
+      getSnapshot(),
   };
 });
 

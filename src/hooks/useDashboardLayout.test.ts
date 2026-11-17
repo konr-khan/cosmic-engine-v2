@@ -2,46 +2,60 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PRESET_LAYOUTS, DEFAULT_WINDOWS, STORAGE_KEY } from './useDashboardLayout';
 
 // Mock React hooks to test the layout hook state transitions deterministically
-let stateStore: Record<string, any> = {};
-let stateSetters: Record<string, (val: any) => void> = {};
+let stateStore: Record<string, unknown> = {};
 let stateCounter = 0;
 
 vi.mock('react', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('react')>();
   return {
     ...actual,
-    useState: (initial: any) => {
+    useState: <T>(initial: T | (() => T)): [T, (val: T | ((prev: T) => T)) => void] => {
       const id = String(stateCounter++);
       if (!(id in stateStore)) {
-        stateStore[id] = typeof initial === 'function' ? initial() : initial;
+        stateStore[id] = typeof initial === 'function' ? (initial as () => T)() : initial;
       }
-      const setter = (val: any) => {
-        stateStore[id] = typeof val === 'function' ? val(stateStore[id]) : val;
+      const setter = (val: T | ((prev: T) => T)): void => {
+        const current = stateStore[id] as T;
+        stateStore[id] = typeof val === 'function' ? (val as (prev: T) => T)(current) : val;
       };
-      stateSetters[id] = setter;
-      return [stateStore[id], setter];
+      return [stateStore[id] as T, setter];
     },
-    useEffect: (effect: () => any) => { effect(); },
-    useCallback: (fn: any) => fn,
-    useMemo: (factory: () => any) => factory()
+    useEffect: (effect: () => void | (() => void)): void => {
+      effect();
+    },
+    useCallback: <T extends (...args: never[]) => unknown>(fn: T): T => fn,
+    useMemo: <T>(factory: () => T): T => factory(),
   };
 });
 
 let mockStorage: Record<string, string> = {};
-const mockLocalStorage = {
-  getItem: (key: string) => mockStorage[key] ?? null,
-  setItem: (key: string, value: string) => { mockStorage[key] = String(value); },
-  removeItem: (key: string) => { delete mockStorage[key]; },
-  clear: () => { mockStorage = {}; }
+const mockLocalStorage: Storage = {
+  get length(): number {
+    return Object.keys(mockStorage).length;
+  },
+  key: (index: number): string | null => Object.keys(mockStorage)[index] ?? null,
+  getItem: (key: string): string | null => mockStorage[key] ?? null,
+  setItem: (key: string, value: string): void => {
+    mockStorage[key] = String(value);
+  },
+  removeItem: (key: string): void => {
+    delete mockStorage[key];
+  },
+  clear: (): void => {
+    mockStorage = {};
+  },
 };
-(globalThis as any).localStorage = mockLocalStorage;
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  writable: true,
+  value: mockLocalStorage,
+});
 
 import { useDashboardLayout } from './useDashboardLayout';
 
 describe('useDashboardLayout hook suite', () => {
   beforeEach(() => {
     stateStore = {};
-    stateSetters = {};
     stateCounter = 0;
     mockStorage = {};
   });

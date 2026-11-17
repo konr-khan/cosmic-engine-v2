@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCosmicEngine } from './hooks/useCosmicEngine';
 import { useChronometerStore, cosmicActions } from './store/cosmicStore';
 import { useDashboardLayout, ICON_MAP, PRESET_LAYOUTS } from './hooks/useDashboardLayout';
-import { ephemerisWorkerManager } from './workers/ephemerisWorkerManager';
 import { ObsNavbar } from './components/layout/ObsNavbar';
 import { OrbitalChronometer } from './components/layout/OrbitalChronometer';
 import { DashboardWindow } from './components/layout/DashboardWindow';
@@ -276,13 +275,6 @@ const MemoizedChronometerDock = React.memo<MemoizedChronometerDockProps>(functio
 
 export default function App() {
   const [isDockCollapsed, setIsDockCollapsed] = useState<boolean>(false);
-
-  // Terminate singleton Web Worker instance on root component unmount / page teardown
-  useEffect(() => {
-    return () => {
-      ephemerisWorkerManager.terminate();
-    };
-  }, []);
 
   const {
     activePresetKey,
