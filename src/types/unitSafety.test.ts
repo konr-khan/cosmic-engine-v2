@@ -180,7 +180,7 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
     expect(violations.map(v => v.idValue)).toEqual(['sunGlow', 'axialEarthClip', 'outsideEarth']);
   });
 
-  it('enforces documentation SSoT integrity (0 broken links, 0 machine-local file:/// URIs, valid DE/ADR IDs, and synchronized Quick Index line ranges)', () => {
+  it('enforces documentation SSoT integrity (links, #anchors, F/M/DE/ADR IDs, 1:1 ADR index, living paths & 100% ARCHITECTURE.md inventory)', () => {
     const { totalFiles, violations } = runDocIntegrityCheck();
     expect(totalFiles).toBeGreaterThan(45);
     if (violations.length > 0) {

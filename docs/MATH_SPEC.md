@@ -17,9 +17,9 @@ This document serves as the ground-truth mathematical reference for **Cosmic Eng
 | **[7. Gyro-Morph Armillary](#7-gyro-morph-armillary-multi-model-unification--astrolabe-projections)** | `L471–L873` | 5-model continuum, stereographic/Rojas/horizon plates, 2-phase camera staging, 3D illumination & laser morph | `src/utils/cosmicMath/armillary/**` |
 | **[8. Tidal Gravity Vectors](#8-gravitational-tidal-vectors--syzygy-deformation)** | `L874–L924` | Alignment factor, spring/neap bulge deformation, 4-quadrant nodal orbit | `src/components/widgets/tides/hooks/useTideMath.ts` |
 | **[9. Apparent Diameters](#9-dynamic-ephemeris-distance--apparent-diameter-scaling)** | `L925–L944` | Subsolar (AU) and Sublunar (km) angular diameter scaling | `src/utils/cosmicMath/{solar,lunar}.ts` |
-| **[10. 3D Scene Graph](#10-unified-3d-astronomical-scene-graph--canonical-camera-rigs)** | `L945–L1213` | Heliocentric/Geocentric/Topocentric frames, camera rigs, limb clipping & Great Meridian Ring | `src/utils/cosmicMath/scene/**`, `globe.ts`, `MiniGlobe.tsx` |
+| **[10. 3D Scene Graph](#10-unified-3d-astronomical-scene-graph--canonical-camera-rigs)** | `L945–L1213` | Heliocentric/Geocentric/Topocentric frames, camera rigs, limb clipping & Great Meridian Ring | `src/utils/cosmicMath/scene/**`, `globe.ts`, `globeGeometry.ts` |
 | **[11. Astro Constants](#11-centralized-physical-astronomical-constants--temporal-purity-astroconstantsts)** | `L1214–L1256` | IAU/WGS-84/Meeus registry, epoch purity & J2000 date fixtures | `src/utils/cosmicMath/astroConstants.ts` |
-| **[12. Today's Sky Dome](#12-sky-dome-projection--diurnal-transit-kinematics-todayskyts)** | `L1257–L1702` | Diurnal paths, culmination bearings (`S`, `N`, `Z`), colure chords | `src/utils/cosmicMath/today/**` |
+| **[12. Today's Sky Dome](#12-sky-dome-projection--diurnal-transit-kinematics-srcutilscosmicmathtoday)** | `L1257–L1702` | Diurnal paths, culmination bearings (`S`, `N`, `Z`), colure chords | `src/utils/cosmicMath/today/**` |
 | **[13. Diurnal Ground Tracks](#13-diurnal-celestial-ground-tracks-antimeridian-seam-interpolation--gated-lunar-nodes)** | `L1703–L1771` | $\pm 12\text{h}$ subsolar/sublunar tracks, antimeridian seam wrapping, nodal gates | `src/utils/cosmicMath/terminatorTracks.ts` |
 
 ---
@@ -1194,7 +1194,7 @@ Given geographic coordinates $(\lambda_{\text{geo}}, \phi_{\text{geo}})$ and loc
 4. **Front-Hemisphere Edge Clipping ($z \ge 0$)**:
    For each polygon edge $\vec{v}_1 \to \vec{v}_2$ crossing $z = 0$, the zero-crossing parameter $t_0 = \frac{-v_{1, z}}{v_{2, z} - v_{1, z}} \in [0, 1]$ yields horizon intersection point $\vec{v}_{\text{cross}} = (1 - t_0)\vec{v}_1 + t_0 \vec{v}_2$. Normalizing $\hat{v} = \vec{v}_{\text{cross}} / \|\vec{v}_{\text{cross}}\|$ guarantees exact limb boundary alignment $(R \hat{v}_x, -R \hat{v}_y)$ with zero polygon chord-cutting.
 
-### H. Great Meridian Ring 3D Parametric Formulation (`MiniGlobe.tsx`)
+### H. Great Meridian Ring 3D Parametric Formulation (`globeGeometry.ts` / `MiniGlobeSphere.tsx`)
 
 In the terrestrial body frame, the Prime Meridian ($0^\circ$) and Antimeridian ($180^\circ$) define the canonical longitudinal reference circle lying in the $Y\text{–}Z$ plane. Given UTC decimal time of day $t \in [0, 24)$, the Greenwich hour angle relative to the solar midnight meridian is $H_0 = (t - 12.0) \times 15.0^\circ$:
 
@@ -1254,7 +1254,7 @@ To guarantee absolute mathematical reproducibility, eliminate runtime timezone l
 
 ---
 
-## 12. Sky Dome Projection & Diurnal Transit Kinematics (`todaySky.ts`)
+## 12. Sky Dome Projection & Diurnal Transit Kinematics (`src/utils/cosmicMath/today/`)
 
 The **Today's Sky Horizon Dome** subsystem projects topocentric celestial coordinates (hour angle $H$, declination $\delta$, and observer latitude $\phi$) into symmetrical 2D SVG canvas viewports (`viewBox="0 0 260 138"`), modeling diurnal paths, atmospheric twilight boundaries, and draconic nodal crossings.
 
@@ -1471,7 +1471,7 @@ For a body with declination $\delta$ and observer latitude $\phi$, the true hori
    [\text{N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW}]
    \]
 
-### J. Celestial Meridian Colure Profile & 3D Diurnal Chord Kinematics (`todaySky.ts`)
+### J. Celestial Meridian Colure Profile & 3D Diurnal Chord Kinematics (`meridian.ts`)
 
 The **Celestial Meridian Profile** subsystem (`SunMeridianDome.tsx`, `MoonMeridianDome.tsx`) projects the observer's sky onto the North–South celestial colure ($S \longleftrightarrow Z \longleftrightarrow N$) side-on plane, visualizing annual solstice corridors, lunar standstill swaths, and instantaneous diurnal transits.
 

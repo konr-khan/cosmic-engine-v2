@@ -1,7 +1,7 @@
 # Project: Cosmic Engine V2.0 — Feature Inventory & Milestone Matrix
 
 > [!NOTE]
-> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F89`)** and **Milestone & Phase Matrix (`M1–M44`)**.
+> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F94`)** and **Milestone & Phase Matrix (`M1–M45`)**.
 
 ---
 
@@ -97,6 +97,11 @@
 | F87 | `ARCHITECTURE.md` SSoT Split, Prompt Kernel Slimming & Documentation Sweep | Extracted live system topology, runtime contracts, code layout, and task routing into `ARCHITECTURE.md`; slimmed `AGENTS.md` prompt kernel by 35.6% (`17.69 KB` $\to$ `11.40 KB`); synchronized `DESIGN_SYSTEM.md`, `README.md`, `PROJECT.md`, and `syncDocMetrics.mjs` | M42 | ADR-0042 |
 | F88 | Documentation Ecosystem Hardening & Automated Ledger Sync | Quick Section & Component/Module navigation indexes in `DESIGN_SYSTEM.md` and `MATH_SPEC.md`, SSoT contradiction reconciliation, explicit `#` and subsystem tagging across all 49 Dead Ends, dual-pipeline dataflow topology in `ARCHITECTURE.md`, ADR subsystem index, and automated ledger range validation in `syncDocMetrics.mjs` | M43 | ADR-0043 |
 | F89 | Living Specification In-Place Consolidation & Automated Documentation Integrity Linter | Consolidated split Armillary, MiniGlobe, and Meridian Dome specifications in `MATH_SPEC.md` and `DESIGN_SYSTEM.md`; reconciled `DE-xx` citations, `260x138` viewBox parity, and ADR milestone attributions; added `runDocIntegrityCheck()` in `lintUnitSafety.mjs` and `unitSafety.test.ts` validating Markdown links, `DE`/`F`/`M`/`ADR` references, and `Lxx–Lyy` Quick Index sync | M44 | ADR-0044 |
+| F90 | `<StrictMode>` Singleton Worker Lifecycle Fix & Generic Annual Matrix Hook | Removed premature root unmount `terminate()` in `App.tsx`, re-attached `beforeunload`/`pagehide` listeners on lazy worker re-creation in `ephemerisWorkerManager.ts`, deduplicated `useAnnualSolarWorker`/`useAnnualLunarWorker` via `useAnnualMatrixWorker`, and extracted shared typed `MockWorker` test fixture (`mockWorkerFixture.ts`) | M45 | ADR-0045 |
+| F91 | Collision-Safe SVG `<defs>` Instance Scoping & Lunar Phase Primitive Consolidation | Created `useSafeSvgId.ts` scoping all SVG gradients, masks, and clipPaths across Eclipse, Solar, Lunar, Terminator, Chronometer, and Armillary layers; consolidated duplicate Moon phase SVG renderers onto `LunarPhaseDisc` and `MiniMoon`; enforced AST `<defs>` static-ID ban via `runSvgDefsIdCheck()` | M45 | ADR-0045 |
+| F92 | 60 FPS `useSyzygyMath` Memoization & Targeted SVG Circle Transitions | Extracted memoized `useSyzygyMath.ts` presenter hook for `LiveSyzygyView.tsx` and replaced layout-thrashing `transition-all` on SVG `<circle>` nodes in `OrbitSvgCanvas.tsx` and `ArmillaryStarsLayer.tsx` with targeted property transitions | M45 | ADR-0045 |
+| F93 | Pure `globeGeometry.ts` & Meridian Config View-Model Extraction | Extracted pure `<MiniGlobe />` view-mode geometry builders into `miniglobe/globeGeometry.ts` and solar/lunar meridian swath & radial tick builders into `meridianConfigHelpers.ts`, pruning unused hook return fields | M45 | ADR-0045 |
+| F94 | 100% Canonical Inventory Parity, Anchor/Path Doc Linter & Read-Only `--check` Gate | Completed 100% bijective production file inventory in `ARCHITECTURE.md`, rectified `ShadowRayDiagram`/`LiveSyzygyView` and `today/` spec references, wired `F#`/`M#`, `#anchor`, ADR index, and living-path validators in `lintUnitSafety.mjs`, and added `syncDocMetrics.mjs --check` to `npm run verify` | M45 | ADR-0045 |
 
 ## 2. Milestones
 
@@ -108,7 +113,7 @@
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M44)
+### Recent Milestones (M21–M45)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -135,9 +140,10 @@
 | M42 | Documentation Sweep & `ARCHITECTURE.md` Token-Preservation SSoT Split | `ARCHITECTURE.md`, `AGENTS.md`, `PROJECT.md`, `README.md`, `docs/DESIGN_SYSTEM.md`, `scripts/syncDocMetrics.mjs`, ADR-0042 | M1–M41 | DONE |
 | M43 | Documentation Ecosystem Hardening & Automated Ledger Sync | `DESIGN_SYSTEM.md`, `MATH_SPEC.md`, `DEAD_ENDS.md`, `ARCHITECTURE.md`, `docs/adr/`, `scripts/syncDocMetrics.mjs`, ADR-0043 | M1–M42 | DONE |
 | M44 | Living Specification Consolidation & Automated Documentation Integrity Gatekeeper | `MATH_SPEC.md`, `DESIGN_SYSTEM.md`, `AGENTS.md`, `ARCHITECTURE.md`, `PROJECT.md`, `DEAD_ENDS.md`, `docs/adr/`, `scripts/lintUnitSafety.mjs`, `scripts/syncDocMetrics.mjs`, `unitSafety.test.ts`, ADR-0044 | M1–M43 | DONE |
+| M45 | Codebase Health Refactoring, SVG `<defs>` Isolation & Self-Verifying Documentation Parity | `src/workers/`, `src/hooks/`, `src/components/`, `AGENTS.md`, `ARCHITECTURE.md`, `README.md`, `DEAD_ENDS.md`, `PROJECT.md`, `docs/`, `scripts/lintUnitSafety.mjs`, `scripts/syncDocMetrics.mjs`, `unitSafety.test.ts`, ADR-0045 | M1–M44 | DONE |
 
 ---
 
 > [!TIP]
 > - **Architecture & Code Layout**: See [`ARCHITECTURE.md`](ARCHITECTURE.md) for interface contracts, canonical code layout, and the Subsystem Task Routing Matrix.
-> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0044`).
+> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0045`).

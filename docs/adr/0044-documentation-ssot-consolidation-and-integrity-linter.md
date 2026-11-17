@@ -1,7 +1,10 @@
 # ADR 0044: Living Specification In-Place Consolidation & Automated Documentation Integrity Linter
 
 ## Status
-Accepted
+Accepted *(Amended by [ADR 0045](0045-codebase-health-svg-defs-isolation-and-doc-parity-gates.md))*
+
+> [!NOTE]
+> **Evolutionary Amendment ([ADR 0045](0045-codebase-health-svg-defs-isolation-and-doc-parity-gates.md))**: `ShadowRayDiagram.tsx` was not retired—it remains the active `viewBox="0 0 520 220"` outer SVG container and live/static mode controller in `EclipseDemonstrator.tsx`, mounting `LiveSyzygyView.tsx` as its live ephemeris `<g>` sub-layer. In addition, `ADR-0045` wired active `F#`/`M#` validation, `#anchor` heading slug checks, 1:1 ADR index bijection, living-doc path checks, and 100% production file-inventory parity into `runDocIntegrityCheck()`.
 
 ## Context
 Following Milestones M42 and M43, a repository-wide documentation audit revealed four remaining categories of structural and referential drift across the documentation corpus:

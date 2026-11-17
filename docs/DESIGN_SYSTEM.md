@@ -83,7 +83,7 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Navigational Astrolabe Stars**: Rendered as delicate diamond florets (`strokeWidth="0.6"`, `r="1.2-3.2px"`) with hairline dashed flame pointers and glowing magnitude halos.
 * **Volumetric Observer Sky Cone & Laser Projection Morph Continuum**:
   - **Topocentric Canopy Envelope**: In 3D space ($\lambda \le 0.45$), conical light wash filled with daylight sky blue (`#38bdf8`, opacity 0.16) or nocturnal indigo (`#818cf8`, opacity 0.16) with subtle dashed silhouette lines (`strokeWidth="0.6"`, `strokeDasharray="3 2"`).
-  - **Phase B Cross-Fade**: Over $\lambda \in (0.45, 1.0]$, the 3D cone fill and horizon disc fade out with $(1 - u)$, while the stereographic laser projection cone (`url(#laserConeGradient)`) fades in with $0.75 u$.
+  - **Phase B Cross-Fade**: Over $\lambda \in (0.45, 1.0]$, the 3D cone fill and horizon disc fade out with $(1 - u)$, while the stereographic laser projection cone (`url(#<id>-laserConeGradient)` via `useSafeSvgId`) fades in with $0.75 u$.
   - **Apex to Focal Pole Glide**: Observer location pin (`"YOU"`, $r=1.8\text{px}$, `#38bdf8`) smoothly fades out and glides into the glowing astrolabe Center of Projection (`"⌖ FOCAL BEACON"`, core $r=2.5\text{px}$, outer halo $r=5\text{px}$, `#0284c7`/`#38bdf8`).
   - **8-Ray Radial Compass Encoding**: 8 radial rays connecting apex to rim vertices encode cardinal directions in Sky Blue (`#38bdf8`, N, E, S, W) and intercardinals in Amber (`#fbbf24`, NE, SE, SW, NW), fading in smoothly with $\text{opacity} \times \min(1, 1.5u)$.
 * **Interactive Draconic Lunar Node Pins**:
@@ -100,9 +100,9 @@ To maximize information density without adding text clutter, orbital loops and c
 * **Prograde Transit Direction (Axial Sightline)**: When looking toward the Sun with North UP, East is Left and West is Right. The lunar transit traverses from **Right to Left (West to East)** across the face of the Sun during solar eclipses ($s = -\sin(\text{phaseRad})$).
 * **Dual-Zone Line-of-Sight Depth Masking**:
   - **Viewer-Side Foreground ($Z > 0$)**: Unmasked with **full vibrancy ($0.9$ opacity, $1.2\text{px}$ width)** in front of the Earth globe. Foreground paths are never muted across the planet disc.
-  - **Sun-Facing Background ($Z \le 0$)**: Rendered with `mask="url(#outsideEarth)"` at $0.9$ opacity in open sky, and softened to a subtle **ghosted X-ray chord** at $0.22$ opacity (`strokeWidth="1.0"`) inside `clipPath="url(#axialEarthClip)"` / `clipPath="url(#syzygyEarthClip)"`.
+  - **Sun-Facing Background ($Z \le 0$)**: Rendered with `mask="url(#<id>-outsideEarth)"` at $0.9$ opacity in open sky, and softened to a subtle **ghosted X-ray chord** at $0.22$ opacity (`strokeWidth="1.0"`) inside `clipPath="url(#<id>-axialEarthClip)"` / `clipPath="url(#<id>-syzygyEarthClip)"` (all `<defs>` IDs scoped per component instance via `useSafeSvgId()`).
 * **Earth-Occluded Moon Outline Overlay**:
-  - Whenever the far-side Moon ($Z \le 0$) overlaps the Earth disc ($dist < R_{\text{earth}} + R_{\text{moon}}$), an overlay disc clipped to `axialEarthClip` renders on top of `<MiniGlobe />`.
+  - Whenever the far-side Moon ($Z \le 0$) overlaps the Earth disc ($dist < R_{\text{earth}} + R_{\text{moon}}$), an overlay disc clipped to the instance-scoped `axialEarthClip` renders on top of `<MiniGlobe />`.
   - **Styling**: Translucent dark fill `#0f172a` ($0.45$ opacity), matching stroke width ($2.0\text{px}$), and phase-appropriate dash array (`strokeDasharray={isWaxing ? undefined : '3 2'}`), preserving a seamless, unbroken circular boundary across Earth's limb.
 * **Ascending (☊) & Descending (☋) Node Pin Depth Muting**:
   - **Directly Behind Earth** ($Z_{\text{node}} \le 0 \land \|\mathbf{x}_{\text{node}} - \mathbf{x}_{\text{earth}}\| \le R_{\text{earth}}$): Ghosted X-ray styling at `opacity="0.35"`, dark translucent fill `#0f172a`, dashed ring `strokeDasharray="2 1.5"`, and muted text `/60 font-medium`.
@@ -274,10 +274,10 @@ The **Earth & Tidal Gravity Micro View** (`MicroTideView`) integrates the unifie
 The Eclipse Demonstrator renders two synchronized, mathematically aligned perspectives side-by-side in `activeTab === 'geometry'`:
 
 * **Layout & Viewport Parity**:
-  - **Identical Dimensions**: Both the Left pane (**Syzygy Profile & Shadow Rays** — `LiveSyzygyView.tsx`) and Right pane (**Axial Sightline 5.14° Tilt** — `NodalPlaneVisualizer.tsx`) share identical SVG `viewBox="0 0 520 220"` ($26:11$ aspect ratio) and CSS class `w-full h-full block flex-1 min-h-[220px]`.
+  - **Identical Dimensions**: Both the Left pane (**Syzygy Profile & Shadow Rays** — outer SVG container `ShadowRayDiagram.tsx` mounting live `<g>` layer `LiveSyzygyView.tsx`) and Right pane (**Axial Sightline 5.14° Tilt** — `NodalPlaneVisualizer.tsx`) share identical SVG `viewBox="0 0 520 220"` ($26:11$ aspect ratio) and CSS class `w-full h-full block flex-1 min-h-[220px]`.
   - **Aligned Origin & Ecliptic Plane**: Both viewports align on the exact same horizontal horizon line at $y = 110$.
 * **Geometric Proportions & Scaling**:
-  - **Left Pane (Transverse Syzygy Profile & Shadow Rays — `LiveSyzygyView.tsx`)**:
+  - **Left Pane (Transverse Syzygy Profile & Shadow Rays — `ShadowRayDiagram.tsx` / `LiveSyzygyView.tsx`)**:
     - *Sun Light Source*: Positioned at $X_\odot = 50, Y_\odot = 110$, radius $R_\odot = 28\text{px}$ with soft corona wash to $44\text{px}$.
     - *Earth Center*: Centered at $(X_\oplus, Y_\oplus) = (310, 110)$, radius $R_\oplus = 18\text{px}$.
     - *Shadow Cones*: Umbra core and penumbra envelope project horizontally toward the right screen boundary ($X > 310$).

@@ -7,7 +7,7 @@ This directory houses the formal Architectural Decision Records for **Cosmic Eng
 
 ---
 
-## Subsystem Index (ADR 0001 – 0044)
+## Subsystem Index (ADR 0001 – 0045)
 
 ### 1. Core Astronomy Math & Nominal Type Safety
 Pure, deterministic mathematical models adhering to Jean Meeus / IAU conventions and TypeScript strict nominal branding.
@@ -105,4 +105,5 @@ Automated AST unit safety linting, strict Single Source of Truth enforcement, an
 | :--- | :--- | :--- | :--- | :--- |
 | [0042](0042-documentation-sweep-and-architecture-ssot-split.md) | Documentation Sweep & Architecture SSoT Split | M42 | Accepted | SSoT separation between `ARCHITECTURE.md`, `MATH_SPEC.md`, and `DESIGN_SYSTEM.md` |
 | [0043](0043-ai-native-documentation-indexing-and-automated-ledger-sync.md) | AI-Native Documentation Indexing & Automated Ledger Sync | M43 | Accepted | Section indexes, SSoT reconciliation, automated ledger metric sync |
-| [0044](0044-documentation-ssot-consolidation-and-integrity-linter.md) | Living Spec In-Place Consolidation & Documentation Integrity Linter | M44 | Accepted | Consolidated Armillary/Meridian specs, `DE-xx` rectification, and automated doc integrity checks |
+| [0044](0044-documentation-ssot-consolidation-and-integrity-linter.md) | Living Spec In-Place Consolidation & Documentation Integrity Linter | M44 | Accepted (Amended) | Consolidated Armillary/Meridian specs, `DE-xx` rectification, and automated doc integrity checks |
+| [0045](0045-codebase-health-svg-defs-isolation-and-doc-parity-gates.md) | Codebase Health, SVG `<defs>` Isolation & Self-Verifying Doc Parity | M45 | Accepted | `<StrictMode>` worker fix, `useSafeSvgId` + AST `<defs>` check, 100% file inventory parity & `check:docs` gate |

@@ -1,11 +1,13 @@
 /**
  * @file lintUnitSafety.mjs
- * Babel AST Lint Guardrail: Banning `asDegrees()` and `asRadians()` within UI presentation layer.
- * 
- * Enforces that UI components (`src/components/**`) never bypass unit conversion gatekeepers
- * (`latToRadians`, `lonToRadians`, `toRadians`, `toDegrees`) via raw nominal type assertion wrappers.
- * Restricts `asDegrees` and `asRadians` strictly to domain mathematical routines (`src/utils/cosmicMath/**`),
- * Web Worker RPC deserializers (`src/workers/**`), and unit test fixtures.
+ * Babel AST & Documentation SSoT Parity Guardrails:
+ * 1. Bans `asDegrees()` and `asRadians()` within UI presentation layer (`src/components/**`).
+ * 2. Enforces mathematical domain purity (`src/utils/cosmicMath/**` free of React/UI imports, Tailwind tokens & `new Date()`).
+ * 3. Bans `= new Date()` default parameter fallbacks in `src/components/**` and `src/hooks/**`.
+ * 4. Bans static string-literal `id="..."` attributes inside JSX `<defs>` across `src/components/**` (`DE-51`).
+ * 5. Enforces `AGENTS.md` prompt kernel size budget (`5.0 KB – 18.0 KB`).
+ * 6. Enforces documentation SSoT integrity (links, `#anchor` slugs, `F#`/`M#`/`DE-xx`/`ADR-xxxx` IDs,
+ *    1:1 ADR index bijection, living-doc path resolution, Quick Index `Lxx–Lyy` sync & 100% `ARCHITECTURE.md` file inventory).
  */
 
 import fs from 'fs';
@@ -45,6 +47,44 @@ export function getSourceFiles(dir) {
   }
 
   return files;
+}
+
+/**
+ * Recursively retrieves all production files (.ts, .tsx, .css) under a directory, ignoring test files.
+ */
+function getProductionFilesPosix(dir, baseDir = rootDir) {
+  let out = [];
+  if (!fs.existsSync(dir)) return out;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out = out.concat(getProductionFilesPosix(full, baseDir));
+    } else if (
+      (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx') || entry.name.endsWith('.css')) &&
+      !entry.name.endsWith('.test.ts') &&
+      !entry.name.endsWith('.test.tsx')
+    ) {
+      out.push(path.relative(baseDir, full).replace(/\\/g, '/'));
+    }
+  }
+  return out;
+}
+
+/**
+ * Recursively collects all files/directories under a directory for basename/path resolution.
+ */
+function collectAllRepoPaths(dir) {
+  let out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    out.push(full);
+    if (entry.isDirectory()) {
+      out = out.concat(collectAllRepoPaths(full));
+    }
+  }
+  return out;
 }
 
 /**
@@ -99,8 +139,8 @@ export function scanFile(filePath) {
   walkAst(ast, (node) => {
     // 1. Check ImportSpecifiers: e.g. import { asDegrees } from '...'
     if (node.type === 'ImportSpecifier') {
-      const importedName = node.imported?.type === 'Identifier' 
-        ? node.imported.name 
+      const importedName = node.imported?.type === 'Identifier'
+        ? node.imported.name
         : node.imported?.value;
 
       if (BANNED_IDENTIFIERS.has(importedName)) {
@@ -155,9 +195,9 @@ export function runUnitSafetyCheck(targetDir = componentsDir) {
 }
 
 /**
- * Scans source text for static string-literal `id` attributes inside JSX `<defs>` blocks.
+ * Scans JSX <defs> subtrees in a TypeScript/TSX source string for static string-literal `id` attributes.
  */
-export function scanSvgDefsIdsInSource(content, filePath = '<memory>') {
+export function scanSvgDefsIdsInSource(content, filePath = '<inline>') {
   let ast;
   try {
     ast = parse(content, {
@@ -404,13 +444,57 @@ export function getAgentsSizeBudget() {
 }
 
 /**
+ * Computes GitHub-flavored Markdown heading slugs for a Markdown file.
+ */
+function computeMarkdownHeadingSlugs(filePath) {
+  const slugs = new Set();
+  if (!fs.existsSync(filePath)) return slugs;
+  const counts = new Map();
+  const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
+  let inCodeFence = false;
+
+  for (const line of lines) {
+    if (/^```/.test(line.trim())) {
+      inCodeFence = !inCodeFence;
+      continue;
+    }
+    if (inCodeFence) continue;
+    const m = line.match(/^#{1,6}\s+(.+)$/);
+    if (!m) continue;
+    const base = m[1]
+      .trim()
+      .toLowerCase()
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[`*_~]/g, '')
+      .replace(/[^\w -]/g, '')
+      .replace(/ /g, '-');
+    const seen = counts.get(base) || 0;
+    counts.set(base, seen + 1);
+    slugs.add(seen === 0 ? base : `${base}-${seen}`);
+  }
+  return slugs;
+}
+
+/**
  * Verifies documentation integrity across core Markdown specifications:
  * 1. Zero non-portable machine-local `file:///` URIs.
- * 2. All relative Markdown file links resolve on disk.
+ * 2. All relative Markdown file links AND `#anchor` heading slugs resolve on disk.
  * 3. All DE-xx, Fxx, Mxx, and ADR xxxx references resolve to valid ledger entries, and bare `Dead End #N` prose is banned.
- * 4. Quick Section Index `Lxx–Lyy` line ranges in MATH_SPEC.md and DESIGN_SYSTEM.md match actual section headers.
+ * 4. 1:1 ADR Index bijection between `docs/adr/README.md` and `docs/adr/00*.md`.
+ * 5. Strict backticked source-path & code-filename existence across living SSoT docs.
+ * 6. 100% bijective parity between `ARCHITECTURE.md` Section 4 (`- \`src/\``) and non-test production files under `src/`.
+ * 7. Quick Section Index `Lxx–Lyy` line ranges in MATH_SPEC.md and DESIGN_SYSTEM.md match actual section headers.
  */
 export function runDocIntegrityCheck() {
+  const livingDocs = new Set([
+    path.join(rootDir, 'AGENTS.md'),
+    path.join(rootDir, 'ARCHITECTURE.md'),
+    path.join(rootDir, 'README.md'),
+    path.join(rootDir, 'docs', 'MATH_SPEC.md'),
+    path.join(rootDir, 'docs', 'DESIGN_SYSTEM.md'),
+    path.join(rootDir, 'docs', 'adr', 'README.md')
+  ]);
+
   const coreDocs = [
     path.join(rootDir, 'AGENTS.md'),
     path.join(rootDir, 'ARCHITECTURE.md'),
@@ -422,11 +506,15 @@ export function runDocIntegrityCheck() {
   ];
   const adrDir = path.join(rootDir, 'docs', 'adr');
   if (fs.existsSync(adrDir)) {
-    for (const f of fs.readdirSync(adrDir)) {
+    for (const f of fs.readdirSync(adrDir).sort()) {
       if (f.endsWith('.md')) {
         coreDocs.push(path.join(adrDir, f));
       }
     }
+  }
+  const dossierPath = path.join(rootDir, 'docs', 'COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
+  if (fs.existsSync(dossierPath)) {
+    coreDocs.push(dossierPath);
   }
 
   const validDe = new Set();
@@ -453,12 +541,43 @@ export function runDocIntegrityCheck() {
   }
 
   const validAdrs = new Set();
+  const adrFilesOnDisk = [];
   if (fs.existsSync(adrDir)) {
-    for (const f of fs.readdirSync(adrDir)) {
+    for (const f of fs.readdirSync(adrDir).sort()) {
       const m = f.match(/^(\d{4})-.*\.md$/);
-      if (m) validAdrs.add(m[1]);
+      if (m) {
+        validAdrs.add(m[1]);
+        adrFilesOnDisk.push(f);
+      }
     }
   }
+
+  // Build repository file basename set for living-doc code filename verification
+  const allRepoBasenames = new Set([
+    'AGENTS.md',
+    'ARCHITECTURE.md',
+    'DEAD_ENDS.md',
+    'PROJECT.md',
+    'README.md',
+    'package.json',
+    'postcss.config.js',
+    'index.html',
+    '.gitattributes',
+    '.gitignore'
+  ]);
+  for (const sub of ['src', 'scripts', 'docs']) {
+    for (const p of collectAllRepoPaths(path.join(rootDir, sub))) {
+      allRepoBasenames.add(path.basename(p));
+    }
+  }
+
+  const headingSlugCache = new Map();
+  const getSlugs = (resolvedPath) => {
+    if (!headingSlugCache.has(resolvedPath)) {
+      headingSlugCache.set(resolvedPath, computeMarkdownHeadingSlugs(resolvedPath));
+    }
+    return headingSlugCache.get(resolvedPath);
+  };
 
   const violations = [];
 
@@ -467,9 +586,15 @@ export function runDocIntegrityCheck() {
     const raw = fs.readFileSync(filePath, 'utf8');
     const lines = raw.split(/\r?\n/);
     const fileDir = path.dirname(filePath);
+    const isLivingDoc = livingDocs.has(filePath);
+    let inCodeFence = false;
 
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
+      if (/^```/.test(line.trim())) {
+        inCodeFence = !inCodeFence;
+        return;
+      }
 
       // 1. Ban machine-local file:/// URIs in markdown links
       if (/\]\(file:\/\/\//i.test(line)) {
@@ -480,6 +605,8 @@ export function runDocIntegrityCheck() {
           message: 'Found non-portable machine-local file:/// URI; use relative repository paths instead.'
         });
       }
+
+      if (inCodeFence) return;
 
       // 2. Ban ambiguous "Dead End #N" prose
       if (/Dead Ends?\s*#\d+/i.test(line)) {
@@ -515,34 +642,204 @@ export function runDocIntegrityCheck() {
         }
       }
 
-      // 5. Validate relative markdown links [label](target)
-      for (const m of line.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
+      // 5. Validate Fxx and Mxx ledger references
+      for (const m of line.matchAll(/\bF(\d{1,3})\b/g)) {
+        const fNum = parseInt(m[1], 10);
+        if (!validFeatures.has(fNum)) {
+          violations.push({
+            filePath,
+            line: lineNum,
+            type: 'invalid-feature-id',
+            message: `Unregistered Feature reference F${fNum} (not in PROJECT.md).`
+          });
+        }
+      }
+      for (const m of line.matchAll(/\bM(\d{1,3})\b/g)) {
+        const mNum = parseInt(m[1], 10);
+        if (!validMilestones.has(mNum)) {
+          violations.push({
+            filePath,
+            line: lineNum,
+            type: 'invalid-milestone-id',
+            message: `Unregistered Milestone reference M${mNum} (not in PROJECT.md).`
+          });
+        }
+      }
+
+      // 6. Validate Markdown links [label](target) and #anchor slugs (outside inline backticks)
+      const lineWithoutInlineCode = line.replace(/`[^`]*`/g, '');
+      for (const m of lineWithoutInlineCode.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
         const rawTarget = m[1].trim();
         if (
-          rawTarget.startsWith('#') ||
           rawTarget.startsWith('http://') ||
           rawTarget.startsWith('https://') ||
+          rawTarget.startsWith('mailto:') ||
           rawTarget.startsWith('file://') ||
           rawTarget.includes('<')
         ) {
           continue;
         }
-        const cleanPath = rawTarget.split('#')[0];
-        if (!cleanPath) continue;
-        const resolved = path.resolve(fileDir, cleanPath);
-        if (!fs.existsSync(resolved)) {
+        const [cleanPath, anchorFrag] = rawTarget.split('#');
+        const resolved = cleanPath ? path.resolve(fileDir, cleanPath) : filePath;
+
+        if (cleanPath && !fs.existsSync(resolved)) {
           violations.push({
             filePath,
             line: lineNum,
             type: 'broken-link',
             message: `Broken relative link target '${cleanPath}' (resolved to ${resolved}).`
           });
+          continue;
+        }
+
+        if (anchorFrag && filePath !== dossierPath && resolved.endsWith('.md') && fs.existsSync(resolved)) {
+          const slugs = getSlugs(resolved);
+          if (!slugs.has(anchorFrag.toLowerCase())) {
+            violations.push({
+              filePath,
+              line: lineNum,
+              type: 'broken-anchor',
+              message: `Broken Markdown heading anchor '#${anchorFrag}' in target '${path.relative(rootDir, resolved).replace(/\\/g, '/')}'.`
+            });
+          }
+        }
+      }
+
+      // 7. Strict backticked path & code filename checks on living SSoT docs
+      if (isLivingDoc) {
+        for (const m of line.matchAll(/`([^`\n]+)`/g)) {
+          const tok = m[1].trim();
+          if (/^(?:src|scripts|docs)\/[A-Za-z0-9_./-]+$/.test(tok)) {
+            const clean = tok.replace(/\/$/, '');
+            if (clean === 'docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md') continue;
+            if (!fs.existsSync(path.join(rootDir, clean))) {
+              violations.push({
+                filePath,
+                line: lineNum,
+                type: 'stale-living-doc-path',
+                message: `Backticked path '${tok}' in living SSoT specification does not exist on disk.`
+              });
+            }
+          } else if (/^[A-Za-z0-9_.-]+\.(?:ts|tsx|mjs|mts|css)$/.test(tok)) {
+            if (!allRepoBasenames.has(tok)) {
+              violations.push({
+                filePath,
+                line: lineNum,
+                type: 'stale-living-doc-filename',
+                message: `Backticked filename '${tok}' in living SSoT specification does not match any file in the repository.`
+              });
+            }
+          }
         }
       }
     });
   }
 
-  // 6. Validate Quick Section Index line ranges in MATH_SPEC.md & DESIGN_SYSTEM.md
+  // 8. Validate 1:1 ADR Index bijection in docs/adr/README.md
+  const adrIndexPath = path.join(adrDir, 'README.md');
+  if (fs.existsSync(adrIndexPath)) {
+    const adrIndexText = fs.readFileSync(adrIndexPath, 'utf8');
+    const indexedAdrFiles = new Set();
+    for (const m of adrIndexText.matchAll(/\((\d{4}-[^)#]+\.md)\)/g)) {
+      indexedAdrFiles.add(m[1]);
+    }
+    for (const adrFile of adrFilesOnDisk) {
+      if (!indexedAdrFiles.has(adrFile)) {
+        violations.push({
+          filePath: adrIndexPath,
+          line: 1,
+          type: 'unindexed-adr',
+          message: `ADR file 'docs/adr/${adrFile}' is not indexed in docs/adr/README.md.`
+        });
+      }
+    }
+  }
+
+  // 9. Validate 100% bijective production file inventory in ARCHITECTURE.md Section 4
+  const archPath = path.join(rootDir, 'ARCHITECTURE.md');
+  if (fs.existsSync(archPath)) {
+    const archLines = fs.readFileSync(archPath, 'utf8').split(/\r?\n/);
+    let inSection4 = false;
+    let section4StartLine = 1;
+    let inSrcTree = false;
+    const dirStack = [];
+    const documentedSrcFiles = new Map();
+
+    for (let i = 0; i < archLines.length; i++) {
+      const line = archLines[i];
+      if (/^## 4\.\s+Canonical Code Layout/.test(line)) {
+        inSection4 = true;
+        section4StartLine = i + 1;
+        continue;
+      }
+      if (inSection4 && /^## \d+\./.test(line)) {
+        break;
+      }
+      if (!inSection4) continue;
+
+      const bulletMatch = line.match(/^(\s*)-\s+`([^`]+)`(.*)$/);
+      if (!bulletMatch) continue;
+      const indent = bulletMatch[1].length;
+      const primary = bulletMatch[2].trim();
+      const rest = bulletMatch[3] || '';
+
+      if (indent === 0) {
+        if (primary === 'src/') {
+          inSrcTree = true;
+          dirStack.length = 0;
+          dirStack.push({ indent: 0, dir: 'src' });
+        } else {
+          inSrcTree = false;
+          dirStack.length = 0;
+        }
+        continue;
+      }
+
+      if (!inSrcTree) continue;
+
+      while (dirStack.length > 0 && dirStack[dirStack.length - 1].indent >= indent) {
+        dirStack.pop();
+      }
+      const parentDir = dirStack.length > 0 ? dirStack[dirStack.length - 1].dir : 'src';
+
+      if (primary.endsWith('/')) {
+        const currentDir = path.posix.join(parentDir, primary.replace(/\/$/, ''));
+        dirStack.push({ indent, dir: currentDir });
+
+        for (const inlineMatch of rest.matchAll(/`([A-Za-z0-9_./-]+\.(?:ts|tsx|css))`/g)) {
+          const relFile = path.posix.join(currentDir, inlineMatch[1]);
+          documentedSrcFiles.set(relFile, i + 1);
+        }
+      } else if (/^[A-Za-z0-9_./-]+\.(?:ts|tsx|css)$/.test(primary)) {
+        const relFile = path.posix.join(parentDir, primary);
+        documentedSrcFiles.set(relFile, i + 1);
+      }
+    }
+
+    const actualProdFiles = new Set(getProductionFilesPosix(path.join(rootDir, 'src')));
+    for (const actualFile of [...actualProdFiles].sort()) {
+      if (!documentedSrcFiles.has(actualFile)) {
+        violations.push({
+          filePath: archPath,
+          line: section4StartLine,
+          type: 'missing-architecture-inventory-file',
+          message: `Production file '${actualFile}' is missing from ARCHITECTURE.md Section 4 (Canonical Code Layout).`
+        });
+      }
+    }
+    for (const [docFile, lineNum] of documentedSrcFiles.entries()) {
+      if (!actualProdFiles.has(docFile)) {
+        violations.push({
+          filePath: archPath,
+          line: lineNum,
+          type: 'stale-architecture-inventory-file',
+          message: `ARCHITECTURE.md Section 4 lists '${docFile}', which is not a live non-test production file in src/.`
+        });
+      }
+    }
+  }
+
+  // 10. Validate Quick Section Index line ranges in MATH_SPEC.md & DESIGN_SYSTEM.md
   for (const specName of ['MATH_SPEC.md', 'DESIGN_SYSTEM.md']) {
     const specPath = path.join(rootDir, 'docs', specName);
     if (!fs.existsSync(specPath)) continue;
@@ -669,6 +966,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports or presentation tokens).`);
   console.log(`✔ [default-date] Prop identity stability verified (${defaultDateCheck.totalFiles} files in src/components and src/hooks contain 0 default new Date() instances).`);
   console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).`);
-  console.log(`✔ [doc-integrity] Documentation SSoT integrity verified (${docIntegrity.totalFiles} Markdown specifications: 0 broken links, 0 stale index ranges, 0 invalid ledger refs).\n`);
+  console.log(`✔ [doc-integrity] Documentation SSoT integrity verified (${docIntegrity.totalFiles} Markdown specifications: 0 broken links/anchors, 0 stale index ranges, 100% file inventory parity).\n`);
   process.exit(0);
 }

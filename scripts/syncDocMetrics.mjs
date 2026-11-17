@@ -26,8 +26,27 @@ const adrDir = path.join(rootDir, 'docs', 'adr');
 const dossierPath = path.join(rootDir, 'docs', 'COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
 const tempJsonPath = path.join(rootDir, '.vitest-metrics.json');
 const vitestBinPath = path.join(rootDir, 'node_modules', 'vitest', 'vitest.mjs');
+const isCheckMode = process.argv.includes('--check');
+const driftedFiles = [];
 
-console.log('⚡ Running Vitest to collect live test metrics...');
+function writeOrCheckFile(filePath, nextContent, label) {
+  const currentContent = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+  const normCurrent = currentContent.replace(/\r\n/g, '\n');
+  const normNext = nextContent.replace(/\r\n/g, '\n');
+  if (isCheckMode) {
+    if (normCurrent !== normNext) {
+      driftedFiles.push(label);
+      console.error(`❌ [check:docs] Drift detected in ${label}.`);
+    } else {
+      console.log(`✔ [check:docs] ${label} is in sync.`);
+    }
+    return;
+  }
+  fs.writeFileSync(filePath, nextContent, 'utf8');
+  console.log(`✔ ${label} synchronized.`);
+}
+
+console.log(`⚡ Running Vitest to collect live test metrics${isCheckMode ? ' (--check read-only mode)' : ''}...`);
 
 const result = spawnSync(
   process.execPath,
@@ -143,7 +162,7 @@ const CANONICAL_SUITES = [
   {
     domain: 'Unit-Safety AST Guardrails',
     file: 'src/types/unitSafety.test.ts',
-    focus: 'Babel AST lint enforcement banning `asDegrees()` and `asRadians()` across all UI components (`src/components/**`), and strict $\\le 18\\text{ KB}$ `AGENTS.md` kernel size budget'
+    focus: 'Babel AST & SSoT lint enforcement banning `asDegrees()`/`asRadians()` and static `<defs>` IDs in `src/components/**`, strict $\\le 18\\text{ KB}$ `AGENTS.md` budget, and 100% Markdown link/anchor/inventory parity'
   },
   {
     domain: 'Cosmic State Store',
@@ -460,8 +479,7 @@ if (projectContent) {
     /\(`0001` through `\d{4}`\)/g,
     `(\`0001\` through \`${latestAdrStr}\`)`
   );
-  fs.writeFileSync(projectPath, projectContent, 'utf8');
-  console.log('✔ PROJECT.md header & footer ledger ranges synchronized.');
+  writeOrCheckFile(projectPath, projectContent, 'PROJECT.md header & footer ledger ranges');
 }
 
 // ==========================================
@@ -492,11 +510,10 @@ if (fs.existsSync(agentsPath)) {
     `(\`DE-01–DE-${latestDeStr}\`)`
   );
 
-  fs.writeFileSync(agentsPath, agentsContent, 'utf8');
-  console.log('✔ AGENTS.md test & ledger metrics synchronized.');
+  writeOrCheckFile(agentsPath, agentsContent, 'AGENTS.md test & ledger metrics');
 
   // D. Size budget assertion: AGENTS.md must remain <= 18 KB to prevent AI prompt truncation
-  const agentsSize = fs.statSync(agentsPath).size;
+  const agentsSize = Buffer.byteLength(agentsContent, 'utf8');
   const maxBudget = 18 * 1024; // 18 KB
   if (agentsSize > maxBudget) {
     console.error(`❌ AGENTS.md exceeds the 18 KB size budget: ${(agentsSize / 1024).toFixed(2)} KB > 18.00 KB.`);
@@ -522,6 +539,19 @@ if (fs.existsSync(readmePath)) {
   readmeContent = readmeContent.replace(
     /(- \*\*Testing\*\*: `vitest` \(`npm test` — comprehensive domain test suite across )\d+ modules, \d+ tests\)/g,
     `$1${totalFiles} modules, ${totalTests} tests)`
+  );
+
+  // UI Component AST file count
+  const totalUiFiles = getSourceFiles(path.join(rootDir, 'src', 'components')).length;
+  readmeContent = readmeContent.replace(
+    /across all \d+\+? UI files in `src\/components\/\*\*`/g,
+    `across all ${totalUiFiles} UI files in \`src/components/**\``
+  );
+
+  // Expandable summary header count
+  readmeContent = readmeContent.replace(
+    /Expand Full \d+-Suite Domain Test Registry/g,
+    `Expand Full ${totalFiles}-Suite Domain Test Registry`
   );
 
   // Ledger: Documents XX Architecture Decision Records
@@ -562,8 +592,7 @@ if (fs.existsSync(readmePath)) {
     readmeContent = readmeContent.replace(tableRegex, fullTableStr + '\n');
   }
 
-  fs.writeFileSync(readmePath, readmeContent, 'utf8');
-  console.log('✔ README.md test & ledger metrics synchronized.');
+  writeOrCheckFile(readmePath, readmeContent, 'README.md test, UI count & ledger metrics');
 }
 
 // ==========================================
@@ -584,12 +613,15 @@ if (fs.existsSync(architecturePath)) {
 
   // ADR reference
   archContent = archContent.replace(
-    /Architecture Decision Records \(`0001` through `\d{4}`\)/g,
-    `Architecture Decision Records (\`0001\` through \`${latestAdrStr}\`)`
+    /\(`DE-01[–-]DE-\d{2}`\)/g,
+    `(\`DE-01–DE-${latestDeStr}\`)`
+  );
+  archContent = archContent.replace(
+    /Architecture Decision Records \(`0001` through `\d{4}`/g,
+    `Architecture Decision Records (\`0001\` through \`${latestAdrStr}\``
   );
 
-  fs.writeFileSync(architecturePath, archContent, 'utf8');
-  console.log('✔ ARCHITECTURE.md ledger metrics synchronized.');
+  writeOrCheckFile(architecturePath, archContent, 'ARCHITECTURE.md ledger metrics');
 }
 
 // ==========================================
@@ -627,8 +659,7 @@ function syncSpecSectionLineRanges(specPath, label) {
     )
   );
 
-  fs.writeFileSync(specPath, updatedLines.join('\n'), 'utf8');
-  console.log(`✔ ${label} Quick Index line ranges (Lxx–Lyy) synchronized (${headers.length} sections).`);
+  writeOrCheckFile(specPath, updatedLines.join('\n'), `${label} Quick Index line ranges (${headers.length} sections)`);
 }
 
 syncSpecSectionLineRanges(path.join(rootDir, 'docs', 'MATH_SPEC.md'), 'docs/MATH_SPEC.md');
@@ -696,18 +727,26 @@ ${tocLines.join('\n')}
     const p = path.join(rootDir, sec.file);
     if (fs.existsSync(p)) {
       const secContent = fs.readFileSync(p, 'utf8');
-      doc += `\n## ${sec.title}\n\n> Source: [${sec.file}](file:///${p.replace(/\\/g, '/')})\n\n${secContent}\n\n---\n`;
+      const relFromDocs = sec.file.startsWith('docs/') ? `./${sec.file.slice(5)}` : `../${sec.file}`;
+      doc += `\n## ${sec.title}\n\n> Source: [${sec.file}](${relFromDocs})\n\n${secContent}\n\n---\n`;
     }
   }
 
   for (const adr of adrs) {
     const relPath = `docs/adr/${adr.file}`;
-    const fullPath = path.join(rootDir, relPath);
-    doc += `\n## ${adr.title}\n\n> Source: [${relPath}](file:///${fullPath.replace(/\\/g, '/')})\n\n${adr.content}\n\n---\n`;
+    doc += `\n## ${adr.title}\n\n> Source: [${relPath}](./adr/${adr.file})\n\n${adr.content}\n\n---\n`;
   }
 
-  fs.writeFileSync(dossierPath, doc, 'utf8');
-  console.log('✔ COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md compiled and synchronized.');
+  writeOrCheckFile(dossierPath, doc, 'docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.md');
 }
 
-console.log(`\n🎉 Documentation test metrics synchronization complete: ${totalFiles} suites, ${totalTests} tests.`);
+if (isCheckMode) {
+  if (driftedFiles.length > 0) {
+    console.error(`\n❌ [check:docs] ${driftedFiles.length} documentation target(s) out of sync: ${driftedFiles.join(', ')}.`);
+    console.error("Run 'npm run sync:docs' to synchronize metrics, ledger spans, and Quick Index line ranges.\n");
+    process.exit(1);
+  }
+  console.log(`\n✔ [check:docs] All documentation test metrics (${totalFiles} suites, ${totalTests} tests), ledger spans, and Quick Index line ranges are in 100% sync.`);
+} else {
+  console.log(`\n🎉 Documentation test metrics synchronization complete: ${totalFiles} suites, ${totalTests} tests.`);
+}

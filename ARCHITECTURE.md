@@ -4,7 +4,7 @@ Welcome to the authoritative structural blueprint for **Cosmic Engine V2.0**. Th
 
 > [!NOTE]
 > - For agent operating protocols, coding standards, and cognitive guardrails, consult [`AGENTS.md`](AGENTS.md).
-> - For the historical Feature Inventory (`F1–F89`) and Milestone Matrix (`M1–M44`), consult [`PROJECT.md`](PROJECT.md).
+> - For the historical Feature Inventory (`F1–F94`) and Milestone Matrix (`M1–M45`), consult [`PROJECT.md`](PROJECT.md).
 > - For astronomical equations and coordinate transformations, consult [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
 > - For semantic color tokens and SVG vector stroke encodings, consult [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
 
@@ -63,7 +63,7 @@ Cosmic Engine V2.0 executes a decoupled dual-pipeline architecture: a **60 FPS R
 - **Atomic Hover Store (`src/store/hoverStore.ts`)**: Isolates high-frequency ribbon scrubber state (`hoverTime`, `hoverDate`, `setHoverState`, `setHoverTime`, `setHoverDate`), eliminating 60 FPS re-render cascades across unhovered widgets.
 - **Web Worker Ephemeris Processing (`src/workers/`)**: Multiplexes calculation requests through `ephemerisWorkerManager.ts` with 100ms trailing-edge flag-merging throttling, monotonic integer sequence stamping (`requestId`), synchronous mount-time LRU cache seeding, and deterministic main-thread fallback (`workerFallback.ts`).
 - **Fault-Tolerant Window Grid (`DashboardWindow.tsx`)**: Every lazy-loaded visualizer is wrapped in a React Error Boundary (`WindowErrorBoundary.tsx`) with dynamic chunk retry mechanisms, isolating rendering exceptions to individual observatory windows.
-- **Dual-Perspective Eclipse Geometry**: Synchronized transverse syzygy profile (`LiveSyzygyView.tsx`) and axial sightline down-the-barrel view (`NodalPlaneVisualizer.tsx`). Canonical transverse displacement equations, prograde right-to-left kinematics, and shadow cone geometry conform strictly to [`docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry`](docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry) and [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings).
+- **Dual-Perspective Eclipse Geometry**: Synchronized transverse syzygy profile (`ShadowRayDiagram.tsx` mounting live sub-layer `LiveSyzygyView.tsx`) and axial sightline down-the-barrel view (`NodalPlaneVisualizer.tsx`). Canonical transverse displacement equations, prograde right-to-left kinematics, and shadow cone geometry conform strictly to [`docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry`](docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry) and [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings).
 - **Orbital Milestones & Scaling**: Keplerian milestone halo nodes and apparent diameter scaling conform to [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings) and [`docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling`](docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling).
 
 ---
@@ -88,79 +88,77 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 
 ## 4. Canonical Code Layout
 
+> [!NOTE]
+> Every non-test production module under `src/` is inventoried 1:1 below and verified bijectively by `runDocIntegrityCheck()` in [`scripts/lintUnitSafety.mjs`](scripts/lintUnitSafety.mjs). For the auto-synchronized 59-suite `.test.ts(x)` registry, consult [`README.md`](README.md#-verification--test-harness) and [`AGENTS.md`](AGENTS.md#3-file-glob-action--test-router).
+
 - `src/`
-  - `main.tsx` — React root renderer
-  - `App.tsx` — Master Observatory dashboard container
-  - `App.test.tsx` — Root dashboard mounting, layout grid & dock integration tests
+  - `main.tsx` — React 19 root renderer
+  - `App.tsx` — Master Observatory dashboard container & memoized widget wrappers
+  - `index.css` — Tailwind CSS v4 entry stylesheet
+  - `vite-env.d.ts` — Vite client ambient TypeScript declarations
   - `constants/`
     - `dashboardPresets.ts` — Observatory window arrangement layout presets
-  - `types/` — Foundational branded units, coordinates, astronomy, worker RPC & store contracts
+  - `types/` — Branded nominal units, coordinates, astronomy, worker RPC & store contracts (`astronomy.ts`, `coordinates.ts`, `index.ts`, `store.ts`, `units.ts`, `worker.ts`)
   - `utils/`
-    - `formatters.ts` — Human-readable coordinate and temporal formatting
+    - `formatters.ts` — Human-readable coordinate and UTC temporal formatting/parsing
     - `lruCache.ts` — Generic bounded LRU cache utility
-    - `lruCache.test.ts` — LRU cache eviction order and capacity tests
     - `cosmicMath/`
-      - `astroConstants.ts` — Centralized IAU/WGS-84/Meeus physical constants & J2000 epoch
+      - `astroConstants.ts` — Centralized IAU/WGS-84/Meeus physical constants & `J2000_DATE` / `J2000_JD` epoch
       - `core.ts` — Julian dates, UTC invariance, spherical linear interpolation (`slerp3D`), GMST & LST
       - `solar.ts` — Solar declination, EoT, twilight algorithms & annual solar matrix
-      - `lunar.ts` — Lunar ephemeris, phase angle, disc illumination, Newton-Raphson crossing solver
+      - `lunar.ts` — Lunar ephemeris, phase angle, disc illumination & Newton-Raphson node solver
       - `eclipse.ts` — Syzygy shadow geometry & eclipse recurrence scanner
-      - `today/` — Decomposed Topocentric Horizon & Meridian submodules (`index.ts` barrel)
-        - `elevation.ts` — Prime vertical dome projection, diurnal paths & rise/set azimuth octants
-        - `meridian.ts` — S-Z-N meridian profiles, Solstice/Standstill swaths & diurnal chords
-        - `draconic.ts` — True lunar node crossings, 18.6y standstills & micro-rail
       - `globe.ts` — Spherical continent projection & analytical limb horizon clipping
       - `projection.ts` — Earth axial tilt 3D projection, observer pin & 4-quadrant orbital stroke segments
       - `geoData.ts` — World landmass continent outline polygons
-      - `milestones.ts` — Canonical Earth orbital milestones (single source of truth)
-      - `frame.ts` — Centralized EphemerisFrame snapshot generator
-      - `terminatorTracks.ts` — Diurnal celestial ground tracks & antimeridian seam interpolation (ADR-0027)
-      - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`types.ts`, `transforms.ts`, `generator.ts`, `cameras.ts`)
-      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math module (5-model continuum, stereographic conformal, Rojas orthographic, almucantars, focal beacon, alidade, `generatorRings.ts`, `generatorBeads.ts`, `generatorGeometry.ts`, `generatorObserverCone.ts`)
-      - `domainInvariants.test.ts` — Empirical domain invariants & physics conservation laws
-  - `store/`
-    - `cosmicStore.ts` — External state store & animation frame ticker
-    - `hoverStore.ts` — Atomic external store for 60 FPS ribbon scrubber isolation (`hoverTime`, `hoverDate`)
-  - `workers/`
-    - `ephemerisWorker.ts` — Dedicated worker thread for Meeus ephemeris & 365-day matrices
-    - `ephemerisWorkerManager.ts` — Application singleton worker manager, trailing-edge coalescing & matrix cache
-    - `workerFallback.ts` — Deterministic synchronous main-thread fallback routines
-    - `workerFallback.test.ts` — Main-thread fallback and cache integration tests
-    - `workerSanitizers.ts` — Parameter boundary clamping & defensive input gatekeepers
-    - `workerSanitizers.test.ts` — Boundary validation & pathological input test suite
-  - `hooks/`
-    - `useCosmicEngine.ts` — Selective domain engine hook
-    - `useCosmicScene.ts` — Reactive 3D scene hook (`useCosmicScene`, `useHeliocentricScene`)
-    - `useEphemerisWorker.ts` — Worker dispatch hook with 100ms throttling & sequence stamping
-    - `useDashboardLayout.ts` — Window layout state, drag-and-drop, resize, locking, presets & storage
+      - `milestones.ts` — Canonical Earth orbital milestones (pure mathematical SSoT)
+      - `frame.ts` — Centralized `EphemerisFrame` snapshot generator
+      - `terminatorTracks.ts` — Diurnal celestial ground tracks & antimeridian seam interpolation
+      - `index.ts` — Pure mathematical barrel exports
+      - `today/` — Topocentric Horizon & Meridian submodules (`draconic.ts`, `elevation.ts`, `index.ts`, `meridian.ts`)
+      - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`cameras.ts`, `generator.ts`, `index.ts`, `transforms.ts`, `types.ts`)
+      - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math engine (`alidade.ts`, `astrolabe.ts`, `constants.ts`, `coordinates.ts`, `focalBeacon.ts`, `generator.ts`, `generatorBeads.ts`, `generatorGeometry.ts`, `generatorObserverCone.ts`, `generatorRings.ts`, `index.ts`, `paths.ts`, `projections.ts`, `types.ts`)
+  - `store/` — External `useSyncExternalStore` state engines (`cosmicStore.ts`, `hoverStore.ts`)
+  - `workers/` — Web Worker ephemeris thread, singleton multiplexer, sanitizers, fallback & test double (`ephemerisWorker.ts`, `ephemerisWorkerManager.ts`, `mockWorkerFixture.ts`, `workerFallback.ts`, `workerSanitizers.ts`)
+  - `hooks/` — Reactive engine, 3D scene, worker RPC & dashboard layout hooks (`useCosmicEngine.ts`, `useCosmicScene.ts`, `useDashboardLayout.ts`, `useEphemerisWorker.ts`)
   - `components/`
+    - `common/` — Shared SVG & fault-isolation primitives (`MiniGlobe.tsx`, `MiniMoon.tsx`, `PhaseVisual.tsx`, `WidgetSkeleton.tsx`, `WindowErrorBoundary.tsx`, `useSafeSvgId.ts`)
+      - `miniglobe/` — Decomposed `<MiniGlobe />` renderers & pure view-mode builders (`MiniGlobeFlat.tsx`, `MiniGlobeSphere.tsx`, `globeGeometry.ts`, `types.ts`)
+    - `controls/` — Accessible astrolabe & coordinate controls (`ArmillaryRail.tsx`, `BufferedInput.tsx`, `ControlRing.tsx`, `LatitudeSlider.tsx`, `PolarLongitudeSelector.tsx`)
+    - `layout/` — Workspace window grid, navbar & bottom dock (`DashboardWindow.tsx`, `ObsNavbar.tsx`, `OrbitalChronometer.tsx`)
+      - `chronometer/` — Concentric astrolabe dial, readouts, solstice jumps & popovers (`AstrolabeDial.tsx`, `ChronometerModalPopovers.tsx`, `ChronometerReadoutCards.tsx`, `SolsticeJumpControls.tsx`, `index.ts`)
     - `widgets/` — Lazy-loaded observatory visualizers (`React.lazy()`)
-      - `common/` — Shared widget primitives (`useRibbonScrubber.ts`, `AlmanacShortcutsRail.tsx`)
-      - `today/` — Today's Sky Horizon subsystem (`SkyDomeBase`, `MeridianDomeBase`, `SunElevationDome`, `SunMeridianDome`, `MoonElevationDome`, `MoonMeridianDome`, `TodayHorizonView`, `todayTokens.ts`)
-        - `hooks/` — Mathematical derivation hooks (`useMoonElevationMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`, `useMoonMeridianMath.ts`, `meridianConfigHelpers.ts`)
-        - `common/` — Shared today visual primitives (`SkyDomeFooter.tsx`, `MeridianDomeFooter.tsx`, `DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`)
-      - `armillary/` — Gyro-Morph Armillary & Astrolabe (`GyroArmillaryView`, `ArmillarySvgCanvas`, `useStagedCamera`, `useArmillaryInteractions`, `controls/`, `canvas/`)
-      - `solar/` — Solar Almanac subsystem (`SolarAlmanacCard`, `SolarRibbonChart`, `PolarSunlightDial`, `polarDialGeometry.ts`, `ribbon/`)
-      - `lunar/` — Lunar Almanac subsystem (`LunarAlmanacCard`, `LunarRibbonChart`, `TidalWaveOscillator`, `ribbon/`)
-      - `eclipse/` — Eclipse Demonstrator subsystem (`EclipseDemonstrator`, `LiveSyzygyView`, `NodalPlaneVisualizer`, `SkyViewSimulator`, `EclipseScanner`, `ShadowRayHoverHud.tsx`, `hooks/useNodalPlaneMath.ts`)
-      - `terminator/` — Daylight Terminator Map (`TerminatorMap`, `TerminatorHoverHud.tsx`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx`, `hooks/useTerminatorMapMath.ts`)
-      - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView`, `OrbitSvgCanvas`, `OrbitPhysicsHud.tsx`, `macroTokens.ts`)
-      - `tides/` — Earth Gravitational Tidal Force (`MicroTideView`, `hooks/useTideMath.ts`)
-    - `controls/` — Astrolabe controls (`ControlRing`, `LatitudeSlider`, `PolarLongitudeSelector`, `BufferedInput`, `ArmillaryRail`)
-    - `layout/` — Layout & window management (`DashboardWindow`, `ObsNavbar`, `OrbitalChronometer`, `chronometer/` (`AstrolabeDial.test.tsx`, `SolsticeJumpControls.test.tsx`))
-    - `common/` — Shared primitives (`MiniGlobe`, `miniglobe/`, `MiniMoon`, `MiniMoon.test.tsx`, `WindowErrorBoundary`, `PhaseVisual`)
+      - `common/` — Shared widget scrubbing & shortcut rails (`AlmanacShortcutsRail.tsx`, `useRibbonScrubber.ts`)
+      - `today/` — Today's Sky Horizon & Meridian subsystem (`MeridianDomeBase.tsx`, `MoonElevationDome.tsx`, `MoonMeridianDome.tsx`, `SkyDomeBase.tsx`, `SunElevationDome.tsx`, `SunMeridianDome.tsx`, `TodayHorizonView.tsx`, `index.ts`, `todayTokens.ts`)
+        - `hooks/` — Elevation/meridian math hooks & view-model builders (`index.ts`, `meridianConfigHelpers.ts`, `useMoonElevationMath.ts`, `useMoonMeridianMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`)
+        - `common/` — Shared horizon footers, draconic rail & phase disc (`DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`, `MeridianDomeFooter.tsx`, `SkyDomeFooter.tsx`, `index.ts`)
+      - `armillary/` — Gyro-Morph Armillary & Astrolabe container, HUDs & camera hooks (`ArmillaryEarthPip.tsx`, `ArmillaryHeaderControls.tsx`, `ArmillaryHoverHud.tsx`, `ArmillarySvgCanvas.tsx`, `ArmillaryTelemetryHud.tsx`, `GyroArmillaryView.tsx`, `index.ts`, `types.ts`, `useArmillaryInteractions.ts`, `useStagedCamera.ts`)
+        - `canvas/` — Modular SVG layers & instance-scoped `<defs>` (`ArmillaryAlidadeLayer.tsx`, `ArmillaryBeadsLayer.tsx`, `ArmillaryBezelLayer.tsx`, `ArmillaryDefs.tsx`, `ArmillaryLaserLayer.tsx`, `ArmillaryObserverConeLayer.tsx`, `ArmillaryRingsLayer.tsx`, `ArmillaryStarsLayer.tsx`, `ArmillaryTympanLayer.tsx`, `index.ts`)
+        - `controls/` — Mode pills, morph slider rail & layer toggles (`ArmillaryLayerToggles.tsx`, `ArmillaryModePills.tsx`, `ArmillaryMorphRail.tsx`, `index.ts`)
+      - `solar/` — Solar Almanac & 24h Polar Dial (`PolarSunlightDial.tsx`, `SolarAlmanacCard.tsx`, `SolarRibbonChart.tsx`, `SolarShortcutsRail.tsx`, `index.ts`, `polarDialGeometry.ts`)
+        - `ribbon/` — Memoized 365-day solar ribbon layers (`SolarRibbonAxes.tsx`, `SolarRibbonBands.tsx`, `SolarRibbonOverlay.tsx`, `index.ts`)
+      - `lunar/` — Lunar Almanac & tidal wave oscillator (`LunarAlmanacCard.tsx`, `LunarRibbonChart.tsx`, `LunarShortcutsRail.tsx`, `TidalWaveOscillator.tsx`, `index.ts`)
+        - `ribbon/` — Memoized braided lunar ribbon layers (`LunarRibbonAxes.tsx`, `LunarRibbonCurves.tsx`, `LunarRibbonHud.tsx`, `index.ts`)
+      - `eclipse/` — Dual-Perspective Eclipse Demonstrator (`EclipseDemonstrator.tsx`, `EclipseScanner.tsx`, `EclipseStatusBadge.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx`, `ShadowRayDiagram.tsx`, `ShadowRayHoverHud.tsx`, `SkyViewSimulator.tsx`, `index.ts`)
+        - `hooks/` — Memoized syzygy & nodal plane math hooks (`index.ts`, `useNodalPlaneMath.ts`, `useSyzygyMath.ts`)
+      - `terminator/` — Observer-centered Daylight Terminator Map (`TerminatorGroundTracks.tsx`, `TerminatorHoverHud.tsx`, `TerminatorLandmasses.tsx`, `TerminatorMap.tsx`, `index.ts`)
+        - `hooks/` — Terminator coordinate & disc-scaling hook (`useTerminatorMapMath.ts`)
+      - `macro/` — Heliocentric Macro Orbit (`MacroOrbitView.tsx`, `OrbitHeaderControls.tsx`, `OrbitHoverHud.tsx`, `OrbitPhysicsHud.tsx`, `OrbitSvgCanvas.tsx`, `index.ts`, `macroTokens.ts`, `milestones.ts`, `types.ts`)
+      - `tides/` — Earth Gravitational Tidal Micro-View (`MicroTideView.tsx`, `index.ts`)
+        - `hooks/` — Tidal bulge & nodal alignment hook (`index.ts`, `useTideMath.ts`)
 - `scripts/`
-  - `lintUnitSafety.mjs` — Babel AST linter for UI unit safety, domain math purity, default `new Date()` ban & `AGENTS.md` size budget
-  - `lintUnitSafety.d.mts` — TypeScript declarations for AST linter exports
-  - `syncDocMetrics.mjs` — Automated Vitest suite counter and master documentation dossier compiler
+  - `lintUnitSafety.mjs` — Babel AST & documentation SSoT parity linter (UI unit safety, math purity, SVG `<defs>` ID scoping, default `new Date()` ban, `AGENTS.md` size budget, link/anchor/ledger/inventory checks)
+  - `lintUnitSafety.d.mts` — TypeScript declarations for AST & doc linter exports
+  - `syncDocMetrics.mjs` — Automated Vitest suite counter, SSoT index/ledger synchronizer (`--check` read-only gate & `--dossier` compiler)
 - `.gitattributes` — Standard line-ending normalization (`eol=lf`) and binary asset flags
-- `ARCHITECTURE.md` — System topology, runtime contracts, canonical code layout & task routing matrix
-- `PROJECT.md` — Historical Feature Inventory (`F1–F89`) and Milestone Matrix (`M1–M44`)
-- `DEAD_ENDS.md` — Critical log of failed historical approaches & solutions
+- `AGENTS.md` — Always-loaded operational prompt kernel & enforced guardrails (`5–18 KB`)
+- `ARCHITECTURE.md` — System topology, runtime contracts, 100% canonical code layout & task routing matrix
+- `PROJECT.md` — Historical Feature Inventory (`F1–F94`) and Milestone Matrix (`M1–M45`)
+- `DEAD_ENDS.md` — Critical log of failed historical approaches & resolved solutions (`DE-01–DE-51`)
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0044`)
+  - `adr/` — Architecture Decision Records (`0001` through `0045` + `README.md` subsystem index)
 
 ---
 
@@ -171,7 +169,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 | **Today's Horizon Dome** | `today/{elevation,meridian,draconic}.ts` | `use{Sun,Moon}ElevationMath.ts`, `use{Sun,Moon}MeridianMath.ts` | `TodayHorizonView.tsx`, `SkyDomeBase.tsx`, `MeridianDomeBase.tsx` | `npx vitest run TodayWidget.test.tsx` |
 | **Solar Almanac** | `solar.ts`, `astroConstants.ts` | `useCosmicEngine.ts` | `SolarAlmanacCard.tsx`, `SolarRibbonChart.tsx`, `PolarSunlightDial.tsx` | `npx vitest run SolarWidget.test.tsx` |
 | **Lunar Almanac** | `lunar.ts`, `astroConstants.ts` | `useCosmicEngine.ts` | `LunarAlmanacCard.tsx`, `LunarRibbonChart.tsx`, `TidalWaveOscillator.tsx` | `npx vitest run LunarWidget.test.tsx` |
-| **Eclipse Demonstrator** | `eclipse.ts`, `scene/cameras.ts` | `useCosmicScene()`, `useNodalPlaneMath.ts` | `EclipseDemonstrator.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | `npx vitest run EclipseWidget.test.tsx` |
+| **Eclipse Demonstrator** | `eclipse.ts`, `scene/cameras.ts` | `useCosmicScene()`, `useNodalPlaneMath.ts`, `useSyzygyMath.ts` | `EclipseDemonstrator.tsx`, `ShadowRayDiagram.tsx`, `LiveSyzygyView.tsx`, `NodalPlaneVisualizer.tsx` | `npx vitest run EclipseWidget.test.tsx` |
 | **Terminator Map** | `terminatorTracks.ts`, `globe.ts` | `useTerminatorMapMath.ts` | `TerminatorMap.tsx`, `TerminatorLandmasses.tsx`, `TerminatorGroundTracks.tsx` | `npx vitest run TerminatorMap.test.tsx` |
 | **Macro Orbit** | `scene/generator.ts`, `milestones.ts` | `useHeliocentricScene()` | `MacroOrbitView.tsx`, `OrbitSvgCanvas.tsx`, `OrbitPhysicsHud.tsx` | `npx vitest run MacroOrbitWidget.test.tsx` |
 | **Gyro-Morph Armillary** | `armillary/{generator,projections}.ts` | `useArmillaryInteractions.ts`, `useStagedCamera.ts` | `GyroArmillaryView.tsx`, `ArmillarySvgCanvas.tsx`, `ArmillaryBeadsLayer.tsx` | `npx vitest run ArmillaryWidget.test.tsx` |
