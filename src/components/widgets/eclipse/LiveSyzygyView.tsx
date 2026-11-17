@@ -3,6 +3,15 @@ import { EclipseData } from '../../../types';
 import { generateOrbitalSegments, toRadians, calculateNodalOrbitalAngles } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { MiniMoon } from '../../common/MiniMoon';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
+
+export interface SyzygyDefsIds {
+  umbraGrad: string;
+  penumbraGrad: string;
+  sunGlow: string;
+  earthClip: string;
+  outsideEarthMask: string;
+}
 
 export interface LiveSyzygyViewProps {
   eclipse: EclipseData;
@@ -11,6 +20,7 @@ export interface LiveSyzygyViewProps {
   timeOfDay: number;
   sunLambdaDeg: number;
   setHoveredEntity: (entity: 'sun' | 'earth' | 'moon' | 'umbra' | 'penumbra' | null) => void;
+  defsIds?: SyzygyDefsIds;
 }
 
 export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
@@ -19,8 +29,15 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
   longitude,
   timeOfDay,
   sunLambdaDeg,
-  setHoveredEntity
+  setHoveredEntity,
+  defsIds
 }) => {
+  const fallbackUid = useSafeSvgId();
+  const umbraGradId = defsIds?.umbraGrad ?? `umbraGrad-${fallbackUid}`;
+  const penumbraGradId = defsIds?.penumbraGrad ?? `penumbraGrad-${fallbackUid}`;
+  const sunGlowId = defsIds?.sunGlow ?? `syzygySunGlow-${fallbackUid}`;
+  const earthClipId = defsIds?.earthClip ?? `syzygyEarthClip-${fallbackUid}`;
+  const outsideEarthMaskId = defsIds?.outsideEarthMask ?? `syzygyOutsideEarth-${fallbackUid}`;
   const beta = eclipse.beta;
   const phaseVal = eclipse.phaseValue || 0;
   const phaseRad = phaseVal * 2 * Math.PI;
@@ -77,12 +94,12 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
     <g>
       <defs>
         {/* Clip path strictly inside Earth disc (r = 18 at 310, 110) */}
-        <clipPath id="syzygyEarthClip">
+        <clipPath id={earthClipId}>
           <circle cx={liveEarthX} cy={liveEarthY} r="18" />
         </clipPath>
 
         {/* Inverse Mask strictly outside Earth disc (r = 18 at 310, 110) */}
-        <mask id="syzygyOutsideEarth">
+        <mask id={outsideEarthMaskId}>
           <rect x="0" y="0" width="520" height="220" fill="#ffffff" />
           <circle cx={liveEarthX} cy={liveEarthY} r="18" fill="#000000" />
         </mask>
@@ -98,7 +115,7 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
         onPointerEnter={() => setHoveredEntity('sun')}
         onPointerLeave={() => setHoveredEntity(null)}
       >
-        <circle cx="50" cy="110" r="32" fill="url(#sunGlow)" />
+        <circle cx="50" cy="110" r="32" fill={`url(#${sunGlowId})`} />
         <circle cx="50" cy="110" r="28" fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
         <text x="50" y="114" textAnchor="middle" className="text-[10px] font-black fill-slate-950 font-mono select-none pointer-events-none">
           SUN
@@ -108,14 +125,14 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       {/* Earth Shadow Cones projecting rightwards into space */}
       <polygon 
         points="310,92 510,65 510,155 310,128" 
-        fill="url(#penumbraGrad)" 
+        fill={`url(#${penumbraGradId})`} 
         className="cursor-pointer"
         onPointerEnter={() => setHoveredEntity('penumbra')}
         onPointerLeave={() => setHoveredEntity(null)}
       />
       <polygon 
         points="310,92 490,110 310,128" 
-        fill="url(#umbraGrad)" 
+        fill={`url(#${umbraGradId})`} 
         stroke="#f43f5e" 
         strokeWidth="1" 
         strokeOpacity="0.6" 
@@ -129,14 +146,14 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       <line x1="50" y1="138" x2="310" y2="128" stroke="#f59e0b" strokeWidth="1" opacity="0.5" strokeDasharray="3 3" />
 
       {/* 4. BACK LUNAR ORBIT (Waning: Dashed stroke, behind Earth, outside Earth disc) */}
-      <g mask="url(#syzygyOutsideEarth)" className="pointer-events-none">
+      <g mask={`url(#${outsideEarthMaskId})`} className="pointer-events-none">
         {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />}
         {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.2" strokeDasharray="4 3" opacity="0.9" />}
       </g>
 
       {/* Line connecting Earth and Moon (Back, masked outside Earth disc) */}
       {!isWaxing && (
-        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" mask="url(#syzygyOutsideEarth)" />
+        <line x1={liveEarthX} y1={liveEarthY} x2={liveMoonX} y2={liveMoonY} stroke="#64748b" strokeWidth="1" opacity="0.6" mask={`url(#${outsideEarthMaskId})`} />
       )}
 
       {/* DYNAMIC MOON BODY (When behind Earth / Waning) */}
@@ -188,14 +205,14 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
       />
 
       {/* DUAL-ZONE GHOSTED X-RAY CHORD ACROSS EARTH DISC (ONLY Far-Side Waning: r <= 18px) */}
-      <g clipPath="url(#syzygyEarthClip)" className="pointer-events-none" opacity="0.22">
+      <g clipPath={`url(#${earthClipId})`} className="pointer-events-none" opacity="0.22">
         {wanAsc.length > 0 && <path d={wanAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" strokeDasharray="3 2" />}
         {wanDesc.length > 0 && <path d={wanDesc.join(' ')} fill="none" stroke="#f43f5e" strokeWidth="1.0" strokeDasharray="3 2" />}
       </g>
 
       {/* EARTH-OCCLUDED MOON OUTLINE OVERLAY (Preserves complete circular outline across Earth) */}
       {!isWaxing && Math.hypot(liveMoonX - liveEarthX, liveMoonY - liveEarthY) < 18 + 8 && (
-        <g clipPath="url(#syzygyEarthClip)" className="pointer-events-none">
+        <g clipPath={`url(#${earthClipId})`} className="pointer-events-none">
           <g transform={`translate(${liveMoonX}, ${liveMoonY})`}>
             <circle
               r="8"

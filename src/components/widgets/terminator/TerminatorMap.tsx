@@ -4,6 +4,7 @@ import { TerminatorHoverHud } from './TerminatorHoverHud';
 import { TerminatorLandmasses } from './TerminatorLandmasses';
 import { TerminatorGroundTracks } from './TerminatorGroundTracks';
 import { useTerminatorMapMath } from './hooks/useTerminatorMapMath';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
 import { J2000_DATE } from '../../../utils/cosmicMath';
 
 export interface TerminatorMapProps {
@@ -29,6 +30,7 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
   initialShowSunTrack = false,
   initialShowMoonTrack = false
 }) => {
+  const terminatorBoundsId = useSafeSvgId('terminatorBounds');
   const [hoveredPoint, setHoveredPoint] = useState<'sun' | 'moon' | 'observer' | null>(null);
   const [showSunTrack, setShowSunTrack] = useState<boolean>(initialShowSunTrack);
   const [showMoonTrack, setShowMoonTrack] = useState<boolean>(initialShowMoonTrack);
@@ -150,12 +152,12 @@ export const TerminatorMap: React.FC<TerminatorMapProps> = ({
 
         <svg viewBox="0 0 360 180" style={{ touchAction: 'none' }} className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
           <defs>
-            <clipPath id="terminatorBounds">
+            <clipPath id={terminatorBoundsId}>
               <rect x="0" y="0" width="360" height="180" rx="8" />
             </clipPath>
           </defs>
 
-          <g clipPath="url(#terminatorBounds)">
+          <g clipPath={`url(#${terminatorBoundsId})`}>
             {/* Ocean Base */}
             <rect width="360" height="180" fill="#0b0f19" />
 

@@ -85,11 +85,12 @@ describe('Eclipse Demonstrator Subsystem', () => {
     expect(nodalHtml).toContain('SUN');
     expect(nodalHtml).toContain('MOON');
 
-    // Both NodalPlaneVisualizer and ShadowRayDiagram integrate Dual-Zone masking
-    expect(nodalHtml).toContain('clipPath id="axialEarthClip"');
-    expect(nodalHtml).toContain('mask id="axialOutsideEarth"');
-    expect(shadowHtml).toContain('clipPath id="syzygyEarthClip"');
-    expect(shadowHtml).toContain('mask id="syzygyOutsideEarth"');
+    // Both NodalPlaneVisualizer and ShadowRayDiagram integrate Dual-Zone masking with collision-safe IDs
+    expect(nodalHtml).toMatch(/clipPath id="axialEarthClip-[^"]+"/);
+    expect(nodalHtml).toMatch(/mask id="axialOutsideEarth-[^"]+"/);
+    expect(shadowHtml).toMatch(/clipPath id="syzygyEarthClip-[^"]+"/);
+    expect(shadowHtml).toMatch(/mask id="syzygyOutsideEarth-[^"]+"/);
+    expect(shadowHtml).not.toContain('id="sunGlow"');
   });
 
   it('renders NodalPlaneVisualizer with ghosted transit silhouette behind Earth at New Moon without popping', () => {
@@ -123,8 +124,8 @@ describe('Eclipse Demonstrator Subsystem', () => {
 
     // Moon should be rendered as a ghosted transit silhouette behind Earth rather than popping on the surface
     expect(html).toContain('[Behind Earth / Transit]');
-    expect(html).toContain('clip-path="url(#axialEarthClip)"');
-    expect(html).toContain('mask="url(#axialOutsideEarth)"');
+    expect(html).toMatch(/clip-path="url\(#axialEarthClip-[^)]+\)"/);
+    expect(html).toMatch(/mask="url\(#axialOutsideEarth-[^)]+\)"/);
   });
 
   it('unmutes viewer-side orbital paths in Axial Sightline and Syzygy views while ghosting only sun-facing far-side paths', () => {
@@ -160,12 +161,12 @@ describe('Eclipse Demonstrator Subsystem', () => {
     // In Axial Sightline, near-side paths are rendered unmasked in front of Earth at 0.9 opacity
     // while only far-side paths are clipped to axialEarthClip at 0.22 opacity
     expect(nodalHtml).toContain('opacity="0.22"');
-    expect(nodalHtml).toContain('clip-path="url(#axialEarthClip)"');
+    expect(nodalHtml).toMatch(/clip-path="url\(#axialEarthClip-[^)]+\)"/);
     expect(nodalHtml).toContain('opacity="0.9"');
 
     // In Syzygy view, waxing front paths are rendered unmasked at 0.9 opacity across Earth
     expect(syzygyHtml).toContain('opacity="0.9"');
-    expect(syzygyHtml).toContain('clip-path="url(#syzygyEarthClip)"');
+    expect(syzygyHtml).toMatch(/clip-path="url\(#syzygyEarthClip-[^)]+\)"/);
   });
 
   it('preserves solid waxing stroke and Earth-occluded circular outline at 0009Z and 0109Z on 8/03/2027', () => {
@@ -186,7 +187,7 @@ describe('Eclipse Demonstrator Subsystem', () => {
     // At 0009Z on 8/03/2027, the Moon has already entered its waxing phase (~14h after New Moon).
     // It must render with a solid stroke (not dashed) and retain its occluded outline across Earth
     expect(eclipse0009.phaseValue).toBeLessThanOrEqual(0.5); // Waxing
-    expect(html0009).toContain('clip-path="url(#axialEarthClip)"');
+    expect(html0009).toMatch(/clip-path="url\(#axialEarthClip-[^)]+\)"/);
     expect(html0009).toContain('[Behind Earth / Transit]');
 
     const date0109 = new Date('2027-08-03T01:09:00Z');
@@ -205,7 +206,7 @@ describe('Eclipse Demonstrator Subsystem', () => {
 
     // At 0109Z, Moon center is just outside Earth (dist ~24.2px), but disc overlaps Earth disc.
     // Occluded overlay must remain present across Earth disc without losing outline
-    expect(html0109).toContain('clip-path="url(#axialEarthClip)"');
+    expect(html0109).toMatch(/clip-path="url\(#axialEarthClip-[^)]+\)"/);
   });
 
   it('mutes ascending and descending nodes only when directly behind Earth disc while preserving full vibrancy in open sky and in front of Earth', () => {
@@ -420,6 +421,25 @@ describe('Eclipse Demonstrator Subsystem', () => {
     expect(axialHtml).toContain('stroke="#38bdf8"');
     expect(axialHtml).toContain('r="1.5"'); // Center sightline pin dot
     expect(axialHtml).toContain('fill="#0f172a"');
+  });
+
+  it('produces globally unique SVG defs IDs across co-mounted ShadowRayDiagram and NodalPlaneVisualizer instances', () => {
+    const jd = getJulianDate(new Date(2026, 2, 20), 12);
+    const eclipse = calculateEclipseData(jd);
+    const combinedHtml = renderToStaticMarkup(
+      React.createElement(
+        'div',
+        null,
+        React.createElement(ShadowRayDiagram, { eclipse }),
+        React.createElement(ShadowRayDiagram, { eclipse }),
+        React.createElement(NodalPlaneVisualizer, { eclipse }),
+        React.createElement(NodalPlaneVisualizer, { eclipse })
+      )
+    );
+
+    const idMatches = Array.from(combinedHtml.matchAll(/\bid="([^"]+)"/g)).map((m) => m[1]);
+    expect(idMatches.length).toBeGreaterThan(8);
+    expect(new Set(idMatches).size).toBe(idMatches.length);
   });
 });
 

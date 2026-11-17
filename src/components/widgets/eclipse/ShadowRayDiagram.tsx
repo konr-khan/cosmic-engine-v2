@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { EclipseData } from '../../../types';
 import { getPhaseName, calculateLunarIllumination, calculateEarthOrbitalPhysics, getJulianDate, J2000_DATE } from '../../../utils/cosmicMath';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
 import { ShadowRayHoverHud } from './ShadowRayHoverHud';
-import { LiveSyzygyView } from './LiveSyzygyView';
+import { LiveSyzygyView, SyzygyDefsIds } from './LiveSyzygyView';
 
 export interface ShadowRayDiagramProps {
   eclipse?: EclipseData | null;
@@ -20,7 +21,16 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   timeOfDay = 12
 }) => {
   const [hoveredEntity, setHoveredEntity] = useState<'sun' | 'earth' | 'moon' | 'umbra' | 'penumbra' | null>(null);
+  const uid = useSafeSvgId();
   if (!eclipse) return null;
+
+  const defsIds: SyzygyDefsIds = {
+    umbraGrad: `umbraGrad-${uid}`,
+    penumbraGrad: `penumbraGrad-${uid}`,
+    sunGlow: `syzygySunGlow-${uid}`,
+    earthClip: `syzygyEarthClip-${uid}`,
+    outsideEarthMask: `syzygyOutsideEarth-${uid}`
+  };
 
   const solarPhysics = calculateEarthOrbitalPhysics(getJulianDate(currentDate, 12));
   const sunLambdaDeg = ((solarPhysics?.lambda ?? solarPhysics?.eclipticLongitude ?? 0) as number);
@@ -73,17 +83,17 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
       {/* SVG Shadow Ray Diagram Viewport */}
       <svg viewBox="0 0 520 220" className="w-full h-full block flex-1 min-h-[220px]" preserveAspectRatio="xMidYMid meet">
         <defs>
-          <linearGradient id="umbraGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={defsIds.umbraGrad} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#0f172a" stopOpacity="0.95" />
             <stop offset="100%" stopColor="#020617" stopOpacity="1" />
           </linearGradient>
 
-          <linearGradient id="penumbraGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={defsIds.penumbraGrad} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#334155" stopOpacity="0.4" />
             <stop offset="100%" stopColor="#0f172a" stopOpacity="0.1" />
           </linearGradient>
 
-          <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+          <radialGradient id={defsIds.sunGlow} cx="50%" cy="50%" r="50%">
             <stop offset="60%" stopColor="#f59e0b" stopOpacity="1" />
             <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
           </radialGradient>
@@ -96,6 +106,7 @@ export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
           timeOfDay={timeOfDay}
           sunLambdaDeg={sunLambdaDeg}
           setHoveredEntity={setHoveredEntity}
+          defsIds={defsIds}
         />
       </svg>
     </div>

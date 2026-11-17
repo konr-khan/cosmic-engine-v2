@@ -8,6 +8,7 @@ import { formatTime } from '../../../utils/formatters';
 import { getSectorPath } from './polarDialGeometry';
 import { AnnualSolarMatrixItem, SolarAlmanacData } from '../../../types';
 import { useChronometerStore, selectTimeOfDay } from '../../../store/cosmicStore';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
 
 export interface PolarSunlightDialProps {
   solarData?: SolarAlmanacData | null;
@@ -32,6 +33,11 @@ export const PolarSunlightDial: React.FC<PolarSunlightDialProps> = ({
   lonOffsetHours,
   eotOffsetHours,
 }) => {
+  const uid = useSafeSvgId();
+  const polarDayGradId = `solarAlmanacPolarDayGrad-${uid}`;
+  const polarCivilGradId = `solarAlmanacPolarCivilGrad-${uid}`;
+  const polarNauticalGradId = `solarAlmanacPolarNauticalGrad-${uid}`;
+  const polarAstroGradId = `solarAlmanacPolarAstroGrad-${uid}`;
   const storeTime = useChronometerStore(selectTimeOfDay);
   const effectiveCurrentTime = currentTime !== undefined ? currentTime : storeTime;
 
@@ -138,19 +144,19 @@ export const PolarSunlightDial: React.FC<PolarSunlightDialProps> = ({
       >
         <svg width="220" height="220" className="drop-shadow-lg overflow-visible">
           <defs>
-            <linearGradient id="solarAlmanacPolarDayGrad" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={polarDayGradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#fde047" />
               <stop offset="100%" stopColor="#fbbf24" />
             </linearGradient>
-            <linearGradient id="solarAlmanacPolarCivilGrad" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={polarCivilGradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.85" />
               <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.85" />
             </linearGradient>
-            <linearGradient id="solarAlmanacPolarNauticalGrad" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={polarNauticalGradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#64748b" stopOpacity="0.75" />
               <stop offset="100%" stopColor="#475569" stopOpacity="0.75" />
             </linearGradient>
-            <linearGradient id="solarAlmanacPolarAstroGrad" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={polarAstroGradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#334155" stopOpacity="0.65" />
               <stop offset="100%" stopColor="#1e293b" stopOpacity="0.65" />
             </linearGradient>
@@ -161,10 +167,10 @@ export const PolarSunlightDial: React.FC<PolarSunlightDialProps> = ({
 
           {/* Sector Paths */}
           <g transform={`rotate(${rotationAngle}, ${center}, ${center})`}>
-            <path d={getSectorPath(astronomical, center, radius)} fill="url(#solarAlmanacPolarAstroGrad)" />
-            <path d={getSectorPath(nautical, center, radius)} fill="url(#solarAlmanacPolarNauticalGrad)" />
-            <path d={getSectorPath(civil, center, radius)} fill="url(#solarAlmanacPolarCivilGrad)" />
-            <path d={getSectorPath(dayLength, center, radius)} fill="url(#solarAlmanacPolarDayGrad)" />
+            <path d={getSectorPath(astronomical, center, radius)} fill={`url(#${polarAstroGradId})`} />
+            <path d={getSectorPath(nautical, center, radius)} fill={`url(#${polarNauticalGradId})`} />
+            <path d={getSectorPath(civil, center, radius)} fill={`url(#${polarCivilGradId})`} />
+            <path d={getSectorPath(dayLength, center, radius)} fill={`url(#${polarDayGradId})`} />
           </g>
 
           {/* Dial 24-Hour Tick Marks */}

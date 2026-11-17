@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { MiniGlobe } from '../../../common/MiniGlobe';
 import { MiniMoon } from '../../../common/MiniMoon';
+import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -34,6 +35,7 @@ export interface ArmillaryBeadsLayerProps {
   onHoverMilestone: (m: ArmillaryMilestoneNode | null) => void;
   onHoverNode: (node: 'asc' | 'desc' | null) => void;
   onTargetClick: (name: string, screenPos: { x: number; y: number }) => void;
+  defsIds?: ArmillaryDefsIds;
 }
 
 export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
@@ -60,7 +62,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   onHoverBead,
   onHoverMilestone,
   onHoverNode,
-  onTargetClick
+  onTargetClick,
+  defsIds = DEFAULT_ARMILLARY_DEFS_IDS
 }) => {
   // Derive effective mode, morph progress lambda, and camera angles
   const effectiveLambda = morphLambda ?? 0;
@@ -365,7 +368,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         const renderSun = () => (
           <g 
             key="bead-sun"
-            filter="url(#sunGlow)"
+            filter={`url(#${defsIds.sunGlow})`}
             className="cursor-pointer"
             style={{ touchAction: 'none' }}
             onClick={(e) => {
@@ -429,7 +432,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         const renderMoon = () => (
           <g 
             key="bead-moon"
-            filter="url(#starGlow)"
+            filter={`url(#${defsIds.starGlow})`}
             className="cursor-pointer"
             style={{ touchAction: 'none' }}
             onClick={(e) => {

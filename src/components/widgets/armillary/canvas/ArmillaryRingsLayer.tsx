@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArmillaryRingPath } from '../types';
 import { ZODIAC_SIGNS } from '../../../../utils/cosmicMath';
+import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
 
 export interface ArmillaryRingsLayerProps {
   rings: ArmillaryRingPath[];
@@ -10,6 +11,7 @@ export interface ArmillaryRingsLayerProps {
   orbitRingOpacity: number;
   celestialRingsOpacity: number;
   lunarOrbitOpacity?: number;
+  defsIds?: ArmillaryDefsIds;
 }
 
 /**
@@ -54,7 +56,8 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
   cameraPitch,
   orbitRingOpacity,
   celestialRingsOpacity,
-  lunarOrbitOpacity = 1.0
+  lunarOrbitOpacity = 1.0,
+  defsIds = DEFAULT_ARMILLARY_DEFS_IDS
 }) => {
   const lambda = morphLambda !== undefined ? morphLambda : (is3D ? 0.0 : 1.0);
   const uMorph = Math.max(0, Math.min(1, (lambda - 0.85) / 0.15));
@@ -117,7 +120,7 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
       </g>
 
       {/* Front Ring Segments (Depth Sorted: zCam >= 0, or full path when unified) */}
-      <g filter="url(#ringGlow)">
+      <g filter={`url(#${defsIds.ringGlow})`}>
         {rings.map((ring) => {
           const isOrbitPath = ring.id === 'orbit_path';
           const isLunarOrbit = ring.id === 'lunar_orbit';

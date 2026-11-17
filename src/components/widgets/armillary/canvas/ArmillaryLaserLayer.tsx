@@ -1,18 +1,21 @@
 import React from 'react';
 import { ProjectionFocalBeaconOutput } from '../types';
+import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
 
 export interface ArmillaryLaserLayerProps {
   showRays: boolean;
   focalBeacon?: ProjectionFocalBeaconOutput;
   isOrbital: boolean;
   morphLambda?: number;
+  defsIds?: ArmillaryDefsIds;
 }
 
 export const ArmillaryLaserLayer: React.FC<ArmillaryLaserLayerProps> = ({
   showRays,
   focalBeacon,
   isOrbital,
-  morphLambda
+  morphLambda,
+  defsIds = DEFAULT_ARMILLARY_DEFS_IDS
 }) => {
   if (!showRays || !focalBeacon) return null;
   if (isOrbital && (!morphLambda || morphLambda <= 0.45)) return null;
@@ -21,12 +24,12 @@ export const ArmillaryLaserLayer: React.FC<ArmillaryLaserLayerProps> = ({
   const phaseBU = parseFloat(phaseBURaw.toFixed(6));
 
   return (
-    <g filter="url(#laserGlow)" className="pointer-events-none">
+    <g filter={`url(#${defsIds.laserGlow})`} className="pointer-events-none">
       {/* Translucent Conic Projection Light Wash */}
       {focalBeacon.conePathD && (
         <path
           d={focalBeacon.conePathD}
-          fill="url(#laserConeGradient)"
+          fill={`url(#${defsIds.laserConeGradient})`}
           stroke="#38bdf8"
           strokeWidth="0.5"
           strokeDasharray="4 2"

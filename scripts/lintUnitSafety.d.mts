@@ -17,6 +17,19 @@ export interface UnitSafetyResult {
   violations: UnitViolation[];
 }
 
+export interface SvgDefsIdViolation {
+  filePath: string;
+  line: number;
+  column: number;
+  idValue: string;
+  snippet: string;
+}
+
+export interface SvgDefsIdResult {
+  totalFiles: number;
+  violations: SvgDefsIdViolation[];
+}
+
 export interface MathPurityViolation {
   filePath: string;
   line: number;
@@ -62,7 +75,9 @@ export interface DocIntegrityResult {
   violations: DocIntegrityViolation[];
 }
 
-export function runUnitSafetyCheck(): UnitSafetyResult;
+export function runUnitSafetyCheck(targetDir?: string): UnitSafetyResult;
+export function scanSvgDefsIdsInSource(content: string, filePath?: string): SvgDefsIdViolation[];
+export function runSvgDefsIdCheck(targetDir?: string): SvgDefsIdResult;
 export function runMathPurityCheck(): MathPurityResult;
 export function getAgentsSizeBudget(): AgentsBudgetResult;
 export function runDefaultDateCheck(): DefaultDateResult;

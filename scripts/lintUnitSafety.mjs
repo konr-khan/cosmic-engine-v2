@@ -155,6 +155,114 @@ export function runUnitSafetyCheck(targetDir = componentsDir) {
 }
 
 /**
+ * Scans source text for static string-literal `id` attributes inside JSX `<defs>` blocks.
+ */
+export function scanSvgDefsIdsInSource(content, filePath = '<memory>') {
+  let ast;
+  try {
+    ast = parse(content, {
+      sourceType: 'module',
+      plugins: [
+        'typescript',
+        'jsx',
+        'decorators-legacy',
+        'classProperties'
+      ]
+    });
+  } catch (err) {
+    return [{
+      filePath,
+      line: 1,
+      column: 1,
+      idValue: 'PARSE_ERROR',
+      snippet: err.message
+    }];
+  }
+
+  const lines = content.split('\n');
+  const violations = [];
+
+  function walkDefs(node, inDefs) {
+    if (!node || typeof node !== 'object') return;
+    let nextInDefs = inDefs;
+    if (
+      node.type === 'JSXElement' &&
+      node.openingElement?.name?.type === 'JSXIdentifier' &&
+      node.openingElement.name.name === 'defs'
+    ) {
+      nextInDefs = true;
+    }
+
+    if (
+      nextInDefs &&
+      node.type === 'JSXAttribute' &&
+      node.name?.type === 'JSXIdentifier' &&
+      node.name.name === 'id'
+    ) {
+      let staticId = null;
+      if (node.value?.type === 'StringLiteral') {
+        staticId = node.value.value;
+      } else if (node.value?.type === 'JSXExpressionContainer') {
+        const expr = node.value.expression;
+        if (expr?.type === 'StringLiteral') {
+          staticId = expr.value;
+        } else if (expr?.type === 'TemplateLiteral' && expr.expressions.length === 0) {
+          staticId = expr.quasis.map(q => q.value?.cooked ?? '').join('');
+        }
+      }
+
+      if (staticId !== null) {
+        const line = node.loc?.start.line || 1;
+        const column = node.loc?.start.column || 0;
+        violations.push({
+          filePath,
+          line,
+          column: column + 1,
+          idValue: staticId,
+          snippet: lines[line - 1]?.trim() || ''
+        });
+      }
+    }
+
+    for (const key of Object.keys(node)) {
+      if (key === 'loc' || key === 'comments') continue;
+      const child = node[key];
+      if (Array.isArray(child)) {
+        for (const c of child) {
+          walkDefs(c, nextInDefs);
+        }
+      } else if (child && typeof child === 'object') {
+        walkDefs(child, nextInDefs);
+      }
+    }
+  }
+
+  walkDefs(ast, false);
+  return violations;
+}
+
+/**
+ * Scans all UI components in `src/components/**` to ban static string-literal `id` attributes inside `<defs>`.
+ */
+export function runSvgDefsIdCheck(targetDir = componentsDir) {
+  const files = getSourceFiles(targetDir);
+  const violations = [];
+
+  for (const filePath of files) {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const fileViolations = scanSvgDefsIdsInSource(content, filePath);
+    if (fileViolations.length > 0) {
+      violations.push(...fileViolations);
+    }
+  }
+
+  return {
+    totalFiles: files.length,
+    violations
+  };
+}
+
+/**
  * Scans pure astronomical math modules (src/utils/cosmicMath/**) to guarantee
  * that they remain 100% deterministic and free from React or UI component imports.
  */
@@ -481,6 +589,7 @@ export function runDocIntegrityCheck() {
 // CLI execution
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { totalFiles, violations } = runUnitSafetyCheck();
+  const svgDefsCheck = runSvgDefsIdCheck();
   const mathPurity = runMathPurityCheck();
   const defaultDateCheck = runDefaultDateCheck();
   const agentsBudget = getAgentsSizeBudget();
@@ -494,6 +603,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     for (const v of violations) {
       const relPath = path.relative(rootDir, v.filePath).replace(/\\/g, '/');
       console.error(`  ${relPath}:${v.line}:${v.column} — [${v.type}] ${v.identifier}()`);
+      console.error(`    > ${v.snippet}\n`);
+    }
+
+    process.exit(1);
+  }
+
+  if (svgDefsCheck.violations.length > 0) {
+    console.error('\n❌ [svg-defs-id] Static SVG <defs> ID Guardrail Violations Detected:');
+    console.error('SVG <defs> children must use instance-scoped IDs via useSafeSvgId() / React.useId() instead of static string literals.\n');
+
+    for (const v of svgDefsCheck.violations) {
+      const relPath = path.relative(rootDir, v.filePath).replace(/\\/g, '/');
+      console.error(`  ${relPath}:${v.line}:${v.column} — static id="${v.idValue}"`);
       console.error(`    > ${v.snippet}\n`);
     }
 
@@ -543,6 +665,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   console.log(`\n✔ [unit-safety] All UI components (${totalFiles} files) conform to branded unit safety guardrails.`);
   console.log('  0 instances of asDegrees() or asRadians() found in src/components/**.');
+  console.log(`✔ [svg-defs-id] Collision-safe SVG <defs> scoping verified (${svgDefsCheck.totalFiles} UI files contain 0 static <defs> IDs).`);
   console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports or presentation tokens).`);
   console.log(`✔ [default-date] Prop identity stability verified (${defaultDateCheck.totalFiles} files in src/components and src/hooks contain 0 default new Date() instances).`);
   console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).`);

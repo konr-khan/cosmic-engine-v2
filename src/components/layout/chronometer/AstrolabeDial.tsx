@@ -3,6 +3,7 @@ import { toDegrees, toRadians, getDaysInYear, getDayOfYear } from '../../../util
 import { ControlRing } from '../../controls/ControlRing';
 import { ArmillaryRail } from '../../controls/ArmillaryRail';
 import { MiniGlobe } from '../../common/MiniGlobe';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
 
 export interface AstrolabeDialProps {
   date: Date;
@@ -44,6 +45,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
   onLatChange,
   onLonChange
 }) => {
+  const hubGlowId = useSafeSvgId('hubGlow');
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeRing, setActiveRing] = useState<'date' | 'time' | 'lon' | 'lat' | null>(null);
   const [hoveredRing, setHoveredRing] = useState<'date' | 'time' | 'lon' | 'lat' | null>(null);
@@ -263,7 +265,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
         onPointerLeave={handlePointerLeave}
       >
         <defs>
-          <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+          <radialGradient id={hubGlowId} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#1e1b4b" stopOpacity="0.8" />
             <stop offset="100%" stopColor="#0f172a" stopOpacity="1" />
           </radialGradient>
@@ -272,7 +274,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
         {/* Outer Bezel Base with Precision Hairlines */}
         <circle cx="0" cy="0" r="134" fill="none" stroke="#334155" strokeWidth="0.75" strokeOpacity="0.5" />
         <circle cx="0" cy="0" r="132.5" fill="none" stroke="#0f172a" strokeWidth="1.5" />
-        <circle cx="0" cy="0" r="45" fill="url(#hubGlow)" />
+        <circle cx="0" cy="0" r="45" fill={`url(#${hubGlowId})`} />
 
         {/* 1. OUTER RING (R=125): DATE / DAY-OF-YEAR (Emerald) */}
         <ControlRing 

@@ -7,7 +7,15 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { runUnitSafetyCheck, runMathPurityCheck, getAgentsSizeBudget, runDefaultDateCheck, runDocIntegrityCheck } from '../../scripts/lintUnitSafety.mjs';
+import {
+  runUnitSafetyCheck,
+  runSvgDefsIdCheck,
+  scanSvgDefsIdsInSource,
+  runMathPurityCheck,
+  getAgentsSizeBudget,
+  runDefaultDateCheck,
+  runDocIntegrityCheck
+} from '../../scripts/lintUnitSafety.mjs';
 import { parse } from '@babel/parser';
 import { 
   Degrees, 
@@ -139,6 +147,37 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
       expect.fail(`Found ${violations.length} default new Date() violations in components/hooks:\n${summary}`);
     }
     expect(violations).toHaveLength(0);
+  });
+
+  it('enforces collision-safe SVG <defs> scoping (0 static string-literal IDs inside <defs> across src/components)', () => {
+    const { totalFiles, violations } = runSvgDefsIdCheck();
+
+    expect(totalFiles).toBeGreaterThan(50);
+    if (violations.length > 0) {
+      const summary = violations.map(v => `${v.filePath}:${v.line}:${v.column} id="${v.idValue}"`).join('\n');
+      expect.fail(`Found ${violations.length} static SVG <defs> ID violations:\n${summary}`);
+    }
+    expect(violations).toHaveLength(0);
+  });
+
+  it('detects static string-literal IDs inside <defs> while allowing instance-scoped expressions', () => {
+    const mockCode = `
+      import React from 'react';
+      export const SvgFixture = ({ safePrefix }: { safePrefix: string }) => (
+        <svg id="outer-svg-root">
+          <defs>
+            <radialGradient id="sunGlow" />
+            <clipPath id={'axialEarthClip'} />
+            <mask id={\`outsideEarth\`} />
+            <linearGradient id={\`\${safePrefix}-laser\`} />
+            <filter id={safePrefix} />
+          </defs>
+        </svg>
+      );
+    `;
+
+    const violations = scanSvgDefsIdsInSource(mockCode, 'SvgFixture.tsx');
+    expect(violations.map(v => v.idValue)).toEqual(['sunGlow', 'axialEarthClip', 'outsideEarth']);
   });
 
   it('enforces documentation SSoT integrity (0 broken links, 0 machine-local file:/// URIs, valid DE/ADR IDs, and synchronized Quick Index line ranges)', () => {

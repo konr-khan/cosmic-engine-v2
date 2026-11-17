@@ -32,7 +32,7 @@ describe('AstrolabeDial Component', () => {
       const html = renderToStaticMarkup(<AstrolabeDial {...standardProps} />);
       expect(html).toContain('viewBox="-135 -135 270 270"');
       expect(html).toContain('cursor-grab');
-      expect(html).toContain('id="hubGlow"');
+      expect(html).toMatch(/id="hubGlow-[^"]+"/);
     });
 
     it('renders outer bezel hairlines and background circles', () => {

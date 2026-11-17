@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnnualSolarMatrixItem } from '../../../../types';
+import { useSafeSvgId } from '../../../common/useSafeSvgId';
 
 export interface SolarRibbonBandsProps {
   almanacData?: AnnualSolarMatrixItem[];
@@ -30,22 +31,28 @@ export const SolarRibbonBands: React.FC<SolarRibbonBandsProps> = React.memo(({
   chartW = 680,
   chartH = 375,
 }) => {
+  const uid = useSafeSvgId();
+  const dayGradId = `solarAlmanacDayGrad-${uid}`;
+  const civilGradId = `solarAlmanacCivilGrad-${uid}`;
+  const nauticalGradId = `solarAlmanacNauticalGrad-${uid}`;
+  const astroGradId = `solarAlmanacAstroGrad-${uid}`;
+
   return (
     <>
       <defs>
-        <linearGradient id="solarAlmanacDayGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={dayGradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#fde047" />
           <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
-        <linearGradient id="solarAlmanacCivilGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={civilGradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.85" />
           <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.85" />
         </linearGradient>
-        <linearGradient id="solarAlmanacNauticalGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={nauticalGradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#64748b" stopOpacity="0.75" />
           <stop offset="100%" stopColor="#475569" stopOpacity="0.75" />
         </linearGradient>
-        <linearGradient id="solarAlmanacAstroGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={astroGradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#334155" stopOpacity="0.8" />
           <stop offset="100%" stopColor="#1e293b" stopOpacity="0.8" />
         </linearGradient>
@@ -55,10 +62,10 @@ export const SolarRibbonBands: React.FC<SolarRibbonBandsProps> = React.memo(({
       <rect x={paddingLeft} y={paddingTop} width={chartW} height={chartH} fill="#020617" rx="6" />
 
       {/* Twilight Bands */}
-      <path d={buildBandPath('astroDusk', 'astroDawn')} fill="url(#solarAlmanacAstroGrad)" />
-      <path d={buildBandPath('nauticalDusk', 'nauticalDawn')} fill="url(#solarAlmanacNauticalGrad)" />
-      <path d={buildBandPath('civilDusk', 'civilDawn')} fill="url(#solarAlmanacCivilGrad)" />
-      <path d={buildBandPath('sunset', 'sunrise')} fill="url(#solarAlmanacDayGrad)" />
+      <path d={buildBandPath('astroDusk', 'astroDawn')} fill={`url(#${astroGradId})`} />
+      <path d={buildBandPath('nauticalDusk', 'nauticalDawn')} fill={`url(#${nauticalGradId})`} />
+      <path d={buildBandPath('civilDusk', 'civilDawn')} fill={`url(#${civilGradId})`} />
+      <path d={buildBandPath('sunset', 'sunrise')} fill={`url(#${dayGradId})`} />
 
       {/* Boundary Curves */}
       <path d={buildLinePath('sunrise')} fill="none" stroke="#000000" strokeWidth="1.5" strokeOpacity="0.85" />

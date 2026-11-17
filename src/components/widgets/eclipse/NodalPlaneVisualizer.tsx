@@ -3,6 +3,7 @@ import { EclipseData } from '../../../types';
 import { J2000_DATE } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { MiniMoon } from '../../common/MiniMoon';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
 import { useNodalPlaneMath } from './hooks';
 
 export interface NodalPlaneVisualizerProps {
@@ -20,6 +21,11 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   longitude = -122.81,
   timeOfDay = 12
 }) => {
+  const uid = useSafeSvgId();
+  const sunCoronaId = `axialSunCorona-${uid}`;
+  const penumbraTargetId = `axialPenumbraTarget-${uid}`;
+  const earthClipId = `axialEarthClip-${uid}`;
+  const outsideEarthMaskId = `axialOutsideEarth-${uid}`;
   const math = useNodalPlaneMath({ eclipse, currentDate });
   if (!eclipse || !math) return null;
 
@@ -81,26 +87,26 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
       <svg viewBox="0 0 520 220" className="w-full h-full block flex-1 min-h-[220px]" preserveAspectRatio="xMidYMid meet">
         <defs>
           {/* Sun Corona Soft Glow */}
-          <radialGradient id="axialSunCorona" cx="50%" cy="50%" r="50%">
+          <radialGradient id={sunCoronaId} cx="50%" cy="50%" r="50%">
             <stop offset="55%" stopColor="#f59e0b" stopOpacity="0.8" />
             <stop offset="85%" stopColor="#fbbf24" stopOpacity="0.25" />
             <stop offset="100%" stopColor="#d97706" stopOpacity="0" />
           </radialGradient>
 
           {/* Earth Penumbra Target Gradient */}
-          <radialGradient id="axialPenumbraTarget" cx="50%" cy="50%" r="50%">
+          <radialGradient id={penumbraTargetId} cx="50%" cy="50%" r="50%">
             <stop offset="30%" stopColor="#020617" stopOpacity="0.9" />
             <stop offset="75%" stopColor="#1e293b" stopOpacity="0.5" />
             <stop offset="100%" stopColor="#334155" stopOpacity="0.1" />
           </radialGradient>
 
           {/* Clip path strictly inside Earth disc (r = 24) */}
-          <clipPath id="axialEarthClip">
+          <clipPath id={earthClipId}>
             <circle cx={centerX} cy={centerY} r="24" />
           </clipPath>
 
           {/* Inverse Mask strictly outside Earth disc (r = 24) */}
-          <mask id="axialOutsideEarth">
+          <mask id={outsideEarthMaskId}>
             <rect x="0" y="0" width="520" height="220" fill="#ffffff" />
             <circle cx={centerX} cy={centerY} r="24" fill="#000000" />
           </mask>
@@ -113,7 +119,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
         {/* 1. BACKGROUND SUN DISC (Partially eclipsed behind Earth along line of sight) */}
         <g>
           <title>{`Sun (Apparent Diameter: ${sunAngularDiamArcmin.toFixed(1)}')`}</title>
-          <circle cx={centerX} cy={centerY} r={axialSunRadius * 1.35} fill="url(#axialSunCorona)" />
+          <circle cx={centerX} cy={centerY} r={axialSunRadius * 1.35} fill={`url(#${sunCoronaId})`} />
           <circle cx={centerX} cy={centerY} r={axialSunRadius} fill="#fbbf24" stroke="#ffffff" strokeWidth="1.5" opacity="0.9" />
           <text x={centerX} y={centerY - axialSunRadius - 6} textAnchor="middle" className="text-[8.5px] font-mono font-bold fill-amber-300 select-none pointer-events-none">
             SUN ({sunAngularDiamArcmin.toFixed(1)}')
@@ -122,12 +128,12 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
 
         {/* 2. EARTH SHADOW TARGET CONES (At Lunar Distance) */}
         {/* Penumbra Shadow Envelope */}
-        <circle cx={centerX} cy={centerY} r="34" fill="url(#axialPenumbraTarget)" stroke="#64748b" strokeWidth="0.75" strokeDasharray="2 2" />
+        <circle cx={centerX} cy={centerY} r="34" fill={`url(#${penumbraTargetId})`} stroke="#64748b" strokeWidth="0.75" strokeDasharray="2 2" />
         {/* Umbra Shadow Core */}
         <circle cx={centerX} cy={centerY} r="18" fill="#020617" stroke="#f43f5e" strokeWidth="1" />
 
         {/* 3. FAR-SIDE ORBITAL PATHS IN OPEN SKY (Sun-Facing side: depth <= 0, outside Earth disc) */}
-        <g mask="url(#axialOutsideEarth)" className="pointer-events-none">
+        <g mask={`url(#${outsideEarthMaskId})`} className="pointer-events-none">
           {farWaxAsc.length > 0 && (
             <path d={farWaxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.9" />
           )}
@@ -177,7 +183,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
         />
 
         {/* 6. SUN-FACING GHOSTED X-RAY CHORD ACROSS EARTH DISC (ONLY Far-Side depth <= 0) */}
-        <g clipPath="url(#axialEarthClip)" className="pointer-events-none" opacity="0.22">
+        <g clipPath={`url(#${earthClipId})`} className="pointer-events-none" opacity="0.22">
           {farWaxAsc.length > 0 && (
             <path d={farWaxAsc.join(' ')} fill="none" stroke="#38bdf8" strokeWidth="1.0" />
           )}
@@ -194,7 +200,7 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
 
         {/* 7. EARTH-OCCLUDED MOON OUTLINE OVERLAY (Preserves complete circular outline across Earth) */}
         {isMoonOccludedByEarth && (
-          <g clipPath="url(#axialEarthClip)" className="pointer-events-none">
+          <g clipPath={`url(#${earthClipId})`} className="pointer-events-none">
             <g transform={`translate(${moonX}, ${moonY})`}>
               <MiniMoon
                 radius={axialMoonRadius}

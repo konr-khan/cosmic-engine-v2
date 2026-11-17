@@ -10,7 +10,7 @@
  * - 'flat': 2D flattened astrolabe plate pin (Astrolabe Rete/Rojas/Horizon)
  */
 
-import React, { useId, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Degrees, Latitude, Longitude, HoursDecimal, toRadians, toDegrees } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
 import { calculateEarthSideGeometry, calculateEarthAxialGeometry } from '../../utils/cosmicMath/projection';
@@ -23,6 +23,7 @@ import {
   projectContinentLandmasses, 
   generateAnalyticalLimbPath 
 } from '../../utils/cosmicMath/globe';
+import { useSafeSvgId } from './useSafeSvgId';
 import { MiniGlobeFlat } from './miniglobe/MiniGlobeFlat';
 import { MiniGlobeSphere } from './miniglobe/MiniGlobeSphere';
 import { 
@@ -126,9 +127,8 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   onPointerLeave,
   onClick
 }) => {
-  // Unique SVG IDs using React useId() to prevent DOM collisions across multiple instances
-  const rawId = useId();
-  const safeId = rawId.replace(/[:/]/g, '_');
+  // Unique SVG IDs using React useId() (sanitized) to prevent DOM collisions across multiple instances
+  const safeId = useSafeSvgId();
   const uid = id ? `${id}-${safeId}` : `globe-${safeId}`;
 
   const clipPathId = `${uid}-clip`;

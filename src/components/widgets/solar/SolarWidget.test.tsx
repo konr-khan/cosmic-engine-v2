@@ -116,10 +116,10 @@ describe('Solar Almanac Subsystem', () => {
     expect(html).toContain('#020617');
 
     // Twilight filled bands
-    expect(html).toContain('url(#solarAlmanacDayGrad)');
-    expect(html).toContain('url(#solarAlmanacCivilGrad)');
-    expect(html).toContain('url(#solarAlmanacNauticalGrad)');
-    expect(html).toContain('url(#solarAlmanacAstroGrad)');
+    expect(html).toMatch(/url\(#solarAlmanacDayGrad-[^)]+\)/);
+    expect(html).toMatch(/url\(#solarAlmanacCivilGrad-[^)]+\)/);
+    expect(html).toMatch(/url\(#solarAlmanacNauticalGrad-[^)]+\)/);
+    expect(html).toMatch(/url\(#solarAlmanacAstroGrad-[^)]+\)/);
 
     // Key stats
     expect(html).toContain('Day 3');

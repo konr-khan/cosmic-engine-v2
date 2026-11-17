@@ -21,6 +21,8 @@ import {
 } from './canvas';
 import { ArmillaryEarthPip } from './ArmillaryEarthPip';
 import { useArmillaryInteractions } from './useArmillaryInteractions';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
+import type { ArmillaryDefsIds } from './canvas/ArmillaryDefs';
 
 export interface ArmillarySvgCanvasProps {
   model: ArmillaryModelOutput;
@@ -67,6 +69,16 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   onRuleAngleChange,
   onSnapToTarget
 }) => {
+  const uid = useSafeSvgId();
+  const defsIds = React.useMemo<ArmillaryDefsIds>(() => ({
+    brassRim: `brassRim-${uid}`,
+    sunGlow: `armillarySunGlow-${uid}`,
+    starGlow: `starGlow-${uid}`,
+    ringGlow: `ringGlow-${uid}`,
+    laserGlow: `laserGlow-${uid}`,
+    laserConeGradient: `laserConeGradient-${uid}`
+  }), [uid]);
+
   const {
     svgRef,
     viewBoxStr,
@@ -176,7 +188,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
         onPointerLeave={handlePointerLeave}
       >
         {/* 0. SVG Defs & Glow Filters */}
-        <ArmillaryDefs />
+        <ArmillaryDefs defsIds={defsIds} />
 
         {/* 1. Outer Precision Bezel (SED Hairline Double-Grooved Bezel) */}
         <ArmillaryBezelLayer bezelOpacity={bezelOpacity} />
@@ -187,6 +199,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           focalBeacon={focalBeacon} 
           isOrbital={isOrbital} 
           morphLambda={morphLambda}
+          defsIds={defsIds}
         />
 
         {/* 2b. Topocentric Observer Field of View (FOV) Sky Cone & Observer Pin */}
@@ -216,6 +229,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           orbitRingOpacity={orbitRingOpacity}
           celestialRingsOpacity={celestialRingsOpacity}
           lunarOrbitOpacity={lunarOrbitOpacity}
+          defsIds={defsIds}
         />
 
         {/* 6. Navigational Astrolabe Stars (Click to Snap) */}
@@ -226,6 +240,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           hoveredStar={hoveredStar}
           onHoverStar={setHoveredStar}
           onTargetClick={handleTargetClick}
+          defsIds={defsIds}
         />
 
         {/* 7. Planetary Beads (Earth, Sun clamped to Ecliptic track, Moon, Milestones, Nodes) */}
@@ -254,6 +269,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
           onHoverMilestone={setHoveredMilestone}
           onHoverNode={setHoveredNode}
           onTargetClick={handleTargetClick}
+          defsIds={defsIds}
         />
 
         {/* 8. Interactive Astrolabe Rule (SED Hairline Alidade Sighting Arm) */}

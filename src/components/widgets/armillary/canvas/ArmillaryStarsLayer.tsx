@@ -1,5 +1,6 @@
 import React from 'react';
 import { HoveredStarInfo, ArmillaryModelOutput } from '../types';
+import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
 
 export interface ArmillaryStarsLayerProps {
   stars: ArmillaryModelOutput['stars'];
@@ -8,6 +9,7 @@ export interface ArmillaryStarsLayerProps {
   hoveredStar: HoveredStarInfo | null;
   onHoverStar: (star: HoveredStarInfo | null) => void;
   onTargetClick: (name: string, screenPos: { x: number; y: number }) => void;
+  defsIds?: ArmillaryDefsIds;
 }
 
 export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
@@ -16,12 +18,13 @@ export const ArmillaryStarsLayer: React.FC<ArmillaryStarsLayerProps> = ({
   starsOpacity,
   hoveredStar,
   onHoverStar,
-  onTargetClick
+  onTargetClick,
+  defsIds = DEFAULT_ARMILLARY_DEFS_IDS
 }) => {
   if (!showStars || starsOpacity <= 0.05) return null;
 
   return (
-    <g filter="url(#starGlow)" opacity={starsOpacity}>
+    <g filter={`url(#${defsIds.starGlow})`} opacity={starsOpacity}>
       {stars.map((star) => {
         const starRadius = Math.max(1.2, 3.2 - (star.magnitude + 1.5) * 0.6);
         const isHovered = hoveredStar?.id === star.id;

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Waves } from 'lucide-react';
 import { TidalVectors } from '../../../types';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
 
 export interface TidalWaveOscillatorProps {
   tides: TidalVectors;
@@ -13,6 +14,7 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
   phaseValue,
   localTideStatus
 }) => {
+  const waveGradId = useSafeSvgId('tideWaveGradCard');
   const tideWavePoints = useMemo(() => {
     const points: { x: number; y: number }[] = [];
     const width = 800;
@@ -63,7 +65,7 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
       <div className="relative w-full h-[60px] overflow-hidden">
         <svg viewBox="0 0 800 90" className="w-full h-full" preserveAspectRatio="none">
           <defs>
-            <linearGradient id="tideWaveGradCard" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={waveGradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#0284c7" stopOpacity="0.65" />
               <stop offset="100%" stopColor="#0f172a" stopOpacity="0.85" />
             </linearGradient>
@@ -80,7 +82,7 @@ export const TidalWaveOscillator: React.FC<TidalWaveOscillatorProps> = ({
 
             return (
               <g>
-                <path d={fillD} fill="url(#tideWaveGradCard)" />
+                <path d={fillD} fill={`url(#${waveGradId})`} />
                 <path d={pathD} fill="none" stroke="#38bdf8" strokeWidth="1.8" />
               </g>
             );
