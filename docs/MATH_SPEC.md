@@ -935,10 +935,10 @@ Given instantaneous Earth-Sun heliocentric distance $r_{\text{AU}} \in [0.983, 1
 ### B. Sublunar Apparent Angular Diameter ($\theta_{\text{moon}}$)
 Given instantaneous geocentric lunar distance $d_{\text{km}} \in [356,400, 406,700]\text{ km}$ relative to mean distance $d_0 = 384,400\text{ km}$:
 \[
-\theta_{\text{moon}} = 31.13' \cdot \left(\frac{384,400\text{ km}}{d_{\text{km}}}\right) \quad [\text{arcminutes}]
+\theta_{\text{moon}} = 2 \arcsin\left(\frac{1,737.4\text{ km}}{d_{\text{km}}}\right) \approx 31.08' \cdot \left(\frac{384,400\text{ km}}{d_{\text{km}}}\right) \quad [\text{arcminutes}]
 \]
-* *Perigee ($356,400\text{ km}$)*: $\theta_{\text{moon}} \approx 33.57'$.
-* *Apogee ($406,700\text{ km}$)*: $\theta_{\text{moon}} \approx 29.42'$.
+* *Perigee ($356,400\text{ km}$)*: $\theta_{\text{moon}} \approx 33.52'$.
+* *Apogee ($406,700\text{ km}$)*: $\theta_{\text{moon}} \approx 29.37'$.
 
 ---
 

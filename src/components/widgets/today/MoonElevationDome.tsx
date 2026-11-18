@@ -325,7 +325,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
         riseSetTooltip={riseSetAz.riseFormatted !== '--' ? `Moonrise: ${riseSetAz.riseFormatted} · Moonset: ${riseSetAz.setFormatted}` : undefined}
         transitLabel="Lunar Transit"
         transitTimeFormatted={formatTime(transit).substring(0, 5)}
-        onSnapTransit={() => transit && onSetTime && onSetTime(transit)}
+        onSnapTransit={() => transit != null && onSetTime && onSetTime(((transit % 24) + 24) % 24)}
         transitTheme="indigo"
         transitTooltip="Click to jump clock to Lunar Transit"
         declinationLabel={isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}

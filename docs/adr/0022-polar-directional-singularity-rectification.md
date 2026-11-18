@@ -3,6 +3,9 @@
 ## Status
 Accepted
 
+> [!NOTE]
+> **Evolutionary Amendment**: The South Pole meridian baseline zenith label was standardized from `Z (-90°)` to `Z (+90°)` so `Z` consistently denotes local Zenith altitude ($+90^\circ$ overhead vs. $-90^\circ$ Nadir) matching [`SkyDomeBase.tsx`](../../src/components/widgets/today/SkyDomeBase.tsx) and [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md#8-todays-sky-dome-symmetrical-horizon--nodal-tokens).
+
 ## Context
 When an observer navigates to the Earth's geographic poles ($|\phi| \ge 89.9^\circ$), the topocentric horizontal coordinate system experiences an azimuthal gimbal lock (the **Polar Directional Singularity**):
 

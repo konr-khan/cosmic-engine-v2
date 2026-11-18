@@ -229,7 +229,7 @@ export const SunElevationDome: React.FC<SunElevationDomeProps> = ({
         riseSetTooltip={riseSetAz.riseFormatted !== '--' ? `Sunrise: ${riseSetAz.riseFormatted} · Sunset: ${riseSetAz.setFormatted}` : undefined}
         transitLabel="Solar Noon"
         transitTimeFormatted={formatTime(solarNoon).substring(0, 5)}
-        onSnapTransit={() => solarNoon && onSetTime && onSetTime(solarNoon)}
+        onSnapTransit={() => solarNoon != null && onSetTime && onSetTime(((solarNoon % 24) + 24) % 24)}
         transitTheme="amber"
         transitTooltip="Click to jump clock to Solar Noon"
         declinationLabel={isQuadMode ? 'Dec (δ) · Span' : 'Declination (δ)'}

@@ -29,6 +29,8 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
   const math = useNodalPlaneMath({ eclipse, currentDate });
   if (!eclipse || !math) return null;
 
+  const isLunarEclipse = eclipse.isEclipseActive && eclipse.category === 'LUNAR';
+
   const {
     isInsideUmbra,
     sunAngularDiamArcmin,
@@ -156,10 +158,12 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
               isDark={true}
               isAscending={isAscending}
               isWaxing={isWaxing}
-              isEclipseActive={eclipse.isEclipseActive}
-              isInsideUmbra={isInsideUmbra}
-              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#475569'}
-              fillOpacity={eclipse.isEclipseActive ? 1 : 0.85}
+              isEclipseActive={isLunarEclipse}
+              isInsideUmbra={isLunarEclipse && isInsideUmbra}
+              stroke={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+              coronaColor={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+              fill={isLunarEclipse ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#475569'}
+              fillOpacity={isLunarEclipse ? 1 : 0.85}
             />
           </g>
         )}
@@ -207,8 +211,9 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
                 isDark={true}
                 isAscending={isAscending}
                 isWaxing={isWaxing}
-                isEclipseActive={eclipse.isEclipseActive}
-                isInsideUmbra={isInsideUmbra}
+                isEclipseActive={isLunarEclipse}
+                isInsideUmbra={isLunarEclipse && isInsideUmbra}
+                stroke={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
                 fill="#0f172a"
                 fillOpacity={0.45}
                 opacity={0.75}
@@ -301,9 +306,11 @@ export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({
               isDark={true}
               isAscending={isAscending}
               isWaxing={isWaxing}
-              isEclipseActive={eclipse.isEclipseActive}
-              isInsideUmbra={isInsideUmbra}
-              fill={eclipse.isEclipseActive ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#0f172a'}
+              isEclipseActive={isLunarEclipse}
+              isInsideUmbra={isLunarEclipse && isInsideUmbra}
+              stroke={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+              coronaColor={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+              fill={isLunarEclipse ? (isInsideUmbra ? '#f43f5e' : '#fb923c') : '#0f172a'}
               fillOpacity={0.95}
               showCenterPin={true}
             />

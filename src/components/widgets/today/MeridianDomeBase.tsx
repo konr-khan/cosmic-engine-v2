@@ -335,7 +335,7 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
   const isNorthPole = isPolar && latitude >= 0;
 
   const defaultLeftLabel = isPolar ? (isNorthPole ? 'S (0°)' : 'N (0°)') : 'S';
-  const defaultCenterLabel = isPolar ? (isNorthPole ? 'Z (+90°)' : 'Z (-90°)') : 'Z';
+  const defaultCenterLabel = isPolar ? 'Z (+90°)' : 'Z';
   const defaultRightLabel = isPolar ? (isNorthPole ? 'S (180°)' : 'N (180°)') : 'N';
 
   return (

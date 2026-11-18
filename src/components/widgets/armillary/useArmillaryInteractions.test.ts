@@ -234,18 +234,23 @@ describe('useArmillaryInteractions Hook', () => {
       expect(onRuleAngleChange).toHaveBeenCalledWith(135);
     });
 
-    it('computes sighting angle and invokes onSnapToTarget on handleTargetClick', () => {
+    it('computes sighting angle and invokes onSnapToTarget without pre-jump, or falls back to updateRuleAngle', () => {
       const onSnapToTarget = vi.fn();
       const onRuleAngleChange = vi.fn();
       let hook = renderHook({ onSnapToTarget, onRuleAngleChange });
 
-      // Point at (x: 100, y: 0) -> angle = (atan2(0, 100) * 180 / PI + 90 + 360) % 360 = 90°
+      // When animated onSnapToTarget is provided, clicking invokes smooth snap without an immediate 1-frame jump
       hook.handleTargetClick('Spica', { x: 100, y: 0 });
       expect(onSnapToTarget).toHaveBeenCalledWith('Spica', 90);
+      expect(onRuleAngleChange).not.toHaveBeenCalled();
+
+      // When onSnapToTarget is omitted, fallback immediately updates rule angle
+      let fallbackHook = renderHook({ onRuleAngleChange });
+      fallbackHook.handleTargetClick('Spica', { x: 100, y: 0 });
       expect(onRuleAngleChange).toHaveBeenCalledWith(90);
 
-      hook = renderHook({ onSnapToTarget, onRuleAngleChange });
-      expect(hook.ruleAngleDeg).toBe(90);
+      fallbackHook = renderHook({ onRuleAngleChange });
+      expect(fallbackHook.ruleAngleDeg).toBe(90);
     });
   });
 
@@ -457,16 +462,38 @@ describe('useArmillaryInteractions Hook', () => {
         screenY: 0
       });
       hook.setHoveredBead('sun');
+      hook.setHoveredNode('asc');
+      hook.setHoveredMilestone({
+        id: 'perihelion',
+        label: 'Perihelion',
+        date: 'Jan 3',
+        color: '#f59e0b',
+        textColor: '#ffffff',
+        fillColor: '#b45309',
+        p3d: { x: 0, y: 0, z: 0 },
+        pCam: { x: 0, y: 0, z: 0 },
+        screenPos: { x: 50, y: 50 },
+        distanceAU: 0.983,
+        distanceKm: 147098074,
+        speedKms: 30.29,
+        description: 'Closest approach',
+        isFront: true
+      });
       hook = renderHook();
       expect(hook.hoveredStar).not.toBeNull();
       expect(hook.hoveredBead).not.toBeNull();
+      expect(hook.hoveredNode).toBe('asc');
+      expect(hook.hoveredMilestone).not.toBeNull();
 
       hook.handlePointerLeave();
       hook = renderHook();
       expect(hook.hoveredStar).toBeNull();
       expect(hook.hoveredBead).toBeNull();
+      expect(hook.hoveredNode).toBeNull();
+      expect(hook.hoveredMilestone).toBeNull();
       expect(hook.isDraggingCamera).toBe(false);
       expect(hook.isDraggingRule).toBe(false);
+      expect(hook.isDraggingRete).toBe(false);
     });
 
     it('handles Free Rete mode drag and triggers onFreeReteRotate callback', () => {

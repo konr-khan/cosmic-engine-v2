@@ -55,8 +55,6 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   const [freeReteOffsetDeg, setFreeReteOffsetDeg] = useState<number>(0);
   const [ruleAngleDeg, setRuleAngleDeg] = useState<number>(0);
 
-  const isTogglingVolumetricRef = useRef<boolean>(false);
-
   const onCameraChange = useCallback(
     (newCam: ArmillaryCameraState) => {
       setIsNodalActive(false);
@@ -90,27 +88,15 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   );
 
   const handleToggleObserverCone = useCallback((val: boolean) => {
-    if (isTogglingVolumetricRef.current) return;
-    isTogglingVolumetricRef.current = true;
     setShowObserverCone(val);
     setShowRays(val);
-    queueMicrotask(() => {
-      isTogglingVolumetricRef.current = false;
-    });
   }, []);
 
   const handleToggleRays = useCallback(() => {
-    if (isTogglingVolumetricRef.current) return;
-    isTogglingVolumetricRef.current = true;
-    setShowRays((prev) => {
-      const next = !prev;
-      setShowObserverCone(next);
-      return next;
-    });
-    queueMicrotask(() => {
-      isTogglingVolumetricRef.current = false;
-    });
-  }, []);
+    const next = !showRays;
+    setShowRays(next);
+    setShowObserverCone(next);
+  }, [showRays]);
 
   const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
   const activeDate = currentDate;
@@ -189,6 +175,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     moonDecDeg,
     moonLambdaDeg,
     moonPhase,
+    moonNodeLonDeg,
     morphLambda,
     projectionMode,
     fromProjectionMode,
@@ -309,7 +296,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
           r0={100}
           latitude={latitude}
           longitude={longitude}
-          timeOfDay={timeOfDay}
+          timeOfDay={activeTime}
           isFreeReteMode={isFreeReteMode}
           onFreeReteRotate={handleFreeReteRotate}
           ruleAngleDeg={ruleAngleDeg}

@@ -466,5 +466,42 @@ describe('Eclipse Demonstrator Subsystem', () => {
     expect(idMatches.length).toBeGreaterThan(8);
     expect(new Set(idMatches).size).toBe(idMatches.length);
   });
+
+  it('does not tint the New Moon blood-red during active Solar eclipses in Syzygy or Axial views', () => {
+    const jdApr2024 = getJulianDate(new Date(2024, 3, 8), 18.283);
+    const solarEclipse = calculateEclipseData(jdApr2024);
+    expect(solarEclipse.isEclipseActive).toBe(true);
+    expect(solarEclipse.category).toBe('SOLAR');
+
+    const syzygyHtml = renderToStaticMarkup(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(LiveSyzygyView, {
+          eclipse: solarEclipse,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 18.283,
+          sunLambdaDeg: 19,
+          setHoveredEntity: () => {}
+        })
+      )
+    );
+    // Moon circle itself (MiniMoon) must use dark slate fill (#0f172a / #475569), not blood-moon fill (#f43f5e / #fb923c)
+    expect(syzygyHtml).not.toContain('fill="#fb923c"');
+    expect(syzygyHtml).not.toMatch(/<circle[^>]*r="8"[^>]*fill="#f43f5e"/);
+
+    const axialHtml = renderToStaticMarkup(
+      React.createElement(NodalPlaneVisualizer, {
+        eclipse: solarEclipse,
+        currentDate: new Date('2024-04-08T18:17:00Z'),
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 18.283
+      })
+    );
+    expect(axialHtml).not.toContain('fill="#fb923c"');
+    expect(axialHtml).not.toMatch(/<circle[^>]*r="[0-9.]+"[^>]*fill="#f43f5e"[^>]*fill-opacity="0\.95"/);
+  });
 });
 

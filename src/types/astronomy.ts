@@ -223,6 +223,7 @@ export interface EclipseData {
   raDiff: number;
   elongation: number;
   phaseValue: number;
+  apparentRadiusRatio?: number;
   nodeAngleDeg?: number;
   argumentOfLatitude?: number;
   isAscendingHemisphere?: boolean;

@@ -338,7 +338,7 @@ export function generateCosmicScene(params: GenerateCosmicSceneParams = {}): Cos
       sunAngularDiameterArcmin: solarPhysics.sunAngularDiameterArcmin ?? SUN_ANGULAR_DIAMETER_1AU_ARCMIN,
       velocity: {
         x: -(solarPhysics.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS) * Math.sin(earthLambdaRad),
-        y: (solarPhysics.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS) * Math.cos(earthLambdaRad),
+        y: -(solarPhysics.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS) * Math.cos(earthLambdaRad),
         z: 0
       },
       subsolarGeo: {

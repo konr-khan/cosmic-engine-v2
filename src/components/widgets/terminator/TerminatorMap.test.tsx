@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import TerminatorMap from '.';
+import { useTerminatorMapMath } from './hooks/useTerminatorMapMath';
 import { SolarAlmanacData, OrbitalData, asDegrees } from '../../../types';
 import { julianDateToDate, calculateTrueLunarNodeEvents, J2000_JD } from '../../../utils/cosmicMath';
 
@@ -271,5 +272,46 @@ describe('TerminatorMap Component & Twilight Projection Suite', () => {
     expect(html).toContain('nodal-crossing-marker');
     expect(html).toContain(targetCrossing.type === 'ascending' ? '☊' : '☋');
     expect(html).toContain('Active Node');
+  });
+
+  it('aligns instantaneous subsolar/sublunar markers with 24-hour ground tracks and computes physical illumination %', () => {
+    // Nov 3 has strong Equation of Time (~+16.4 min -> ~4.1° subsolar longitude offset from mean solar time)
+    const nov3Date = new Date('2026-11-03T12:00:00Z');
+    let captured: ReturnType<typeof useTerminatorMapMath> | null = null;
+    const MathProbe: React.FC = () => {
+      captured = useTerminatorMapMath({
+        solarData: mockSolarData,
+        orbitalData: {
+          ...mockOrbitalData,
+          lunarPos: { ...mockOrbitalData.lunarPos, illuminationFraction: undefined },
+          phase: { value: 0.5, name: 'Full Moon' }
+        },
+        latitude: 47.06,
+        longitude: -122.81,
+        timeOfDay: 12,
+        currentDate: nov3Date,
+        showSunTrack: true,
+        showMoonTrack: true
+      });
+      return null;
+    };
+
+    renderToStaticMarkup(React.createElement(MathProbe));
+    expect(captured).not.toBeNull();
+    const result = captured!;
+
+    // Full Moon (phaseValue = 0.5) must report 100% illumination, not 50%
+    expect(result.moonIllum).toBe('100');
+
+    // Find hoursOffset === 0 anchor on both 24-hour ground tracks
+    const sunZeroPt = result.sunTrack!.points.find(p => p.hoursOffset === 0)!;
+    const moonZeroPt = result.moonTrack!.points.find(p => p.hoursOffset === 0)!;
+    expect(sunZeroPt).toBeDefined();
+    expect(moonZeroPt).toBeDefined();
+
+    // Instantaneous markers must match the 24h track h=0 coordinates without EoT or transit drift
+    expect(result.relSunX).toBeCloseTo(sunZeroPt.x, 4);
+    expect(result.relMoonX).toBeCloseTo(moonZeroPt.x, 4);
+    expect(result.normalizedSunLong).toBeCloseTo(sunZeroPt.lon, 4);
   });
 });

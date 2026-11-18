@@ -894,7 +894,7 @@ describe('Today Horizon Subsystem', () => {
     expect(npElevationHtml).toContain('>0° (Grw)</text>');
     expect(npElevationHtml).toContain('>90°W</text>');
 
-    // South Pole (-90°S): Meridian dome baseline has both horizons North: N (0°), Z (-90°), N (180°)
+    // South Pole (-90°S): Meridian dome baseline has both horizons North: N (0°), Z (+90°), N (180°)
     const spMeridianHtml = renderToStaticMarkup(
       React.createElement(SunMeridianDome, {
         displayTime: 12,
@@ -903,7 +903,7 @@ describe('Today Horizon Subsystem', () => {
     );
 
     expect(spMeridianHtml).toContain('>N (0°)</text>');
-    expect(spMeridianHtml).toContain('>Z (-90°)</text>');
+    expect(spMeridianHtml).toContain('>Z (+90°)</text>');
     expect(spMeridianHtml).toContain('>N (180°)</text>');
     expect(spMeridianHtml).toContain('Constant Altitude:');
     expect(spMeridianHtml).toContain('id="polar-counterpart-summer-tick"');

@@ -24,6 +24,69 @@ function isValidWindowConfig(item: unknown): item is WindowLayoutConfig {
   );
 }
 
+function isValidWidgetsRecord(item: unknown): item is Record<string, boolean> {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+  return Object.values(item as Record<string, unknown>).every(v => typeof v === 'boolean');
+}
+
+interface PersistedDashboardLayout {
+  activePresetKey: string;
+  widgets: Record<string, boolean>;
+  windows: WindowLayoutConfig[];
+}
+
+function deriveWidgetsFromWindows(windows: WindowLayoutConfig[]): Record<string, boolean> {
+  const activeIds = new Set(windows.map(w => w.id));
+  const next: Record<string, boolean> = {};
+  for (const key of Object.keys(PRESET_LAYOUTS.master.widgets)) {
+    next[key] = activeIds.has(key);
+  }
+  return next;
+}
+
+function readSavedLayoutState(): PersistedDashboardLayout {
+  const fallback: PersistedDashboardLayout = {
+    activePresetKey: 'master',
+    widgets: PRESET_LAYOUTS.master.widgets,
+    windows: PRESET_LAYOUTS.master.windows,
+  };
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return fallback;
+    const parsed: unknown = JSON.parse(saved);
+
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(isValidWindowConfig)) {
+      return {
+        activePresetKey: 'master',
+        widgets: deriveWidgetsFromWindows(parsed),
+        windows: parsed,
+      };
+    }
+
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const obj = parsed as Record<string, unknown>;
+      if (Array.isArray(obj.windows) && obj.windows.length > 0 && obj.windows.every(isValidWindowConfig)) {
+        const presetKey =
+          typeof obj.activePresetKey === 'string' && obj.activePresetKey in PRESET_LAYOUTS
+            ? obj.activePresetKey
+            : 'master';
+        const restoredWidgets = isValidWidgetsRecord(obj.widgets)
+          ? { ...PRESET_LAYOUTS[presetKey].widgets, ...obj.widgets }
+          : deriveWidgetsFromWindows(obj.windows);
+        return {
+          activePresetKey: presetKey,
+          widgets: restoredWidgets,
+          windows: obj.windows,
+        };
+      }
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export interface UseDashboardLayoutReturn {
   activePresetKey: string;
   widgets: Record<string, boolean>;
@@ -44,40 +107,31 @@ export interface UseDashboardLayoutReturn {
 }
 
 export function useDashboardLayout(): UseDashboardLayoutReturn {
-  const [activePresetKey, setActivePresetKey] = useState<string>('master');
-  const [widgets, setWidgets] = useState<Record<string, boolean>>(PRESET_LAYOUTS.master.widgets);
+  const [activePresetKey, setActivePresetKey] = useState<string>(() => readSavedLayoutState().activePresetKey);
+  const [widgets, setWidgets] = useState<Record<string, boolean>>(() => readSavedLayoutState().widgets);
   const [lockedWindows, setLockedWindows] = useState<Record<string, boolean>>({});
   const [isAllLocked, setIsAllLocked] = useState<boolean>(false);
 
-  const [windows, setWindows] = useState<WindowLayoutConfig[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(isValidWindowConfig)) {
-          return parsed;
-        }
-      }
-      return PRESET_LAYOUTS.master.windows;
-    } catch {
-      return PRESET_LAYOUTS.master.windows;
-    }
-  });
+  const [windows, setWindows] = useState<WindowLayoutConfig[]>(() => readSavedLayoutState().windows);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(windows.map(w => ({
-          id: w.id,
-          title: w.title,
-          colSpan: w.colSpan,
-          height: w.height
-        }))));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          activePresetKey,
+          widgets,
+          windows: windows.map(w => ({
+            id: w.id,
+            title: w.title,
+            colSpan: w.colSpan,
+            height: w.height
+          }))
+        }));
       } catch {}
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [windows]);
+  }, [activePresetKey, widgets, windows]);
 
   const handleSelectPreset = useCallback((key: string) => {
     const preset = PRESET_LAYOUTS[key];
@@ -88,22 +142,20 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   }, []);
 
   const toggleWidget = useCallback((key: string) => {
-    setWidgets(prev => {
-      const willBeActive = !prev[key];
-      if (willBeActive) {
-        setWindows(currentWindows => {
-          if (!currentWindows.some(w => w.id === key)) {
-            const canonical = DEFAULT_WINDOWS.find(w => w.id === key);
-            if (canonical) {
-              return [...currentWindows, canonical];
-            }
+    const willBeActive = !widgets[key];
+    setWidgets(prev => ({ ...prev, [key]: !prev[key] }));
+    if (willBeActive) {
+      setWindows(currentWindows => {
+        if (!currentWindows.some(w => w.id === key)) {
+          const canonical = DEFAULT_WINDOWS.find(w => w.id === key);
+          if (canonical) {
+            return [...currentWindows, canonical];
           }
-          return currentWindows;
-        });
-      }
-      return { ...prev, [key]: willBeActive };
-    });
-  }, []);
+        }
+        return currentWindows;
+      });
+    }
+  }, [widgets]);
 
   const handleDragStart = useCallback((e: React.DragEvent<HTMLElement>, id: string) => {
     e.dataTransfer.effectAllowed = 'move';

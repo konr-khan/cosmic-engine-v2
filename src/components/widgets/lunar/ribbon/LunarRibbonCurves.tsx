@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { getPhaseName } from '../../../../utils/cosmicMath';
+import { getPhaseName, calculateLunarIllumination } from '../../../../utils/cosmicMath';
 import { formatTime } from '../../../../utils/formatters';
 import { AnnualLunarMatrixItem } from '../../../../types';
 
@@ -183,7 +183,7 @@ export const LunarRibbonCurves: React.FC<LunarRibbonCurvesProps> = React.memo(({
 
         const riseStr = hRiseT !== null ? formatTime(hRiseT).substring(0, 5) : '--:--';
         const setStr = hSetT !== null ? formatTime(hSetT).substring(0, 5) : '--:--';
-        const phasePct = Math.round(hoverData.phaseValue * 100);
+        const phasePct = calculateLunarIllumination(hoverData.phaseValue);
 
         return (
           <g className="pointer-events-none">

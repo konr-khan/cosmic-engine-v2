@@ -213,7 +213,7 @@ describe('useDashboardLayout hook suite', () => {
     layout = useDashboardLayout();
     expect(layout.windows.length).toBe(PRESET_LAYOUTS.master.windows.length);
 
-    // 5. Valid schema
+    // 5. Valid legacy array schema
     const validWindows = [
       { id: 'today', title: "Today's Sky", colSpan: 12, height: '400px' }
     ];
@@ -223,6 +223,22 @@ describe('useDashboardLayout hook suite', () => {
     layout = useDashboardLayout();
     expect(layout.windows.length).toBe(1);
     expect(layout.windows[0].id).toBe('today');
+
+    // 6. Full persisted layout envelope restores activePresetKey, widgets, and windows across reloads
+    const fullEnvelope = {
+      activePresetKey: 'solar',
+      widgets: { ...PRESET_LAYOUTS.solar.widgets, macroOrbit: false },
+      windows: PRESET_LAYOUTS.solar.windows
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fullEnvelope));
+    stateStore = {};
+    stateCounter = 0;
+    layout = useDashboardLayout();
+    expect(layout.activePresetKey).toBe('solar');
+    expect(layout.widgets.today).toBe(true);
+    expect(layout.widgets.lunarAlmanac).toBe(false);
+    expect(layout.widgets.macroOrbit).toBe(false);
+    expect(layout.windows.length).toBe(PRESET_LAYOUTS.solar.windows.length);
   });
 
   it('enforces isAllLocked and lockedWindows guards for handleDrop, handleResize, and handleToggleColSpan', () => {

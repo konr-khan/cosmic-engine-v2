@@ -23,6 +23,8 @@ describe('Micro Tide Subsystem', () => {
     // MiniGlobe Earth rendered
     expect(html).toContain('miniglobe-root');
     expect(html).toContain('SPRING');
+    // Bulge radius displayed in Earth Radii (rx=19px / 12px = 1.58 RE), not raw SVG pixels
+    expect(html).toContain('1.58 RE');
 
     // Segmented toggle controls rendered
     expect(html).toContain('Standard');

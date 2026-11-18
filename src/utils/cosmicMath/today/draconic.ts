@@ -120,20 +120,23 @@ export const calculateSkyDomeLunarNodes = (
     isNearNode
   } = trueEvents;
 
-  // Build sorted list of true node events within the [-15, +15] days window
+  // Build sorted list of true node events strictly within the [-15, +15] days window
   const timelineNodes: TimelineNodeEvent[] = trueEvents.allCrossings
-    .filter((c) => c.daysOffset >= -15.2 && c.daysOffset <= 15.2)
-    .map((c) => ({
+    .filter((c) => c.daysOffset >= -15.0 && c.daysOffset <= 15.0)
+    .map((c): TimelineNodeEvent => ({
       type: c.type,
-      daysOffset: parseFloat(c.daysOffset.toFixed(1)),
+      daysOffset: clamp(parseFloat(c.daysOffset.toFixed(1)), -15, 15),
       symbol: c.type === 'ascending' ? '☊' : '☋',
       color: c.type === 'ascending' ? '#38bdf8' : '#f43f5e',
       isUpcoming: c.daysOffset > 0
-    }));
+    }))
+    .sort((a, b) => a.daysOffset - b.daysOffset);
 
   // Generate continuous color track segments spanning [-15, +15] based on true beta >= 0
   const timelineSegments: TimelineTrackSegment[] = [];
-  const cutPoints = [-15, ...timelineNodes.map((n) => n.daysOffset), 15];
+  const cutPoints = [-15, ...timelineNodes.map((n) => n.daysOffset), 15]
+    .map((d) => clamp(d, -15, 15))
+    .sort((a, b) => a - b);
 
   for (let i = 0; i < cutPoints.length - 1; i++) {
     const startDays = cutPoints[i];

@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { getDayOfYear, getPhaseName } from '../../../utils/cosmicMath';
+import { getDayOfYear, getPhaseName, calculateLunarIllumination } from '../../../utils/cosmicMath';
 import { formatTime } from '../../../utils/formatters';
 import { AnnualLunarMatrixItem } from '../../../types';
 import { useRibbonScrubber } from '../common/useRibbonScrubber';
@@ -163,55 +163,56 @@ export const LunarRibbonChart: React.FC<LunarRibbonChartProps> = React.memo(({
     : (isCircumpolarDown ? 'Down All Day' : (displaySetT !== null ? formatTime(displaySetT).substring(0, 5) : 'No Set'));
   const displayTransitT = transformTime(displayData.transit);
   const displayTransitStr = displayTransitT !== null ? formatTime(displayTransitT).substring(0, 5) : '--:--';
-  const displayPhasePct = Math.round(displayData.phaseValue * 100);
+  const displayPhasePct = calculateLunarIllumination(displayData.phaseValue);
   const displayPhaseName = getPhaseName(displayData.phaseValue);
 
-  // Generate Braided Ribbon Curves for Moonrise and Moonset
-  const moonrisePathD = useMemo(() => {
+  // Generate Braided Ribbon Curves for Moonrise and Moonset with seamless midnight wrap splitting
+  const buildWrappedLunarPath = useCallback((pickTime: (d: AnnualLunarMatrixItem) => number | null | undefined): string => {
     if (!visibleDays.length) return '';
     let path = '';
-    let isDrawing = false;
-    for (let i = 0; i < visibleDays.length; i++) {
-      const d = visibleDays[i];
-      const t = transformTime(d.moonrise);
-      if (t !== null && t !== undefined) {
-        const x = dayToX(d.day);
-        const y = timeToY(t);
-        if (!isDrawing) {
-          path += `M ${x.toFixed(1)} ${y.toFixed(1)}`;
-          isDrawing = true;
-        } else {
-          path += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
-        }
-      } else {
-        isDrawing = false;
-      }
-    }
-    return path;
-  }, [visibleDays, dayToX, transformTime]);
+    let prevT: number | null = null;
+    let prevX: number | null = null;
 
-  const moonsetPathD = useMemo(() => {
-    if (!visibleDays.length) return '';
-    let path = '';
-    let isDrawing = false;
     for (let i = 0; i < visibleDays.length; i++) {
       const d = visibleDays[i];
-      const t = transformTime(d.moonset);
+      const t = transformTime(pickTime(d));
       if (t !== null && t !== undefined) {
         const x = dayToX(d.day);
         const y = timeToY(t);
-        if (!isDrawing) {
-          path += `M ${x.toFixed(1)} ${y.toFixed(1)}`;
-          isDrawing = true;
+        if (prevT === null || prevX === null) {
+          path += ` M ${x.toFixed(1)} ${y.toFixed(1)}`;
+        } else if (prevT - t > 12) {
+          const denom = (t + 24) - prevT;
+          const frac = denom > 1e-6 ? (24 - prevT) / denom : 0.5;
+          const xCross = prevX + (x - prevX) * frac;
+          path += ` L ${xCross.toFixed(1)} ${timeToY(24).toFixed(1)} M ${xCross.toFixed(1)} ${timeToY(0).toFixed(1)} L ${x.toFixed(1)} ${y.toFixed(1)}`;
+        } else if (t - prevT > 12) {
+          const denom = prevT + (24 - t);
+          const frac = denom > 1e-6 ? prevT / denom : 0.5;
+          const xCross = prevX + (x - prevX) * frac;
+          path += ` L ${xCross.toFixed(1)} ${timeToY(0).toFixed(1)} M ${xCross.toFixed(1)} ${timeToY(24).toFixed(1)} L ${x.toFixed(1)} ${y.toFixed(1)}`;
         } else {
           path += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
         }
+        prevT = t;
+        prevX = x;
       } else {
-        isDrawing = false;
+        prevT = null;
+        prevX = null;
       }
     }
-    return path;
-  }, [visibleDays, dayToX, transformTime]);
+    return path.trim();
+  }, [visibleDays, dayToX, timeToY, transformTime]);
+
+  const moonrisePathD = useMemo(
+    () => buildWrappedLunarPath(d => d.moonrise),
+    [buildWrappedLunarPath]
+  );
+
+  const moonsetPathD = useMemo(
+    () => buildWrappedLunarPath(d => d.moonset),
+    [buildWrappedLunarPath]
+  );
 
   return (
     <div className="relative w-full bg-slate-950/60 rounded-xl border border-slate-800/60 p-3 my-1 touch-none">

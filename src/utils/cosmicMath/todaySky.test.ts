@@ -278,7 +278,29 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
     expect(nodes.timelineSegments[nodes.timelineSegments.length - 1].endDays).toBe(15);
     for (const seg of nodes.timelineSegments) {
       expect(seg.startDays).toBeLessThan(seg.endDays);
+      expect(seg.startDays).toBeGreaterThanOrEqual(-15);
+      expect(seg.endDays).toBeLessThanOrEqual(15);
       expect(['#38bdf8', '#f43f5e']).toContain(seg.color);
+    }
+  });
+
+  it('strictly bounds timelineNodes and timelineSegments within [-15, 15] even when crossings occur near window edges', () => {
+    const startJd = getJulianDate(new Date('2026-01-01T12:00:00Z'));
+    for (let offset = 0; offset < 60; offset++) {
+      const nodes = calculateSkyDomeLunarNodes(47.06, startJd + offset * 0.5, 12);
+      for (const node of nodes.timelineNodes) {
+        expect(node.daysOffset).toBeGreaterThanOrEqual(-15);
+        expect(node.daysOffset).toBeLessThanOrEqual(15);
+      }
+      if (nodes.timelineSegments.length > 0) {
+        expect(nodes.timelineSegments[0].startDays).toBe(-15);
+        expect(nodes.timelineSegments[nodes.timelineSegments.length - 1].endDays).toBe(15);
+        for (const seg of nodes.timelineSegments) {
+          expect(seg.startDays).toBeLessThan(seg.endDays);
+          expect(seg.startDays).toBeGreaterThanOrEqual(-15);
+          expect(seg.endDays).toBeLessThanOrEqual(15);
+        }
+      }
     }
   });
 
@@ -327,9 +349,9 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
     expect(nodes23.moonBeta).toBeLessThan(-0.6);
     expect(nodes23.isNearNode).toBe(true);
 
-    // 9/24/2026 04:34 UTC: True node crossing where beta = 0.000°
-    const jd24Crossing = getJulianDate(new Date('2026-09-24T00:00:00Z'), 4 + 34 / 60);
-    const nodes24Crossing = calculateSkyDomeLunarNodes(47.06, jd24Crossing, 4 + 34 / 60);
+    // 9/24/2026 04:35 UTC: Immediately past the true node crossing where full-precision beta > 0°
+    const jd24Crossing = getJulianDate(new Date('2026-09-24T00:00:00Z'), 4 + 35 / 60);
+    const nodes24Crossing = calculateSkyDomeLunarNodes(47.06, jd24Crossing, 4 + 35 / 60);
     expect(nodes24Crossing.nearestNodeType).toBe('ascending');
     expect(nodes24Crossing.nearestNodeDistDays).toBeLessThanOrEqual(0.05);
     expect(nodes24Crossing.isNearNode).toBe(true);
@@ -1003,8 +1025,8 @@ describe('Meridian Profile Coordinate Projections and Swaths', () => {
       const info = getPolarColureInfo(-90);
       expect(info.isPolar).toBe(true);
       expect(info.isNorth).toBe(false);
-      expect(info.baselineColure).toBe('N (0°) — Z (-90°) — N (180°)');
-      expect(info.zenithLabel).toBe('Z (-90°)');
+      expect(info.baselineColure).toBe('N (0°) — Z (+90°) — N (180°)');
+      expect(info.zenithLabel).toBe('Z (+90°)');
       expect(info.noonColure).toBe('N (0° Prime)');
       expect(info.midnightColure).toBe('N (180° Anti)');
       expect(info.perspectiveLabel).toBe('Looking North · 0° Meridian Front · Transits Continuous');

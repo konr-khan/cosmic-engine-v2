@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
-import { calculateDailySolarEvents, getDayOfYear } from '../../utils/cosmicMath';
+import { getDayOfYear, projectSkyDomePoint, SOLAR_TWILIGHT_THRESHOLDS } from '../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../types';
 import {
   AstrolabeDial,
@@ -47,18 +47,28 @@ export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
 
   const dayOfYear = getDayOfYear(date);
   const declination = solarData ? solarData.declination : 0;
-  const solarEvents = calculateDailySolarEvents(latitude, declination, solarData ? solarData.solarNoon : 12);
 
   let currentTwilightPhase = "Daylight";
   if (solarData) {
-    const { sunrise, sunset, dayLength } = solarData;
-    if (dayLength <= 0) currentTwilightPhase = "Polar Night";
-    else if (dayLength >= 24) currentTwilightPhase = "Midnight Sun";
-    else if (timeOfDay >= sunrise && timeOfDay <= sunset) currentTwilightPhase = "Full Daylight";
-    else if (timeOfDay >= solarEvents.civil.morning && timeOfDay <= solarEvents.civil.evening) currentTwilightPhase = "Civil Twilight";
-    else if (timeOfDay >= solarEvents.nautical.morning && timeOfDay <= solarEvents.nautical.evening) currentTwilightPhase = "Nautical Twilight";
-    else if (timeOfDay >= solarEvents.astronomical.morning && timeOfDay <= solarEvents.astronomical.evening) currentTwilightPhase = "Astronomical Twilight";
-    else currentTwilightPhase = "Night";
+    const { dayLength, solarNoon } = solarData;
+    const hourAngleDeg = (timeOfDay - solarNoon) * 15;
+    const solarElevationDeg = projectSkyDomePoint(hourAngleDeg, declination, latitude).elevation;
+
+    if (dayLength >= 24) {
+      currentTwilightPhase = "Midnight Sun";
+    } else if (dayLength <= 0 && solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.OFFICIAL) {
+      currentTwilightPhase = "Polar Night";
+    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.OFFICIAL) {
+      currentTwilightPhase = "Full Daylight";
+    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.CIVIL) {
+      currentTwilightPhase = "Civil Twilight";
+    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.NAUTICAL) {
+      currentTwilightPhase = "Nautical Twilight";
+    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.ASTRONOMICAL) {
+      currentTwilightPhase = "Astronomical Twilight";
+    } else {
+      currentTwilightPhase = dayLength <= 0 ? "Polar Night" : "Night";
+    }
   }
 
   const formatDate = (d: number): string => {

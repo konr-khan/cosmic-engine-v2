@@ -61,6 +61,8 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
     moonSubsolarVector
   } = useSyzygyMath(eclipse);
 
+  const isLunarEclipse = eclipse.isEclipseActive && eclipse.category === 'LUNAR';
+
   return (
     <g>
       <defs>
@@ -141,9 +143,11 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
             phase={phaseVal}
             isAscending={isAscending}
             isWaxing={false}
-            isEclipseActive={eclipse.isEclipseActive}
-            fill={eclipse.isEclipseActive ? '#f43f5e' : '#475569'}
-            fillOpacity={eclipse.isEclipseActive ? 1 : 0.75}
+            isEclipseActive={isLunarEclipse}
+            stroke={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+            coronaColor={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+            fill={isLunarEclipse ? '#f43f5e' : '#475569'}
+            fillOpacity={isLunarEclipse ? 1 : 0.75}
           />
           <text
             x={liveMoonX > liveEarthX ? 12 : -12}
@@ -279,8 +283,10 @@ export const LiveSyzygyView: React.FC<LiveSyzygyViewProps> = ({
             phase={phaseVal}
             isAscending={isAscending}
             isWaxing={true}
-            isEclipseActive={eclipse.isEclipseActive}
-            fill={eclipse.isEclipseActive ? '#f43f5e' : '#0f172a'}
+            isEclipseActive={isLunarEclipse}
+            stroke={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+            coronaColor={eclipse.isEclipseActive && !isLunarEclipse ? '#fbbf24' : undefined}
+            fill={isLunarEclipse ? '#f43f5e' : '#0f172a'}
             fillOpacity={1}
           />
           <text

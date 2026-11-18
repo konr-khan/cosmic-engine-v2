@@ -569,6 +569,19 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       const vBack = transformArmillaryToScene(vArm);
       expect(vBack).toEqual(vScene);
     });
+
+    it('keeps Earth 3D velocity tangent and perpendicular to heliocentric position across the orbit', () => {
+      for (let day = 0; day < 365; day += 15) {
+        const scene = generateCosmicScene({ julianDate: 2451545.0 + day, scaleMode: 'true' });
+        const pos = scene.earth.position;
+        const vel = scene.earth.velocity!;
+        expect(vel).toBeDefined();
+        const rMag = Math.hypot(pos.x, pos.y);
+        const vMag = Math.hypot(vel.x, vel.y);
+        const cosAngle = (pos.x * vel.x + pos.y * vel.y) / (rMag * vMag);
+        expect(cosAngle).toBeCloseTo(0, 6);
+      }
+    });
   });
 
 });

@@ -81,6 +81,33 @@ describe('Lunar Almanac Subsystem', () => {
     expect(annualHtml).toContain('365-Day Ribbon');
     expect(annualHtml).toContain('Jan');
     expect(annualHtml).toContain('Dec');
+    expect(annualHtml).toContain('Full Moon (100%)');
+  });
+
+  it('splits moonrise/moonset curves across midnight without drawing vertical full-chart lines', () => {
+    const mockWrapData: AnnualLunarMatrixItem[] = [
+      { day: 1, moonrise: 22.8, transit: 4.0, moonset: 10.0, phaseValue: 0.5, isPerigee: false, isApogee: false, distanceKm: 384400 },
+      { day: 2, moonrise: 23.6, transit: 4.8, moonset: 10.8, phaseValue: 0.52, isPerigee: false, isApogee: false, distanceKm: 384400 },
+      { day: 3, moonrise: 0.4, transit: 5.6, moonset: 11.6, phaseValue: 0.54, isPerigee: false, isApogee: false, distanceKm: 384400 },
+      { day: 4, moonrise: 1.2, transit: 6.4, moonset: 12.4, phaseValue: 0.56, isPerigee: false, isApogee: false, distanceKm: 384400 }
+    ];
+
+    const wrapHtml = renderToStaticMarkup(
+      React.createElement(LunarRibbonChart, {
+        annualLunarData: mockWrapData,
+        activeDay: 2,
+        totalDays: 4,
+        year: 2026,
+        activeData: mockWrapData[1],
+        getDayLabel: (d: number) => `Day ${d}`,
+        viewMode: 'synodic',
+        timeMode: 'utc',
+        onViewModeChange: () => {}
+      })
+    );
+
+    // Expect a second M command in the moonrise path where it exits top edge (y=20.0) and resumes at bottom edge (y=190.0)
+    expect(wrapHtml).toMatch(/d="M [^"]*L [0-9.]+ 20\.0 M [0-9.]+ 190\.0 L [^"]*"/);
   });
 
   it('renders circumpolar 24h moonlight and down all day statuses in polar conditions', () => {

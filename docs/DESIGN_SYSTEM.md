@@ -381,7 +381,7 @@ The Sun and Moon Horizon Domes in `TodayWidget` share identical geometry, layout
 * **Polar Directional Singularity Baseline Tokens ($|\phi| \ge 89.9^\circ$)**:
   - **Meridian Profile Baseline (`MeridianDomeBase`)**:
     - *North Pole ($\phi \ge +89.9^\circ$)*: `S (0°)` (Greenwich meridian, $X=38$) $\longleftrightarrow$ `Z (+90°)` (North Celestial Pole, $X=130$) $\longleftrightarrow$ `S (180°)` (Antimeridian, $X=222$).
-    - *South Pole ($\phi \le -89.9^\circ$)*: `N (0°)` ($X=38$) $\longleftrightarrow$ `Z (-90°)` ($X=130$) $\longleftrightarrow$ `N (180°)` ($X=222$).
+    - *South Pole ($\phi \le -89.9^\circ$)*: `N (0°)` ($X=38$) $\longleftrightarrow$ `Z (+90°)` ($X=130$) $\longleftrightarrow$ `N (180°)` ($X=222$).
     - Replaces the misleading `"N"` label at the North Pole with explicit longitudinal horizon references, proving both horizons point South.
   - **Upper Diurnal Elevation Dome Baseline (`SkyDomeBase`)**:
     - *At Poles ($|\phi| \ge 89.9^\circ$)*: `90°E` $\longleftrightarrow$ `0° (Grw)` $\longleftrightarrow$ `90°W`.

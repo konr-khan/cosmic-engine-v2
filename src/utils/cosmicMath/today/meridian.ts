@@ -491,8 +491,8 @@ export function getPolarColureInfo(latitude: number): PolarColureInfo {
   return {
     isPolar,
     isNorth,
-    baselineColure: isNorth ? 'S (0°) — Z (+90°) — S (180°)' : 'N (0°) — Z (-90°) — N (180°)',
-    zenithLabel: isNorth ? 'Z (+90°)' : 'Z (-90°)',
+    baselineColure: isNorth ? 'S (0°) — Z (+90°) — S (180°)' : 'N (0°) — Z (+90°) — N (180°)',
+    zenithLabel: 'Z (+90°)',
     noonColure: isNorth ? 'S (0° Prime)' : 'N (0° Prime)',
     midnightColure: isNorth ? 'S (180° Anti)' : 'N (180° Anti)',
     perspectiveLabel: isNorth

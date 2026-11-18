@@ -147,7 +147,7 @@ export const calculateEclipseData = (
 
   if (isNearNewMoon && gammaSolar < solarMaxLimit) {
     category = "SOLAR";
-    const apparentRadiusRatio = sSun > 0 ? parseFloat((sMoon / sSun).toFixed(4)) : 1.0;
+    const apparentRadiusRatio = sSun > 0 ? sMoon / sSun : 1.0;
     const isTotalityCapable = apparentRadiusRatio >= 1.0;
     if (gammaSolar < 1.0) {
       if (isTotalityCapable) {
@@ -224,7 +224,7 @@ export const calculateEclipseData = (
     raDiff: parseFloat(raDiff.toFixed(2)),
     elongation: parseFloat(elongation.toFixed(2)),
     phaseValue: parseFloat(phaseValue.toFixed(3)),
-    apparentRadiusRatio: sSun > 0 ? parseFloat((sMoon / sSun).toFixed(4)) : undefined,
+    apparentRadiusRatio: sSun > 0 ? sMoon / sSun : undefined,
     nodeAngleDeg: parseFloat(Number(calculateNodalPhaseParameters(sunLambda, lunarPos.nodeLongitude ?? 0).nodeAngleDeg).toFixed(2)),
     argumentOfLatitude,
     isAscendingHemisphere,

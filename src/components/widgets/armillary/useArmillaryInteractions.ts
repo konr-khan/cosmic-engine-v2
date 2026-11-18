@@ -255,8 +255,11 @@ export function useArmillaryInteractions({
   const handlePointerLeave = () => {
     setIsDraggingCamera(false);
     setIsDraggingRule(false);
+    setIsDraggingRete(false);
     setHoveredStar(null);
     setHoveredBead(null);
+    setHoveredMilestone(null);
+    setHoveredNode(null);
   };
 
   const handlePointerDownRule = (e: React.PointerEvent<SVGGElement | SVGElement>) => {
@@ -268,9 +271,10 @@ export function useArmillaryInteractions({
 
   const handleTargetClick = (name: string, screenPos: { x: number; y: number }) => {
     const angle = (Math.atan2(screenPos.y, screenPos.x) * 180 / Math.PI + 90 + 360) % 360;
-    updateRuleAngle(angle);
     if (onSnapToTarget) {
       onSnapToTarget(name, angle);
+    } else {
+      updateRuleAngle(angle);
     }
   };
 

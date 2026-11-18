@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { TidalVectors } from "../../../types";
 import { OrbitalAngles } from "../../../types/coordinates";
+import { TOPDOWN_EARTH_BASE_RADIUS } from "../../../utils/cosmicMath";
 import { TidalWaveOscillator } from "../lunar/TidalWaveOscillator";
 import { MiniGlobe } from "../../common/MiniGlobe";
 import { MiniMoon } from "../../common/MiniMoon";
@@ -342,7 +343,7 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
             </div>
             <div className="flex justify-between items-center text-[10px] text-slate-400 border-t border-slate-800/60 pt-1">
               <span>Syzygy Factor: {((safeTides.alignment || 0) * 100).toFixed(0)}%</span>
-              <span>Bulge Radius: {(safeTides.rx || 16).toFixed(1)} RE</span>
+              <span>Bulge Radius: {((safeTides.rx || (TOPDOWN_EARTH_BASE_RADIUS + 4)) / TOPDOWN_EARTH_BASE_RADIUS).toFixed(2)} RE</span>
             </div>
           </div>
         </div>

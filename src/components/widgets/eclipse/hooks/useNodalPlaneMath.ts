@@ -6,7 +6,10 @@ import {
   getJulianDate, 
   generateOrbitalSegments,
   toRadians,
+  toDegrees,
   calculateNodalOrbitalAngles,
+  MOON_RADIUS_MEAN_KM,
+  MOON_MEAN_DISTANCE_KM,
   J2000_DATE,
   type OrbitalSegments
 } from '../../../../utils/cosmicMath';
@@ -106,13 +109,17 @@ export function useNodalPlaneMath(params: UseNodalPlaneMathParams): UseNodalPlan
   const sunAngularDiamArcmin = solarPhysics.sunAngularDiameterArcmin; // ~31.5' (Aphelion) to ~32.5' (Perihelion)
   const sunLambdaDeg = ((solarPhysics?.lambda ?? solarPhysics?.eclipticLongitude ?? 0) as number);
 
-  const moonDistKm = eclipse.distanceKm || 384400;
-  const moonAngularDiamArcmin = 31.13 * (384400 / moonDistKm); // ~29.4' (Apogee) to ~33.5' (Perigee)
+  const moonDistKm = eclipse.distanceKm || MOON_MEAN_DISTANCE_KM;
+  const safeMoonDistKm = Math.max(1e-6, moonDistKm);
+  const moonAngularDiamArcmin = toDegrees(Math.asin(clamp(MOON_RADIUS_MEAN_KM / safeMoonDistKm, -1, 1))) * 120; // ~29.4' (Apogee) to ~33.5' (Perigee)
+  const meanMoonDiamArcmin = toDegrees(Math.asin(MOON_RADIUS_MEAN_KM / MOON_MEAN_DISTANCE_KM)) * 120;
 
   // Apparent radii in SVG pixels (scaled so Earth is prominent and Moon is distinct)
   const axialSunRadius = 46;
-  const axialMoonRadius = clamp(10.5 * (moonAngularDiamArcmin / 31.13), 8.5, 12.5);
-  const isTotalCapable = moonAngularDiamArcmin >= sunAngularDiamArcmin;
+  const axialMoonRadius = clamp(10.5 * (moonAngularDiamArcmin / meanMoonDiamArcmin), 8.5, 12.5);
+  const isTotalCapable = eclipse.apparentRadiusRatio !== undefined
+    ? eclipse.apparentRadiusRatio >= 1.0
+    : moonAngularDiamArcmin >= sunAngularDiamArcmin;
 
   // --- Orbital Geometry in Axial Projection (3D Elliptical Orbital Loop) ---
   const centerX = 260;

@@ -117,10 +117,10 @@ export const calculateLunarPosition = (
   const phaseName = getPhaseName(phase0to1);
 
   return { 
-    lambda: asDegrees(parseFloat(normLambda.toFixed(4))), 
-    eclipticLongitude: asDegrees(parseFloat(normLambda.toFixed(4))),
-    beta: asDegrees(parseFloat(beta.toFixed(4))), 
-    eclipticLatitude: asDegrees(parseFloat(beta.toFixed(4))),
+    lambda: asDegrees(normLambda), 
+    eclipticLongitude: asDegrees(normLambda),
+    beta: asDegrees(beta), 
+    eclipticLatitude: asDegrees(beta),
     declination, 
     rightAscension, 
     distanceKm, 

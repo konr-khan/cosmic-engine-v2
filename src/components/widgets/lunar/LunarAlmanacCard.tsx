@@ -185,7 +185,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
 
         {/* Box 2 (Lunar Transit) */}
         <div 
-          onClick={() => transitHour && onSetTime && onSetTime(transitHour)}
+          onClick={() => transitHour != null && onSetTime && onSetTime(((transitHour % 24) + 24) % 24)}
           className="bg-indigo-950/60 hover:bg-indigo-900/80 transition-all cursor-pointer p-2.5 rounded-xl border border-indigo-500/40 flex flex-col items-center justify-center text-center text-indigo-300 shadow-sm"
           title="Click to jump clock to Lunar Transit"
         >

@@ -22,7 +22,7 @@ This file is the always-loaded operational kernel for AI agents working in **Cos
 
 ### Essential Commands & Automated Gatekeepers
 
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 895 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 900 tests)
 
 | Command | Execution Scope & When to Run |
 | :--- | :--- |

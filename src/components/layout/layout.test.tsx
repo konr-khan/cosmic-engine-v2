@@ -193,6 +193,75 @@ describe('Layout Subsystem & Chronometer Dock Integration', () => {
         })
       );
       expect(htmlNight).toContain('Night');
+
+      // Non-Greenwich longitude crossing UTC midnight: Seattle (lon=-122.81, solarNoon=20.19, sunset=28.19) at 02:00 UTC is still late afternoon daylight
+      const seattleSolarData: SolarAlmanacData = {
+        ...mockSolarData,
+        solarNoon: 20.19,
+        sunrise: 12.19,
+        sunset: 28.19,
+        dayLength: 16.0
+      };
+      const htmlSeattleLateDay = renderToStaticMarkup(
+        React.createElement(OrbitalChronometer, {
+          date: mockDate,
+          timeOfDay: 2.0,
+          longitude: -122.81,
+          latitude: 47.06,
+          solarData: seattleSolarData
+        })
+      );
+      expect(htmlSeattleLateDay).toContain('Full Daylight');
+
+      // Non-Greenwich eastern longitude crossing UTC midnight: Tokyo (lon=+139.69, solarNoon=2.69, sunrise=-3.31) at 22:00 UTC is morning daylight
+      const tokyoSolarData: SolarAlmanacData = {
+        ...mockSolarData,
+        declination: 0,
+        solarNoon: 2.69,
+        sunrise: -3.31,
+        sunset: 8.69,
+        dayLength: 12.0
+      };
+      const htmlTokyoMorning = renderToStaticMarkup(
+        React.createElement(OrbitalChronometer, {
+          date: mockDate,
+          timeOfDay: 22.0,
+          longitude: 139.69,
+          latitude: 35.68,
+          solarData: tokyoSolarData
+        })
+      );
+      expect(htmlTokyoMorning).toContain('Full Daylight');
+
+      // Polar twilight during polar winter (dayLength = 0 at 78°N, dec = -20°): noon elevation is -8° (Nautical Twilight), midnight is -32° (Polar Night)
+      const arcticWinterNoon: SolarAlmanacData = {
+        ...mockSolarData,
+        declination: -20.0,
+        solarNoon: 12.0,
+        dayLength: 0,
+        isPolarNight: true
+      };
+      const htmlPolarTwilight = renderToStaticMarkup(
+        React.createElement(OrbitalChronometer, {
+          date: new Date('2026-11-22T12:00:00Z'),
+          timeOfDay: 12.0,
+          longitude: 0,
+          latitude: 78.0,
+          solarData: arcticWinterNoon
+        })
+      );
+      expect(htmlPolarTwilight).toContain('Nautical Twilight');
+
+      const htmlArcticDeepNight = renderToStaticMarkup(
+        React.createElement(OrbitalChronometer, {
+          date: new Date('2026-11-22T00:00:00Z'),
+          timeOfDay: 0.0,
+          longitude: 0,
+          latitude: 78.0,
+          solarData: arcticWinterNoon
+        })
+      );
+      expect(htmlArcticDeepNight).toContain('Polar Night');
     });
   });
 

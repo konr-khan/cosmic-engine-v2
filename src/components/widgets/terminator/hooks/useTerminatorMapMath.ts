@@ -7,6 +7,13 @@ import {
   generate24HourGroundTrack,
   findActiveNodalCrossing,
   getLunarNodeProximityTelemetry,
+  calculateSubsolarPoint,
+  calculateSublunarPoint,
+  projectMapX,
+  calculateLunarIllumination,
+  toDegrees,
+  MOON_RADIUS_MEAN_KM,
+  MOON_MEAN_DISTANCE_KM,
   GroundTrackResult,
   ActiveNodalMarker,
   LunarNodeProximityTelemetry,
@@ -93,6 +100,9 @@ export const useTerminatorMapMath = ({
   const activeTime = effectiveHoverTime !== null ? effectiveHoverTime : timeOfDay;
   const activeJD = useMemo(() => getJulianDate(currentDate, activeTime), [currentDate, activeTime]);
 
+  const subsolarPoint = useMemo(() => calculateSubsolarPoint(activeJD), [activeJD]);
+  const sublunarPoint = useMemo(() => calculateSublunarPoint(activeJD), [activeJD]);
+
   // --- 1. Earth-Sun Keplerian Distance & Dynamic Disc Scaling ---
   const fallbackPhysics = useMemo(
     () => calculateEarthOrbitalPhysics(activeJD),
@@ -107,30 +117,36 @@ export const useTerminatorMapMath = ({
   const sunRadius = clamp(4.5 * sunScale, 3.5, 6.0);
   const sunGlowRadius = sunRadius * 2.4;
 
-  const sunLong = (12 - activeTime) * 15;
-  const normalizedSunLong = ((sunLong + 180) % 360 + 360) % 360 - 180;
+  // Use true instantaneous subsolar longitude (Right Ascension - GMST) so marker matches the 24h ground track
+  const normalizedSunLong = subsolarPoint.lon;
   const sunCy = 90 - declination;
   const userCy = 90 - latitude;
 
   // --- 2. Sublunar Point (Moon) Coordinates, Distance & Ephemeris ---
-  const lunarDec = (orbitalData?.lunarEvents?.declination ?? orbitalData?.lunarPos?.declination ?? 0) as number;
+  const lunarDec = (orbitalData?.lunarEvents?.declination ?? orbitalData?.lunarPos?.declination ?? sublunarPoint.lat) as number;
   const transit = orbitalData?.lunarEvents?.transit ?? 12;
   const moonPhase = orbitalData?.phase?.name || 'Waxing Crescent';
-  const moonIllum = ((orbitalData?.phase?.value ?? 0.34) * 100).toFixed(0);
-  const moonDistKm = orbitalData?.lunarEvents?.distanceKm || orbitalData?.lunarPos?.distanceKm || 384400;
-  const moonAngularDiamArcmin = 31.13 * (384400 / moonDistKm);
+  const moonIllum = (
+    orbitalData?.lunarPos?.illuminationFraction !== undefined
+      ? Math.round(orbitalData.lunarPos.illuminationFraction * 100)
+      : calculateLunarIllumination(orbitalData?.phase?.value ?? 0.34)
+  ).toFixed(0);
+  const moonDistKm = orbitalData?.lunarEvents?.distanceKm || orbitalData?.lunarPos?.distanceKm || MOON_MEAN_DISTANCE_KM;
+  const safeMoonDistKm = Math.max(1e-6, moonDistKm);
+  const moonAngularDiamArcmin = orbitalData?.lunarPos?.angularRadiusDeg !== undefined
+    ? orbitalData.lunarPos.angularRadiusDeg * 120
+    : toDegrees(Math.asin(clamp(MOON_RADIUS_MEAN_KM / safeMoonDistKm, -1, 1))) * 120;
   const isSupermoon = moonDistKm < 365000;
   const isMicromoon = moonDistKm > 400000;
 
   // Dynamic Moon Disc Radius (Base 4.0px, dynamically scaled with geocentric distance)
-  const moonScale = 1.0 + (384400 / moonDistKm - 1.0) * 2.5;
+  const moonScale = 1.0 + (MOON_MEAN_DISTANCE_KM / safeMoonDistKm - 1.0) * 2.5;
   const moonRadius = clamp(4.0 * moonScale, 3.0, 5.5);
   const moonGlowRadius = moonRadius * 2.5;
 
-  // Map subsolar & sublunar positions relative to centered observer longitude
-  const relSunX = (normalizedSunLong - longitude + 180 + 360) % 360;
-  const moonHourAngle = (activeTime - transit) * 15;
-  const relMoonX = ((180 - moonHourAngle) % 360 + 360) % 360;
+  // Map subsolar & sublunar positions relative to centered observer longitude (matching 24h ground tracks)
+  const relSunX = projectMapX(normalizedSunLong, longitude);
+  const relMoonX = projectMapX(sublunarPoint.lon, longitude);
   const moonCy = 90 - lunarDec;
 
   // --- 3. 24-Hour Diurnal Subsolar & Sublunar Ground Tracks ---
