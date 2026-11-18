@@ -32,6 +32,27 @@ export interface PendingThrottledEphemerisEntry {
   dispatchedEntry: PendingEphemerisEntry | null;
 }
 
+export interface EphemerisRequestParams extends EphemerisCalculationParams {
+  calculateLunar?: boolean;
+  calculateEclipse?: boolean;
+  throttleMs?: number;
+}
+
+export interface EphemerisSubscription {
+  /** Updates parameters for a mounted consumer without cancelling in-flight worker work. */
+  update: (
+    params: EphemerisRequestParams,
+    onResult: (payload: EphemerisWorkerPayload, jd: number, lat: number, lon: number) => void
+  ) => void;
+  /** Disposes all queued and in-flight registrations for an unmounting/disabled consumer. */
+  dispose: () => void;
+}
+
+interface EphemerisRequestHandle {
+  unsubscribe: () => void;
+  isQueued: () => boolean;
+}
+
 export type SolarAlmanacDay = AnnualSolarMatrixItem;
 export type LunarAlmanacDay = AnnualLunarMatrixItem;
 
@@ -430,20 +451,13 @@ export class EphemerisWorkerManager {
     this._dispatchPendingThrottledEntries();
   }
 
-  /**
-   * Requests an asynchronous ephemeris calculation from the singleton worker with in-flight request
-   * deduplication, rate throttling, and monotonic sequence tracking.
-   */
-  requestCalculation(
-    params: EphemerisCalculationParams & { 
-      calculateLunar?: boolean; 
-      calculateEclipse?: boolean;
-      throttleMs?: number;
-    },
-    onResult: (payload: EphemerisWorkerPayload) => void
-  ): () => void {
+  private _requestCalculationInternal(
+    params: EphemerisRequestParams,
+    onResult: (payload: EphemerisWorkerPayload) => void,
+    now: number = Date.now()
+  ): EphemerisRequestHandle {
     if (!this.isAvailable()) {
-      return () => {};
+      return { unsubscribe: () => {}, isQueued: () => false };
     }
 
     const calculateLunar = params.calculateLunar !== false && params.isLunarActive !== false;
@@ -456,21 +470,26 @@ export class EphemerisWorkerManager {
       const existingEntry = this.pendingRequests.get(existingId);
       if (existingEntry && existingEntry.type === 'EPHEMERIS') {
         existingEntry.callbacks.add(onResult);
-        return this._createUnsubscribe(existingId, signature, existingEntry.callbacks, onResult);
+        return {
+          unsubscribe: this._createUnsubscribe(existingId, signature, existingEntry.callbacks, onResult),
+          isQueued: () => false
+        };
       }
     }
 
     // 2. Throttle handling if throttleMs is requested (> 0)
     const throttleMs = params.throttleMs ?? 0;
     if (throttleMs > 0) {
-      const now = Date.now();
       const elapsed = now - this.lastEphemerisDispatchTime;
 
       // Outside throttle window: dispatch immediately (leading-edge)
       if (elapsed >= throttleMs) {
         this._dispatchPendingThrottledEntries();
         this.lastEphemerisDispatchTime = now;
-        return this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult);
+        return {
+          unsubscribe: this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult),
+          isQueued: () => false
+        };
       }
 
       // Within throttle window: coalesce into pendingThrottledEntries (trailing-edge)
@@ -505,23 +524,31 @@ export class EphemerisWorkerManager {
         }, remaining);
       }
 
-      return () => {
-        activeEntry.callbacks.delete(onResult);
-        if (activeEntry.callbacks.size === 0) {
-          this.pendingThrottledEntries.delete(baseKey);
-          if (this.pendingThrottledEntries.size === 0 && this.ephemerisThrottleTimer) {
-            clearTimeout(this.ephemerisThrottleTimer);
-            this.ephemerisThrottleTimer = null;
+      return {
+        isQueued: () =>
+          activeEntry.dispatchedEntry === null &&
+          this.pendingThrottledEntries.get(baseKey) === activeEntry &&
+          activeEntry.callbacks.has(onResult),
+        unsubscribe: () => {
+          activeEntry.callbacks.delete(onResult);
+          if (activeEntry.callbacks.size === 0) {
+            if (this.pendingThrottledEntries.get(baseKey) === activeEntry) {
+              this.pendingThrottledEntries.delete(baseKey);
+            }
+            if (this.pendingThrottledEntries.size === 0 && this.ephemerisThrottleTimer) {
+              clearTimeout(this.ephemerisThrottleTimer);
+              this.ephemerisThrottleTimer = null;
+            }
           }
-        }
-        if (activeEntry.dispatchedEntry) {
-          activeEntry.dispatchedEntry.callbacks.delete(onResult);
-          if (activeEntry.dispatchedEntry.callbacks.size === 0) {
-            const reqId = this.signatureToRequestId.get(activeEntry.dispatchedEntry.signature);
-            if (reqId !== undefined) {
-              this._clearRequestTimeout(reqId);
-              this.pendingRequests.delete(reqId);
-              this.signatureToRequestId.delete(activeEntry.dispatchedEntry.signature);
+          if (activeEntry.dispatchedEntry) {
+            activeEntry.dispatchedEntry.callbacks.delete(onResult);
+            if (activeEntry.dispatchedEntry.callbacks.size === 0) {
+              const reqId = this.signatureToRequestId.get(activeEntry.dispatchedEntry.signature);
+              if (reqId !== undefined) {
+                this._clearRequestTimeout(reqId);
+                this.pendingRequests.delete(reqId);
+                this.signatureToRequestId.delete(activeEntry.dispatchedEntry.signature);
+              }
             }
           }
         }
@@ -529,7 +556,108 @@ export class EphemerisWorkerManager {
     }
 
     // Default un-throttled immediate dispatch
-    return this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult);
+    return {
+      unsubscribe: this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult),
+      isQueued: () => false
+    };
+  }
+
+  /**
+   * Requests an asynchronous ephemeris calculation from the singleton worker with in-flight request
+   * deduplication, rate throttling, and monotonic sequence tracking.
+   */
+  requestCalculation(
+    params: EphemerisRequestParams,
+    onResult: (payload: EphemerisWorkerPayload) => void
+  ): () => void {
+    return this._requestCalculationInternal(params, onResult).unsubscribe;
+  }
+
+  /**
+   * Creates a persistent per-consumer subscription channel for high-frequency consumers (e.g. 60 FPS playback).
+   * Replaces superseded queued-but-undispatched throttled entries without cancelling in-flight worker work
+   * or resetting active throttle timers.
+   */
+  createEphemerisSubscription(): EphemerisSubscription {
+    let disposed = false;
+    let nextSeq = 0;
+    let queuedEntry: { seq: number; handle: EphemerisRequestHandle } | null = null;
+    const inFlight = new Map<number, EphemerisRequestHandle>();
+
+    const pruneOlderInFlight = (completedSeq: number) => {
+      for (const [seq, handle] of Array.from(inFlight.entries())) {
+        if (seq <= completedSeq && !handle.isQueued()) {
+          handle.unsubscribe();
+          inFlight.delete(seq);
+        }
+      }
+    };
+
+    return {
+      update: (params, onResult) => {
+        if (disposed || !this.isAvailable()) return;
+
+        // Promote any previously queued entry whose throttle timer already fired into inFlight
+        if (queuedEntry && !queuedEntry.handle.isQueued()) {
+          inFlight.set(queuedEntry.seq, queuedEntry.handle);
+          queuedEntry = null;
+        }
+
+        const seq = ++nextSeq;
+        const reqJd = Number(params.julianDate);
+        const reqLat = Number(params.latitude);
+        const reqLon = Number(params.longitude);
+
+        const wrappedCallback = (payload: EphemerisWorkerPayload) => {
+          inFlight.delete(seq);
+          if (queuedEntry?.seq === seq) {
+            queuedEntry = null;
+          }
+          pruneOlderInFlight(seq);
+          if (disposed) return;
+          onResult(payload, reqJd, reqLat, reqLon);
+        };
+
+        const now = Date.now();
+        const throttleMs = params.throttleMs ?? 0;
+        const elapsed = now - this.lastEphemerisDispatchTime;
+        const willDispatchImmediately = throttleMs <= 0 || elapsed >= throttleMs;
+
+        // If a leading-edge dispatch runs immediately, discard our stale queued entry first
+        // so it is not flushed right alongside this newer frame.
+        if (queuedEntry && willDispatchImmediately) {
+          queuedEntry.handle.unsubscribe();
+          queuedEntry = null;
+        }
+
+        const newHandle = this._requestCalculationInternal(params, wrappedCallback, now);
+
+        // Within an active throttle window, cancel our superseded queued callback after adding the new one
+        // so pendingThrottledEntries remains non-empty and the existing timer is preserved without churn.
+        if (queuedEntry) {
+          queuedEntry.handle.unsubscribe();
+          queuedEntry = null;
+        }
+
+        if (newHandle.isQueued()) {
+          queuedEntry = { seq, handle: newHandle };
+        } else {
+          inFlight.set(seq, newHandle);
+        }
+      },
+
+      dispose: () => {
+        disposed = true;
+        if (queuedEntry) {
+          queuedEntry.handle.unsubscribe();
+          queuedEntry = null;
+        }
+        for (const handle of inFlight.values()) {
+          handle.unsubscribe();
+        }
+        inFlight.clear();
+      }
+    };
   }
 
   /**

@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   calculateLunarEvents, 
   calculateEclipseData,
   calculateAnnualSolarMatrix,
   calculateAnnualLunarMatrix
 } from '../utils/cosmicMath';
-import { ephemerisWorkerManager } from '../workers/ephemerisWorkerManager';
+import { ephemerisWorkerManager, EphemerisSubscription } from '../workers/ephemerisWorkerManager';
 import { EphemerisWorkerPayload } from '../types/worker';
 import { LunarEvents, EclipseData, AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude, JulianDate, HoursDecimal } from '../types/units';
@@ -48,28 +48,53 @@ export const useEphemerisWorker = ({
   isOrbitalActive = true,
   throttleMs = 100
 }: UseEphemerisWorkerParams): UseEphemerisWorkerResult => {
-  const [workerState, setWorkerState] = useState<{ payload: EphemerisWorkerPayload; jd: number } | null>(null);
+  const [workerState, setWorkerState] = useState<{
+    payload: EphemerisWorkerPayload;
+    jd: number;
+    lat: number;
+    lon: number;
+  } | null>(null);
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
+  const subscriptionRef = useRef<EphemerisSubscription | null>(null);
 
-  // Detect stale epoch on discontinuous jumps (> 0.01 days ~ 14.4 mins)
-  const isWorkerEpochStale = !workerState || Math.abs(Number(julianDate) - workerState.jd) > 0.01;
+  // Detect stale epoch or location jumps (> 0.01 days ~ 14.4 mins or > 0.05 deg)
+  const isWorkerEpochStale =
+    !workerState ||
+    Math.abs(Number(julianDate) - workerState.jd) > 0.01 ||
+    Math.abs(Number(latitude) - workerState.lat) > 0.05 ||
+    Math.abs(Number(longitude) - workerState.lon) > 0.05;
   const activePayload = isWorkerEpochStale ? null : workerState?.payload;
 
-  // Post calculation request to singleton worker manager when inputs change
+  // Dispose persistent subscription strictly on unmount (never mid-flight across 60 FPS frame ticks)
+  useEffect(() => {
+    return () => {
+      subscriptionRef.current?.dispose();
+      subscriptionRef.current = null;
+    };
+  }, []);
+
+  // Post calculation updates via persistent worker channel when inputs change
   useEffect(() => {
     if (!isOrbitalActive || (!isLunarActive && !isEclipseActive)) {
+      subscriptionRef.current?.dispose();
+      subscriptionRef.current = null;
       setWorkerState(null);
       return;
     }
 
     if (!ephemerisWorkerManager.isAvailable()) {
+      subscriptionRef.current?.dispose();
+      subscriptionRef.current = null;
       setIsWorkerActive(false);
       return;
     }
 
     setIsWorkerActive(true);
+    if (!subscriptionRef.current) {
+      subscriptionRef.current = ephemerisWorkerManager.createEphemerisSubscription();
+    }
 
-    const unsubscribe = ephemerisWorkerManager.requestCalculation(
+    subscriptionRef.current.update(
       {
         latitude,
         longitude,
@@ -79,17 +104,13 @@ export const useEphemerisWorker = ({
         calculateEclipse: isEclipseActive,
         throttleMs
       },
-      (payload) => {
-        setWorkerState({ payload, jd: Number(julianDate) });
+      (payload, resolvedJd, resolvedLat, resolvedLon) => {
+        setWorkerState({ payload, jd: resolvedJd, lat: resolvedLat, lon: resolvedLon });
       }
     );
-
-    return () => {
-      unsubscribe();
-    };
   }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, throttleMs]);
 
-  // Synchronous calculation fallback (used when worker is unavailable, pending initial result, or epoch is stale on date jumps)
+  // Synchronous calculation fallback (used when worker is unavailable, pending initial result, or epoch/location is stale on jumps)
   const syncResult = useMemo(() => {
     if (!isOrbitalActive) return { lunarEvents: null, eclipse: null };
     if (isWorkerActive && !isWorkerEpochStale && activePayload !== null) return null;
@@ -115,8 +136,12 @@ export const useEphemerisWorker = ({
     }
   }, [latitude, longitude, julianDate, timeOfDay, isLunarActive, isEclipseActive, isOrbitalActive, isWorkerActive, isWorkerEpochStale, activePayload]);
 
-  const lunarEvents = activePayload ? activePayload.lunarEvents : (syncResult ? syncResult.lunarEvents : null);
-  const eclipse = activePayload ? activePayload.eclipse : (syncResult ? syncResult.eclipse : null);
+  const lunarEvents = isOrbitalActive && isLunarActive
+    ? (activePayload ? activePayload.lunarEvents : (syncResult ? syncResult.lunarEvents : null))
+    : null;
+  const eclipse = isOrbitalActive && isEclipseActive
+    ? (activePayload ? activePayload.eclipse : (syncResult ? syncResult.eclipse : null))
+    : null;
 
   return useMemo(() => ({
     lunarEvents,
@@ -135,8 +160,8 @@ interface UseAnnualMatrixWorkerConfig<TItem> {
 
 /**
  * Shared generic hook for annual 365/366-day solar and lunar ephemeris matrices.
- * Encapsulates LRU cache lookup, render-time key synchronization, worker subscription,
- * and synchronous fallback seeding.
+ * Encapsulates key-matched state, LRU cache lookup, worker subscription, and synchronous fallback seeding
+ * without render-phase setState mutations.
  */
 function useAnnualMatrixWorker<TItem>({
   currentKey,
@@ -145,14 +170,11 @@ function useAnnualMatrixWorker<TItem>({
   computeAndSeedSync,
   hookLabel
 }: UseAnnualMatrixWorkerConfig<TItem>): TItem[] {
-  const [activeKey, setActiveKey] = useState(currentKey);
-  const [workerMatrix, setWorkerMatrix] = useState<TItem[] | null>(() => getCached() ?? null);
+  const [workerEntry, setWorkerEntry] = useState<{ key: string; items: TItem[] } | null>(() => {
+    const cached = getCached();
+    return cached ? { key: currentKey, items: cached } : null;
+  });
   const [isWorkerActive, setIsWorkerActive] = useState<boolean>(() => ephemerisWorkerManager.isAvailable());
-
-  if (activeKey !== currentKey) {
-    setActiveKey(currentKey);
-    setWorkerMatrix(getCached() ?? null);
-  }
 
   useEffect(() => {
     if (!ephemerisWorkerManager.isAvailable()) {
@@ -161,21 +183,24 @@ function useAnnualMatrixWorker<TItem>({
     }
 
     setIsWorkerActive(true);
+    let cancelled = false;
 
     const unsubscribe = requestAsync((items) => {
-      if (items) {
-        setWorkerMatrix(items);
+      if (!cancelled && items) {
+        setWorkerEntry({ key: currentKey, items });
       }
     });
 
     return () => {
+      cancelled = true;
       unsubscribe();
     };
-  }, [currentKey]);
+  }, [currentKey, requestAsync]);
 
-  const hasWorkerMatrix = workerMatrix !== null;
+  const matchingWorkerItems = workerEntry?.key === currentKey ? workerEntry.items : null;
+
   const syncMatrix = useMemo(() => {
-    if (isWorkerActive && hasWorkerMatrix) return null;
+    if (isWorkerActive && matchingWorkerItems !== null) return null;
     const cached = getCached();
     if (cached) return cached;
     try {
@@ -184,9 +209,9 @@ function useAnnualMatrixWorker<TItem>({
       console.error(`[${hookLabel}] Synchronous fallback calculation failed:`, err);
       return [];
     }
-  }, [currentKey, isWorkerActive, hasWorkerMatrix]);
+  }, [currentKey, isWorkerActive, matchingWorkerItems, getCached, computeAndSeedSync, hookLabel]);
 
-  return workerMatrix || syncMatrix || [];
+  return matchingWorkerItems ?? syncMatrix ?? [];
 }
 
 /**
@@ -194,7 +219,7 @@ function useAnnualMatrixWorker<TItem>({
  * Automatically falls back to synchronous main-thread execution if Web Workers are unsupported, blocked, or pending.
  */
 export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitude: Latitude }): AnnualSolarMatrixItem[] => {
-  return useAnnualMatrixWorker<AnnualSolarMatrixItem>({
+  const config = useMemo<UseAnnualMatrixWorkerConfig<AnnualSolarMatrixItem>>(() => ({
     currentKey: `${year}_${latitude}`,
     getCached: () => ephemerisWorkerManager.getCachedAnnualSolar(year, latitude),
     requestAsync: (onItems) =>
@@ -210,7 +235,9 @@ export const useAnnualSolarWorker = ({ year, latitude }: { year: number; latitud
       return matrix;
     },
     hookLabel: 'useAnnualSolarWorker'
-  });
+  }), [year, latitude]);
+
+  return useAnnualMatrixWorker<AnnualSolarMatrixItem>(config);
 };
 
 /**
@@ -226,7 +253,7 @@ export const useAnnualLunarWorker = ({
   latitude: Latitude; 
   longitude: Longitude; 
 }): AnnualLunarMatrixItem[] => {
-  return useAnnualMatrixWorker<AnnualLunarMatrixItem>({
+  const config = useMemo<UseAnnualMatrixWorkerConfig<AnnualLunarMatrixItem>>(() => ({
     currentKey: `${year}_${latitude}_${longitude}`,
     getCached: () => ephemerisWorkerManager.getCachedAnnualLunar(year, latitude, longitude),
     requestAsync: (onItems) =>
@@ -243,5 +270,7 @@ export const useAnnualLunarWorker = ({
       return matrix;
     },
     hookLabel: 'useAnnualLunarWorker'
-  });
+  }), [year, latitude, longitude]);
+
+  return useAnnualMatrixWorker<AnnualLunarMatrixItem>(config);
 };

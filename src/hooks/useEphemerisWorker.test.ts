@@ -871,6 +871,177 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     vi.useRealTimers();
   });
 
+  it('preserves in-flight leading requests and throttle timers across 60 FPS subscription updates without dispatching stale frames', () => {
+    vi.useFakeTimers();
+    try {
+      installMockWorker();
+      const manager = new EphemerisWorkerManager();
+      const sub = manager.createEphemerisSubscription();
+      const onResult = vi.fn();
+
+      // Frame 0 (t=0ms): Leading-edge dispatch (id = 1)
+      sub.update(
+        {
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          julianDate: 2451545.0,
+          timeOfDay: 12,
+          calculateLunar: true,
+          calculateEclipse: true,
+          throttleMs: 100,
+        },
+        onResult
+      );
+
+      const worker = getActiveMockWorker(manager);
+      expect(worker.postMessage).toHaveBeenCalledTimes(1);
+
+      // Frames 1..5 (16ms, 32ms, 48ms, 64ms, 80ms): rapid 60 FPS updates replace queued frame only
+      for (let frame = 1; frame <= 5; frame++) {
+        vi.advanceTimersByTime(16);
+        sub.update(
+          {
+            latitude: 47.06 as Latitude,
+            longitude: -122.81 as Longitude,
+            julianDate: 2451545.0 + frame * 0.0002,
+            timeOfDay: 12 + frame * 0.0048,
+            calculateLunar: true,
+            calculateEclipse: true,
+            throttleMs: 100,
+          },
+          onResult
+        );
+      }
+
+      // Leading-edge id=1 must NOT be cancelled by intermediate ticks; worker completion at t=80ms delivers result
+      expect(worker.postMessage).toHaveBeenCalledTimes(1);
+      expect(manager.pendingThrottledEntries.size).toBe(1);
+      worker.emitMessage({
+        type: 'EPHEMERIS_SUCCESS',
+        id: 1,
+        payload: { lunarEvents: { distanceKm: 384400 } as unknown as LunarEvents, eclipse: null, timestamp: 10 },
+      });
+      expect(onResult).toHaveBeenCalledTimes(1);
+      expect(onResult).toHaveBeenLastCalledWith(
+        expect.objectContaining({ timestamp: 10 }),
+        2451545.0,
+        47.06,
+        -122.81
+      );
+
+      // Advance remaining 20ms to hit 100ms throttle expiry -> dispatches ONLY latest queued frame (frame 5)
+      vi.advanceTimersByTime(20);
+      expect(worker.postMessage).toHaveBeenCalledTimes(2);
+      expect(worker.postMessage).toHaveBeenLastCalledWith({
+        type: 'CALCULATE_EPHEMERIS',
+        id: 2,
+        payload: expect.objectContaining({ julianDate: 2451545.0 + 5 * 0.0002 }),
+      });
+
+      worker.emitMessage({
+        type: 'EPHEMERIS_SUCCESS',
+        id: 2,
+        payload: { lunarEvents: { distanceKm: 384410 } as unknown as LunarEvents, eclipse: null, timestamp: 20 },
+      });
+      expect(onResult).toHaveBeenCalledTimes(2);
+      expect(onResult).toHaveBeenLastCalledWith(
+        expect.objectContaining({ timestamp: 20 }),
+        2451545.0 + 5 * 0.0002,
+        47.06,
+        -122.81
+      );
+
+      // Frame 6 arrives after throttle expiry: leading-edge dispatch id=3, then dispose() cancels it cleanly
+      vi.advanceTimersByTime(110);
+      sub.update(
+        {
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          julianDate: 2451545.002,
+          timeOfDay: 12.048,
+          calculateLunar: true,
+          calculateEclipse: true,
+          throttleMs: 100,
+        },
+        onResult
+      );
+      expect(worker.postMessage).toHaveBeenCalledTimes(3);
+
+      sub.dispose();
+      worker.emitMessage({
+        type: 'EPHEMERIS_SUCCESS',
+        id: 3,
+        payload: { lunarEvents: null, eclipse: null, timestamp: 30 },
+      });
+      expect(onResult).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('drops stale queued frame before leading-edge dispatch when throttle window elapses prior to timer callback', () => {
+    vi.useFakeTimers();
+    try {
+      installMockWorker();
+      const manager = new EphemerisWorkerManager();
+      const sub = manager.createEphemerisSubscription();
+      const onResult = vi.fn();
+
+      // t=0: leading dispatch (id=1)
+      sub.update(
+        {
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          julianDate: 2451545.0,
+          timeOfDay: 12,
+          throttleMs: 100,
+        },
+        onResult
+      );
+
+      // t=20: queued frame (JD + 0.01)
+      vi.advanceTimersByTime(20);
+      sub.update(
+        {
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          julianDate: 2451545.01,
+          timeOfDay: 12.24,
+          throttleMs: 100,
+        },
+        onResult
+      );
+
+      const worker = getActiveMockWorker(manager);
+      expect(worker.postMessage).toHaveBeenCalledTimes(1);
+
+      // Advance system clock directly past throttle window without running pending timer first
+      vi.setSystemTime(Date.now() + 100);
+      sub.update(
+        {
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          julianDate: 2451545.05,
+          timeOfDay: 13.2,
+          throttleMs: 100,
+        },
+        onResult
+      );
+
+      // Only id=2 (JD + 0.05) should dispatch; stale JD + 0.01 must NOT flush
+      expect(worker.postMessage).toHaveBeenCalledTimes(2);
+      expect(worker.postMessage).toHaveBeenLastCalledWith({
+        type: 'CALCULATE_EPHEMERIS',
+        id: 2,
+        payload: expect.objectContaining({ julianDate: 2451545.05 }),
+      });
+
+      sub.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   describe('Annual Matrix LRU Cache Policy', () => {
     it('evicts the oldest entry when cache size exceeds MAX_ANNUAL_CACHE_SIZE (16)', () => {
       const manager = new EphemerisWorkerManager();
