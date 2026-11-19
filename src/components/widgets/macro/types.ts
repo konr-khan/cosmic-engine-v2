@@ -1,10 +1,12 @@
 import { EclipseData } from '../../../types';
 import { MilestoneNode3D } from '../../../utils/cosmicMath/scene/types';
 import type { MilestoneItem } from '../../../utils/cosmicMath/milestones';
+import type { MilestoneVisualToken } from './macroTokens';
 
 export type { MilestoneItem };
 
-export type OrbitMilestoneInput = MilestoneItem | (MilestoneNode3D & { x: number; y: number });
+export type OrbitMilestoneInput = (MilestoneItem | (MilestoneNode3D & { x: number; y: number })) &
+  Partial<MilestoneVisualToken>;
 
 export interface MacroOrbitHoverData {
   label: string;

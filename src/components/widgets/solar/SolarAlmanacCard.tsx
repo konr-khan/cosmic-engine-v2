@@ -6,6 +6,7 @@ import { AnnualSolarMatrixItem, SolarAlmanacData } from '../../../types';
 import { SolarShortcutsRail, SolarShortcut } from './SolarShortcutsRail';
 import { SolarRibbonChart } from './SolarRibbonChart';
 import { PolarSunlightDial } from './PolarSunlightDial';
+import { findMirrorSolarDay } from './solarHelpers';
 import { useHoverTime, useHoverDate, hoverActions } from '../../../store/hoverStore';
 
 export interface SolarAlmanacProps {
@@ -77,25 +78,10 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
   const activeData = almanacData[activeDay - 1] || almanacData[0] || { sunrise: 6, sunset: 18, dayLength: 12, solarNoon: 12 };
 
   // Compute equivalent daylight mirror day across Solstice
-  const mirrorDayData = useMemo<AnnualSolarMatrixItem | null>(() => {
-    if (!almanacData.length) return null;
-    const targetLength = activeData.dayLength;
-    
-    let bestDay: AnnualSolarMatrixItem | null = null;
-    let minDiff = 999;
-    
-    almanacData.forEach(d => {
-      if (Math.abs(d.day - activeDay) > 5 && Math.abs(d.day - activeDay) < (totalDays - 5)) {
-        const diff = Math.abs(d.dayLength - targetLength);
-        if (diff < minDiff) {
-          minDiff = diff;
-          bestDay = d;
-        }
-      }
-    });
-    
-    return bestDay;
-  }, [almanacData, activeDay, activeData.dayLength, totalDays]);
+  const mirrorDayData = useMemo<AnnualSolarMatrixItem | null>(
+    () => findMirrorSolarDay(almanacData, activeDay, activeData.dayLength, totalDays),
+    [almanacData, activeDay, activeData.dayLength, totalDays]
+  );
 
   // Fast-jump shortcut pins
   const shortcuts: SolarShortcut[] = useMemo(() => [

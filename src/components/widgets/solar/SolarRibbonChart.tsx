@@ -2,6 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { getDayOfYear } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem } from '../../../types';
 import { useRibbonScrubber } from '../common/useRibbonScrubber';
+import { findMirrorSolarDay } from './solarHelpers';
 import { SolarRibbonAxes, SolarRibbonBands, SolarRibbonOverlay } from './ribbon';
 
 export interface SolarRibbonChartProps {
@@ -123,24 +124,14 @@ export const SolarRibbonChart: React.FC<SolarRibbonChartProps> = React.memo(({
 
   const currentMirrorDayData = useMemo<AnnualSolarMatrixItem | null>(() => {
     if (!almanacData.length) return null;
-    const targetLength = effectiveFocusData.dayLength;
-    
-    let bestDay: AnnualSolarMatrixItem | null = null;
-    let minDiff = 999;
-    
-    for (let i = 0; i < almanacData.length; i++) {
-      const d = almanacData[i];
-      if (Math.abs(d.day - effectiveFocusDay) > 5 && Math.abs(d.day - effectiveFocusDay) < (totalDays - 5)) {
-        const diff = Math.abs(d.dayLength - targetLength);
-        if (diff < minDiff) {
-          minDiff = diff;
-          bestDay = d;
-        }
-      }
+    if (effectiveFocusDay === activeDay && mirrorDayData !== null) {
+      return mirrorDayData;
     }
-    
-    return bestDay ?? mirrorDayData;
-  }, [almanacData, effectiveFocusDay, effectiveFocusData.dayLength, totalDays, mirrorDayData]);
+    return (
+      findMirrorSolarDay(almanacData, effectiveFocusDay, effectiveFocusData.dayLength, totalDays) ??
+      mirrorDayData
+    );
+  }, [almanacData, activeDay, effectiveFocusDay, effectiveFocusData.dayLength, totalDays, mirrorDayData]);
 
   return (
     <div className="xl:col-span-8 2xl:col-span-8 relative w-full h-full min-h-[300px] touch-none flex items-center">

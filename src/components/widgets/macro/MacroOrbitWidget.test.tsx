@@ -10,6 +10,7 @@ import {
   EARTH_MILESTONES 
 } from './index';
 import { calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
+import { asDegrees } from '../../../types/units';
 
 describe('Macro Orbit Subsystem', () => {
   it('exports MacroOrbitView and all decomposed sub-components cleanly', () => {
@@ -229,6 +230,44 @@ describe('Macro Orbit Subsystem', () => {
     const [scrubbedDate] = onScrub.mock.calls[0];
     expect(scrubbedDate).toBeInstanceOf(Date);
     expect(scrubbedDate.getUTCFullYear()).toBe(2026);
+  });
+
+  it('renders custom milestones using typed rawX/rawY fallback coordinates without type coercions', () => {
+    const htmlCanvas = renderToStaticMarkup(
+      React.createElement(OrbitSvgCanvas, {
+        renderSunX: 0,
+        renderSunY: 0,
+        renderEarthX: 200,
+        renderEarthY: 0,
+        renderMoonX: 228,
+        renderMoonY: 0,
+        orbitalRadius: 200,
+        bRatio: 0.5,
+        focus2X: 0,
+        focus2Y: 0,
+        exaggerateEccentricity: false,
+        hoveredId: null,
+        onHover: () => {},
+        milestones: [
+          {
+            id: 'custom_apside',
+            label: 'Custom Apside',
+            date: 'May 1',
+            distanceAU: 1.01,
+            distanceKm: 151000000,
+            speedKms: 29.5,
+            helioEclipticLon: asDegrees(45),
+            description: 'Custom test milestone',
+            rawX: 120,
+            rawY: -80,
+          },
+        ],
+      })
+    );
+
+    expect(htmlCanvas).toContain('Custom Apside');
+    expect(htmlCanvas).toContain('cx="120"');
+    expect(htmlCanvas).toContain('cy="-40"'); // rawY (-80) * bRatio (0.5)
   });
 });
 

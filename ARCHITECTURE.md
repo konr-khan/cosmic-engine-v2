@@ -135,7 +135,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `armillary/` — Gyro-Morph Armillary & Astrolabe container, HUDs & camera hooks (`ArmillaryEarthPip.tsx`, `ArmillaryHeaderControls.tsx`, `ArmillaryHoverHud.tsx`, `ArmillarySvgCanvas.tsx`, `ArmillaryTelemetryHud.tsx`, `GyroArmillaryView.tsx`, `armillaryTokens.ts`, `index.ts`, `types.ts`, `useArmillaryInteractions.ts`, `useStagedCamera.ts`)
         - `canvas/` — Modular SVG layers & instance-scoped `<defs>` (`ArmillaryAlidadeLayer.tsx`, `ArmillaryBeadsLayer.tsx`, `ArmillaryBezelLayer.tsx`, `ArmillaryDefs.tsx`, `ArmillaryLaserLayer.tsx`, `ArmillaryObserverConeLayer.tsx`, `ArmillaryRingsLayer.tsx`, `ArmillaryStarsLayer.tsx`, `ArmillaryTympanLayer.tsx`, `index.ts`)
         - `controls/` — Mode pills, morph slider rail & layer toggles (`ArmillaryLayerToggles.tsx`, `ArmillaryModePills.tsx`, `ArmillaryMorphRail.tsx`, `index.ts`)
-      - `solar/` — Solar Almanac & 24h Polar Dial (`PolarSunlightDial.tsx`, `SolarAlmanacCard.tsx`, `SolarRibbonChart.tsx`, `SolarShortcutsRail.tsx`, `index.ts`, `polarDialGeometry.ts`)
+      - `solar/` — Solar Almanac & 24h Polar Dial (`PolarSunlightDial.tsx`, `SolarAlmanacCard.tsx`, `SolarRibbonChart.tsx`, `SolarShortcutsRail.tsx`, `index.ts`, `polarDialGeometry.ts`, `solarHelpers.ts`)
         - `ribbon/` — Memoized 365-day solar ribbon layers (`SolarRibbonAxes.tsx`, `SolarRibbonBands.tsx`, `SolarRibbonOverlay.tsx`, `index.ts`)
       - `lunar/` — Lunar Almanac & tidal wave oscillator (`LunarAlmanacCard.tsx`, `LunarRibbonChart.tsx`, `LunarShortcutsRail.tsx`, `TidalWaveOscillator.tsx`, `index.ts`)
         - `ribbon/` — Memoized braided lunar ribbon layers (`LunarRibbonAxes.tsx`, `LunarRibbonCurves.tsx`, `LunarRibbonHud.tsx`, `index.ts`)

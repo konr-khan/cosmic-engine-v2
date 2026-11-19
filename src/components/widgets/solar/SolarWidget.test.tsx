@@ -9,7 +9,8 @@ import {
   SolarRibbonAxes,
   SolarRibbonBands,
   SolarRibbonOverlay,
-  getSectorPath
+  getSectorPath,
+  findMirrorSolarDay
 } from './index';
 import { calculateSolarPosition, calculateEarthOrbitalPhysics, getJulianDate } from '../../../utils/cosmicMath';
 import { AnnualSolarMatrixItem } from '../../../types';
@@ -263,6 +264,24 @@ describe('Solar Almanac Subsystem', () => {
 
     // Symmetrical 12h daylight sector spans 180° centered around 12 o'clock (-90° in SVG)
     expect(standardPath).toContain('A 50 50 0 0 1');
+  });
+
+  it('finds opposite-season mirror day outside the ±5 day exclusion window via findMirrorSolarDay', () => {
+    expect(findMirrorSolarDay([], 100, 12, 365)).toBeNull();
+
+    const yearData = Array.from({ length: 365 }, (_, i) => {
+      const day = i + 1;
+      const dayLength = 12 + 4 * Math.sin(((day - 80) / 365) * 2 * Math.PI);
+      return { day, dayLength } as AnnualSolarMatrixItem;
+    });
+
+    // Day 110 (late April) should match an opposite late-August day (~day 233) and exclude [105..115]
+    const mirror = findMirrorSolarDay(yearData, 110, yearData[109].dayLength, 365);
+    expect(mirror).not.toBeNull();
+    expect(Math.abs(mirror!.day - 110)).toBeGreaterThan(5);
+    expect(mirror!.day).toBeGreaterThan(220);
+    expect(mirror!.day).toBeLessThan(245);
+    expect(mirror!.dayLength).toBeCloseTo(yearData[109].dayLength, 1);
   });
 });
 

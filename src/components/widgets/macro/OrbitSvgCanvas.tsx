@@ -1,7 +1,7 @@
 import React from 'react';
 import { MILESTONE_VISUAL_TOKENS, MACRO_THEME } from './macroTokens';
 import { EARTH_MILESTONES } from './milestones';
-import { OrbitSvgCanvasProps } from './types';
+import { OrbitSvgCanvasProps, OrbitMilestoneInput } from './types';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { MiniMoon } from '../../common/MiniMoon';
 
@@ -158,9 +158,10 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
 
       {/* Key Astronomical Orbital Milestones */}
       {milestones.map((m) => {
-        const token = MILESTONE_VISUAL_TOKENS[m.id];
-        const mx = 'x' in m && typeof m.x === 'number' ? m.x : (token?.rawX ?? ('rawX' in m ? (m as any).rawX : 0));
-        const my = 'y' in m && typeof m.y === 'number' ? m.y : ((token?.rawY ?? ('rawY' in m ? (m as any).rawY : 0)) * bRatio);
+        const item: OrbitMilestoneInput = m;
+        const token = MILESTONE_VISUAL_TOKENS[item.id];
+        const mx = 'x' in item && typeof item.x === 'number' ? item.x : (token?.rawX ?? (typeof item.rawX === 'number' ? item.rawX : 0));
+        const my = 'y' in item && typeof item.y === 'number' ? item.y : ((token?.rawY ?? (typeof item.rawY === 'number' ? item.rawY : 0)) * bRatio);
         const isHovered = hoveredId === m.id;
         const color = token?.color ?? ('color' in m && m.color ? m.color : '#38bdf8');
         const fillColor = token?.fillColor ?? ('fillColor' in m && m.fillColor ? m.fillColor : 'fill-sky-400');
