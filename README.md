@@ -17,7 +17,7 @@ Rather than relying on informal conventions that drift across sessions, Cosmic E
    - Angular metrics (`Degrees`, `Radians`) and epochs (`JulianDate`, `JulianCenturies`) use unique Symbol brands with forbidden brand intersections (`NotRadians`, `NotDegrees`).
    - Passing degrees into a trigonometric solver expecting radians (`Math.sin`, Meeus ephemeris series) or double-converting branded values fails at compile time (`npm run typecheck`).
 3. **Programmatic Babel AST Guardrails ([`scripts/lintUnitSafety.mjs`](./scripts/lintUnitSafety.mjs))**:
-   - **UI Unit Boundary**: Bans `asDegrees()` and `asRadians()` across all 119 UI files in `src/components/**`, forcing presentation components through verified conversion gatekeepers (`latToRadians`, `lonToRadians`, `toRadians`).
+   - **UI Unit Boundary**: Bans `asDegrees()` and `asRadians()` across all 120 UI files in `src/components/**`, forcing presentation components through verified conversion gatekeepers (`latToRadians`, `lonToRadians`, `toRadians`).
    - **Collision-Safe SVG `<defs>` Scoping**: Scans JSX `<defs>` blocks across `src/components/**` to ban static string-literal `id="..."` attributes, enforcing instance-scoped `useSafeSvgId()` / `useId()` references across co-mounted observatory widgets.
    - **Mathematical Domain Purity**: Scans `src/utils/cosmicMath/**` to guarantee 0 React imports, 0 UI component imports, 0 Tailwind presentation tokens, and 0 unparameterized `new Date()` calls.
    - **Prop Identity Stability & SSoT Parity**: Bans `= new Date()` default parameter fallbacks across `src/components/**` and `src/hooks/**` (enforcing immutable `J2000_DATE` fallbacks) and verifies 100% Markdown link/anchor resolution, `F#`/`M#`/`DE-xx`/`ADR-xxxx` ledger parity, and 1:1 `ARCHITECTURE.md` production file inventory sync.
@@ -76,7 +76,7 @@ To prevent documentation drift across AI pair-programming sessions, every archit
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`, `src/store/hoverStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 902 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 904 tests)
 
 ```bash
 # Install dependencies
@@ -104,7 +104,7 @@ npm run sync:dossier       # Compiles docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.m
 
 ## 🧪 Verification & Test Harness
 
-The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**902 tests**):
+The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**904 tests**):
 
 <details>
 <summary><strong>📊 Expand Full 59-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
@@ -124,7 +124,7 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **3D Scene Graph Math** | `src/utils/cosmicMath/scene/scene.test.ts` (35 tests) | 3D coordinate consistency across frames (Heliocentric, Geocentric, Terrestrial), True vs. Exaggerated Keplerian scale modes, 6 seasonal milestone coordinates, dynamic $5.14^\circ$ inclined lunar orbit with continuous nodal precession $\Omega(t)$, and 3D syzygy shadow cones |
 | **Scene Cameras Stress** | `src/utils/cosmicMath/scene/cameras.stress.test.ts` (23 tests) | Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts |
 | **Scene Coordinate Adversarial** | `src/utils/cosmicMath/scene/m1_adversarial.test.ts` (18 tests) | Coordinate frame invariants, axial tilt matrix preservation ($23.439^\circ$) in inertial space, and singular polar viewing angles |
-| **Unit-Safety AST Guardrails** | `src/types/unitSafety.test.ts` (11 tests) | Babel AST & SSoT lint enforcement banning `asDegrees()`/`asRadians()` and static `<defs>` IDs in `src/components/**`, strict $\le 18\text{ KB}$ `AGENTS.md` budget, and 100% Markdown link/anchor/inventory parity |
+| **Unit-Safety AST Guardrails** | `src/types/unitSafety.test.ts` (12 tests) | Babel AST & SSoT lint enforcement banning `asDegrees()`/`asRadians()` and static `<defs>` IDs in `src/components/**`, strict $\le 18\text{ KB}$ `AGENTS.md` budget, and 100% Markdown link/anchor/inventory parity |
 | **Cosmic State Store** | `src/store/cosmicStore.test.ts` (13 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (23 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (5 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useCosmicScene` and `useHeliocentricScene`), and `shallowEqual` protection |
@@ -148,7 +148,7 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **Terminator Map Math Hook** | `src/components/widgets/terminator/hooks/useTerminatorMapMath.test.ts` (5 tests) | Astronomical coordinates, Keplerian disc scaling, hover overrides, ground-track toggles, and null-data fallbacks |
 | **Macro Orbit Widget** | `src/components/widgets/macro/MacroOrbitWidget.test.tsx` (8 tests) | Heliocentric planetary orbit view, 6 Keplerian orbital milestones, True vs. Exaggerated scale toggles, and 1 AU orbital physics HUD |
 | **Micro Tide Widget** | `src/components/widgets/tides/TidesWidget.test.tsx` (5 tests) | MicroTideView Earth tidal gravity, MiniGlobe 3D vector integration, segmented Nodal Loop and potential toggles, and counter-clockwise prograde Moon revolution |
-| **Armillary Visualizer Widget** | `src/components/widgets/armillary/ArmillaryWidget.test.tsx` (25 tests) | Continuum model generation, camera staging timing (pitch/yaw at $\lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification |
+| **Armillary Visualizer Widget** | `src/components/widgets/armillary/ArmillaryWidget.test.tsx` (26 tests) | Continuum model generation, camera staging timing (pitch/yaw at $\lambda=0.45$), Keplerian milestones, Ecliptic Sun bead clamping, double-grooved hairline bezel, volumetric laser cones, sighting alidade, and top-down ring stroke unification |
 | **Staged Camera Hook** | `src/components/widgets/armillary/useStagedCamera.test.ts` (11 tests) | 2-phase Euler angle interpolation ($\lambda \le 0.45$), canonical pole locking ($\lambda \ge 0.45$), memory angle retention, and reverse transition unwinding |
 | **Camera Staging Adversarial** | `src/components/widgets/armillary/m2_adversarial.test.ts` (9 tests) | Camera alignment timing ($0 \le \lambda \le 0.45$), canonical pole lock ($0.45 \le \lambda \le 1.0$), geodesic wrapping, and custom user 3D angle restoration |
 | **Depth Stroke Unification** | `src/components/widgets/depthUnificationStress.test.ts` (11 tests) | Continuous stroke width scaling, dash gap closure, opacity interpolation, and duplicate path prevention over $\lambda \in [0.85, 1.0]$ |

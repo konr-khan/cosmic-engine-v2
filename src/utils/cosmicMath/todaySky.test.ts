@@ -270,7 +270,7 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
       expect(node.daysOffset).toBeGreaterThanOrEqual(-15);
       expect(node.daysOffset).toBeLessThanOrEqual(15);
       expect(['☊', '☋']).toContain(node.symbol);
-      expect(['#38bdf8', '#f43f5e']).toContain(node.color);
+      expect(['ascending', 'descending']).toContain(node.type);
     }
 
     expect(nodes.timelineSegments.length).toBeGreaterThanOrEqual(2);
@@ -280,7 +280,7 @@ describe('Sky Dome Lunar Nodes (calculateSkyDomeLunarNodes)', () => {
       expect(seg.startDays).toBeLessThan(seg.endDays);
       expect(seg.startDays).toBeGreaterThanOrEqual(-15);
       expect(seg.endDays).toBeLessThanOrEqual(15);
-      expect(['#38bdf8', '#f43f5e']).toContain(seg.color);
+      expect(typeof seg.isNorth).toBe('boolean');
     }
   });
 

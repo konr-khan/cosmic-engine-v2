@@ -122,10 +122,11 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
       bodyX={moonX}
       bodyY={moonY}
       bodyVectorStroke={currentMoonElevation >= 0 ? moonTrackColor : '#475569'}
-      extraSvgContent={isNodalModeActive && nodalData.isNearNode && nodalData.nearestNode.isVisible && (
+      extraSvgContent={isNodalModeActive && nodalData.isNearNode && nodalData.nearestNode?.isVisible && (
         <g className="lunar-upcoming-node-layer">
           {(() => {
             const node = nodalData.nearestNode;
+            if (!node) return null;
             const isAsc = nodalData.nearestNodeType === 'ascending';
             const color = isAsc ? '#38bdf8' : '#f43f5e';
             const symbol = isAsc ? '☊' : '☋';

@@ -26,10 +26,20 @@ import { generateOrbitalSegments } from '../projection';
 import { EARTH_ECCENTRICITY_TRUE, EARTH_ECCENTRICITY_EXAGGERATED } from '../astroConstants';
 import { calculateNodalOrbitalAngles } from '../eclipse';
 
-/** Canonical lunar orbit segment design tokens */
-const LUNAR_NODE_ASC_STROKE = '#38bdf8';
-const LUNAR_NODE_DESC_STROKE = '#f43f5e';
+/** Canonical lunar orbit segment stroke dash encoding */
 const LUNAR_NODE_WANING_DASHARRAY = '4 3';
+
+function buildLunarOrbitSegments(
+  orbitalSegments: { waxAsc: string[]; waxDesc: string[]; wanAsc: string[]; wanDesc: string[] }
+): LunarOrbitSegment2D[] {
+  const rawSegments: LunarOrbitSegment2D[] = [
+    { path: orbitalSegments.waxAsc.join(' '), strokeRole: 'ascending', isFront: true, isAscending: true },
+    { path: orbitalSegments.waxDesc.join(' '), strokeRole: 'descending', isFront: true, isAscending: false },
+    { path: orbitalSegments.wanAsc.join(' '), strokeRole: 'ascending', strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: true },
+    { path: orbitalSegments.wanDesc.join(' '), strokeRole: 'descending', strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: false }
+  ];
+  return rawSegments.filter(seg => seg.path.length > 0);
+}
 
 /** Options for standard 2D camera viewport configuration */
 export interface CameraOptions {
@@ -281,14 +291,7 @@ export function projectGeocentricTransverse(
     'side',
     72
   );
-  const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
-
-  const lunarOrbitSegments: LunarOrbitSegment2D[] = [
-    { path: waxAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, isFront: true, isAscending: true },
-    { path: waxDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, isFront: true, isAscending: false },
-    { path: wanAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: true },
-    { path: wanDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: false }
-  ].filter(seg => seg.path.length > 0);
+  const lunarOrbitSegments = buildLunarOrbitSegments(orbitalSegments);
 
   // 5. Projected Syzygy Shadow Cones
   const umbraApexX = earthX + 180 * s;
@@ -422,14 +425,7 @@ export function projectGeocentricAxial(
     'axial',
     72
   );
-  const { waxAsc, waxDesc, wanAsc, wanDesc } = orbitalSegments;
-
-  const lunarOrbitSegments: LunarOrbitSegment2D[] = [
-    { path: waxAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, isFront: true, isAscending: true },
-    { path: waxDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, isFront: true, isAscending: false },
-    { path: wanAsc.join(' '), stroke: LUNAR_NODE_ASC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: true },
-    { path: wanDesc.join(' '), stroke: LUNAR_NODE_DESC_STROKE, strokeDasharray: LUNAR_NODE_WANING_DASHARRAY, isFront: false, isAscending: false }
-  ].filter(seg => seg.path.length > 0);
+  const lunarOrbitSegments = buildLunarOrbitSegments(orbitalSegments);
 
   // 5. Node Markers (where orbital loop crosses horizontal ecliptic plane cy)
   const { tAsc, tDesc } = calculateNodalOrbitalAngles(nodeAngleRad);

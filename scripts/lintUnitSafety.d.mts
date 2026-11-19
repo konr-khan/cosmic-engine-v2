@@ -75,9 +75,11 @@ export interface DocIntegrityResult {
   violations: DocIntegrityViolation[];
 }
 
+export function scanUnitSafetyInSource(content: string, filePath?: string): UnitViolation[];
 export function runUnitSafetyCheck(targetDir?: string): UnitSafetyResult;
 export function scanSvgDefsIdsInSource(content: string, filePath?: string): SvgDefsIdViolation[];
 export function runSvgDefsIdCheck(targetDir?: string): SvgDefsIdResult;
+export function scanMathPurityInSource(content: string, filePath?: string): MathPurityViolation[];
 export function runMathPurityCheck(targetDir?: string): MathPurityResult;
 export function getAgentsSizeBudget(): AgentsBudgetResult;
 export function runDefaultDateCheck(targetDirs?: string[]): DefaultDateResult;

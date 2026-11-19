@@ -285,7 +285,7 @@ export interface ProjectedMilestone2D {
 /** Segmented lunar orbital path stroke for 4-quadrant depth and node coloring */
 export interface LunarOrbitSegment2D {
   path: string;
-  stroke: string;
+  strokeRole: 'ascending' | 'descending';
   strokeDasharray?: string;
   isFront: boolean;
   isAscending?: boolean;

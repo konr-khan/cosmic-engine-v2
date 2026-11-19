@@ -225,7 +225,7 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
     laserRays.push({
       start: A,
       end: morphedPoints[rayIdx],
-      color: angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24',
+      role: angleDeg % 90 === 0 ? 'cardinal' : 'intercardinal',
       opacity: 0.6
     });
   }

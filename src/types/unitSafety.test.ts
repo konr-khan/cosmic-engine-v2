@@ -8,27 +8,28 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  scanUnitSafetyInSource,
   runUnitSafetyCheck,
   runSvgDefsIdCheck,
   scanSvgDefsIdsInSource,
+  scanMathPurityInSource,
   runMathPurityCheck,
   getAgentsSizeBudget,
   runDefaultDateCheck,
   runDocIntegrityCheck
 } from '../../scripts/lintUnitSafety.mjs';
-import { parse } from '@babel/parser';
-import { 
-  Degrees, 
-  Radians, 
-  JulianDate, 
-  JulianCenturies, 
-  asDegrees, 
-  asRadians, 
-  asJulianDate, 
-  asJulianCenturies, 
-  toRadians, 
-  toDegrees, 
-  julianDateToCenturies 
+import {
+  Degrees,
+  Radians,
+  JulianDate,
+  JulianCenturies,
+  asDegrees,
+  asRadians,
+  asJulianDate,
+  asJulianCenturies,
+  toRadians,
+  toDegrees,
+  julianDateToCenturies
 } from './units';
 
 interface UnitViolation {
@@ -46,7 +47,7 @@ interface UnitSafetyResult {
 }
 
 describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
-  it('enforces 0 instances of asDegrees() or asRadians() across all UI components in src/components', () => {
+  it('enforces 0 instances of banned unit wrappers or unsafe casts across all UI components in src/components', () => {
     const { totalFiles, violations } = runUnitSafetyCheck() as UnitSafetyResult;
 
     expect(totalFiles).toBeGreaterThan(50);
@@ -57,57 +58,41 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
     expect(violations).toHaveLength(0);
   });
 
-  it('detects violations when asDegrees or asRadians are imported or called', () => {
+  it('detects banned unit wrappers (asDegrees, asRadians, asJulianDate, asJulianCenturies) and unsafe casts via scanUnitSafetyInSource', () => {
     const mockCode = `
       import React from 'react';
-      import { asDegrees, asRadians, toRadians } from '../types/units';
+      import { asDegrees, asRadians, asJulianDate, asJulianCenturies, toRadians } from '../types/units';
 
       export const BadComponent = () => {
         const angle1 = asDegrees(45);
         const angle2 = asRadians(1.57);
+        const jd = asJulianDate(2451545.0);
+        const jc = asJulianCenturies(0.25);
+        const coerced = null as unknown as { x: number };
+        const castDeg = 90 as Degrees;
         const safe = toRadians(45);
         return <div>{angle1}</div>;
       };
     `;
 
-    const ast = parse(mockCode, {
-      sourceType: 'module',
-      plugins: ['typescript', 'jsx']
-    });
+    const violations = scanUnitSafetyInSource(mockCode, 'BadComponent.tsx') as UnitViolation[];
+    const pairs = violations.map(v => `${v.type}:${v.identifier}`);
 
-    const banned = new Set(['asDegrees', 'asRadians']);
-    const foundViolations: string[] = [];
-
-    function walk(node: any) {
-      if (!node || typeof node !== 'object') return;
-      if (node.type === 'ImportSpecifier' && banned.has(node.imported?.name)) {
-        foundViolations.push(`import:${node.imported.name}`);
-      }
-      if (node.type === 'CallExpression' && banned.has(node.callee?.name)) {
-        foundViolations.push(`call:${node.callee.name}`);
-      }
-      for (const key of Object.keys(node)) {
-        if (key === 'loc' || key === 'comments') continue;
-        const child = node[key];
-        if (Array.isArray(child)) {
-          child.forEach(walk);
-        } else if (child && typeof child === 'object') {
-          walk(child);
-        }
-      }
-    }
-
-    walk(ast);
-
-    expect(foundViolations).toContain('import:asDegrees');
-    expect(foundViolations).toContain('import:asRadians');
-    expect(foundViolations).toContain('call:asDegrees');
-    expect(foundViolations).toContain('call:asRadians');
-    expect(foundViolations).not.toContain('call:toRadians');
-    expect(foundViolations).toHaveLength(4);
+    expect(pairs).toContain('import:asDegrees');
+    expect(pairs).toContain('import:asRadians');
+    expect(pairs).toContain('import:asJulianDate');
+    expect(pairs).toContain('import:asJulianCenturies');
+    expect(pairs).toContain('call:asDegrees');
+    expect(pairs).toContain('call:asRadians');
+    expect(pairs).toContain('call:asJulianDate');
+    expect(pairs).toContain('call:asJulianCenturies');
+    expect(pairs).toContain('double-cast:as unknown as');
+    expect(pairs).toContain('unit-cast:as Degrees');
+    expect(pairs).not.toContain('call:toRadians');
+    expect(violations).toHaveLength(10);
   });
 
-  it('enforces mathematical domain purity (0 React or UI component imports or presentation tokens in src/utils/cosmicMath)', () => {
+  it('enforces mathematical domain purity (0 React or UI component imports or presentation/hex color tokens in src/utils/cosmicMath)', () => {
     const { totalFiles, violations } = runMathPurityCheck() as {
       totalFiles: number;
       violations: Array<{ filePath: string; line: number; column: number; source: string; snippet: string }>;
@@ -119,6 +104,26 @@ describe('Unit-Safety AST Guardrails (ADR 0002 Compliance)', () => {
       expect.fail(`Found ${violations.length} mathematical domain purity violations:\n${summary}`);
     }
     expect(violations).toHaveLength(0);
+  });
+
+  it('detects React imports, Tailwind classes, hex color literals, and unparameterized new Date() in scanMathPurityInSource', () => {
+    const badMathCode = `
+      import React from 'react';
+      const colorHex = '#38bdf8';
+      const svgTpl = \`stroke="#f43f5e"\`;
+      const twClass = 'text-sky-400';
+      const now = new Date();
+    `;
+
+    const violations = scanMathPurityInSource(badMathCode, 'badMath.ts');
+    const sources = violations.map(v => v.source);
+
+    expect(sources).toContain("imported 'react'");
+    expect(sources).toContain("Hex color presentation literal '#38bdf8'");
+    expect(sources).toContain("Hex color presentation literal '#f43f5e'");
+    expect(sources).toContain("Tailwind presentation token 'text-sky-400'");
+    expect(sources).toContain("unparameterized 'new Date()' in pure math module");
+    expect(violations).toHaveLength(5);
   });
 
   it('enforces AGENTS.md size budget strictly under 18 KB to prevent AI prompt truncation', () => {

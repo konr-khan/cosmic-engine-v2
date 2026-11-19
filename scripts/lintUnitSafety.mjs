@@ -1,8 +1,8 @@
 /**
  * @file lintUnitSafety.mjs
  * Babel AST & Documentation SSoT Parity Guardrails:
- * 1. Bans `asDegrees()` and `asRadians()` within UI presentation layer (`src/components/**`).
- * 2. Enforces mathematical domain purity (`src/utils/cosmicMath/**` free of React/UI imports, Tailwind tokens & `new Date()`).
+ * 1. Bans `asDegrees()`, `asRadians()`, `asJulianDate()`, `asJulianCenturies()`, and `as unknown as` / direct unit casts within UI presentation layer (`src/components/**`).
+ * 2. Enforces mathematical domain purity (`src/utils/cosmicMath/**` free of React/UI imports, Tailwind/hex color presentation tokens & `new Date()`).
  * 3. Bans `= new Date()` default parameter fallbacks in `src/components/**` and `src/hooks/**`.
  * 4. Bans static string-literal `id="..."` attributes inside JSX `<defs>` across `src/components/**` (`DE-51`).
  * 5. Enforces `AGENTS.md` prompt kernel size budget (`5.0 KB – 18.0 KB`).
@@ -22,8 +22,11 @@ const componentsDir = path.resolve(rootDir, 'src', 'components');
 const hooksDir = path.resolve(rootDir, 'src', 'hooks');
 const cosmicMathDir = path.resolve(rootDir, 'src', 'utils', 'cosmicMath');
 
-const BANNED_IDENTIFIERS = new Set(['asDegrees', 'asRadians']);
+const BANNED_IDENTIFIERS = new Set(['asDegrees', 'asRadians', 'asJulianDate', 'asJulianCenturies']);
+const BANNED_UNIT_TYPE_NAMES = new Set(['Degrees', 'Radians', 'JulianDate', 'JulianCenturies']);
 const BANNED_DATE_DEFAULT_REGEX = /=\s*new\s+Date\(\)/;
+const BANNED_MATH_PRESENTATION_REGEX = /^(text|bg|fill|stroke)-[a-z]+-\d{2,3}$/;
+const BANNED_HEX_COLOR_REGEX = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/;
 
 /**
  * Recursively retrieves all .ts and .tsx files under a directory, ignoring test files.
@@ -107,10 +110,9 @@ function walkAst(node, visitor) {
 }
 
 /**
- * Scans a TypeScript/TSX file's Babel AST for banned nominal unit wrappers.
+ * Scans a TypeScript/TSX source string's Babel AST for banned nominal unit wrappers and unsafe type coercions.
  */
-export function scanFile(filePath) {
-  const content = fs.readFileSync(filePath, 'utf8');
+export function scanUnitSafetyInSource(content, filePath = '<inline>') {
   let ast;
   try {
     ast = parse(content, {
@@ -137,7 +139,7 @@ export function scanFile(filePath) {
   const violations = [];
 
   walkAst(ast, (node) => {
-    // 1. Check ImportSpecifiers: e.g. import { asDegrees } from '...'
+    // 1. Check ImportSpecifiers: e.g. import { asDegrees, asJulianDate } from '...'
     if (node.type === 'ImportSpecifier') {
       const importedName = node.imported?.type === 'Identifier'
         ? node.imported.name
@@ -157,7 +159,7 @@ export function scanFile(filePath) {
       }
     }
 
-    // 2. Check CallExpressions: e.g. asDegrees(...)
+    // 2. Check CallExpressions: e.g. asDegrees(...), asJulianDate(...)
     if (node.type === 'CallExpression') {
       if (node.callee?.type === 'Identifier' && BANNED_IDENTIFIERS.has(node.callee.name)) {
         const line = node.loc?.start.line || 1;
@@ -172,9 +174,53 @@ export function scanFile(filePath) {
         });
       }
     }
+
+    // 3. Check double casts (`as unknown as T`) and direct casts onto banned branded unit types
+    if (node.type === 'TSAsExpression' || node.type === 'TSTypeAssertion') {
+      const inner = node.expression;
+      const isDoubleUnknownCast =
+        (inner?.type === 'TSAsExpression' || inner?.type === 'TSTypeAssertion') &&
+        inner.typeAnnotation?.type === 'TSUnknownKeyword';
+
+      if (isDoubleUnknownCast) {
+        const line = node.loc?.start.line || 1;
+        const column = node.loc?.start.column || 0;
+        violations.push({
+          filePath,
+          line,
+          column: column + 1,
+          identifier: 'as unknown as',
+          type: 'double-cast',
+          snippet: lines[line - 1]?.trim() || ''
+        });
+      } else if (
+        node.typeAnnotation?.type === 'TSTypeReference' &&
+        node.typeAnnotation.typeName?.type === 'Identifier' &&
+        BANNED_UNIT_TYPE_NAMES.has(node.typeAnnotation.typeName.name)
+      ) {
+        const line = node.loc?.start.line || 1;
+        const column = node.loc?.start.column || 0;
+        violations.push({
+          filePath,
+          line,
+          column: column + 1,
+          identifier: `as ${node.typeAnnotation.typeName.name}`,
+          type: 'unit-cast',
+          snippet: lines[line - 1]?.trim() || ''
+        });
+      }
+    }
   });
 
   return violations;
+}
+
+/**
+ * Scans a TypeScript/TSX file's Babel AST for banned nominal unit wrappers and unsafe type coercions.
+ */
+export function scanFile(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8');
+  return scanUnitSafetyInSource(content, filePath);
 }
 
 export function runUnitSafetyCheck(targetDir = componentsDir) {
@@ -303,6 +349,115 @@ export function runSvgDefsIdCheck(targetDir = componentsDir) {
 }
 
 /**
+ * Scans a pure astronomical math source string to guarantee determinism and
+ * freedom from React/UI imports, presentation tokens/hex colors, and unparameterized `new Date()`.
+ */
+export function scanMathPurityInSource(content, filePath = '<inline>') {
+  const violations = [];
+  let ast;
+  try {
+    ast = parse(content, {
+      sourceType: 'module',
+      plugins: [
+        'typescript',
+        'jsx',
+        'decorators-legacy',
+        'classProperties'
+      ]
+    });
+  } catch (err) {
+    return [{
+      filePath,
+      line: 1,
+      column: 1,
+      source: `Failed to parse AST: ${err.message}`,
+      snippet: ''
+    }];
+  }
+
+  const lines = content.split('\n');
+  walkAst(ast, (node) => {
+    if (node.type === 'ImportDeclaration') {
+      const src = node.source?.value || '';
+      if (src === 'react' || src.startsWith('react/') || src.includes('/components/')) {
+        const line = node.loc?.start.line || 1;
+        const column = node.loc?.start.column || 0;
+        violations.push({
+          filePath,
+          line,
+          column: column + 1,
+          source: `imported '${src}'`,
+          snippet: lines[line - 1]?.trim() || ''
+        });
+      }
+    }
+
+    if (node.type === 'StringLiteral') {
+      const val = node.value || '';
+      if (BANNED_MATH_PRESENTATION_REGEX.test(val)) {
+        const line = node.loc?.start.line || 1;
+        const column = node.loc?.start.column || 0;
+        violations.push({
+          filePath,
+          line,
+          column: column + 1,
+          source: `Tailwind presentation token '${val}'`,
+          snippet: lines[line - 1]?.trim() || ''
+        });
+      } else {
+        const hexMatch = val.match(BANNED_HEX_COLOR_REGEX);
+        if (hexMatch) {
+          const line = node.loc?.start.line || 1;
+          const column = node.loc?.start.column || 0;
+          violations.push({
+            filePath,
+            line,
+            column: column + 1,
+            source: `Hex color presentation literal '${hexMatch[0]}'`,
+            snippet: lines[line - 1]?.trim() || ''
+          });
+        }
+      }
+    }
+
+    if (node.type === 'TemplateElement') {
+      const rawText = node.value?.cooked ?? node.value?.raw ?? '';
+      const hexMatch = rawText.match(BANNED_HEX_COLOR_REGEX);
+      if (hexMatch) {
+        const line = node.loc?.start.line || 1;
+        const column = node.loc?.start.column || 0;
+        violations.push({
+          filePath,
+          line,
+          column: column + 1,
+          source: `Hex color presentation literal '${hexMatch[0]}'`,
+          snippet: lines[line - 1]?.trim() || ''
+        });
+      }
+    }
+
+    if (
+      node.type === 'NewExpression' &&
+      node.callee?.type === 'Identifier' &&
+      node.callee?.name === 'Date' &&
+      (!node.arguments || node.arguments.length === 0)
+    ) {
+      const line = node.loc?.start.line || 1;
+      const column = node.loc?.start.column || 0;
+      violations.push({
+        filePath,
+        line,
+        column: column + 1,
+        source: "unparameterized 'new Date()' in pure math module",
+        snippet: lines[line - 1]?.trim() || ''
+      });
+    }
+  });
+
+  return violations;
+}
+
+/**
  * Scans pure astronomical math modules (src/utils/cosmicMath/**) to guarantee
  * that they remain 100% deterministic and free from React or UI component imports.
  */
@@ -312,79 +467,7 @@ export function runMathPurityCheck(targetDir = cosmicMathDir) {
 
   for (const filePath of files) {
     const content = fs.readFileSync(filePath, 'utf8');
-    let ast;
-    try {
-      ast = parse(content, {
-        sourceType: 'module',
-        plugins: [
-          'typescript',
-          'jsx',
-          'decorators-legacy',
-          'classProperties'
-        ]
-      });
-    } catch (err) {
-      violations.push({
-        filePath,
-        line: 1,
-        column: 1,
-        source: `Failed to parse AST: ${err.message}`,
-        snippet: ''
-      });
-      continue;
-    }
-
-    const BANNED_MATH_PRESENTATION_REGEX = /^(text|bg|fill|stroke)-[a-z]+-\d{2,3}$/;
-
-    const lines = content.split('\n');
-    walkAst(ast, (node) => {
-      if (node.type === 'ImportDeclaration') {
-        const src = node.source?.value || '';
-        if (src === 'react' || src.startsWith('react/') || src.includes('/components/')) {
-          const line = node.loc?.start.line || 1;
-          const column = node.loc?.start.column || 0;
-          violations.push({
-            filePath,
-            line,
-            column: column + 1,
-            source: `imported '${src}'`,
-            snippet: lines[line - 1]?.trim() || ''
-          });
-        }
-      }
-
-      if (node.type === 'StringLiteral') {
-        const val = node.value || '';
-        if (BANNED_MATH_PRESENTATION_REGEX.test(val)) {
-          const line = node.loc?.start.line || 1;
-          const column = node.loc?.start.column || 0;
-          violations.push({
-            filePath,
-            line,
-            column: column + 1,
-            source: `Tailwind presentation token '${val}'`,
-            snippet: lines[line - 1]?.trim() || ''
-          });
-        }
-      }
-
-      if (
-        node.type === 'NewExpression' &&
-        node.callee?.type === 'Identifier' &&
-        node.callee?.name === 'Date' &&
-        (!node.arguments || node.arguments.length === 0)
-      ) {
-        const line = node.loc?.start.line || 1;
-        const column = node.loc?.start.column || 0;
-        violations.push({
-          filePath,
-          line,
-          column: column + 1,
-          source: "unparameterized 'new Date()' in pure math module",
-          snippet: lines[line - 1]?.trim() || ''
-        });
-      }
-    });
+    violations.push(...scanMathPurityInSource(content, filePath));
   }
 
   return {
@@ -894,12 +977,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   if (violations.length > 0) {
     console.error('\n❌ [unit-safety] Unit-Safety AST Guardrail Violations Detected:');
-    console.error('The following UI presentation files use banned identity assertion wrappers (asDegrees / asRadians).');
-    console.error('UI components must route angles through verified conversion gatekeepers (toRadians, toDegrees, latToRadians, lonToRadians).\n');
+    console.error('The following UI presentation files use banned identity assertion wrappers (asDegrees / asRadians / asJulianDate / asJulianCenturies) or unsafe type coercions (`as unknown as`).');
+    console.error('UI components must route values through verified conversion gatekeepers (toRadians, toDegrees, latToRadians, lonToRadians, getJulianDate, dateToJulianDate).\n');
 
     for (const v of violations) {
       const relPath = path.relative(rootDir, v.filePath).replace(/\\/g, '/');
-      console.error(`  ${relPath}:${v.line}:${v.column} — [${v.type}] ${v.identifier}()`);
+      console.error(`  ${relPath}:${v.line}:${v.column} — [${v.type}] ${v.identifier}`);
       console.error(`    > ${v.snippet}\n`);
     }
 
@@ -961,9 +1044,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
 
   console.log(`\n✔ [unit-safety] All UI components (${totalFiles} files) conform to branded unit safety guardrails.`);
-  console.log('  0 instances of asDegrees() or asRadians() found in src/components/**.');
+  console.log('  0 instances of asDegrees(), asRadians(), asJulianDate(), asJulianCenturies(), or `as unknown as` found in src/components/**.');
   console.log(`✔ [svg-defs-id] Collision-safe SVG <defs> scoping verified (${svgDefsCheck.totalFiles} UI files contain 0 static <defs> IDs).`);
-  console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports or presentation tokens).`);
+  console.log(`✔ [math-purity] Mathematical domain purity verified (${mathPurity.totalFiles} files in src/utils/cosmicMath/** contain 0 React/UI imports or presentation/hex color tokens).`);
   console.log(`✔ [default-date] Prop identity stability verified (${defaultDateCheck.totalFiles} files in src/components and src/hooks contain 0 default new Date() instances).`);
   console.log(`✔ [unit-safety] AGENTS.md kernel size budget verified (${agentsBudget.sizeKb} KB <= ${agentsBudget.maxKb} KB).`);
   console.log(`✔ [doc-integrity] Documentation SSoT integrity verified (${docIntegrity.totalFiles} Markdown specifications: 0 broken links/anchors, 0 stale index ranges, 100% file inventory parity).\n`);

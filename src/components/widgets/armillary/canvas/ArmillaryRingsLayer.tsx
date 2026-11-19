@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArmillaryRingPath } from '../types';
 import { ZODIAC_SIGNS } from '../../../../utils/cosmicMath';
+import { ARMILLARY_RING_COLORS, ZODIAC_SIGN_COLORS } from '../armillaryTokens';
 import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
 
 export interface ArmillaryRingsLayerProps {
@@ -104,13 +105,14 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
           const dashGap = 2 * (1 - u);
           const strokeDasharray = u <= 0.01 ? '3,2' : `3,${parseFloat(dashGap.toFixed(2))}`;
           const strokeWidth = ring.backStrokeWidth + (ring.frontStrokeWidth - ring.backStrokeWidth) * u;
+          const ringColor = ring.color ?? ARMILLARY_RING_COLORS[ring.id] ?? '#94a3b8';
 
           return (
             <path
               key={`back-${ring.id}`}
               d={ring.backPathD}
               fill="none"
-              stroke={ring.color}
+              stroke={ringColor}
               strokeWidth={strokeWidth}
               strokeDasharray={strokeDasharray}
               opacity={ringOpacity * backOpacityFactor}
@@ -131,13 +133,14 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
           const isUnified = u >= 0.99;
           const pathD = isUnified && ring.fullPathD ? ring.fullPathD : ring.frontPathD;
           if (!pathD) return null;
+          const ringColor = ring.color ?? ARMILLARY_RING_COLORS[ring.id] ?? '#94a3b8';
 
           return (
             <path
               key={`front-${ring.id}`}
               d={pathD}
               fill="none"
-              stroke={ring.color}
+              stroke={ringColor}
               strokeWidth={ring.frontStrokeWidth}
               opacity={ringOpacity}
             />
@@ -153,6 +156,7 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
         const midIndex = Math.floor(((idx * 30 + 15) / 360) * (eclRing.vertices.length - 1));
         const v = eclRing.vertices[midIndex];
         if (!v) return null;
+        const signColor = sign.color ?? ZODIAC_SIGN_COLORS[sign.name] ?? '#38bdf8';
 
         return (
           <g key={`zodiac-${sign.name}`} opacity={celestialRingsOpacity}>
@@ -160,13 +164,13 @@ export const ArmillaryRingsLayer: React.FC<ArmillaryRingsLayerProps> = ({
               cx={v.screenPos.x}
               cy={v.screenPos.y}
               r="1.0"
-              fill={sign.color}
+              fill={signColor}
             />
             <text
               x={v.screenPos.x}
               y={v.screenPos.y - 2.8}
               fontSize="4.2"
-              fill={sign.color}
+              fill={signColor}
               fontFamily="sans-serif"
               fontWeight="bold"
               textAnchor="middle"

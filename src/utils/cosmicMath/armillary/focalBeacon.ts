@@ -10,7 +10,7 @@ const PRECOMPUTED_RAYS = RAY_ANGLES.map(angleDeg => {
     cos: Math.cos(rad),
     sin: Math.sin(rad),
     angleDeg,
-    color: angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24'
+    role: (angleDeg % 90 === 0 ? 'cardinal' : 'intercardinal') as 'cardinal' | 'intercardinal'
   };
 });
 
@@ -83,7 +83,7 @@ export function generateProjectionFocalBeacon(
     laserRays[idx] = {
       start: focalScreenPos,
       end: { x: endX, y: endY },
-      color: ray.color,
+      role: ray.role,
       opacity: 0.6
     };
   }

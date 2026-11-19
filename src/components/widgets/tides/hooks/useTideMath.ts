@@ -6,7 +6,6 @@ import {
   calculateTrueLunarNodeEvents 
 } from '../../../../utils/cosmicMath';
 import { TidalVectors } from '../../../../types';
-import { asJulianDate } from '../../../../types/units';
 import { OrbitalAngles } from '../../../../types/coordinates';
 
 export interface UseTideMathParams {
@@ -105,7 +104,7 @@ export function useTideMath(params: UseTideMathParams): UseTideMathResult {
 
   const { trueAscNodeLon, trueDescNodeLon } = useMemo(() => {
     if (jdDayBucket !== null) {
-      const bucketJd = asJulianDate(jdDayBucket + 0.5);
+      const bucketJd = jdDayBucket + 0.5;
       const trueEvents = calculateTrueLunarNodeEvents(bucketJd, 16);
       const ascCrossings = trueEvents.allCrossings.filter((c: { type: string }) => c.type === 'ascending');
       const descCrossings = trueEvents.allCrossings.filter((c: { type: string }) => c.type === 'descending');

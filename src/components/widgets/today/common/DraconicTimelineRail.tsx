@@ -8,9 +8,21 @@
 
 import React from 'react';
 import { calculateSkyDomeLunarNodes } from '../../../../utils/cosmicMath';
+import { NODAL_HEMISPHERE_COLORS } from '../todayTokens';
+
+export type DraconicTimelineNodalData = Pick<
+  ReturnType<typeof calculateSkyDomeLunarNodes>,
+  | 'prevNodeType'
+  | 'upcomingNodeType'
+  | 'daysSincePrevNode'
+  | 'daysToNextNode'
+  | 'timelineSegments'
+  | 'timelineNodes'
+  | 'isMoonAscending'
+>;
 
 export interface DraconicTimelineRailProps {
-  nodalData: ReturnType<typeof calculateSkyDomeLunarNodes>;
+  nodalData: DraconicTimelineNodalData;
 }
 
 export const DraconicTimelineRail: React.FC<DraconicTimelineRailProps> = ({ nodalData }) => {
@@ -47,6 +59,7 @@ export const DraconicTimelineRail: React.FC<DraconicTimelineRailProps> = ({ noda
         {nodalData.timelineSegments.map((seg, idx) => {
           const x1 = Math.max(12, Math.min(228, 120 + seg.startDays * 7.2));
           const x2 = Math.max(12, Math.min(228, 120 + seg.endDays * 7.2));
+          const segColor = seg.isNorth ? NODAL_HEMISPHERE_COLORS.ascending : NODAL_HEMISPHERE_COLORS.descending;
           return (
             <line
               key={idx}
@@ -54,7 +67,7 @@ export const DraconicTimelineRail: React.FC<DraconicTimelineRailProps> = ({ noda
               y1="8"
               x2={x2.toFixed(1)}
               y2="8"
-              stroke={seg.color}
+              stroke={segColor}
               strokeWidth="2.5"
               strokeOpacity="0.85"
             />
@@ -65,15 +78,16 @@ export const DraconicTimelineRail: React.FC<DraconicTimelineRailProps> = ({ noda
         {nodalData.timelineNodes.map((node, idx) => {
           const x = 120 + node.daysOffset * 7.2;
           if (x < 10 || x > 230) return null;
+          const nodeColor = node.type === 'ascending' ? NODAL_HEMISPHERE_COLORS.ascending : NODAL_HEMISPHERE_COLORS.descending;
           return (
             <g key={idx} transform={`translate(${x.toFixed(1)}, 8)`}>
-              <circle cx="0" cy="0" r="2.8" fill="#020617" stroke={node.color} strokeWidth="1.2" />
+              <circle cx="0" cy="0" r="2.8" fill="#020617" stroke={nodeColor} strokeWidth="1.2" />
               <text
                 x="0"
                 y="-4.5"
                 textAnchor="middle"
                 className="text-[6.5px] font-bold select-none pointer-events-none"
-                fill={node.color}
+                fill={nodeColor}
               >
                 {node.symbol}
               </text>
@@ -91,7 +105,7 @@ export const DraconicTimelineRail: React.FC<DraconicTimelineRailProps> = ({ noda
             cx="0"
             cy="0"
             r="4.5"
-            fill={nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e'}
+            fill={nodalData.isMoonAscending ? NODAL_HEMISPHERE_COLORS.ascending : NODAL_HEMISPHERE_COLORS.descending}
             fillOpacity="0.35"
             className="animate-pulse"
           />
@@ -100,7 +114,7 @@ export const DraconicTimelineRail: React.FC<DraconicTimelineRailProps> = ({ noda
             cy="0"
             r="2.5"
             fill="#f8fafc"
-            stroke={nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e'}
+            stroke={nodalData.isMoonAscending ? NODAL_HEMISPHERE_COLORS.ascending : NODAL_HEMISPHERE_COLORS.descending}
             strokeWidth="1.2"
           />
         </g>

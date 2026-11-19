@@ -57,7 +57,7 @@ export function buildSegmentedSvgPaths(vertices: ArmillaryRingVertex[]): { front
 export interface ParametricRingConfig {
   id: string;
   label: string;
-  color: string;
+  color?: string;
   frontStrokeWidth: number;
   backStrokeWidth: number;
   sampleCount?: number;

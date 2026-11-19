@@ -332,8 +332,8 @@ describe("Gyro-Morph Mathematical Morphing Engine (Phases A & B)", () => {
 
             // Alternating cardinal / intercardinal colors
             const angleDeg = j * 45;
-            const expectedColor = angleDeg % 90 === 0 ? '#38bdf8' : '#fbbf24';
-            expect(ray.color).toBe(expectedColor);
+            const expectedRole = angleDeg % 90 === 0 ? 'cardinal' : 'intercardinal';
+            expect(ray.role).toBe(expectedRole);
             expect(ray.opacity).toBe(0.6);
           }
         }
@@ -371,7 +371,7 @@ describe("Gyro-Morph Mathematical Morphing Engine (Phases A & B)", () => {
             expect(fRay.start.y).toBeCloseTo(oRay.start.y, 4);
             expect(fRay.end.x).toBeCloseTo(oRay.end.x, 4);
             expect(fRay.end.y).toBeCloseTo(oRay.end.y, 4);
-            expect(fRay.color).toBe(oRay.color);
+            expect(fRay.role).toBe(oRay.role);
             expect(fRay.opacity).toBe(oRay.opacity);
           }
         }

@@ -357,6 +357,7 @@ describe('Sky Dome Refactored Hooks & Primitives', () => {
       expect(html).toContain('Today');
       expect(html).toContain('−15d');
       expect(html).toContain('+15d');
+      expect(html).toMatch(/stroke="#(38bdf8|f43f5e)"/);
     });
   });
 

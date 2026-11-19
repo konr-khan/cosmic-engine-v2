@@ -23,18 +23,18 @@ export const ASTROLABE_STARS: Omit<ArmillaryStarData, 'p3d'>[] = [
  * 12 Zodiac Constellations on the Ecliptic Rete
  */
 export const ZODIAC_SIGNS: ZodiacSignSegment[] = [
-  { name: 'Aries', symbol: '♈', startLambda: 0, endLambda: 30, color: '#f87171' },
-  { name: 'Taurus', symbol: '♉', startLambda: 30, endLambda: 60, color: '#fb923c' },
-  { name: 'Gemini', symbol: '♊', startLambda: 60, endLambda: 90, color: '#facc15' },
-  { name: 'Cancer', symbol: '♋', startLambda: 90, endLambda: 120, color: '#4ade80' },
-  { name: 'Leo', symbol: '♌', startLambda: 120, endLambda: 150, color: '#2dd4bf' },
-  { name: 'Virgo', symbol: '♍', startLambda: 150, endLambda: 180, color: '#38bdf8' },
-  { name: 'Libra', symbol: '♎', startLambda: 180, endLambda: 210, color: '#818cf8' },
-  { name: 'Scorpio', symbol: '♏', startLambda: 210, endLambda: 240, color: '#c084fc' },
-  { name: 'Sagittarius', symbol: '♐', startLambda: 240, endLambda: 270, color: '#f472b6' },
-  { name: 'Capricorn', symbol: '♑', startLambda: 270, endLambda: 300, color: '#fb7185' },
-  { name: 'Aquarius', symbol: '♒', startLambda: 300, endLambda: 330, color: '#38bdf8' },
-  { name: 'Pisces', symbol: '♓', startLambda: 330, endLambda: 360, color: '#a78bfa' }
+  { name: 'Aries', symbol: '♈', startLambda: 0, endLambda: 30 },
+  { name: 'Taurus', symbol: '♉', startLambda: 30, endLambda: 60 },
+  { name: 'Gemini', symbol: '♊', startLambda: 60, endLambda: 90 },
+  { name: 'Cancer', symbol: '♋', startLambda: 90, endLambda: 120 },
+  { name: 'Leo', symbol: '♌', startLambda: 120, endLambda: 150 },
+  { name: 'Virgo', symbol: '♍', startLambda: 150, endLambda: 180 },
+  { name: 'Libra', symbol: '♎', startLambda: 180, endLambda: 210 },
+  { name: 'Scorpio', symbol: '♏', startLambda: 210, endLambda: 240 },
+  { name: 'Sagittarius', symbol: '♐', startLambda: 240, endLambda: 270 },
+  { name: 'Capricorn', symbol: '♑', startLambda: 270, endLambda: 300 },
+  { name: 'Aquarius', symbol: '♒', startLambda: 300, endLambda: 330 },
+  { name: 'Pisces', symbol: '♓', startLambda: 330, endLambda: 360 }
 ];
 
 export const CHALDEAN_PLANETS = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon'] as const;

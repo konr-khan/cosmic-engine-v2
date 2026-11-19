@@ -1,4 +1,5 @@
 export * from './types';
+export * from './armillaryTokens';
 export * from './ArmillaryHeaderControls';
 export * from './controls';
 export * from './ArmillarySvgCanvas';

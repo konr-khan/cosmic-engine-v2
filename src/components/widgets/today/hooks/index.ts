@@ -16,10 +16,13 @@ export {
   buildSunMeridianRadialTicks,
   buildMoonMeridianSwaths,
   buildMoonMeridianRadialTicks,
+  createInactiveNodalData,
 } from './meridianConfigHelpers';
 export type {
   BuildSunMeridianSwathsParams,
   BuildSunMeridianRadialTicksParams,
   BuildMoonMeridianSwathsParams,
   BuildMoonMeridianRadialTicksParams,
+  ActiveSkyDomeNodalData,
+  NullableSkyDomeNodalData,
 } from './meridianConfigHelpers';

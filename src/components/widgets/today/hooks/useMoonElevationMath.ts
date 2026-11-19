@@ -6,15 +6,14 @@
  */
 
 import { useMemo } from 'react';
-import { 
-  toRadians, 
+import {
+  toRadians,
   getJulianDate,
   calculateLunarIllumination,
   projectSkyDomePoint,
   generateDiurnalPath,
   calculateMonthlyLunarDeclinationBounds,
   calculateSkyDomeLunarNodes,
-  SkyDomeLunarNode,
   getLunarElevationStatus,
   calculateCulminationBearing,
   calculateRiseSetAzimuth,
@@ -25,6 +24,7 @@ import {
 } from '../../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../../types';
 import { EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from '../SkyDomeBase';
+import { createInactiveNodalData, NullableSkyDomeNodalData } from './meridianConfigHelpers';
 
 export interface UseMoonElevationMathParams {
   orbitalData?: OrbitalData | null;
@@ -143,30 +143,9 @@ export const useMoonElevationMath = ({
   const sunDeclination = (solarData?.declination ?? 0) as number;
   const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
 
-  const nodalData = useMemo(() => {
+  const nodalData = useMemo<NullableSkyDomeNodalData>(() => {
     if (!isNodalModeActive) {
-      return {
-        ascendingNode: null as unknown as SkyDomeLunarNode,
-        descendingNode: null as unknown as SkyDomeLunarNode,
-        moonBeta: 0,
-        isMoonAscending: false,
-        isWaxing: false,
-        argumentOfLatitude: 0,
-        orbitalProgressPercent: 0,
-        daysToNextNode: 0,
-        daysSincePrevNode: 0,
-        upcomingNodeType: 'ascending' as const,
-        prevNodeType: 'descending' as const,
-        upcomingNode: null as unknown as SkyDomeLunarNode,
-        nearestNode: null as unknown as SkyDomeLunarNode,
-        nearestNodeType: 'ascending' as const,
-        nearestNodeDistDays: 0,
-        isApproachingNearestNode: false,
-        isNearNode: false,
-        quadrantLabel: '',
-        timelineNodes: [],
-        timelineSegments: []
-      };
+      return createInactiveNodalData();
     }
     return calculateSkyDomeLunarNodes(
       latitude,

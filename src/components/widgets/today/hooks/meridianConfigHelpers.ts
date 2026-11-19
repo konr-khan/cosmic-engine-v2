@@ -9,6 +9,8 @@ import {
   CulminationInfo,
   PolarMeridianCounterpart,
   RadialTickLine,
+  SkyDomeLunarNode,
+  calculateSkyDomeLunarNodes,
 } from '../../../../utils/cosmicMath';
 import {
   MeridianSwathConfig,
@@ -563,4 +565,44 @@ export function buildMoonMeridianRadialTicks({
         ]
       : []),
   ];
+}
+
+export type ActiveSkyDomeNodalData = ReturnType<typeof calculateSkyDomeLunarNodes>;
+
+export type NullableSkyDomeNodalData = Omit<
+  ActiveSkyDomeNodalData,
+  'ascendingNode' | 'descendingNode' | 'upcomingNode' | 'nearestNode'
+> & {
+  ascendingNode: SkyDomeLunarNode | null;
+  descendingNode: SkyDomeLunarNode | null;
+  upcomingNode: SkyDomeLunarNode | null;
+  nearestNode: SkyDomeLunarNode | null;
+};
+
+/**
+ * Returns a typed placeholder structure when Draconic Nodal Mode is inactive.
+ */
+export function createInactiveNodalData(): NullableSkyDomeNodalData {
+  return {
+    ascendingNode: null,
+    descendingNode: null,
+    moonBeta: 0,
+    isMoonAscending: false,
+    isWaxing: false,
+    argumentOfLatitude: 0,
+    orbitalProgressPercent: 0,
+    daysToNextNode: 0,
+    daysSincePrevNode: 0,
+    upcomingNodeType: 'ascending',
+    prevNodeType: 'descending',
+    upcomingNode: null,
+    nearestNode: null,
+    nearestNodeType: 'ascending',
+    nearestNodeDistDays: 0,
+    isApproachingNearestNode: false,
+    isNearNode: false,
+    quadrantLabel: '',
+    timelineNodes: [],
+    timelineSegments: [],
+  };
 }

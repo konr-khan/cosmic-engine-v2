@@ -1139,6 +1139,57 @@ describe('Gyro-Morph Armillary Subsystem', () => {
         );
         expect(htmlWithRule).toContain('fill="#f59e0b" stroke="#78350f"');
       });
+
+      // 8. UI token resolution for math-layer rings & laser rays lacking inline hex color strings
+      it('resolves armillary ring and cardinal/intercardinal laser colors from UI tokens when math model omits color', () => {
+        const jd = getJulianDate(new Date(2026, 2, 20), 12);
+        const model = generateArmillaryModel({
+          julianDate: jd,
+          latitude: 47.06,
+          longitude: -122.81,
+          timeOfDay: 12,
+          sunRaDeg: 0,
+          sunDecDeg: 0,
+          sunLambdaDeg: 0,
+          moonRaDeg: 90,
+          moonDecDeg: 20,
+          moonLambdaDeg: 90,
+          moonPhase: 0.5,
+          morphLambda: 1.0,
+          projectionMode: 'stereographic',
+          cameraPitch: 90,
+          cameraYaw: 0,
+          r0: 100
+        });
+
+        const ringsHtml = renderToStaticMarkup(
+          React.createElement('svg', null,
+            React.createElement(ArmillaryRingsLayer, {
+              rings: model.rings,
+              is3D: false,
+              morphLambda: 1.0,
+              cameraPitch: 90,
+              orbitRingOpacity: 1.0,
+              celestialRingsOpacity: 1.0
+            })
+          )
+        );
+        expect(ringsHtml).toContain('stroke="#d97706"'); // tropic_cancer
+        expect(ringsHtml).toContain('stroke="#94a3b8"'); // tropic_capricorn
+
+        const laserHtml = renderToStaticMarkup(
+          React.createElement('svg', null,
+            React.createElement(ArmillaryLaserLayer, {
+              showRays: true,
+              focalBeacon: model.focalBeacon,
+              isOrbital: false,
+              morphLambda: 1.0
+            })
+          )
+        );
+        expect(laserHtml).toContain('stroke="#38bdf8"'); // cardinal laser ray
+        expect(laserHtml).toContain('stroke="#fbbf24"'); // intercardinal laser ray
+      });
     });
 
   });

@@ -47,7 +47,7 @@ export interface ZodiacSignSegment {
   symbol: string;
   startLambda: number;
   endLambda: number;
-  color: string;
+  color?: string;
 }
 
 export interface AlmucantarCircleData {
@@ -74,7 +74,7 @@ export interface ArmillaryRingVertex {
 export interface ArmillaryRingPath {
   id: string;
   label: string;
-  color: string;
+  color?: string;
   frontStrokeWidth: number;
   backStrokeWidth: number;
   vertices: ArmillaryRingVertex[];
@@ -113,7 +113,8 @@ export interface ArmillaryLunarNodes {
 export interface LaserRay {
   start: Vector2D;
   end: Vector2D;
-  color: string;
+  role?: 'cardinal' | 'intercardinal';
+  color?: string;
   opacity: number;
 }
 

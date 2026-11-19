@@ -13,3 +13,8 @@ export const LUNAR_ELEVATION_BADGE_CLASSES: Record<LunarElevationPhase, string> 
   near_horizon: 'text-slate-400',
   below_horizon: 'text-slate-500'
 };
+
+export const NODAL_HEMISPHERE_COLORS = {
+  ascending: '#38bdf8',
+  descending: '#f43f5e'
+} as const;

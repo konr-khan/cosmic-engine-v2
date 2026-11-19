@@ -31,7 +31,6 @@ export interface TimelineNodeEvent {
   type: 'ascending' | 'descending';
   daysOffset: number; // relative to Today (t=0) within [-15, +15]
   symbol: '☊' | '☋';
-  color: string;
   isUpcoming: boolean;
 }
 
@@ -39,7 +38,6 @@ export interface TimelineTrackSegment {
   startDays: number;
   endDays: number;
   isNorth: boolean;
-  color: string;
 }
 
 export interface SkyDomeLunarNodesResult {
@@ -127,7 +125,6 @@ export const calculateSkyDomeLunarNodes = (
       type: c.type,
       daysOffset: clamp(parseFloat(c.daysOffset.toFixed(1)), -15, 15),
       symbol: c.type === 'ascending' ? '☊' : '☋',
-      color: c.type === 'ascending' ? '#38bdf8' : '#f43f5e',
       isUpcoming: c.daysOffset > 0
     }))
     .sort((a, b) => a.daysOffset - b.daysOffset);
@@ -150,8 +147,7 @@ export const calculateSkyDomeLunarNodes = (
     timelineSegments.push({
       startDays,
       endDays,
-      isNorth,
-      color: isNorth ? '#38bdf8' : '#f43f5e'
+      isNorth
     });
   }
 

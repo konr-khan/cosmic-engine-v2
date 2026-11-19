@@ -14,7 +14,6 @@ import {
   calculateLunarExtremaCulminations,
   calculateMonthlyLunarDeclinationBounds,
   calculateSkyDomeLunarNodes,
-  SkyDomeLunarNode,
   calculateMeridianPoint,
   generateMeridianSwathD,
   calculateMeridianRadialTick,
@@ -48,6 +47,8 @@ import {
   createMeridianPeakTargetConfig,
   buildMoonMeridianSwaths,
   buildMoonMeridianRadialTicks,
+  createInactiveNodalData,
+  NullableSkyDomeNodalData,
 } from './meridianConfigHelpers';
 
 export interface UseMoonMeridianMathParams {
@@ -143,30 +144,9 @@ export const useMoonMeridianMath = ({
   const solarNoon = solarData?.solarNoon ?? 12;
   const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
 
-  const nodalData = useMemo(() => {
+  const nodalData = useMemo<NullableSkyDomeNodalData>(() => {
     if (!isNodalModeActive) {
-      return {
-        ascendingNode: null as unknown as SkyDomeLunarNode,
-        descendingNode: null as unknown as SkyDomeLunarNode,
-        moonBeta: 0,
-        isMoonAscending: false,
-        isWaxing: false,
-        argumentOfLatitude: 0,
-        orbitalProgressPercent: 0,
-        daysToNextNode: 0,
-        daysSincePrevNode: 0,
-        upcomingNodeType: 'ascending' as const,
-        prevNodeType: 'descending' as const,
-        upcomingNode: null as unknown as SkyDomeLunarNode,
-        nearestNode: null as unknown as SkyDomeLunarNode,
-        nearestNodeType: 'ascending' as const,
-        nearestNodeDistDays: 0,
-        isApproachingNearestNode: false,
-        isNearNode: false,
-        quadrantLabel: '',
-        timelineNodes: [],
-        timelineSegments: [],
-      };
+      return createInactiveNodalData();
     }
     return calculateSkyDomeLunarNodes(
       latitude,

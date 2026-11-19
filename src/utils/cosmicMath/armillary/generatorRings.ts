@@ -97,7 +97,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'orbit_path',
         label: 'Orbital Path',
-        color: '#38bdf8', // Sky Blue
         frontStrokeWidth: 1.6,
         backStrokeWidth: 0.8,
         sampleCount: NUM_SAMPLES,
@@ -131,7 +130,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'lunar_orbit',
         label: 'Lunar Orbit (5.14° Inclined)',
-        color: '#cbd5e1', // Silver/Slate
         frontStrokeWidth: 1.2,
         backStrokeWidth: 0.6,
         sampleCount: NUM_SAMPLES,
@@ -176,7 +174,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'equator',
         label: 'Celestial Equator',
-        color: '#10b981', // Emerald
         frontStrokeWidth: 2.0,
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
@@ -203,7 +200,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'ecliptic',
         label: 'Ecliptic (Zodiac Rete)',
-        color: '#f59e0b', // Amber/Gold
         frontStrokeWidth: 2.2,
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
@@ -232,7 +228,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'tropic_cancer',
         label: 'Tropic of Cancer (+23.44°)',
-        color: '#d97706', // Muted Antique Brass / Amber
         frontStrokeWidth: 0.9,
         backStrokeWidth: 0.5,
         sampleCount: NUM_SAMPLES,
@@ -252,7 +247,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'tropic_capricorn',
         label: 'Tropic of Capricorn (-23.44°)',
-        color: '#94a3b8', // Muted Slate
         frontStrokeWidth: 0.9,
         backStrokeWidth: 0.5,
         sampleCount: NUM_SAMPLES,
@@ -278,7 +272,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'horizon',
         label: 'Local Horizon',
-        color: '#06b6d4', // Cyan
         frontStrokeWidth: 2.0,
         backStrokeWidth: 1.0,
         sampleCount: NUM_SAMPLES,
@@ -298,7 +291,6 @@ export function generateArmillaryRings(params: GenerateArmillaryRingsParams): Ar
       {
         id: 'colure',
         label: 'Solstitial Colure',
-        color: '#64748b', // Slate
         frontStrokeWidth: 1.2,
         backStrokeWidth: 0.8,
         sampleCount: NUM_SAMPLES,

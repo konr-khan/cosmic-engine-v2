@@ -150,7 +150,7 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
       }
     });
 
-    it('C2.2: 4-Quadrant lunar orbit stroke segmentation, color encoding (#38bdf8 vs #f43f5e), and continuity', () => {
+    it('C2.2: 4-Quadrant lunar orbit stroke segmentation, nodal role encoding, and continuity', () => {
       // Test across 36 steps of nodal progression (0 to 360 deg)
       for (let angle = 0; angle < 360; angle += 15) {
         const scene = generateCosmicScene({ julianDate: EPOCHS.j2000 });
@@ -165,11 +165,11 @@ describe('Adversarial Stress Harness: Canonical Camera Projection Rigs', () => {
         expect(segs.length).toBeLessThanOrEqual(4);
 
         for (const seg of segs) {
-          // Verify color encoding
+          // Verify semantic nodal stroke role
           if (seg.isAscending) {
-            expect(seg.stroke).toBe('#38bdf8'); // Sky Blue
+            expect(seg.strokeRole).toBe('ascending');
           } else {
-            expect(seg.stroke).toBe('#f43f5e'); // Crimson Red
+            expect(seg.strokeRole).toBe('descending');
           }
 
           // Verify front/back stroke style

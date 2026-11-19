@@ -418,9 +418,9 @@ describe('Unified 3D Astronomical Scene Graph & Camera Rigs (Milestone 1)', () =
       expect(axial.elements.lunarOrbitSegments).toBeDefined();
       expect(axial.elements.lunarOrbitSegments!.length).toBeGreaterThan(0);
 
-      // Segments must have valid stroke colors (#38bdf8 sky blue for asc, #f43f5e crimson for desc)
+      // Segments must carry valid semantic stroke roles ('ascending' vs 'descending')
       for (const seg of transverse.elements.lunarOrbitSegments!) {
-        expect(['#38bdf8', '#f43f5e']).toContain(seg.stroke);
+        expect(['ascending', 'descending']).toContain(seg.strokeRole);
       }
     });
   });

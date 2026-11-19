@@ -73,6 +73,15 @@ try {
   } catch (_) {}
 }
 
+if (result.status !== 0 || !metricsData?.success || (metricsData?.numFailedTests ?? 0) > 0) {
+  console.error('❌ [syncDocMetrics] Vitest suite failed during metrics collection; aborting.');
+  console.error(
+    `   Exit code: ${result.status ?? 'unknown'}, Failed tests: ${metricsData?.numFailedTests ?? 'unknown'}, Failed suites: ${metricsData?.numFailedTestSuites ?? 'unknown'}`
+  );
+  if (result.stderr) console.error(result.stderr);
+  process.exit(1);
+}
+
 const fileMap = new Map();
 const baseNameMap = new Map();
 

@@ -358,8 +358,10 @@ describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
       // Verify muted palette for Tropic rings
       const cancerRing = modelCross.rings.find((r) => r.id === 'tropic_cancer');
       const capricornRing = modelCross.rings.find((r) => r.id === 'tropic_capricorn');
-      expect(cancerRing?.color).toBe('#d97706'); // Muted Antique Brass
-      expect(capricornRing?.color).toBe('#94a3b8'); // Muted Slate
+      expect(cancerRing).toBeDefined();
+      expect(cancerRing?.color).toBeUndefined();
+      expect(capricornRing).toBeDefined();
+      expect(capricornRing?.color).toBeUndefined();
     });
 
     it('generates topocentric observer FOV sky cone and lunar nodes in orbital modes', () => {

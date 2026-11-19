@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProjectionFocalBeaconOutput } from '../types';
+import { LASER_RAY_COLORS } from '../armillaryTokens';
 import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
 
 export interface ArmillaryLaserLayerProps {
@@ -38,19 +39,22 @@ export const ArmillaryLaserLayer: React.FC<ArmillaryLaserLayerProps> = ({
       )}
 
       {/* Radiating Laser Rays from Focal Pole through Celestial Circles */}
-      {(focalBeacon.laserRays ?? []).map((ray, idx) => (
-        <line
-          key={`laser-ray-${idx}`}
-          x1={ray.start.x}
-          y1={ray.start.y}
-          x2={ray.end.x}
-          y2={ray.end.y}
-          stroke={ray.color}
-          strokeWidth="1.0"
-          strokeDasharray="2 3"
-          opacity={ray.opacity * Math.min(1, phaseBU * 1.5)}
-        />
-      ))}
+      {(focalBeacon.laserRays ?? []).map((ray, idx) => {
+        const rayColor = ray.color ?? (ray.role === 'intercardinal' ? LASER_RAY_COLORS.intercardinal : LASER_RAY_COLORS.cardinal);
+        return (
+          <line
+            key={`laser-ray-${idx}`}
+            x1={ray.start.x}
+            y1={ray.start.y}
+            x2={ray.end.x}
+            y2={ray.end.y}
+            stroke={rayColor}
+            strokeWidth="1.0"
+            strokeDasharray="2 3"
+            opacity={ray.opacity * Math.min(1, phaseBU * 1.5)}
+          />
+        );
+      })}
 
       {/* Glowing Projection Focal Pole Beacon */}
       {phaseBU > 0.3 && (
