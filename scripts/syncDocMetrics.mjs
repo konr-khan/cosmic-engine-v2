@@ -397,6 +397,16 @@ const CANONICAL_SUITES = [
     domain: 'Worker Synchronous Fallback',
     file: 'src/workers/workerFallback.test.ts',
     focus: 'Deterministic main-thread ephemeris fallback routines, annual matrix computation, cache integration, and failsafe zombie error handling'
+  },
+  {
+    domain: 'DOM StrictMode Hook Lifecycle & Persistence',
+    file: 'src/hooks/workerLifecycle.dom.test.tsx',
+    focus: 'Real React 19 <StrictMode> mounting, effect cleanup/disposal on useEphemerisWorker, 60 FPS request coalescing, and localStorage dashboard preset/widget persistence in jsdom'
+  },
+  {
+    domain: 'DOM StrictMode App & Native Interactions',
+    file: 'src/App.dom.test.tsx',
+    focus: 'Mounted <App /> preset/layer controls, useSyncExternalStore live DOM propagation, and native non-passive wheel zoom and pointer-leave cleanup in jsdom'
   }
 ];
 

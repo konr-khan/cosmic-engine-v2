@@ -76,7 +76,7 @@ To prevent documentation drift across AI pair-programming sessions, every archit
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`, `src/store/hoverStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 910 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 61 modules, 916 tests)
 
 ```bash
 # Install dependencies
@@ -104,10 +104,10 @@ npm run sync:dossier       # Compiles docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.m
 
 ## 🧪 Verification & Test Harness
 
-The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**910 tests**):
+The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 61 specialized domain suites (**916 tests**):
 
 <details>
-<summary><strong>📊 Expand Full 59-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
+<summary><strong>📊 Expand Full 61-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
@@ -170,5 +170,7 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **Stereographic Conformal Invariants** | `src/utils/cosmicMath/armillary/armillaryStereographic.test.ts` (8 tests) | Analytical closed-form stereographic invariants ($R_0\sec\epsilon$), circle preservation under stereographic projection, non-degeneracy, and scale-invariance |
 | **Temporal Formatters & Parsing** | `src/utils/formatters.test.ts` (11 tests) | UTC calendar date formatting (`formatYMD`), 24h & 12h AM/PM time string parsing (`parseTimeString`), HH:MM formatting, and edge case resilience |
 | **Worker Synchronous Fallback** | `src/workers/workerFallback.test.ts` (26 tests) | Deterministic main-thread ephemeris fallback routines, annual matrix computation, cache integration, and failsafe zombie error handling |
+| **DOM StrictMode Hook Lifecycle & Persistence** | `src/hooks/workerLifecycle.dom.test.tsx` (3 tests) | Real React 19 <StrictMode> mounting, effect cleanup/disposal on useEphemerisWorker, 60 FPS request coalescing, and localStorage dashboard preset/widget persistence in jsdom |
+| **DOM StrictMode App & Native Interactions** | `src/App.dom.test.tsx` (3 tests) | Mounted <App /> preset/layer controls, useSyncExternalStore live DOM propagation, and native non-passive wheel zoom and pointer-leave cleanup in jsdom |
 
 </details>
