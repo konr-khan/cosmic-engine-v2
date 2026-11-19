@@ -8,23 +8,22 @@
 import { useMemo } from 'react';
 import {
   toRadians,
-  getJulianDate,
   calculateLunarIllumination,
-  projectSkyDomePoint,
   generateDiurnalPath,
-  calculateMonthlyLunarDeclinationBounds,
-  calculateSkyDomeLunarNodes,
   getLunarElevationStatus,
-  calculateCulminationBearing,
   calculateRiseSetAzimuth,
-  calculateLunarExtremaCulminations,
   calculateParallacticAngle,
-  LUNAR_MAJOR_STANDSTILL_DEG,
   J2000_DATE,
 } from '../../../../utils/cosmicMath';
 import { OrbitalData, SolarAlmanacData } from '../../../../types';
 import { EL_R, EL_CX, EL_CY, SkyDomeDiurnalPath } from '../SkyDomeBase';
-import { createInactiveNodalData, NullableSkyDomeNodalData } from './meridianConfigHelpers';
+import {
+  useLunarDomeSharedMath,
+  LUNAR_MAX_DEC,
+  LunarDomeSharedMath,
+} from './useLunarDomeSharedMath';
+
+export { LUNAR_MAX_DEC };
 
 export interface UseMoonElevationMathParams {
   orbitalData?: OrbitalData | null;
@@ -34,9 +33,8 @@ export interface UseMoonElevationMathParams {
   longitude?: number;
   currentDate?: Date;
   isNodalModeActive: boolean;
+  sharedMath?: LunarDomeSharedMath;
 }
-
-export const LUNAR_MAX_DEC = Number(LUNAR_MAJOR_STANDSTILL_DEG);
 
 export const useMoonElevationMath = ({
   orbitalData,
@@ -46,81 +44,61 @@ export const useMoonElevationMath = ({
   longitude,
   currentDate = J2000_DATE,
   isNodalModeActive,
+  sharedMath,
 }: UseMoonElevationMathParams) => {
-  // --- Moon Elevation & Phase Math ---
-  const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
-  const phase = safeOrbital.phase || { value: 0, name: 'New Moon' };
-  const lunarEvents = safeOrbital.lunarEvents || {
-    moonrise: 6,
-    transit: 12,
-    moonset: 18,
-    distanceKm: 384400,
-    distanceEarthRadii: 60.3,
-    isPerigee: false,
-    isApogee: false,
-    declination: 0,
-    parallacticAngle: 0,
-  };
+  const shared = useLunarDomeSharedMath({
+    orbitalData,
+    solarData,
+    displayTime,
+    latitude,
+    currentDate,
+    isNodalModeActive,
+    precomputed: sharedMath,
+  });
 
   const {
-    moonrise = 6,
-    transit = 12,
-    moonset = 18,
-    distanceKm = 384400,
-    distanceEarthRadii = 60.3,
-    isPerigee = false,
-    isApogee = false,
-    declination = 0,
-    parallacticAngle = 0,
+    phase,
+    lunarEvents,
+    moonDeclination,
+    moonPos,
+    currentMoonElevation,
+    todayCulmination: culmination,
+    standstillMaxCulmination,
+    standstillMinCulmination,
+    monthlyBounds,
+    extremaCulminations,
+    jd,
+    sunDeclination,
+    nodalData,
+    nodalThemeColor: moonTrackColor,
+    moonTrackDash,
+  } = shared;
+
+  const {
+    moonrise,
+    transit,
+    moonset,
+    distanceKm,
+    distanceEarthRadii,
+    isPerigee,
+    isApogee,
+    parallacticAngle,
   } = lunarEvents;
 
-  const moonDeclination = (orbitalData?.lunarPos?.declination ?? declination ?? 0) as number;
   const illPercent = calculateLunarIllumination(phase.value ?? 0);
-
-  const moonHourAngle = (displayTime - transit) * 15;
-  const moonPos = projectSkyDomePoint(moonHourAngle, Number(moonDeclination), latitude);
-  const currentMoonElevation = moonPos.elevation;
   const moonX = moonPos.x;
   const moonY = moonPos.y;
-
-  const transitPeakElevation = projectSkyDomePoint(0, Number(moonDeclination), latitude).elevation;
-
-  // --- Culmination & Sighting Bearing Math ---
-  const culmination = useMemo(
-    () => calculateCulminationBearing(latitude, Number(moonDeclination)),
-    [latitude, moonDeclination]
-  );
+  const transitPeakElevation = culmination.altitude;
 
   const riseSetAz = useMemo(
     () => calculateRiseSetAzimuth(latitude, Number(moonDeclination)),
     [latitude, moonDeclination]
   );
 
-  // Monthly Declination Bounds over a rolling 30-day window (±15 days)
-  const monthlyBounds = useMemo(
-    () => calculateMonthlyLunarDeclinationBounds(currentDate),
-    [currentDate]
-  );
-
-  const extremaCulminations = useMemo(
-    () => calculateLunarExtremaCulminations(latitude, monthlyBounds.maxDec, monthlyBounds.minDec),
-    [latitude, monthlyBounds.maxDec, monthlyBounds.minDec]
-  );
-
   // --- Lunar Altitude Bounds & Zenith Cap Math ---
   const absLat = Math.abs(latitude);
   const isLunarTropical = absLat <= LUNAR_MAX_DEC;
   const isPolar = absLat >= 89.9;
-
-  const standstillMaxCulmination = useMemo(
-    () => calculateCulminationBearing(latitude, LUNAR_MAX_DEC),
-    [latitude]
-  );
-
-  const standstillMinCulmination = useMemo(
-    () => calculateCulminationBearing(latitude, -LUNAR_MAX_DEC),
-    [latitude]
-  );
 
   // Maximum possible lunar transit elevation across all 18.6-year nodal cycles
   const maxAnnualMoonNoon = isLunarTropical ? 90 : (90 - absLat + LUNAR_MAX_DEC);
@@ -136,28 +114,6 @@ export const useMoonElevationMath = ({
     }
     return '';
   }, [isLunarTropical, maxAnnualMoonNoon]);
-
-  // --- Nodal Geometry & Sky Dome Node Pins ---
-  const jd = useMemo(() => getJulianDate(currentDate, displayTime), [currentDate, displayTime]);
-  const solarNoon = solarData?.solarNoon ?? 12;
-  const sunDeclination = (solarData?.declination ?? 0) as number;
-  const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
-
-  const nodalData = useMemo<NullableSkyDomeNodalData>(() => {
-    if (!isNodalModeActive) {
-      return createInactiveNodalData();
-    }
-    return calculateSkyDomeLunarNodes(
-      latitude,
-      jd,
-      displayTime,
-      solarNoon,
-      sunLambda,
-      {
-        phaseValue: phase.value !== undefined ? Number(phase.value) : undefined
-      }
-    );
-  }, [isNodalModeActive, latitude, jd, displayTime, solarNoon, sunLambda, phase.value]);
 
   const eclipticPathResult = useMemo(
     () => generateDiurnalPath(latitude, sunDeclination),
@@ -179,14 +135,6 @@ export const useMoonElevationMath = ({
     () => generateDiurnalPath(latitude, monthlyBounds.minDec),
     [latitude, monthlyBounds.minDec]
   );
-
-  const moonTrackColor = isNodalModeActive
-    ? (nodalData.isMoonAscending ? '#38bdf8' : '#f43f5e')
-    : '#e2e8f0';
-
-  const moonTrackDash = isNodalModeActive
-    ? (nodalData.isWaxing ? undefined : '4 3')
-    : undefined;
 
   const diurnalPaths = useMemo<SkyDomeDiurnalPath[]>(() => {
     const paths: SkyDomeDiurnalPath[] = [];

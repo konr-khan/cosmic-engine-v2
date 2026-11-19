@@ -6,6 +6,7 @@ import { SunElevationDome } from './SunElevationDome';
 import { MoonElevationDome } from './MoonElevationDome';
 import { SunMeridianDome } from './SunMeridianDome';
 import { MoonMeridianDome } from './MoonMeridianDome';
+import { useLunarDomeSharedMath } from './hooks/useLunarDomeSharedMath';
 
 export interface TodayHorizonViewProps {
   solarData?: SolarAlmanacData | null;
@@ -18,6 +19,107 @@ export interface TodayHorizonViewProps {
   onSetTime?: (time: number) => void;
   initialDomeMode?: '2-dome' | '4-dome';
 }
+
+interface QuadDomeGridProps {
+  solarData?: SolarAlmanacData | null;
+  orbitalData?: OrbitalData | null;
+  displayTime: number;
+  latitude: number;
+  longitude?: number;
+  currentDate: Date;
+  onSetTime?: (time: number) => void;
+  isTwilightMode: boolean;
+  onToggleTwilight: () => void;
+  isNodalMode: boolean;
+  onToggleNodal: () => void;
+}
+
+const QuadDomeGrid: React.FC<QuadDomeGridProps> = ({
+  solarData,
+  orbitalData,
+  displayTime,
+  latitude,
+  longitude,
+  currentDate,
+  onSetTime,
+  isTwilightMode,
+  onToggleTwilight,
+  isNodalMode,
+  onToggleNodal,
+}) => {
+  // Compute shared 30-day lunar bounds, standstills & nodal kinematics once for both lunar domes
+  const sharedLunarMath = useLunarDomeSharedMath({
+    orbitalData,
+    solarData,
+    displayTime,
+    latitude,
+    currentDate,
+    isNodalModeActive: isNodalMode,
+  });
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 items-stretch overflow-y-auto pr-1">
+      {/* Left Column (Sun): Unified Card containing Diurnal Elevation Arc + Meridian Profile */}
+      <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 shadow-inner backdrop-blur-sm flex flex-col justify-between">
+        <SunElevationDome
+          solarData={solarData}
+          displayTime={displayTime}
+          latitude={latitude}
+          currentDate={currentDate}
+          onSetTime={onSetTime}
+          isTwilightMode={isTwilightMode}
+          onToggleTwilight={onToggleTwilight}
+          isQuadMode={true}
+          variant="embedded"
+        />
+        <div className="border-t border-slate-800/50 mt-2 pt-1">
+          <SunMeridianDome
+            solarData={solarData}
+            displayTime={displayTime}
+            latitude={latitude}
+            currentDate={currentDate}
+            isTwilightMode={isTwilightMode}
+            onToggleTwilight={onToggleTwilight}
+            hideFooter={true}
+            variant="embedded"
+          />
+        </div>
+      </div>
+
+      {/* Right Column (Moon): Unified Card containing Diurnal Elevation Arc + Meridian Profile */}
+      <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 shadow-inner backdrop-blur-sm flex flex-col justify-between">
+        <MoonElevationDome
+          orbitalData={orbitalData}
+          solarData={solarData}
+          displayTime={displayTime}
+          latitude={latitude}
+          longitude={longitude}
+          currentDate={currentDate}
+          onSetTime={onSetTime}
+          isNodalMode={isNodalMode}
+          onToggleNodal={onToggleNodal}
+          isQuadMode={true}
+          variant="embedded"
+          sharedMath={sharedLunarMath}
+        />
+        <div className="border-t border-slate-800/50 mt-2 pt-1">
+          <MoonMeridianDome
+            orbitalData={orbitalData}
+            solarData={solarData}
+            displayTime={displayTime}
+            latitude={latitude}
+            currentDate={currentDate}
+            isNodalMode={isNodalMode}
+            onToggleNodal={onToggleNodal}
+            hideFooter={true}
+            variant="embedded"
+            sharedMath={sharedLunarMath}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
   solarData,
@@ -111,64 +213,19 @@ export const TodayHorizonView: React.FC<TodayHorizonViewProps> = ({
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 items-stretch overflow-y-auto pr-1">
-          {/* Left Column (Sun): Unified Card containing Diurnal Elevation Arc + Meridian Profile */}
-          <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 shadow-inner backdrop-blur-sm flex flex-col justify-between">
-            <SunElevationDome
-              solarData={solarData}
-              displayTime={displayTime}
-              latitude={latitude}
-              currentDate={currentDate}
-              onSetTime={onSetTime}
-              isTwilightMode={isTwilightMode}
-              onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
-              isQuadMode={true}
-              variant="embedded"
-            />
-            <div className="border-t border-slate-800/50 mt-2 pt-1">
-              <SunMeridianDome
-                solarData={solarData}
-                displayTime={displayTime}
-                latitude={latitude}
-                currentDate={currentDate}
-                isTwilightMode={isTwilightMode}
-                onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
-                hideFooter={true}
-                variant="embedded"
-              />
-            </div>
-          </div>
-
-          {/* Right Column (Moon): Unified Card containing Diurnal Elevation Arc + Meridian Profile */}
-          <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-800/60 shadow-inner backdrop-blur-sm flex flex-col justify-between">
-            <MoonElevationDome
-              orbitalData={orbitalData}
-              solarData={solarData}
-              displayTime={displayTime}
-              latitude={latitude}
-              longitude={longitude}
-              currentDate={currentDate}
-              onSetTime={onSetTime}
-              isNodalMode={isNodalMode}
-              onToggleNodal={() => setIsNodalMode((prev) => !prev)}
-              isQuadMode={true}
-              variant="embedded"
-            />
-            <div className="border-t border-slate-800/50 mt-2 pt-1">
-              <MoonMeridianDome
-                orbitalData={orbitalData}
-                solarData={solarData}
-                displayTime={displayTime}
-                latitude={latitude}
-                currentDate={currentDate}
-                isNodalMode={isNodalMode}
-                onToggleNodal={() => setIsNodalMode((prev) => !prev)}
-                hideFooter={true}
-                variant="embedded"
-              />
-            </div>
-          </div>
-        </div>
+        <QuadDomeGrid
+          solarData={solarData}
+          orbitalData={orbitalData}
+          displayTime={displayTime}
+          latitude={latitude}
+          longitude={longitude}
+          currentDate={currentDate}
+          onSetTime={onSetTime}
+          isTwilightMode={isTwilightMode}
+          onToggleTwilight={() => setIsTwilightMode((prev) => !prev)}
+          isNodalMode={isNodalMode}
+          onToggleNodal={() => setIsNodalMode((prev) => !prev)}
+        />
       )}
     </div>
   );

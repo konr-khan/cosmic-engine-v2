@@ -17,7 +17,7 @@ Rather than relying on informal conventions that drift across sessions, Cosmic E
    - Angular metrics (`Degrees`, `Radians`) and epochs (`JulianDate`, `JulianCenturies`) use unique Symbol brands with forbidden brand intersections (`NotRadians`, `NotDegrees`).
    - Passing degrees into a trigonometric solver expecting radians (`Math.sin`, Meeus ephemeris series) or double-converting branded values fails at compile time (`npm run typecheck`).
 3. **Programmatic Babel AST Guardrails ([`scripts/lintUnitSafety.mjs`](./scripts/lintUnitSafety.mjs))**:
-   - **UI Unit Boundary**: Bans `asDegrees()` and `asRadians()` across all 120 UI files in `src/components/**`, forcing presentation components through verified conversion gatekeepers (`latToRadians`, `lonToRadians`, `toRadians`).
+   - **UI Unit Boundary**: Bans `asDegrees()` and `asRadians()` across all 121 UI files in `src/components/**`, forcing presentation components through verified conversion gatekeepers (`latToRadians`, `lonToRadians`, `toRadians`).
    - **Collision-Safe SVG `<defs>` Scoping**: Scans JSX `<defs>` blocks across `src/components/**` to ban static string-literal `id="..."` attributes, enforcing instance-scoped `useSafeSvgId()` / `useId()` references across co-mounted observatory widgets.
    - **Mathematical Domain Purity**: Scans `src/utils/cosmicMath/**` to guarantee 0 React imports, 0 UI component imports, 0 Tailwind presentation tokens, and 0 unparameterized `new Date()` calls.
    - **Prop Identity Stability & SSoT Parity**: Bans `= new Date()` default parameter fallbacks across `src/components/**` and `src/hooks/**` (enforcing immutable `J2000_DATE` fallbacks) and verifies 100% Markdown link/anchor resolution, `F#`/`M#`/`DE-xx`/`ADR-xxxx` ledger parity, and 1:1 `ARCHITECTURE.md` production file inventory sync.
@@ -76,7 +76,7 @@ To prevent documentation drift across AI pair-programming sessions, every archit
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`, `src/store/hoverStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 904 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 59 modules, 906 tests)
 
 ```bash
 # Install dependencies
@@ -104,7 +104,7 @@ npm run sync:dossier       # Compiles docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.m
 
 ## 🧪 Verification & Test Harness
 
-The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**904 tests**):
+The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 59 specialized domain suites (**906 tests**):
 
 <details>
 <summary><strong>📊 Expand Full 59-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
@@ -138,8 +138,8 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **Layout & Chronometer Dock** | `src/components/layout/layout.test.tsx` (10 tests) | Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing |
 | **Ribbon Scrubber Hook** | `src/components/widgets/common/useRibbonScrubber.test.ts` (10 tests) | Bidirectional 2D coordinate scaling (dayToX, xToDay, timeToY, yToTime), synodic sub-window scaling, dragging state, and pointer capture lifecycle |
 | **SkyDomeBase Primitive** | `src/components/widgets/today/SkyDomeBase.test.tsx` (19 tests) | Shared 260x138 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors |
-| **Sky Dome Hooks & Primitives** | `src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx` (12 tests) | Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer |
-| **Today Horizon Widget** | `src/components/widgets/today/TodayWidget.test.tsx` (24 tests) | SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles |
+| **Sky Dome Hooks & Primitives** | `src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx` (13 tests) | Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer |
+| **Today Horizon Widget** | `src/components/widgets/today/TodayWidget.test.tsx` (25 tests) | SunElevationDome and MoonElevationDome diurnal paths, SunMeridianDome and MoonMeridianDome celestial profiles, 2-Dome vs. 4-Dome Quad view switching, real-time vertical elevation kinematics, Solstice and Standstill swaths, and twilight/nodal mode toggles |
 | **Meridian View-Model Config Helpers** | `src/components/widgets/today/hooks/meridianConfigHelpers.test.ts` (12 tests) | Strongly typed view-model builders for radial ticks, swaths, gate anchors, and peak targets deduplicating Sun and Moon meridian views |
 | **Solar Almanac Widget** | `src/components/widgets/solar/SolarWidget.test.tsx` (8 tests) | Keplerian solar metrics, perihelion orbital dynamics, interactive SolarRibbonChart hover hairline, and PolarSunlightDial 24h circular polar sector dial |
 | **Lunar Almanac Widget** | `src/components/widgets/lunar/LunarWidget.test.tsx` (7 tests) | 30-day synodic daily phase discs, 365-day annual braided ribbon, polar circumpolar statuses (24h moonlight / down all day), and TidalWaveOscillator ocean deformation wave |

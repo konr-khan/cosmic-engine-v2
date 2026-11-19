@@ -12,8 +12,9 @@ import { PhaseVisual } from '../../common/PhaseVisual';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
 import { J2000_DATE } from '../../../utils/cosmicMath';
 import { SkyDomeBase } from './SkyDomeBase';
-import { LUNAR_ELEVATION_BADGE_CLASSES } from './todayTokens';
+import { LUNAR_ELEVATION_BADGE_CLASSES, NODAL_HEMISPHERE_COLORS } from './todayTokens';
 import { useMoonElevationMath, LUNAR_MAX_DEC } from './hooks/useMoonElevationMath';
+import { LunarDomeSharedMath } from './hooks/useLunarDomeSharedMath';
 import { SkyDomeFooter } from './common/SkyDomeFooter';
 import { DraconicTimelineRail } from './common/DraconicTimelineRail';
 import { LunarPhaseDisc } from './common/LunarPhaseDisc';
@@ -31,6 +32,7 @@ export interface MoonElevationDomeProps {
   onToggleNodal?: () => void;
   isQuadMode?: boolean;
   variant?: 'card' | 'embedded';
+  sharedMath?: LunarDomeSharedMath;
 }
 
 export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
@@ -46,6 +48,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
   onToggleNodal,
   isQuadMode = false,
   variant,
+  sharedMath,
 }) => {
   const [isHoveringMoonMetrics, setIsHoveringMoonMetrics] = useState(false);
   const [localNodalMode, setLocalNodalMode] = useState(initialNodalMode);
@@ -100,6 +103,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
     longitude,
     currentDate,
     isNodalModeActive,
+    sharedMath,
   });
 
   return (
@@ -128,7 +132,7 @@ export const MoonElevationDome: React.FC<MoonElevationDomeProps> = ({
             const node = nodalData.nearestNode;
             if (!node) return null;
             const isAsc = nodalData.nearestNodeType === 'ascending';
-            const color = isAsc ? '#38bdf8' : '#f43f5e';
+            const color = isAsc ? NODAL_HEMISPHERE_COLORS.ascending : NODAL_HEMISPHERE_COLORS.descending;
             const symbol = isAsc ? '☊' : '☋';
             const dist = nodalData.nearestNodeDistDays;
             let labelText: string;

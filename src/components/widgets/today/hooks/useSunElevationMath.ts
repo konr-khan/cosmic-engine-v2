@@ -39,13 +39,14 @@ export const useSunElevationMath = ({
   currentDate = J2000_DATE,
   isTwilightModeActive,
 }: UseSunElevationMathParams) => {
-  // Earth-Sun Distance & Orbital Physics from Canonical Solver
+  // Earth-Sun Distance & Orbital Physics from Canonical Solver (only when props omit them)
+  const needsFallbackPhysics = solarData?.distanceAU === undefined || solarData?.distanceKm === undefined;
   const fallbackPhysics = useMemo(
-    () => calculateEarthOrbitalPhysics(getJulianDate(currentDate, displayTime)),
-    [currentDate, displayTime]
+    () => (needsFallbackPhysics ? calculateEarthOrbitalPhysics(getJulianDate(currentDate, displayTime)) : null),
+    [needsFallbackPhysics, currentDate, displayTime]
   );
-  const sunDistanceAU = solarData?.distanceAU ?? fallbackPhysics.distanceAU;
-  const sunDistanceKm = solarData?.distanceKm ?? fallbackPhysics.distanceKm;
+  const sunDistanceAU = solarData?.distanceAU ?? fallbackPhysics?.distanceAU ?? 1.0;
+  const sunDistanceKm = solarData?.distanceKm ?? fallbackPhysics?.distanceKm ?? 149597870;
 
   // --- Sun Elevation Math ---
   const {

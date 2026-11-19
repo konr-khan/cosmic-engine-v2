@@ -13,6 +13,7 @@ import { J2000_DATE } from '../../../utils/cosmicMath';
 import { MeridianDomeBase, EL_CX } from './MeridianDomeBase';
 import { LunarPhaseDisc, MeridianDomeFooter } from './common';
 import { useMoonMeridianMath, LUNAR_MAX_DEC } from './hooks/useMoonMeridianMath';
+import { LunarDomeSharedMath } from './hooks/useLunarDomeSharedMath';
 
 export interface MoonMeridianDomeProps {
   orbitalData?: OrbitalData | null;
@@ -25,6 +26,7 @@ export interface MoonMeridianDomeProps {
   onToggleNodal?: () => void;
   hideFooter?: boolean;
   variant?: 'card' | 'embedded';
+  sharedMath?: LunarDomeSharedMath;
 }
 
 export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
@@ -38,6 +40,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
   onToggleNodal,
   hideFooter = false,
   variant,
+  sharedMath,
 }) => {
   const [localNodalMode, setLocalNodalMode] = useState(initialNodalMode);
   const isNodalModeActive = isNodalMode !== undefined ? isNodalMode : localNodalMode;
@@ -88,6 +91,7 @@ export const MoonMeridianDome: React.FC<MoonMeridianDomeProps> = ({
     latitude,
     currentDate,
     isNodalModeActive,
+    sharedMath,
   });
 
   return (

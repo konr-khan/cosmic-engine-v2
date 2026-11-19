@@ -13,6 +13,8 @@ import {
   EL_CY
 } from './index';
 import { OrbitalData, SolarAlmanacData } from '../../../types';
+import { MeridianDomeBase } from './MeridianDomeBase';
+import { Moon } from 'lucide-react';
 
 describe('Today Horizon Subsystem', () => {
   it('exports all decomposed today sub-components cleanly', () => {
@@ -975,6 +977,57 @@ describe('Today Horizon Subsystem', () => {
     expect(polarMoonHtml).toContain('id="polar-counterpart-lunar-max-tick"');
     expect(polarMoonHtml).toContain('id="polar-lunar-max-chord"');
     expect(polarMoonHtml).toContain('id="polar-counterpart-lunar-max-swath"');
+  });
+
+  it('produces zero duplicate DOM id attributes across all 4 domes in Quad Mode and scopes MeridianDomeBase fallback IDs per instance', () => {
+    const quadHtml = renderToStaticMarkup(
+      React.createElement(TodayHorizonView, {
+        initialDomeMode: '4-dome',
+        currentTime: 12,
+        latitude: 47.06,
+      })
+    );
+    const quadIds = Array.from(quadHtml.matchAll(/\bid="([^"]+)"/g), (m) => m[1]);
+    expect(quadIds.length).toBeGreaterThan(10);
+    expect(new Set(quadIds).size).toBe(quadIds.length);
+
+    const siblingBasesHtml = renderToStaticMarkup(
+      React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(MeridianDomeBase, {
+          title: 'Dome A',
+          icon: Moon,
+          peakLabel: 'Peak',
+          peakElevation: 45,
+          currentElevation: 30,
+          latitude: 47.06,
+          todayChordConfig: {
+            chord: { daylightD: 'M 0 0 L 10 10', isPolar: false, anchorPoint: { x: 10, y: 10 } } as any,
+            stroke: '#38bdf8',
+          },
+          gateAnchor: { x: 10, y: 10 },
+          peakTarget: { peakPoint: { x: 5, y: 5 } },
+        }),
+        React.createElement(MeridianDomeBase, {
+          title: 'Dome B',
+          icon: Moon,
+          peakLabel: 'Peak',
+          peakElevation: 45,
+          currentElevation: 30,
+          latitude: 47.06,
+          todayChordConfig: {
+            chord: { daylightD: 'M 0 0 L 10 10', isPolar: false, anchorPoint: { x: 10, y: 10 } } as any,
+            stroke: '#38bdf8',
+          },
+          gateAnchor: { x: 10, y: 10 },
+          peakTarget: { peakPoint: { x: 5, y: 5 } },
+        })
+      )
+    );
+    const baseIds = Array.from(siblingBasesHtml.matchAll(/\bid="([^"]+)"/g), (m) => m[1]);
+    expect(baseIds.length).toBeGreaterThanOrEqual(8);
+    expect(new Set(baseIds).size).toBe(baseIds.length);
   });
 });
 

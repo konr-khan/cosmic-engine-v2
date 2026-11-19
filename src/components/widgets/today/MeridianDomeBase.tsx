@@ -1,6 +1,7 @@
 import React, { ReactNode, ComponentType } from 'react';
 import { SkyDomeBase, EL_CX, EL_CY, EL_R } from './SkyDomeBase';
 import { RadialTickLine, MeridianDiurnalChord } from '../../../utils/cosmicMath';
+import { useSafeSvgId } from '../../common/useSafeSvgId';
 
 export { EL_CX, EL_CY, EL_R };
 
@@ -164,7 +165,7 @@ export const MeridianRadialTick: React.FC<MeridianRadialTickConfig> = ({
 
 /** Reusable SVG sub-component for today's diurnal chord projection */
 export const MeridianDiurnalChordPath: React.FC<MeridianDiurnalChordConfig> = ({
-  id = 'meridian-today-diurnal-chord',
+  id,
   daylightId,
   twilightId,
   chord,
@@ -182,8 +183,10 @@ export const MeridianDiurnalChordPath: React.FC<MeridianDiurnalChordConfig> = ({
   daylightTitle,
   twilightTitle,
 }) => {
-  const dId = daylightId ?? id;
-  const tId = twilightId ?? (id ? `${id}-twilight` : undefined);
+  const uid = useSafeSvgId();
+  const baseId = id ?? `meridian-today-diurnal-chord-${uid}`;
+  const dId = daylightId ?? baseId;
+  const tId = twilightId ?? `${baseId}-twilight`;
   return (
     <>
       {glow && chord.daylightD && (
@@ -228,61 +231,67 @@ export const MeridianDiurnalChordPath: React.FC<MeridianDiurnalChordConfig> = ({
 
 /** Reusable SVG sub-component for parked gate anchor marker */
 export const MeridianGateAnchor: React.FC<MeridianGateAnchorConfig> = ({
-  id = 'meridian-gate-anchor',
+  id,
   x,
   y,
   r = 3.5,
   stroke = '#64748b',
   title,
-}) => (
-  <g id={id} transform={`translate(${x}, ${y})`}>
-    <circle
-      cx="0"
-      cy="0"
-      r={r}
-      fill="none"
-      stroke={stroke}
-      strokeWidth="0.8"
-      strokeDasharray="1.5 1.5"
-      strokeOpacity="0.6"
-    >
-      {title && <title>{title}</title>}
-    </circle>
-  </g>
-);
+}) => {
+  const uid = useSafeSvgId();
+  return (
+    <g id={id ?? `meridian-gate-anchor-${uid}`} transform={`translate(${x}, ${y})`}>
+      <circle
+        cx="0"
+        cy="0"
+        r={r}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="0.8"
+        strokeDasharray="1.5 1.5"
+        strokeOpacity="0.6"
+      >
+        {title && <title>{title}</title>}
+      </circle>
+    </g>
+  );
+};
 
 /** Reusable SVG sub-component for meridian daily culmination peak target halo */
 export const MeridianPeakTarget: React.FC<MeridianPeakTargetConfig> = ({
-  id = 'meridian-peak-target',
+  id,
   peakPoint,
   stroke = '#fbbf24',
   title,
-}) => (
-  <g id={id}>
-    <line
-      x1={EL_CX}
-      y1={EL_CY}
-      x2={peakPoint.x}
-      y2={peakPoint.y}
-      stroke={stroke}
-      strokeWidth="0.75"
-      strokeDasharray="2 2"
-      strokeOpacity="0.35"
-    />
-    <circle
-      cx={peakPoint.x}
-      cy={peakPoint.y}
-      r="5.5"
-      fill="none"
-      stroke={stroke}
-      strokeWidth="1.0"
-      strokeDasharray="2 2"
-      strokeOpacity="0.75"
-    >
-      {title && <title>{title}</title>}
-    </circle>
-  </g>
-);
+}) => {
+  const uid = useSafeSvgId();
+  return (
+    <g id={id ?? `meridian-peak-target-${uid}`}>
+      <line
+        x1={EL_CX}
+        y1={EL_CY}
+        x2={peakPoint.x}
+        y2={peakPoint.y}
+        stroke={stroke}
+        strokeWidth="0.75"
+        strokeDasharray="2 2"
+        strokeOpacity="0.35"
+      />
+      <circle
+        cx={peakPoint.x}
+        cy={peakPoint.y}
+        r="5.5"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="1.0"
+        strokeDasharray="2 2"
+        strokeOpacity="0.75"
+      >
+        {title && <title>{title}</title>}
+      </circle>
+    </g>
+  );
+};
 
 /**
  * Shared base component for celestial meridian profile dome visualizations
@@ -331,6 +340,7 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
   rightHorizonLabel,
   variant,
 }) => {
+  const uid = useSafeSvgId();
   const isPolar = latitude !== undefined && Math.abs(latitude) >= 89.9;
   const isNorthPole = isPolar && latitude >= 0;
 
@@ -366,7 +376,7 @@ export const MeridianDomeBase: React.FC<MeridianDomeBaseProps> = ({
       popover={popover}
       extraSvgContent={
         <g
-          id={geometryGroupId ?? 'meridian-dome-geometry'}
+          id={geometryGroupId ?? `meridian-dome-geometry-${uid}`}
           className={geometryGroupClassName ?? 'meridian-dome-geometry'}
         >
           {/* Swaths */}

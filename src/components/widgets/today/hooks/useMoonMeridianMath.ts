@@ -8,12 +8,7 @@
 
 import { useMemo } from 'react';
 import {
-  getJulianDate,
-  projectSkyDomePoint,
   calculateCulminationBearing,
-  calculateLunarExtremaCulminations,
-  calculateMonthlyLunarDeclinationBounds,
-  calculateSkyDomeLunarNodes,
   calculateMeridianPoint,
   generateMeridianSwathD,
   calculateMeridianRadialTick,
@@ -26,7 +21,6 @@ import {
   MeridianDiurnalChord,
   PolarMeridianCounterpart,
   MeridianPoint,
-  LUNAR_MAJOR_STANDSTILL_DEG,
   getPolarColureInfo,
   PolarColureInfo,
   J2000_DATE,
@@ -47,9 +41,14 @@ import {
   createMeridianPeakTargetConfig,
   buildMoonMeridianSwaths,
   buildMoonMeridianRadialTicks,
-  createInactiveNodalData,
-  NullableSkyDomeNodalData,
 } from './meridianConfigHelpers';
+import {
+  useLunarDomeSharedMath,
+  LUNAR_MAX_DEC,
+  LunarDomeSharedMath,
+} from './useLunarDomeSharedMath';
+
+export { LUNAR_MAX_DEC };
 
 export interface UseMoonMeridianMathParams {
   orbitalData?: OrbitalData | null;
@@ -58,10 +57,8 @@ export interface UseMoonMeridianMathParams {
   latitude: number;
   currentDate?: Date;
   isNodalModeActive: boolean;
+  sharedMath?: LunarDomeSharedMath;
 }
-
-// Major lunar standstill: 23.439° + 5.145° = 28.584°
-export const LUNAR_MAX_DEC = Number(LUNAR_MAJOR_STANDSTILL_DEG);
 
 export const useMoonMeridianMath = ({
   orbitalData,
@@ -70,26 +67,37 @@ export const useMoonMeridianMath = ({
   latitude,
   currentDate = J2000_DATE,
   isNodalModeActive,
+  sharedMath,
 }: UseMoonMeridianMathParams) => {
-  const safeOrbital = orbitalData || ({} as Partial<OrbitalData>);
-  const phase = safeOrbital.phase || { value: 0, name: 'New Moon' };
-  const lunarEvents = safeOrbital.lunarEvents || {
-    transit: 12,
-    declination: 0,
-    parallacticAngle: 0,
-  };
+  const shared = useLunarDomeSharedMath({
+    orbitalData,
+    solarData,
+    displayTime,
+    latitude,
+    currentDate,
+    isNodalModeActive,
+    precomputed: sharedMath,
+  });
+
   const {
-    transit = 12,
-    declination = 0,
-    parallacticAngle = 0,
-  } = lunarEvents;
+    phase,
+    lunarEvents,
+    moonDeclination,
+    moonHourAngle,
+    currentMoonElevation,
+    todayCulmination,
+    standstillMaxCulmination: standstillMax,
+    standstillMinCulmination: standstillMin,
+    monthlyBounds,
+    extremaCulminations,
+    jd,
+    nodalData,
+    isAscendingBranch,
+    nodalThemeColor,
+    moonTrackDash,
+  } = shared;
 
-  const moonDeclination = (orbitalData?.lunarPos?.declination ?? declination ?? 0) as number;
-
-  // --- Real-Time Moon Elevation & Meridian Diurnal Trajectory ---
-  const moonHourAngle = (displayTime - transit) * 15;
-  const currentMoonPos = projectSkyDomePoint(moonHourAngle, Number(moonDeclination), latitude);
-  const currentMoonElevation = currentMoonPos.elevation;
+  const { parallacticAngle } = lunarEvents;
 
   // Real-time instantaneous Moon position along continuous 3D diurnal path
   const activeMoonPoint: MeridianDiurnalPoint = useMemo(
@@ -110,65 +118,9 @@ export const useMoonMeridianMath = ({
   );
   const { isPolar } = polarColureInfo;
 
-  const todayCulmination: CulminationInfo = useMemo(
-    () => calculateCulminationBearing(latitude, Number(moonDeclination)),
-    [latitude, moonDeclination]
-  );
   const peakAlt = todayCulmination.altitude;
-
-  const standstillMax: CulminationInfo = useMemo(
-    () => calculateCulminationBearing(latitude, LUNAR_MAX_DEC),
-    [latitude]
-  );
-  const standstillMin: CulminationInfo = useMemo(
-    () => calculateCulminationBearing(latitude, -LUNAR_MAX_DEC),
-    [latitude]
-  );
-
-  // Monthly Declination Bounds over a rolling 30-day window (±15 days)
-  const monthlyBounds = useMemo(
-    () => calculateMonthlyLunarDeclinationBounds(currentDate),
-    [currentDate]
-  );
-
-  const extremaCulminations = useMemo(
-    () => calculateLunarExtremaCulminations(latitude, monthlyBounds.maxDec, monthlyBounds.minDec),
-    [latitude, monthlyBounds.maxDec, monthlyBounds.minDec]
-  );
-
   const monthMax = extremaCulminations.maxBound;
   const monthMin = extremaCulminations.minBound;
-
-  // --- Nodal Kinematics & Color Conventions ---
-  const jd = useMemo(() => getJulianDate(currentDate, displayTime), [currentDate, displayTime]);
-  const solarNoon = solarData?.solarNoon ?? 12;
-  const sunLambda = solarData?.lambda !== undefined ? Number(solarData.lambda) : undefined;
-
-  const nodalData = useMemo<NullableSkyDomeNodalData>(() => {
-    if (!isNodalModeActive) {
-      return createInactiveNodalData();
-    }
-    return calculateSkyDomeLunarNodes(
-      latitude,
-      jd,
-      displayTime,
-      solarNoon,
-      sunLambda,
-      {
-        phaseValue: phase.value !== undefined ? Number(phase.value) : undefined,
-        moonBeta: orbitalData?.lunarPos?.beta !== undefined ? Number(orbitalData.lunarPos.beta) : undefined,
-      }
-    );
-  }, [isNodalModeActive, latitude, jd, displayTime, solarNoon, sunLambda, phase.value, orbitalData?.lunarPos?.beta]);
-
-  const isAscendingBranch = nodalData.isMoonAscending;
-  // Eclipse-convention: Sky Blue for β >= 0 (North of ecliptic), Rose Red for β < 0 (South of ecliptic)
-  const nodalThemeColor = isNodalModeActive
-    ? (isAscendingBranch ? '#38bdf8' : '#f43f5e')
-    : '#e2e8f0';
-  const moonTrackDash = isNodalModeActive
-    ? (nodalData.isWaxing ? undefined : '4 3')
-    : undefined;
 
   // Ecliptic Node Crossing point on Meridian (where β = 0°)
   const eclipticCulmination = useMemo(() => {

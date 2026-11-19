@@ -1,18 +1,20 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { 
-  useSunElevationMath, 
-  useMoonElevationMath, 
+import {
+  useSunElevationMath,
+  useLunarDomeSharedMath,
+  useMoonElevationMath,
   useSunMeridianMath,
   useMoonMeridianMath,
   SkyDomeFooter,
-  MeridianDomeFooter, 
-  DraconicTimelineRail, 
+  MeridianDomeFooter,
+  DraconicTimelineRail,
   LunarPhaseDisc,
   OBLIQUITY,
   LUNAR_MAX_DEC,
   SunElevationMathResult,
+  LunarDomeSharedMath,
   MoonElevationMathResult,
   SunMeridianMathResult,
   MoonMeridianMathResult
@@ -422,6 +424,71 @@ describe('Sky Dome Refactored Hooks & Primitives', () => {
       expect(html).toContain('19.5° S');
       expect(html).toContain('Std');
       expect(html).toContain('Twilight');
+    });
+  });
+
+  describe('useLunarDomeSharedMath (Quad Mode Hoisting)', () => {
+    it('shares monthly bounds, standstill culminations, and nodal kinematics across both lunar dome hooks', () => {
+      const commonParams = {
+        orbitalData: {
+          phase: { value: 0.25, name: 'First Quarter' },
+          lunarEvents: {
+            moonrise: null,
+            transit: 15,
+            moonset: null,
+            distanceKm: 372000,
+            distanceEarthRadii: 58.3,
+            isPerigee: true,
+            isApogee: false,
+            declination: 18,
+            parallacticAngle: 25,
+          },
+          lunarPos: {
+            declination: 18,
+            beta: 3.1,
+            lambda: 95,
+          },
+        } as any,
+        solarData: {
+          solarNoon: 12,
+          declination: 12,
+          lambda: 45,
+        } as any,
+        displayTime: 15,
+        latitude: 67.5,
+        isNodalModeActive: true,
+      };
+
+      let shared!: LunarDomeSharedMath;
+      let sharedEl!: MoonElevationMathResult;
+      let sharedMer!: MoonMeridianMathResult;
+      let directEl!: MoonElevationMathResult;
+      let directMer!: MoonMeridianMathResult;
+
+      const Harness: React.FC = () => {
+        shared = useLunarDomeSharedMath(commonParams);
+        sharedEl = useMoonElevationMath({ ...commonParams, sharedMath: shared });
+        sharedMer = useMoonMeridianMath({ ...commonParams, sharedMath: shared });
+        directEl = useMoonElevationMath(commonParams);
+        directMer = useMoonMeridianMath(commonParams);
+        return null;
+      };
+
+      renderToStaticMarkup(<Harness />);
+
+      // Exact shared reference reuse when precomputed sharedMath is passed
+      expect(sharedEl.nodalData).toBe(shared.nodalData);
+      expect(sharedMer.nodalData).toBe(shared.nodalData);
+      expect(sharedEl.monthlyBounds).toBe(shared.monthlyBounds);
+      expect(sharedMer.monthMax).toBe(shared.extremaCulminations.maxBound);
+      // Preserves null circumpolar moonrise/moonset instead of coercing to numeric fallbacks
+      expect(sharedEl.moonrise).toBeNull();
+      expect(sharedEl.moonset).toBeNull();
+      // Identical numerical outputs vs standalone hook calls
+      expect(sharedEl.currentMoonElevation).toBeCloseTo(directEl.currentMoonElevation, 6);
+      expect(sharedMer.peakAlt).toBeCloseTo(directMer.peakAlt, 6);
+      expect(sharedMer.nodalThemeColor).toBe('#38bdf8');
+      expect(sharedEl.moonTrackColor).toBe('#38bdf8');
     });
   });
 });
