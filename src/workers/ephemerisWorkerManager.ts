@@ -1,65 +1,40 @@
-import { 
-  EphemerisCalculationParams, 
+import {
+  EphemerisCalculationParams,
   EphemerisWorkerPayload,
-  EphemerisWorkerRequest,
-  EphemerisWorkerResponse,
   PendingRequestEntry,
-  PendingEphemerisEntry,
-  PendingAnnualSolarEntry,
-  PendingAnnualLunarEntry,
-  AnnualCalculationType,
-  AnnualCalculationPayloadMap,
-  AnnualCalculationParamsMap,
-  AnnualCalculationRequestTypeMap,
-  AnnualCalculationCacheItemMap,
-  PendingAnnualCalculationEntry
+  PendingEphemerisEntry
 } from '../types/worker';
 import { AnnualSolarMatrixItem, AnnualLunarMatrixItem } from '../types/astronomy';
 import { Latitude, Longitude } from '../types/units';
 import { LruCache } from '../utils/lruCache';
+import { executeSyncFallbackForEntry } from './workerFallback';
 import {
-  executeSyncFallbackForEntry,
-  executeSyncAnnualSolarFallback,
-  executeSyncAnnualLunarFallback
-} from './workerFallback';
+  buildEphemerisSignature,
+  EphemerisRequestHandle,
+  EphemerisRequestParams,
+  EphemerisSubscription,
+  PendingThrottledEphemerisEntry,
+  SolarAlmanacDay,
+  LunarAlmanacDay,
+  PendingAnnualSolarEntry,
+  PendingAnnualLunarEntry,
+  AnnualCalculationType,
+  PendingAnnualCalculationEntry
+} from './ephemerisTypes';
+import { createManagedEphemerisSubscription } from './ephemerisSubscription';
+import { AnnualMatrixCacheService, AnnualCacheTransportBridge } from './ephemerisAnnualCache';
+import { EphemerisThrottleQueue, ThrottleDispatchHost } from './ephemerisThrottle';
+import { WorkerTransport } from './workerTransport';
 
-export interface PendingThrottledEphemerisEntry {
-  signature: string;
-  params: EphemerisCalculationParams;
-  calculateLunar: boolean;
-  calculateEclipse: boolean;
-  callbacks: Set<(payload: EphemerisWorkerPayload) => void>;
-  dispatchedEntry: PendingEphemerisEntry | null;
-}
-
-export interface EphemerisRequestParams extends EphemerisCalculationParams {
-  calculateLunar?: boolean;
-  calculateEclipse?: boolean;
-  throttleMs?: number;
-}
-
-export interface EphemerisSubscription {
-  /** Updates parameters for a mounted consumer without cancelling in-flight worker work. */
-  update: (
-    params: EphemerisRequestParams,
-    onResult: (payload: EphemerisWorkerPayload, jd: number, lat: number, lon: number) => void
-  ) => void;
-  /** Disposes all queued and in-flight registrations for an unmounting/disabled consumer. */
-  dispose: () => void;
-}
-
-interface EphemerisRequestHandle {
-  unsubscribe: () => void;
-  isQueued: () => boolean;
-}
-
-export type SolarAlmanacDay = AnnualSolarMatrixItem;
-export type LunarAlmanacDay = AnnualLunarMatrixItem;
-
-export type { 
-  PendingRequestEntry, 
-  PendingEphemerisEntry, 
-  PendingAnnualSolarEntry, 
+export type {
+  PendingThrottledEphemerisEntry,
+  EphemerisRequestParams,
+  EphemerisSubscription,
+  SolarAlmanacDay,
+  LunarAlmanacDay,
+  PendingRequestEntry,
+  PendingEphemerisEntry,
+  PendingAnnualSolarEntry,
   PendingAnnualLunarEntry,
   AnnualCalculationType,
   PendingAnnualCalculationEntry
@@ -67,86 +42,139 @@ export type {
 
 /**
  * Ephemeris Worker Singleton Manager
- * 
- * Manages a single application-level Web Worker instance for Meeus lunar ephemeris,
- * syzygy eclipse shadow geometry, and annual solar/lunar ephemeris matrix calculations,
- * multiplexing concurrent calculation requests across mounted dashboard windows to prevent
- * worker thread proliferation.
+ *
+ * Coordinates Web Worker transport, request deduplication, 100ms trailing-edge flag-merging
+ * throttling, persistent 60 FPS consumer subscriptions, and bounded LRU annual matrix caches.
  */
 export class EphemerisWorkerManager {
-  public static readonly MAX_ANNUAL_CACHE_SIZE = 16;
+  public static readonly MAX_ANNUAL_CACHE_SIZE = AnnualMatrixCacheService.MAX_CACHE_SIZE;
+
+  private readonly _annualCache: AnnualMatrixCacheService;
+  private readonly _throttle: EphemerisThrottleQueue;
+  private readonly _transport: WorkerTransport;
+  private readonly _throttleHost: ThrottleDispatchHost;
+  private readonly _annualBridge: AnnualCacheTransportBridge;
+
+  constructor() {
+    this._annualCache = new AnnualMatrixCacheService(EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE);
+    this._throttle = new EphemerisThrottleQueue();
+    this._transport = new WorkerTransport({
+      onSyncFallback: (entry) => this._executeSyncFallbackForEntry(entry),
+      onAnnualSolarSuccess: (sig, data) => this._annualCache.setInCache(this._annualCache.solarCache, sig, data),
+      onAnnualLunarSuccess: (sig, data) => this._annualCache.setInCache(this._annualCache.lunarCache, sig, data),
+      drainThrottledForFailure: () => this._throttle.drainForFailure(),
+      onUnloadTerminate: () => this.terminate()
+    });
+
+    this._throttleHost = {
+      getWorker: () => this._getWorker(),
+      registerAndPost: (w, entry, reqType) => this._transport.registerAndPost(w, entry, reqType),
+      clearDispatchedEntry: (entry) => this._transport.clearDispatchedBySignature(entry.signature),
+      dispatchImmediate: (sig, params, calcLunar, calcEclipse, onResult) =>
+        this._dispatchEphemerisRequest(sig, params, calcLunar, calcEclipse, onResult)
+    };
+
+    this._annualBridge = {
+      isAvailable: () => this.isAvailable(),
+      getWorker: () => this._getWorker(),
+      getExistingRequestId: (sig) => this.signatureToRequestId.get(sig),
+      getPendingRequest: (id) => this.pendingRequests.get(id),
+      createUnsubscribe: (id, sig, cbs, cb) => this._transport.createUnsubscribe(id, sig, cbs, cb),
+      registerAndPost: (w, entry, reqType) => this._transport.registerAndPost(w, entry, reqType)
+    };
+  }
+
+  public get worker(): Worker | null {
+    return this._transport.worker;
+  }
+
+  public set worker(value: Worker | null) {
+    this._transport.worker = value;
+  }
+
+  public get nextRequestId(): number {
+    return this._transport.nextRequestId;
+  }
+
+  public set nextRequestId(value: number) {
+    this._transport.nextRequestId = value;
+  }
+
+  public get pendingRequests(): Map<number, PendingRequestEntry> {
+    return this._transport.pendingRequests;
+  }
+
+  public get signatureToRequestId(): Map<string, number> {
+    return this._transport.signatureToRequestId;
+  }
+
+  public get requestTimeouts(): Map<number, ReturnType<typeof setTimeout>> {
+    return this._transport.requestTimeouts;
+  }
+
+  public get annualSolarCache(): LruCache<string, AnnualSolarMatrixItem[]> {
+    return this._annualCache.solarCache;
+  }
+
+  public get annualLunarCache(): LruCache<string, AnnualLunarMatrixItem[]> {
+    return this._annualCache.lunarCache;
+  }
+
+  public get _isAvailable(): boolean {
+    return this._transport.isAvailableFlag;
+  }
+
+  public set _isAvailable(value: boolean) {
+    this._transport.isAvailableFlag = value;
+  }
+
+  public get latestProcessedEphemerisId(): number {
+    return this._transport.latestProcessedEphemerisId;
+  }
+
+  public set latestProcessedEphemerisId(value: number) {
+    this._transport.latestProcessedEphemerisId = value;
+  }
+
+  public get lastEphemerisDispatchTime(): number {
+    return this._throttle.lastDispatchTime;
+  }
+
+  public set lastEphemerisDispatchTime(value: number) {
+    this._throttle.lastDispatchTime = value;
+  }
+
+  public get ephemerisThrottleTimer(): ReturnType<typeof setTimeout> | null {
+    return this._throttle.timer;
+  }
+
+  public set ephemerisThrottleTimer(value: ReturnType<typeof setTimeout> | null) {
+    this._throttle.timer = value;
+  }
+
+  public get pendingThrottledEntries(): Map<string, PendingThrottledEphemerisEntry> {
+    return this._throttle.pendingEntries;
+  }
 
   /**
-   * Sets an entry into an annual matrix cache using an LRU eviction policy capped at MAX_ANNUAL_CACHE_SIZE.
+   * Sets an entry into an annual matrix cache using bounded LRU eviction.
    */
   public _setInAnnualCache<T>(cache: LruCache<string, T> | Map<string, T>, key: string, value: T): void {
-    cache.set(key, value);
+    this._annualCache.setInCache(cache, key, value);
   }
 
   /**
    * Retrieves an entry from an annual matrix cache and promotes it to most recently used.
    */
   public _getFromAnnualCache<T>(cache: LruCache<string, T> | Map<string, T>, key: string): T | undefined {
-    return cache.get(key);
-  }
-
-  public worker: Worker | null;
-  public nextRequestId: number;
-  public pendingRequests: Map<number, PendingRequestEntry>;
-  public signatureToRequestId: Map<string, number>;
-  public annualSolarCache: LruCache<string, AnnualSolarMatrixItem[]>;
-  public annualLunarCache: LruCache<string, AnnualLunarMatrixItem[]>;
-  public requestTimeouts: Map<number, ReturnType<typeof setTimeout>>;
-  public _isAvailable: boolean;
-  public latestProcessedEphemerisId: number;
-  public lastEphemerisDispatchTime: number;
-  public ephemerisThrottleTimer: ReturnType<typeof setTimeout> | null;
-  public pendingThrottledEntries: Map<string, PendingThrottledEphemerisEntry>;
-  private readonly _boundOnUnload: () => void;
-  private _hasUnloadListeners: boolean;
-
-  constructor() {
-    this.worker = null;
-    this.nextRequestId = 0;
-    this.pendingRequests = new Map();
-    this.signatureToRequestId = new Map();
-    this.annualSolarCache = new LruCache<string, AnnualSolarMatrixItem[]>(EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE);
-    this.annualLunarCache = new LruCache<string, AnnualLunarMatrixItem[]>(EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE);
-    this.requestTimeouts = new Map();
-    this._isAvailable = typeof Worker !== 'undefined';
-    this.latestProcessedEphemerisId = 0;
-    this.lastEphemerisDispatchTime = 0;
-    this.ephemerisThrottleTimer = null;
-    this.pendingThrottledEntries = new Map();
-    this._boundOnUnload = () => this.terminate();
-    this._hasUnloadListeners = false;
-
-    this._ensureUnloadListeners();
-  }
-
-  private _ensureUnloadListeners(): void {
-    if (this._hasUnloadListeners) return;
-    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-      window.addEventListener('beforeunload', this._boundOnUnload);
-      window.addEventListener('pagehide', this._boundOnUnload);
-      this._hasUnloadListeners = true;
-    }
-  }
-
-  private _removeUnloadListeners(): void {
-    if (!this._hasUnloadListeners) return;
-    if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
-      window.removeEventListener('beforeunload', this._boundOnUnload);
-      window.removeEventListener('pagehide', this._boundOnUnload);
-    }
-    this._hasUnloadListeners = false;
+    return this._annualCache.getFromCache(cache, key);
   }
 
   /**
    * Returns whether Web Worker support is available and functional.
    */
-  isAvailable(): boolean {
-    return typeof Worker !== 'undefined' && this._isAvailable !== false;
+  public isAvailable(): boolean {
+    return this._transport.isAvailable();
   }
 
   /**
@@ -155,230 +183,28 @@ export class EphemerisWorkerManager {
   public _executeSyncFallbackForEntry(entry: PendingRequestEntry): void {
     executeSyncFallbackForEntry(
       entry,
-      this.annualSolarCache,
-      this.annualLunarCache,
+      this._annualCache.solarCache,
+      this._annualCache.lunarCache,
       (c, k, v) => this._setInAnnualCache(c, k, v)
     );
   }
 
-  /**
-   * Sets a safety timeout guard for a dispatched worker request.
-   * If the worker hangs or fails to respond within ms (default 5000ms),
-   * the timeout callback invokes synchronous fallback and cleans up.
-   */
   public _setRequestTimeout(requestId: number, entry: PendingRequestEntry, ms: number = 5000): void {
-    this._clearRequestTimeout(requestId);
-    const timer = setTimeout(() => {
-      this.requestTimeouts.delete(requestId);
-      const pending = this.pendingRequests.get(requestId);
-      if (pending) {
-        this.pendingRequests.delete(requestId);
-        this.signatureToRequestId.delete(pending.signature);
-        console.warn(`[EphemerisWorkerManager] Request ${requestId} (${pending.type}) timed out after ${ms}ms; invoking synchronous fallback.`);
-        this._executeSyncFallbackForEntry(pending);
-      }
-    }, ms);
-    this.requestTimeouts.set(requestId, timer);
+    this._transport.setRequestTimeout(requestId, entry, ms);
   }
 
-  /**
-   * Clears any active timeout guard for a completed or cancelled request.
-   */
   public _clearRequestTimeout(requestId: number): void {
-    const timer = this.requestTimeouts.get(requestId);
-    if (timer) {
-      clearTimeout(timer);
-      this.requestTimeouts.delete(requestId);
-    }
+    this._transport.clearRequestTimeout(requestId);
   }
 
-  private _notifyCallbacks<TPayload>(
-    callbacks: Set<(payload: TPayload) => void>,
-    payload: TPayload,
-    label: string
-  ): void {
-    callbacks.forEach((cb) => {
-      try {
-        cb(payload);
-      } catch (e) {
-        console.error(`${label} callback error:`, e);
-      }
-    });
+  public _handleWorkerFailure(error?: unknown): void {
+    this._transport.handleWorkerFailure(error);
   }
 
-  private _createUnsubscribe<TCallback>(
-    requestId: number,
-    signature: string,
-    callbacks: Set<TCallback>,
-    callback: TCallback
-  ): () => void {
-    return () => {
-      callbacks.delete(callback);
-      if (callbacks.size === 0) {
-        this._clearRequestTimeout(requestId);
-        this.pendingRequests.delete(requestId);
-        this.signatureToRequestId.delete(signature);
-      }
-    };
-  }
-
-  private _registerAndPost(
-    worker: Worker,
-    requestEntry: PendingRequestEntry,
-    requestType: EphemerisWorkerRequest['type']
-  ): number {
-    const requestId = ++this.nextRequestId;
-    this.pendingRequests.set(requestId, requestEntry);
-    this.signatureToRequestId.set(requestEntry.signature, requestId);
-    this._setRequestTimeout(requestId, requestEntry);
-
-    try {
-      const message = {
-        type: requestType,
-        id: requestId,
-        payload: requestEntry.params
-      } as EphemerisWorkerRequest;
-      worker.postMessage(message);
-    } catch (error) {
-      this._handleWorkerFailure(error);
-    }
-
-    return requestId;
-  }
-
-  private _handleWorkerMessage(response: EphemerisWorkerResponse): void {
-    if (!response) return;
-    const { type, id } = response;
-    if (typeof id === 'number') {
-      this._clearRequestTimeout(id);
-    }
-
-    const requestEntry = this.pendingRequests.get(id);
-    if (!requestEntry) return;
-
-    if (type === 'EPHEMERIS_SUCCESS' && requestEntry.type === 'EPHEMERIS') {
-      this.pendingRequests.delete(id);
-      this.signatureToRequestId.delete(requestEntry.signature);
-
-      // Discard stale responses that completed out of order
-      if (id < this.latestProcessedEphemerisId) {
-        return;
-      }
-      this.latestProcessedEphemerisId = id;
-      this._notifyCallbacks(requestEntry.callbacks, response.payload, 'Ephemeris');
-    } else if (type === 'ANNUAL_SOLAR_SUCCESS' && requestEntry.type === 'ANNUAL_SOLAR') {
-      this.pendingRequests.delete(id);
-      this.signatureToRequestId.delete(requestEntry.signature);
-      if (response.payload?.annualSolar) {
-        this._setInAnnualCache(this.annualSolarCache, requestEntry.signature, response.payload.annualSolar);
-      }
-      this._notifyCallbacks(requestEntry.callbacks, response.payload, 'Annual solar');
-    } else if (type === 'ANNUAL_LUNAR_SUCCESS' && requestEntry.type === 'ANNUAL_LUNAR') {
-      this.pendingRequests.delete(id);
-      this.signatureToRequestId.delete(requestEntry.signature);
-      if (response.payload?.annualLunar) {
-        this._setInAnnualCache(this.annualLunarCache, requestEntry.signature, response.payload.annualLunar);
-      }
-      this._notifyCallbacks(requestEntry.callbacks, response.payload, 'Annual lunar');
-    } else if (
-      type === 'EPHEMERIS_ERROR' ||
-      type === 'ANNUAL_SOLAR_ERROR' ||
-      type === 'ANNUAL_LUNAR_ERROR'
-    ) {
-      this.pendingRequests.delete(id);
-      this.signatureToRequestId.delete(requestEntry.signature);
-      if (type !== 'EPHEMERIS_ERROR' || id >= this.latestProcessedEphemerisId) {
-        this._executeSyncFallbackForEntry(requestEntry);
-      }
-    }
-  }
-
-  /**
-   * Handles unexpected worker failure (onerror / postMessage failure) by notifying pending requests
-   * via synchronous fallback calculations and safely clearing the worker instance.
-   */
-  public _handleWorkerFailure(_error?: unknown): void {
-    this._isAvailable = false;
-    if (this.ephemerisThrottleTimer) {
-      clearTimeout(this.ephemerisThrottleTimer);
-      this.ephemerisThrottleTimer = null;
-    }
-    for (const timer of this.requestTimeouts.values()) {
-      clearTimeout(timer);
-    }
-    this.requestTimeouts.clear();
-    const pending = Array.from(this.pendingRequests.values());
-    for (const throttled of this.pendingThrottledEntries.values()) {
-      if (throttled.callbacks.size > 0) {
-        pending.push({
-          type: 'EPHEMERIS',
-          signature: throttled.signature,
-          callbacks: throttled.callbacks,
-          params: {
-            latitude: throttled.params.latitude,
-            longitude: throttled.params.longitude,
-            julianDate: throttled.params.julianDate,
-            timeOfDay: throttled.params.timeOfDay,
-            calculateLunar: throttled.calculateLunar,
-            calculateEclipse: throttled.calculateEclipse
-          }
-        });
-      }
-    }
-    this.pendingThrottledEntries.clear();
-    this.pendingRequests.clear();
-    this.signatureToRequestId.clear();
-
-    if (this.worker) {
-      try {
-        this.worker.terminate();
-      } catch {
-        // Ignore termination error on failed worker
-      }
-      this.worker = null;
-    }
-
-    for (const entry of pending) {
-      this._executeSyncFallbackForEntry(entry);
-    }
-  }
-
-  /**
-   * Initializes or retrieves the singleton Web Worker instance.
-   */
   public _getWorker(): Worker | null {
-    if (!this.isAvailable()) {
-      return null;
-    }
-
-    if (!this.worker) {
-      try {
-        this._ensureUnloadListeners();
-        this.worker = new Worker(
-          new URL('./ephemerisWorker.ts', import.meta.url),
-          { type: 'module' }
-        );
-
-        this.worker.onmessage = (event: MessageEvent<EphemerisWorkerResponse>) => {
-          this._handleWorkerMessage(event.data);
-        };
-
-        this.worker.onerror = (error) => {
-          this._handleWorkerFailure(error);
-        };
-      } catch {
-        this._isAvailable = false;
-        this.worker = null;
-        return null;
-      }
-    }
-
-    return this.worker;
+    return this._transport.getWorker();
   }
 
-  /**
-   * Internal helper to dispatch an ephemeris calculation request directly to the worker.
-   */
   public _dispatchEphemerisRequest(
     signature: string,
     params: EphemerisCalculationParams & { calculateLunar?: boolean; calculateEclipse?: boolean },
@@ -405,46 +231,12 @@ export class EphemerisWorkerManager {
       }
     };
 
-    const requestId = this._registerAndPost(worker, requestEntry, 'CALCULATE_EPHEMERIS');
-    return this._createUnsubscribe(requestId, signature, requestEntry.callbacks, onResult);
+    const requestId = this._transport.registerAndPost(worker, requestEntry, 'CALCULATE_EPHEMERIS');
+    return this._transport.createUnsubscribe(requestId, signature, requestEntry.callbacks, onResult);
   }
 
-  /**
-   * Dispatches all pending throttled entries to the worker once the throttle interval elapses.
-   */
   public _dispatchPendingThrottledEntries(): void {
-    if (this.ephemerisThrottleTimer) {
-      clearTimeout(this.ephemerisThrottleTimer);
-      this.ephemerisThrottleTimer = null;
-    }
-    if (this.pendingThrottledEntries.size === 0) return;
-
-    const entries = Array.from(this.pendingThrottledEntries.values());
-    this.pendingThrottledEntries.clear();
-
-    const worker = this._getWorker();
-    if (!worker) return;
-
-    for (const entry of entries) {
-      if (entry.callbacks.size === 0) continue;
-
-      const requestEntry: PendingEphemerisEntry = {
-        type: 'EPHEMERIS',
-        signature: entry.signature,
-        callbacks: new Set(entry.callbacks),
-        params: {
-          latitude: entry.params.latitude,
-          longitude: entry.params.longitude,
-          julianDate: entry.params.julianDate,
-          timeOfDay: entry.params.timeOfDay,
-          calculateLunar: entry.calculateLunar,
-          calculateEclipse: entry.calculateEclipse
-        }
-      };
-
-      entry.dispatchedEntry = requestEntry;
-      this._registerAndPost(worker, requestEntry, 'CALCULATE_EPHEMERIS');
-    }
+    this._throttle.flushPendingEntries(this._throttleHost);
   }
 
   public _dispatchPendingThrottledEntry(): void {
@@ -462,100 +254,34 @@ export class EphemerisWorkerManager {
 
     const calculateLunar = params.calculateLunar !== false && params.isLunarActive !== false;
     const calculateEclipse = params.calculateEclipse !== false && params.isEclipseActive !== false;
-    const signature = `EPHEMERIS_${params.latitude}_${params.longitude}_${params.julianDate}_${params.timeOfDay}_${calculateLunar}_${calculateEclipse}`;
+    const signature = buildEphemerisSignature(params, calculateLunar, calculateEclipse);
 
-    // 1. In-flight request deduplication / coalescing
     if (this.signatureToRequestId.has(signature)) {
       const existingId = this.signatureToRequestId.get(signature)!;
       const existingEntry = this.pendingRequests.get(existingId);
       if (existingEntry && existingEntry.type === 'EPHEMERIS') {
         existingEntry.callbacks.add(onResult);
         return {
-          unsubscribe: this._createUnsubscribe(existingId, signature, existingEntry.callbacks, onResult),
+          unsubscribe: this._transport.createUnsubscribe(existingId, signature, existingEntry.callbacks, onResult),
           isQueued: () => false
         };
       }
     }
 
-    // 2. Throttle handling if throttleMs is requested (> 0)
     const throttleMs = params.throttleMs ?? 0;
     if (throttleMs > 0) {
-      const elapsed = now - this.lastEphemerisDispatchTime;
-
-      // Outside throttle window: dispatch immediately (leading-edge)
-      if (elapsed >= throttleMs) {
-        this._dispatchPendingThrottledEntries();
-        this.lastEphemerisDispatchTime = now;
-        return {
-          unsubscribe: this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult),
-          isQueued: () => false
-        };
-      }
-
-      // Within throttle window: coalesce into pendingThrottledEntries (trailing-edge)
-      const baseKey = `${params.julianDate}_${params.timeOfDay}_${params.latitude}_${params.longitude}`;
-      let throttledEntry = this.pendingThrottledEntries.get(baseKey);
-
-      if (throttledEntry) {
-        throttledEntry.calculateLunar = throttledEntry.calculateLunar || calculateLunar;
-        throttledEntry.calculateEclipse = throttledEntry.calculateEclipse || calculateEclipse;
-        throttledEntry.signature = `EPHEMERIS_${params.latitude}_${params.longitude}_${params.julianDate}_${params.timeOfDay}_${throttledEntry.calculateLunar}_${throttledEntry.calculateEclipse}`;
-        throttledEntry.callbacks.add(onResult);
-      } else {
-        throttledEntry = {
-          signature,
-          params,
-          calculateLunar,
-          calculateEclipse,
-          callbacks: new Set([onResult]),
-          dispatchedEntry: null
-        };
-        this.pendingThrottledEntries.set(baseKey, throttledEntry);
-      }
-
-      const activeEntry = throttledEntry;
-
-      if (!this.ephemerisThrottleTimer) {
-        const remaining = Math.max(0, throttleMs - elapsed);
-        this.ephemerisThrottleTimer = setTimeout(() => {
-          this.ephemerisThrottleTimer = null;
-          this.lastEphemerisDispatchTime = Date.now();
-          this._dispatchPendingThrottledEntries();
-        }, remaining);
-      }
-
-      return {
-        isQueued: () =>
-          activeEntry.dispatchedEntry === null &&
-          this.pendingThrottledEntries.get(baseKey) === activeEntry &&
-          activeEntry.callbacks.has(onResult),
-        unsubscribe: () => {
-          activeEntry.callbacks.delete(onResult);
-          if (activeEntry.callbacks.size === 0) {
-            if (this.pendingThrottledEntries.get(baseKey) === activeEntry) {
-              this.pendingThrottledEntries.delete(baseKey);
-            }
-            if (this.pendingThrottledEntries.size === 0 && this.ephemerisThrottleTimer) {
-              clearTimeout(this.ephemerisThrottleTimer);
-              this.ephemerisThrottleTimer = null;
-            }
-          }
-          if (activeEntry.dispatchedEntry) {
-            activeEntry.dispatchedEntry.callbacks.delete(onResult);
-            if (activeEntry.dispatchedEntry.callbacks.size === 0) {
-              const reqId = this.signatureToRequestId.get(activeEntry.dispatchedEntry.signature);
-              if (reqId !== undefined) {
-                this._clearRequestTimeout(reqId);
-                this.pendingRequests.delete(reqId);
-                this.signatureToRequestId.delete(activeEntry.dispatchedEntry.signature);
-              }
-            }
-          }
-        }
-      };
+      return this._throttle.enqueueOrDispatch(
+        this._throttleHost,
+        signature,
+        params,
+        calculateLunar,
+        calculateEclipse,
+        onResult,
+        now,
+        throttleMs
+      );
     }
 
-    // Default un-throttled immediate dispatch
     return {
       unsubscribe: this._dispatchEphemerisRequest(signature, params, calculateLunar, calculateEclipse, onResult),
       isQueued: () => false
@@ -563,10 +289,9 @@ export class EphemerisWorkerManager {
   }
 
   /**
-   * Requests an asynchronous ephemeris calculation from the singleton worker with in-flight request
-   * deduplication, rate throttling, and monotonic sequence tracking.
+   * Requests an asynchronous ephemeris calculation with deduplication, throttling, and sequence filtering.
    */
-  requestCalculation(
+  public requestCalculation(
     params: EphemerisRequestParams,
     onResult: (payload: EphemerisWorkerPayload) => void
   ): () => void {
@@ -575,265 +300,52 @@ export class EphemerisWorkerManager {
 
   /**
    * Creates a persistent per-consumer subscription channel for high-frequency consumers (e.g. 60 FPS playback).
-   * Replaces superseded queued-but-undispatched throttled entries without cancelling in-flight worker work
-   * or resetting active throttle timers.
    */
-  createEphemerisSubscription(): EphemerisSubscription {
-    let disposed = false;
-    let nextSeq = 0;
-    let queuedEntry: { seq: number; handle: EphemerisRequestHandle } | null = null;
-    const inFlight = new Map<number, EphemerisRequestHandle>();
-
-    const pruneOlderInFlight = (completedSeq: number) => {
-      for (const [seq, handle] of Array.from(inFlight.entries())) {
-        if (seq <= completedSeq && !handle.isQueued()) {
-          handle.unsubscribe();
-          inFlight.delete(seq);
-        }
-      }
-    };
-
-    return {
-      update: (params, onResult) => {
-        if (disposed || !this.isAvailable()) return;
-
-        // Promote any previously queued entry whose throttle timer already fired into inFlight
-        if (queuedEntry && !queuedEntry.handle.isQueued()) {
-          inFlight.set(queuedEntry.seq, queuedEntry.handle);
-          queuedEntry = null;
-        }
-
-        const seq = ++nextSeq;
-        const reqJd = Number(params.julianDate);
-        const reqLat = Number(params.latitude);
-        const reqLon = Number(params.longitude);
-
-        const wrappedCallback = (payload: EphemerisWorkerPayload) => {
-          inFlight.delete(seq);
-          if (queuedEntry?.seq === seq) {
-            queuedEntry = null;
-          }
-          pruneOlderInFlight(seq);
-          if (disposed) return;
-          onResult(payload, reqJd, reqLat, reqLon);
-        };
-
-        const now = Date.now();
-        const throttleMs = params.throttleMs ?? 0;
-        const elapsed = now - this.lastEphemerisDispatchTime;
-        const willDispatchImmediately = throttleMs <= 0 || elapsed >= throttleMs;
-
-        // If a leading-edge dispatch runs immediately, discard our stale queued entry first
-        // so it is not flushed right alongside this newer frame.
-        if (queuedEntry && willDispatchImmediately) {
-          queuedEntry.handle.unsubscribe();
-          queuedEntry = null;
-        }
-
-        const newHandle = this._requestCalculationInternal(params, wrappedCallback, now);
-
-        // Within an active throttle window, cancel our superseded queued callback after adding the new one
-        // so pendingThrottledEntries remains non-empty and the existing timer is preserved without churn.
-        if (queuedEntry) {
-          queuedEntry.handle.unsubscribe();
-          queuedEntry = null;
-        }
-
-        if (newHandle.isQueued()) {
-          queuedEntry = { seq, handle: newHandle };
-        } else {
-          inFlight.set(seq, newHandle);
-        }
-      },
-
-      dispose: () => {
-        disposed = true;
-        if (queuedEntry) {
-          queuedEntry.handle.unsubscribe();
-          queuedEntry = null;
-        }
-        for (const handle of inFlight.values()) {
-          handle.unsubscribe();
-        }
-        inFlight.clear();
-      }
-    };
+  public createEphemerisSubscription(): EphemerisSubscription {
+    return createManagedEphemerisSubscription({
+      isAvailable: () => this.isAvailable(),
+      getLastDispatchTime: () => this._throttle.lastDispatchTime,
+      dispatchInternal: (params, onResult, now) => this._requestCalculationInternal(params, onResult, now)
+    });
   }
 
-  /**
-   * Private generic dispatcher for annual matrix calculations (Solar or Lunar),
-   * encapsulating cache checking, synchronous fallbacks, request coalescing, and postMessage.
-   */
-  private _requestAnnualCalculation<K extends AnnualCalculationType>(
-    signature: string,
-    cache: LruCache<string, AnnualCalculationCacheItemMap[K]>,
-    entryType: K,
-    requestType: AnnualCalculationRequestTypeMap[K],
-    params: AnnualCalculationParamsMap[K],
-    fallbackFn: () => AnnualCalculationPayloadMap[K],
-    wrapCached: (item: AnnualCalculationCacheItemMap[K]) => AnnualCalculationPayloadMap[K],
-    onResult: (result: AnnualCalculationPayloadMap[K]) => void
-  ): () => void {
-    // Cache hit
-    if (cache.has(signature)) {
-      const item = this._getFromAnnualCache(cache, signature)!;
-      onResult(wrapCached(item));
-      return () => {};
-    }
-
-    // Synchronous fallback if worker unavailable
-    if (!this.isAvailable()) {
-      const result = fallbackFn();
-      onResult(result);
-      return () => {};
-    }
-
-    // In-flight request deduplication / coalescing
-    if (this.signatureToRequestId.has(signature)) {
-      const existingId = this.signatureToRequestId.get(signature)!;
-      const existingEntry = this.pendingRequests.get(existingId);
-      if (existingEntry && existingEntry.type === entryType) {
-        const entry = existingEntry as PendingAnnualCalculationEntry<K>;
-        const callbacks = entry.callbacks as Set<(result: AnnualCalculationPayloadMap[K]) => void>;
-        callbacks.add(onResult);
-        return this._createUnsubscribe(existingId, signature, callbacks, onResult);
-      }
-    }
-
-    const worker = this._getWorker();
-    if (!worker) {
-      const result = fallbackFn();
-      onResult(result);
-      return () => {};
-    }
-
-    const callbacks = new Set<(result: AnnualCalculationPayloadMap[K]) => void>([onResult]);
-    const requestEntry = {
-      type: entryType,
-      signature,
-      callbacks,
-      params
-    } as PendingAnnualCalculationEntry<K>;
-
-    const requestId = this._registerAndPost(worker, requestEntry, requestType);
-    return this._createUnsubscribe(requestId, signature, callbacks, onResult);
-  }
-
-  /**
-   * Requests an annual solar ephemeris matrix calculation with caching, deduplication, and fallback.
-   */
-  requestAnnualSolarCalculation(
-    { year, latitude }: { year: number; latitude: Latitude },
+  public requestAnnualSolarCalculation(
+    params: { year: number; latitude: Latitude },
     onResult: (payload: { annualSolar: AnnualSolarMatrixItem[] }) => void
   ): () => void {
-    const signature = `SOLAR_${year}_${latitude}`;
-    return this._requestAnnualCalculation(
-      signature,
-      this.annualSolarCache,
-      'ANNUAL_SOLAR',
-      'CALCULATE_ANNUAL_SOLAR',
-      { year, latitude },
-      () => executeSyncAnnualSolarFallback(
-        year,
-        latitude,
-        signature,
-        this.annualSolarCache,
-        (c, k, v) => this._setInAnnualCache(c, k, v)
-      ),
-      (annualSolar) => ({ annualSolar }),
-      onResult
-    );
+    return this._annualCache.requestSolar(this._annualBridge, params, onResult);
   }
 
-  /**
-   * Requests an annual lunar ephemeris matrix calculation with caching, deduplication, and fallback.
-   */
-  requestAnnualLunarCalculation(
-    { year, latitude, longitude }: { year: number; latitude: Latitude; longitude: Longitude },
+  public requestAnnualLunarCalculation(
+    params: { year: number; latitude: Latitude; longitude: Longitude },
     onResult: (payload: { annualLunar: AnnualLunarMatrixItem[] }) => void
   ): () => void {
-    const signature = `LUNAR_${year}_${latitude}_${longitude}`;
-    return this._requestAnnualCalculation(
-      signature,
-      this.annualLunarCache,
-      'ANNUAL_LUNAR',
-      'CALCULATE_ANNUAL_LUNAR',
-      { year, latitude, longitude },
-      () => executeSyncAnnualLunarFallback(
-        year,
-        latitude,
-        longitude,
-        signature,
-        this.annualLunarCache,
-        (c, k, v) => this._setInAnnualCache(c, k, v)
-      ),
-      (annualLunar) => ({ annualLunar }),
-      onResult
-    );
+    return this._annualCache.requestLunar(this._annualBridge, params, onResult);
+  }
+
+  public getCachedAnnualSolar(year: number, latitude: number): AnnualSolarMatrixItem[] | undefined {
+    return this._annualCache.getCachedSolar(year, latitude);
+  }
+
+  public seedAnnualSolarCache(year: number, latitude: number, data: AnnualSolarMatrixItem[]): void {
+    this._annualCache.seedSolar(year, latitude, data);
+  }
+
+  public getCachedAnnualLunar(year: number, latitude: number, longitude: number): AnnualLunarMatrixItem[] | undefined {
+    return this._annualCache.getCachedLunar(year, latitude, longitude);
+  }
+
+  public seedAnnualLunarCache(year: number, latitude: number, longitude: number, data: AnnualLunarMatrixItem[]): void {
+    this._annualCache.seedLunar(year, latitude, longitude, data);
   }
 
   /**
-   * Retrieves an annual solar ephemeris matrix from the manager's LRU cache if present.
+   * Terminates the active singleton worker instance and resets pending requests, throttle state, and caches.
    */
-  getCachedAnnualSolar(year: number, latitude: number): AnnualSolarMatrixItem[] | undefined {
-    const signature = `SOLAR_${year}_${latitude}`;
-    return this.annualSolarCache.get(signature);
-  }
-
-  /**
-   * Directly seeds the annual solar ephemeris matrix cache with precomputed data.
-   */
-  seedAnnualSolarCache(year: number, latitude: number, data: AnnualSolarMatrixItem[]): void {
-    const signature = `SOLAR_${year}_${latitude}`;
-    this._setInAnnualCache(this.annualSolarCache, signature, data);
-  }
-
-  /**
-   * Retrieves an annual lunar ephemeris matrix from the manager's LRU cache if present.
-   */
-  getCachedAnnualLunar(year: number, latitude: number, longitude: number): AnnualLunarMatrixItem[] | undefined {
-    const signature = `LUNAR_${year}_${latitude}_${longitude}`;
-    return this.annualLunarCache.get(signature);
-  }
-
-  /**
-   * Directly seeds the annual lunar ephemeris matrix cache with precomputed data.
-   */
-  seedAnnualLunarCache(year: number, latitude: number, longitude: number, data: AnnualLunarMatrixItem[]): void {
-    const signature = `LUNAR_${year}_${latitude}_${longitude}`;
-    this._setInAnnualCache(this.annualLunarCache, signature, data);
-  }
-
-  /**
-   * Terminates the active singleton worker instance and resets pending requests and caches.
-   */
-  terminate(): void {
-    this._removeUnloadListeners();
-    if (this.ephemerisThrottleTimer) {
-      clearTimeout(this.ephemerisThrottleTimer);
-      this.ephemerisThrottleTimer = null;
-    }
-    for (const timer of this.requestTimeouts.values()) {
-      clearTimeout(timer);
-    }
-    this.requestTimeouts.clear();
-    this.pendingThrottledEntries.clear();
-    this.lastEphemerisDispatchTime = 0;
-    this.latestProcessedEphemerisId = 0;
-
-    if (this.worker) {
-      try {
-        this.worker.terminate();
-      } catch {
-        // Ignore termination error
-      }
-      this.worker = null;
-    }
-    this.pendingRequests.clear();
-    this.signatureToRequestId.clear();
-    this.annualSolarCache.clear();
-    this.annualLunarCache.clear();
-    this._isAvailable = typeof Worker !== 'undefined';
+  public terminate(): void {
+    this._throttle.clear();
+    this._transport.terminate();
+    this._annualCache.clear();
   }
 }
 

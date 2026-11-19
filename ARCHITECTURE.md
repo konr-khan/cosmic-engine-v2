@@ -119,7 +119,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`cameras.ts`, `generator.ts`, `index.ts`, `transforms.ts`, `types.ts`)
       - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math engine (`alidade.ts`, `astrolabe.ts`, `constants.ts`, `coordinates.ts`, `focalBeacon.ts`, `generator.ts`, `generatorBeads.ts`, `generatorGeometry.ts`, `generatorObserverCone.ts`, `generatorRings.ts`, `index.ts`, `paths.ts`, `projections.ts`, `types.ts`)
   - `store/` — External `useSyncExternalStore` state engines (`cosmicStore.ts`, `hoverStore.ts`)
-  - `workers/` — Web Worker ephemeris thread, singleton multiplexer, sanitizers, fallback & test double (`ephemerisWorker.ts`, `ephemerisWorkerManager.ts`, `mockWorkerFixture.ts`, `workerFallback.ts`, `workerSanitizers.ts`)
+  - `workers/` — Web Worker ephemeris thread, decomposed multiplexer subsystems, sanitizers, fallback & test double (`ephemerisAnnualCache.ts`, `ephemerisSubscription.ts`, `ephemerisThrottle.ts`, `ephemerisTypes.ts`, `ephemerisWorker.ts`, `ephemerisWorkerManager.ts`, `mockWorkerFixture.ts`, `workerFallback.ts`, `workerSanitizers.ts`, `workerTransport.ts`)
   - `hooks/` — Reactive engine, 3D scene, worker RPC & dashboard layout hooks (`useCosmicEngine.ts`, `useCosmicScene.ts`, `useDashboardLayout.ts`, `useEphemerisWorker.ts`)
   - `components/`
     - `common/` — Shared SVG & fault-isolation primitives (`MiniGlobe.tsx`, `MiniMoon.tsx`, `PhaseVisual.tsx`, `WidgetSkeleton.tsx`, `WindowErrorBoundary.tsx`, `useSafeSvgId.ts`)
