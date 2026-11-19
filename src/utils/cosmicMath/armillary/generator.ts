@@ -81,6 +81,7 @@ export function generateArmillaryModel(params: {
   isFreeReteMode?: boolean;
   freeReteOffsetDeg?: number;
   exaggerateEccentricity?: boolean;
+  orbitalPhysics?: Partial<ArmillaryOrbitalPhysics>;
 }): ArmillaryModelOutput {
   const {
     julianDate,
@@ -107,14 +108,14 @@ export function generateArmillaryModel(params: {
     sunset = 18,
     isFreeReteMode = false,
     freeReteOffsetDeg = 0,
-    exaggerateEccentricity = false
+    exaggerateEccentricity = false,
+    orbitalPhysics
   } = params;
 
   const lambdaClamp = clamp(morphLambda, 0, 1);
   const transT = clamp(projectionTransitionT, 0, 1);
   const obliquity = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG);
-  const defaultNodeLon = calculateMeanLunarNodeLongitude(julianDate);
-  const nodeLonDeg = moonNodeLonDeg ?? defaultNodeLon;
+  const nodeLonDeg = moonNodeLonDeg ?? calculateMeanLunarNodeLongitude(julianDate);
   const gmstDeg = calculateGMST(julianDate);
   const baseLstDeg = asDegrees(((gmstDeg + longitude) % 360 + 360) % 360);
   const lstDeg = isFreeReteMode 
@@ -127,14 +128,20 @@ export function generateArmillaryModel(params: {
   const focalBeacon = generateProjectionFocalBeacon(projectionMode, r0, cameraPitch, cameraYaw, lambdaClamp, rotateCamera, lambdaClamp > 0.45);
   const reteOffset = isFreeReteMode ? freeReteOffsetDeg : 0;
 
-  // Calculate live Keplerian orbital physics
-  const physicsSolar = calculateEarthOrbitalPhysics(julianDate);
+  // Calculate live Keplerian orbital physics (or reuse precomputed solar physics when complete)
+  const hasCompletePhysics =
+    orbitalPhysics?.distanceAU !== undefined &&
+    orbitalPhysics?.distanceKm !== undefined &&
+    orbitalPhysics?.orbitalSpeedKms !== undefined &&
+    orbitalPhysics?.solarIrradiancePercent !== undefined &&
+    orbitalPhysics?.sunAngularDiameterArcmin !== undefined;
+  const physicsSolar = hasCompletePhysics ? null : calculateEarthOrbitalPhysics(julianDate);
   const physics: ArmillaryOrbitalPhysics = {
-    distanceAU: physicsSolar.distanceAU ?? 1.0,
-    distanceKm: physicsSolar.distanceKm ?? ASTRONOMICAL_UNIT_KM,
-    orbitalSpeedKms: physicsSolar.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS,
-    solarIrradiancePercent: physicsSolar.solarIrradiancePercent ?? 100.0,
-    sunAngularDiameterArcmin: physicsSolar.sunAngularDiameterArcmin ?? SUN_ANGULAR_DIAMETER_1AU_ARCMIN
+    distanceAU: orbitalPhysics?.distanceAU ?? physicsSolar?.distanceAU ?? 1.0,
+    distanceKm: orbitalPhysics?.distanceKm ?? physicsSolar?.distanceKm ?? ASTRONOMICAL_UNIT_KM,
+    orbitalSpeedKms: orbitalPhysics?.orbitalSpeedKms ?? physicsSolar?.orbitalSpeedKms ?? EARTH_ORBITAL_SPEED_MEAN_KMS,
+    solarIrradiancePercent: orbitalPhysics?.solarIrradiancePercent ?? physicsSolar?.solarIrradiancePercent ?? 100.0,
+    sunAngularDiameterArcmin: orbitalPhysics?.sunAngularDiameterArcmin ?? physicsSolar?.sunAngularDiameterArcmin ?? SUN_ANGULAR_DIAMETER_1AU_ARCMIN
   };
   const project2D = createContinuousProjectionResolver(
     fromProjectionMode,

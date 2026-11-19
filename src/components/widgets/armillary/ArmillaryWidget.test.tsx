@@ -27,7 +27,8 @@ import {
   type ArmillaryObserverCone,
   type ProjectionFocalBeaconOutput
 } from './index';
-import { getJulianDate, generateArmillaryModel } from '../../../utils/cosmicMath';
+import { getJulianDate, generateArmillaryModel, calculateEphemerisFrame, getPhaseName } from '../../../utils/cosmicMath';
+import { Latitude, Longitude } from '../../../types/units';
 
 describe('Gyro-Morph Armillary Subsystem', () => {
   it('exports all decomposed armillary sub-components cleanly', () => {
@@ -1189,6 +1190,94 @@ describe('Gyro-Morph Armillary Subsystem', () => {
         );
         expect(laserHtml).toContain('stroke="#38bdf8"'); // cardinal laser ray
         expect(laserHtml).toContain('stroke="#fbbf24"'); // intercardinal laser ray
+      });
+
+      // 9. Precomputed props parity in GyroArmillaryView (skips redundant fallback ephemeris computation)
+      it('renders GyroArmillaryView identically with precomputed solarData/orbitalData props vs fallback derivation', () => {
+        const testDate = new Date('2026-06-21T12:00:00Z');
+        const lat = 47.06 as Latitude;
+        const lon = -122.81 as Longitude;
+        const time = 12;
+        const jd = getJulianDate(testDate, time);
+        const frame = calculateEphemerisFrame(jd, lat, lon);
+
+        const precomputedHtml = renderToStaticMarkup(
+          React.createElement(GyroArmillaryView, {
+            latitude: 47.06,
+            longitude: -122.81,
+            timeOfDay: time,
+            currentDate: testDate,
+            solarData: {
+              dayLength: frame.dayLength,
+              civil: 0,
+              nautical: 0,
+              astronomical: 0,
+              sunrise: frame.sunrise,
+              sunset: frame.sunset,
+              solarNoon: frame.solarNoon,
+              equationOfTime: frame.equationOfTime,
+              daysSinceEpoch: frame.solarPos.n,
+              noonElevation: frame.noonElevation,
+              declination: frame.solarPos.declination,
+              rightAscension: frame.solarPos.rightAscension,
+              lambda: frame.solarPos.lambda,
+              eclipticLongitude: frame.solarPos.lambda,
+              isPolarNight: frame.isPolarNight,
+              isMidnightSun: frame.isMidnightSun,
+              distanceAU: frame.solarPos.distanceAU,
+              distanceKm: frame.solarPos.distanceKm,
+              orbitalSpeedKms: frame.solarPos.orbitalSpeedKms,
+              solarIrradiancePercent: frame.solarPos.solarIrradiancePercent,
+              sunAngularDiameterArcmin: frame.solarPos.sunAngularDiameterArcmin,
+            },
+            orbitalData: {
+              angles: {
+                toSun: 0,
+                toMoon: 0,
+                sunDegrees: frame.solarPos.lambda,
+                moonDegrees: frame.lunarPos.lambda,
+                nodeLongitude: frame.lunarPos.nodeLongitude,
+                descendingNodeLongitude: frame.lunarPos.descendingNodeLongitude,
+              },
+              nodeLongitude: Number(frame.lunarPos.nodeLongitude),
+              descendingNodeLongitude: Number(frame.lunarPos.descendingNodeLongitude),
+              lunarPos: frame.lunarPos,
+              phase: { value: frame.lunarPos.phase, name: getPhaseName(frame.lunarPos.phase) },
+              tides: { rx: 16, ry: 12, type: 'Transitional', alignment: 0 },
+              localTideStatus: 'Low Tide',
+              lunarEvents: {
+                moonrise: 6,
+                transit: 12,
+                moonset: 18,
+                distanceKm: frame.lunarPos.distanceKm,
+                distanceEarthRadii: frame.lunarPos.distanceEarthRadii,
+                isPerigee: false,
+                isApogee: false,
+                declination: frame.lunarPos.declination,
+                parallacticAngle: 0,
+              },
+              eclipse: null,
+            },
+          })
+        );
+
+        const fallbackHtml = renderToStaticMarkup(
+          React.createElement(GyroArmillaryView, {
+            latitude: 47.06,
+            longitude: -122.81,
+            timeOfDay: time,
+            currentDate: testDate,
+          })
+        );
+
+        expect(precomputedHtml).toContain('Gyro-Morph Armillary');
+        expect(precomputedHtml).toContain(frame.solarPos.distanceAU.toFixed(5));
+        expect(fallbackHtml).toContain(frame.solarPos.distanceAU.toFixed(5));
+        // Normalizing React 19 useId() suffixes shows identical SVG geometry & telemetry markup
+        const normalizeSvgIds = (html: string) => html.replace(/-(?:[«_]|\\u00AB)R[^"»)]*(?:»|\\u00BB)?|-«R[^»]+»|-[«_][^"()]+/g, '');
+        expect(normalizeSvgIds(precomputedHtml)).toBe(normalizeSvgIds(fallbackHtml));
+        // Consolidated volumetric projection button renders active by default
+        expect(precomputedHtml).toContain('Toggle Volumetric Observer Sky Cone &amp; Laser Projection');
       });
     });
 

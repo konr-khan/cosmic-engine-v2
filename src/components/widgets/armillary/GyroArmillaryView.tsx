@@ -45,8 +45,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   const [isNodalActive, setIsNodalActive] = useState<boolean>(false);
 
   const [exaggerateEccentricity, setExaggerateEccentricity] = useState<boolean>(false);
-  const [showObserverCone, setShowObserverCone] = useState<boolean>(true);
-  const [showRays, setShowRays] = useState<boolean>(true);
+  const [showVolumetric, setShowVolumetric] = useState<boolean>(true);
   const [showStars, setShowStars] = useState<boolean>(true);
   const [showTympan, setShowTympan] = useState<boolean>(true);
   const [showRule, setShowRule] = useState<boolean>(false);
@@ -87,36 +86,91 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     [setProjectionMode]
   );
 
-  const handleToggleObserverCone = useCallback((val: boolean) => {
-    setShowObserverCone(val);
-    setShowRays(val);
+  const handleToggleVolumetric = useCallback(() => {
+    setShowVolumetric((prev) => !prev);
   }, []);
 
-  const handleToggleRays = useCallback(() => {
-    const next = !showRays;
-    setShowRays(next);
-    setShowObserverCone(next);
-  }, [showRays]);
-
-  const activeTime = hoverTime !== null && hoverTime !== undefined ? hoverTime : timeOfDay;
+  const isHoverOverride = hoverTime !== null && hoverTime !== undefined;
+  const activeTime = isHoverOverride ? hoverTime : timeOfDay;
   const activeDate = currentDate;
 
   const julianDate = useMemo(() => {
     return getJulianDate(activeDate, activeTime);
   }, [activeDate, activeTime]);
 
-  // Ephemeris derivations for Sun & Moon
-  const fallbackFrame = useMemo(() => calculateEphemerisFrame(julianDate, latitude, longitude), [julianDate, latitude, longitude]);
+  // Ephemeris derivations for Sun & Moon (skip full frame recomputation when props supply all required ephemerides)
+  const hasPrecomputedEphemeris =
+    !isHoverOverride &&
+    solarData?.rightAscension !== undefined &&
+    solarData?.declination !== undefined &&
+    solarData?.lambda !== undefined &&
+    solarData?.sunrise !== undefined &&
+    solarData?.sunset !== undefined &&
+    orbitalData?.lunarPos?.rightAscension !== undefined &&
+    orbitalData?.lunarPos?.declination !== undefined &&
+    orbitalData?.lunarPos?.lambda !== undefined &&
+    orbitalData?.lunarPos?.nodeLongitude !== undefined &&
+    orbitalData?.phase?.value !== undefined;
 
-  const sunRaDeg = fallbackFrame.solarPos.rightAscension ?? 0;
-  const sunDecDeg = solarData?.declination ?? fallbackFrame.solarPos.declination ?? 0;
-  const sunLambdaDeg = fallbackFrame.solarPos.lambda ?? 0;
+  const fallbackFrame = useMemo(
+    () => (hasPrecomputedEphemeris ? null : calculateEphemerisFrame(julianDate, latitude, longitude)),
+    [hasPrecomputedEphemeris, julianDate, latitude, longitude]
+  );
 
-  const moonRaDeg = orbitalData?.lunarPos?.rightAscension ?? fallbackFrame.lunarPos.rightAscension ?? 0;
-  const moonDecDeg = orbitalData?.lunarEvents?.declination ?? fallbackFrame.lunarPos.declination ?? 0;
-  const moonLambdaDeg = fallbackFrame.lunarPos.lambda ?? 0;
-  const moonPhase = orbitalData?.phase?.value ?? fallbackFrame.lunarPos.phase ?? 0.5;
-  const moonNodeLonDeg = orbitalData?.lunarPos?.nodeLongitude ?? fallbackFrame.lunarPos.nodeLongitude;
+  const sunRaDeg = !isHoverOverride && solarData?.rightAscension !== undefined
+    ? Number(solarData.rightAscension)
+    : (fallbackFrame?.solarPos.rightAscension ?? 0);
+  const sunDecDeg = !isHoverOverride && solarData?.declination !== undefined
+    ? Number(solarData.declination)
+    : (fallbackFrame?.solarPos.declination ?? 0);
+  const sunLambdaDeg = !isHoverOverride && solarData?.lambda !== undefined
+    ? Number(solarData.lambda)
+    : (fallbackFrame?.solarPos.lambda ?? 0);
+
+  const moonRaDeg = !isHoverOverride && orbitalData?.lunarPos?.rightAscension !== undefined
+    ? orbitalData.lunarPos.rightAscension
+    : (fallbackFrame?.lunarPos.rightAscension ?? 0);
+  const moonDecDeg = !isHoverOverride && orbitalData?.lunarEvents?.declination !== undefined
+    ? orbitalData.lunarEvents.declination
+    : (!isHoverOverride && orbitalData?.lunarPos?.declination !== undefined
+        ? orbitalData.lunarPos.declination
+        : (fallbackFrame?.lunarPos.declination ?? 0));
+  const moonLambdaDeg = !isHoverOverride && orbitalData?.lunarPos?.lambda !== undefined
+    ? orbitalData.lunarPos.lambda
+    : (fallbackFrame?.lunarPos.lambda ?? 0);
+  const moonPhase = !isHoverOverride && orbitalData?.phase?.value !== undefined
+    ? orbitalData.phase.value
+    : (fallbackFrame?.lunarPos.phase ?? 0.5);
+  const moonNodeLonDeg = !isHoverOverride && orbitalData?.lunarPos?.nodeLongitude !== undefined
+    ? Number(orbitalData.lunarPos.nodeLongitude)
+    : (fallbackFrame ? Number(fallbackFrame.lunarPos.nodeLongitude) : undefined);
+
+  const precomputedOrbitalPhysics = useMemo(() => {
+    if (
+      isHoverOverride ||
+      solarData?.distanceAU === undefined ||
+      solarData?.distanceKm === undefined ||
+      solarData?.orbitalSpeedKms === undefined ||
+      solarData?.solarIrradiancePercent === undefined ||
+      solarData?.sunAngularDiameterArcmin === undefined
+    ) {
+      return undefined;
+    }
+    return {
+      distanceAU: solarData.distanceAU,
+      distanceKm: solarData.distanceKm,
+      orbitalSpeedKms: solarData.orbitalSpeedKms,
+      solarIrradiancePercent: solarData.solarIrradiancePercent,
+      sunAngularDiameterArcmin: solarData.sunAngularDiameterArcmin,
+    };
+  }, [
+    isHoverOverride,
+    solarData?.distanceAU,
+    solarData?.distanceKm,
+    solarData?.orbitalSpeedKms,
+    solarData?.solarIrradiancePercent,
+    solarData?.sunAngularDiameterArcmin,
+  ]);
 
   const handleToggleNodal = useCallback(() => {
     if (isNodalActive) {
@@ -124,15 +178,18 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       handleResetFromNodal();
     } else {
       setIsNodalActive(true);
-      const defaultNodeLon = calculateMeanLunarNodeLongitude(julianDate);
-      const nodeLon = Number(moonNodeLonDeg ?? defaultNodeLon);
+      const nodeLon = Number(moonNodeLonDeg ?? calculateMeanLunarNodeLongitude(julianDate));
       handleSnapToNodal(nodeLon);
     }
   }, [isNodalActive, moonNodeLonDeg, julianDate, handleSnapToNodal, handleResetFromNodal]);
 
   const dayOfWeek = activeDate.getUTCDay();
-  const sunrise = solarData?.sunrise ?? fallbackFrame.sunrise;
-  const sunset = solarData?.sunset ?? fallbackFrame.sunset;
+  const sunrise = !isHoverOverride && solarData?.sunrise !== undefined
+    ? solarData.sunrise
+    : (fallbackFrame?.sunrise ?? 6);
+  const sunset = !isHoverOverride && solarData?.sunset !== undefined
+    ? solarData.sunset
+    : (fallbackFrame?.sunset ?? 18);
 
   // Generate 60 FPS Gyro-Morph Model
   const model = useMemo(() => {
@@ -161,7 +218,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
       sunset,
       isFreeReteMode,
       freeReteOffsetDeg,
-      exaggerateEccentricity
+      exaggerateEccentricity,
+      orbitalPhysics: precomputedOrbitalPhysics
     });
   }, [
     julianDate,
@@ -187,7 +245,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     sunset,
     isFreeReteMode,
     freeReteOffsetDeg,
-    exaggerateEccentricity
+    exaggerateEccentricity,
+    precomputedOrbitalPhysics
   ]);
 
   // --- Snap Alidade Rule to Celestial Target ---
@@ -255,8 +314,8 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         onSelectMode={onSelectMode}
         morphLambda={morphLambda}
         onMorphChange={onMorphChange}
-        showRays={showRays}
-        onToggleRays={handleToggleRays}
+        showRays={showVolumetric}
+        onToggleRays={handleToggleVolumetric}
         showStars={showStars}
         onToggleStars={() => setShowStars(!showStars)}
         showTympan={showTympan}
@@ -265,8 +324,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
         onToggleRule={() => setShowRule(!showRule)}
         showLunarNodes={showLunarNodes}
         onToggleLunarNodes={() => setShowLunarNodes((prev) => !prev)}
-        showObserverCone={showObserverCone}
-        onToggleObserverCone={handleToggleObserverCone}
+        showObserverCone={showVolumetric}
         onResetCamera={handleResetCamera}
         onSnapToPreset={onSnapToPreset}
         isFreeReteMode={isFreeReteMode}
@@ -285,12 +343,12 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
           model={model}
           projectionMode={projectionMode}
           morphLambda={morphLambda}
-          showRays={showRays}
+          showRays={showVolumetric}
           showStars={showStars}
           showTympan={showTympan}
           showRule={showRule}
           showLunarNodes={showLunarNodes}
-          showObserverCone={showObserverCone}
+          showObserverCone={showVolumetric}
           camera={camera}
           onCameraChange={onCameraChange}
           r0={100}

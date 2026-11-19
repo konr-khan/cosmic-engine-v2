@@ -50,6 +50,7 @@ export interface SolarAlmanacData {
   daysSinceEpoch: number;
   noonElevation: Degrees | number;
   declination: Degrees | number;
+  rightAscension?: Degrees | number;
   lambda: Degrees | number;
   eclipticLongitude: Degrees | number;
   isPolarNight: boolean;

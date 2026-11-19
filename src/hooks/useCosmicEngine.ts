@@ -90,6 +90,7 @@ export const useCosmicEngine = (
       daysSinceEpoch: n,
       noonElevation: frame.noonElevation,
       declination,
+      rightAscension: solarPos.rightAscension,
       lambda: solarLambda,
       eclipticLongitude: solarLambda,
       isPolarNight: frame.isPolarNight,

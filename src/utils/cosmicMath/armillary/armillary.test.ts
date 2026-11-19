@@ -27,6 +27,7 @@ import {
 import { ASTROLABE_STARS, ZODIAC_SIGNS } from "./constants";
 import { ArmillaryProjectionMode } from "./types";
 import { clamp, calculateGMST, calculateLST } from "../core";
+import { calculateEarthOrbitalPhysics } from "../solar";
 import { Vector3D, Degrees, Latitude, Longitude, HoursDecimal } from "../../../types";
 describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
     it('calculates accurate GMST and Local Sidereal Time (LST)', () => {
@@ -1072,6 +1073,45 @@ describe('Gyro-Morph Armillary & Astrolabe Mathematical Engine', () => {
         );
         expect(moonRelDist).toBeCloseTo(expectedDist, 3);
       }
+    });
+
+    it('produces identical output when precomputed orbitalPhysics is supplied to generateArmillaryModel', () => {
+      const physics = calculateEarthOrbitalPhysics(2451545.0);
+      const baseParams = {
+        julianDate: 2451545.0,
+        latitude: 47.06 as Latitude,
+        longitude: -122.81 as Longitude,
+        timeOfDay: 12 as HoursDecimal,
+        sunRaDeg: 281 as Degrees,
+        sunDecDeg: -23 as Degrees,
+        sunLambdaDeg: 280 as Degrees,
+        moonRaDeg: 120 as Degrees,
+        moonDecDeg: 15 as Degrees,
+        moonLambdaDeg: 120 as Degrees,
+        moonPhase: 0.5,
+        moonNodeLonDeg: 125.04,
+        morphLambda: 0,
+        projectionMode: 'heliocentric' as const,
+        cameraPitch: 25,
+        cameraYaw: 35,
+        r0: 100
+      };
+
+      const derivedModel = generateArmillaryModel(baseParams);
+      const precomputedModel = generateArmillaryModel({
+        ...baseParams,
+        orbitalPhysics: {
+          distanceAU: physics.distanceAU,
+          distanceKm: physics.distanceKm,
+          orbitalSpeedKms: physics.orbitalSpeedKms,
+          solarIrradiancePercent: physics.solarIrradiancePercent,
+          sunAngularDiameterArcmin: physics.sunAngularDiameterArcmin
+        }
+      });
+
+      expect(precomputedModel.physics).toEqual(derivedModel.physics);
+      expect(precomputedModel.earth.screenPos).toEqual(derivedModel.earth.screenPos);
+      expect(precomputedModel.moon.screenPos).toEqual(derivedModel.moon.screenPos);
     });
 
     // 10. Celestial Ring Radius Blooming Expansion

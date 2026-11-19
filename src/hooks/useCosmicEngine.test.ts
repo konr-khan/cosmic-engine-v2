@@ -278,9 +278,11 @@ describe('useCosmicEngine Hook Suite', () => {
       const result = useCosmicEngine(testDate, 12, 47.06, -122.81);
 
       expect(result.orbitalData).not.toBeNull();
-      // Sun at June Solstice is at ~90° ecliptic longitude
+      // Sun at June Solstice is at ~90° ecliptic longitude & right ascension
       expect(result.orbitalData!.angles.sunDegrees).toBeCloseTo(result.solarData.lambda as number, 3);
       expect(result.orbitalData!.angles.sunDegrees).toBeCloseTo(90, 0);
+      expect(result.solarData.rightAscension).toBeDefined();
+      expect(result.solarData.rightAscension).toBeCloseTo(90, 0);
       // Moon degrees match true Meeus lunar longitude
       expect(result.orbitalData!.angles.moonDegrees).toBeCloseTo(result.orbitalData!.lunarPos.lambda as number, 3);
       // Normalized phase matches Meeus phase
