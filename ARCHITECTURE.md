@@ -4,7 +4,7 @@ Welcome to the authoritative structural blueprint for **Cosmic Engine V2.0**. Th
 
 > [!NOTE]
 > - For agent operating protocols, coding standards, and cognitive guardrails, consult [`AGENTS.md`](AGENTS.md).
-> - For the historical Feature Inventory (`F1–F94`) and Milestone Matrix (`M1–M45`), consult [`PROJECT.md`](PROJECT.md).
+> - For the historical Feature Inventory (`F1–F98`) and Milestone Matrix (`M1–M46`), consult [`PROJECT.md`](PROJECT.md).
 > - For astronomical equations and coordinate transformations, consult [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
 > - For semantic color tokens and SVG vector stroke encodings, consult [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
 
@@ -61,7 +61,7 @@ Cosmic Engine V2.0 executes a decoupled dual-pipeline architecture: a **60 FPS R
 - **Pure Mathematical Engine (`src/utils/cosmicMath/`)**: Deterministic, pure domain functions free of React state, UI side-effects, or unparameterized `new Date()` calls. All algorithms, coordinate systems (Alt-Az, Equatorial, Ecliptic), and polar singularity clamping criteria conform strictly to [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
 - **External Chronometer Store (`src/store/cosmicStore.ts`)**: Decouples 60 FPS animation ticking from React render trees using `useSyncExternalStore` with granular selector memoization (`lastSelectorRef`, e.g. `useChronometerStore(s => s.timeOfDay)`) and full IEEE-754 double-precision time accumulation.
 - **Atomic Hover Store (`src/store/hoverStore.ts`)**: Isolates high-frequency ribbon scrubber state (`hoverTime`, `hoverDate`, `setHoverState`, `setHoverTime`, `setHoverDate`), eliminating 60 FPS re-render cascades across unhovered widgets.
-- **Web Worker Ephemeris Processing (`src/workers/`)**: Multiplexes calculation requests through `ephemerisWorkerManager.ts` with 100ms trailing-edge flag-merging throttling, monotonic integer sequence stamping (`requestId`), synchronous mount-time LRU cache seeding, and deterministic main-thread fallback (`workerFallback.ts`).
+- **Web Worker Ephemeris Processing (`src/workers/`)**: Multiplexes calculation requests through the [`ephemerisWorkerManager.ts`](src/workers/ephemerisWorkerManager.ts) facade delegating across cohesive submodules (`workerTransport.ts`, `ephemerisThrottle.ts`, `ephemerisSubscription.ts`, `ephemerisAnnualCache.ts`, `ephemerisTypes.ts`) with 100ms trailing-edge flag-merging throttling, monotonic integer sequence stamping (`requestId`), synchronous mount-time LRU cache seeding, and deterministic main-thread fallback (`workerFallback.ts`).
 - **Fault-Tolerant Window Grid (`DashboardWindow.tsx`)**: Every lazy-loaded visualizer is wrapped in a React Error Boundary (`WindowErrorBoundary.tsx`) with dynamic chunk retry mechanisms, isolating rendering exceptions to individual observatory windows.
 - **Dual-Perspective Eclipse Geometry**: Synchronized transverse syzygy profile (`ShadowRayDiagram.tsx` mounting live sub-layer `LiveSyzygyView.tsx`) and axial sightline down-the-barrel view (`NodalPlaneVisualizer.tsx`). Canonical transverse displacement equations, prograde right-to-left kinematics, and shadow cone geometry conform strictly to [`docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry`](docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry) and [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings).
 - **Orbital Milestones & Scaling**: Keplerian milestone halo nodes and apparent diameter scaling conform to [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings) and [`docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling`](docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling).
@@ -75,7 +75,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - **3D Astronomical Scene Graph & Camera Pipelines**: [`src/utils/cosmicMath/scene/types.ts`](src/utils/cosmicMath/scene/types.ts) (`CosmicScene3D`, `SceneBody3D`, `ShadowCones3D`, `ProjectedScene2D`, `ScaleMode`) and [`src/hooks/useCosmicScene.ts`](src/hooks/useCosmicScene.ts) (`useCosmicScene`, `useHeliocentricScene`)
 - **Branded Nominal Units & Coordinates**: [`src/types/units.ts`](src/types/units.ts) (`Degrees`, `Radians`, `JulianDate`, `JulianCenturies`, `Latitude`, `Longitude`, forbidden brand intersections `NotRadians` / `NotDegrees`) and [`src/types/coordinates.ts`](src/types/coordinates.ts) (`Vector2D`, `Vector3D`, `AltAzimuthCoordinates`, `EquatorialCoordinates`)
 - **Astronomical Data Models**: [`src/types/astronomy.ts`](src/types/astronomy.ts) (`EphemerisFrame`, `SolarPositionFull`, `LunarPositionFull`, `EclipseData`)
-- **Web Worker Concurrency Contracts**: [`src/types/worker.ts`](src/types/worker.ts) (`EphemerisWorkerRequest`, `EphemerisWorkerResponse`, discriminated RPC payload maps, monotonic sequence stamps) and [`src/workers/ephemerisWorkerManager.ts`](src/workers/ephemerisWorkerManager.ts) (trailing-edge flag-merging multiplexer & pre-seeded annual LRU caches)
+- **Web Worker Concurrency Contracts**: [`src/types/worker.ts`](src/types/worker.ts) (`EphemerisWorkerRequest`, `EphemerisWorkerResponse`, discriminated RPC payload maps, monotonic sequence stamps) and [`src/workers/ephemerisWorkerManager.ts`](src/workers/ephemerisWorkerManager.ts) / [`src/workers/ephemerisTypes.ts`](src/workers/ephemerisTypes.ts) (trailing-edge flag-merging multiplexer, persistent 60 FPS subscriptions, and pre-seeded annual LRU caches)
 - **Observatory Store State & Window Layout**: [`src/types/store.ts`](src/types/store.ts) (`CosmicStoreState`, `WindowLayoutConfig`, `WindowLayoutDictionary`, `WindowLayoutPreset`) and [`src/store/hoverStore.ts`](src/store/hoverStore.ts) (`HoverState`: `hoverTime`, `hoverDate`, `setHoverState`, `setHoverTime`, `setHoverDate`)
 - **Shared Component Primitives**:
   - MiniGlobe: [`src/components/common/MiniGlobe.tsx`](src/components/common/MiniGlobe.tsx) (`MiniGlobeProps`, `MiniGlobeViewMode`)
@@ -89,7 +89,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 ## 4. Canonical Code Layout
 
 > [!NOTE]
-> Every non-test production module under `src/` is inventoried 1:1 below and verified bijectively by `runDocIntegrityCheck()` in [`scripts/lintUnitSafety.mjs`](scripts/lintUnitSafety.mjs). For the auto-synchronized 59-suite `.test.ts(x)` registry, consult [`README.md`](README.md#-verification--test-harness) and [`AGENTS.md`](AGENTS.md#3-file-glob-action--test-router).
+> Every non-test production module under `src/` is inventoried 1:1 below and verified bijectively by `runDocIntegrityCheck()` in [`scripts/lintUnitSafety.mjs`](scripts/lintUnitSafety.mjs). For the auto-synchronized 61-suite `.test.ts(x)` registry, consult [`README.md`](README.md#-verification--test-harness) and [`AGENTS.md`](AGENTS.md#3-file-glob-action--test-router).
 
 - `src/`
   - `main.tsx` — React 19 root renderer
@@ -153,12 +153,12 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `.gitattributes` — Standard line-ending normalization (`eol=lf`) and binary asset flags
 - `AGENTS.md` — Always-loaded operational prompt kernel & enforced guardrails (`5–18 KB`)
 - `ARCHITECTURE.md` — System topology, runtime contracts, 100% canonical code layout & task routing matrix
-- `PROJECT.md` — Historical Feature Inventory (`F1–F94`) and Milestone Matrix (`M1–M45`)
-- `DEAD_ENDS.md` — Critical log of failed historical approaches & resolved solutions (`DE-01–DE-51`)
+- `PROJECT.md` — Historical Feature Inventory (`F1–F98`) and Milestone Matrix (`M1–M46`)
+- `DEAD_ENDS.md` — Critical log of failed historical approaches & resolved solutions (`DE-01–DE-52`)
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0045` + `README.md` subsystem index)
+  - `adr/` — Architecture Decision Records (`0001` through `0046` + `README.md` subsystem index)
 
 ---
 

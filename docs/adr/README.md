@@ -7,7 +7,7 @@ This directory houses the formal Architectural Decision Records for **Cosmic Eng
 
 ---
 
-## Subsystem Index (ADR 0001 – 0045)
+## Subsystem Index (ADR 0001 – 0046)
 
 ### 1. Core Astronomy Math & Nominal Type Safety
 Pure, deterministic mathematical models adhering to Jean Meeus / IAU conventions and TypeScript strict nominal branding.
@@ -83,6 +83,7 @@ Decoupled multi-rate architecture: 60 FPS chronometer ticking, 10 Hz worker ephe
 | [0026](0026-ephemeris-worker-synchronous-fallback-hardening.md) | Ephemeris Worker Synchronous Fallback Hardening | M26 | Accepted | `workerFallback.ts` parity for SSR / non-Worker environments |
 | [0034](0034-terminator-map-modular-decomposition-and-worker-lifecycle-hardening.md) | Terminator Map Modular Decomposition & Worker Lifecycle | M34 | Accepted | Web Worker lifecycle management during terminator track calculations |
 | [0036](0036-codebase-health-ssot-worker-fallback-and-test-partitioning.md) | Codebase Health SSoT Worker Fallback & Test Partitioning | M36 | Accepted | Consolidated fallback dispatcher and isolated test suites |
+| [0046](0046-remediation-strictmode-lifecycle-ast-hardening-and-worker-decomposition.md) | Phases 1–3 Remediation, `<StrictMode>` DOM Harness & Worker Decomposition | M46 | Accepted | Persistent 60 FPS worker subscriptions (`DE-52`), `jsdom` `<StrictMode>` integration suites, `EphemerisWorkerManager` decomposition |
 
 ---
 

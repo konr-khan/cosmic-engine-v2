@@ -24,7 +24,7 @@ Rather than relying on informal conventions that drift across sessions, Cosmic E
 4. **Empirical Physics Conservation & Adversarial Stress Suites**:
    - Domain tests verify physical conservation laws directly—including Keplerian areal velocity invariance ($r^2\dot{\theta} = \text{const}$), vis-viva orbital energy conservation, 10,000-sample Monte Carlo stereographic ring invariants ($R_0\sec\epsilon$), and a strict **$< 0.8\text{ ms/frame}$ hot-loop latency budget** across 1,000 continuous frames.
 5. **Institutional Memory & Anti-Pattern Ledger ([`DEAD_ENDS.md`](./DEAD_ENDS.md) & [`docs/adr/`](./docs/adr/))**:
-   - Documents 45 Architecture Decision Records (`ADR 0001–0045`) and 51 historical anti-patterns (`DE-01–DE-51`) and historical mathematical/rendering dead ends so future AI sessions never repeat discarded approaches.
+   - Documents 46 Architecture Decision Records (`ADR 0001–0046`) and 52 historical anti-patterns (`DE-01–DE-52`) and historical mathematical/rendering dead ends so future AI sessions never repeat discarded approaches.
 
 ---
 
@@ -63,8 +63,8 @@ To prevent documentation drift across AI pair-programming sessions, every archit
 | **[`docs/MATH_SPEC.md`](./docs/MATH_SPEC.md)** | **Astronomical Math Specification**: Jean Meeus equations, coordinate transformations, stereographic invariants, and syzygy shadow geometry |
 | **[`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)** | **Visual Tokens & Stroke Grammar**: Smallest Effective Difference (SED) principles, semantic colors (Sky Blue / Rose Red / Amber), and 2D/3D SVG stroke encodings |
 | **[`DEAD_ENDS.md`](./DEAD_ENDS.md)** | **Historical Anti-Pattern Log**: Critical post-mortems of failed geometric, projection, camera staging, and worker concurrency approaches |
-| **[`PROJECT.md`](./PROJECT.md)** | **Feature & Milestone Ledger**: Complete chronological inventory of completed features (`F1–F94`) and engineering milestones (`M1–M45`) |
-| **[`docs/adr/`](./docs/adr/)** | **Architecture Decision Records**: 45 immutable decision records (`ADR 0001–0045`) with evolutionary amendment tracking |
+| **[`PROJECT.md`](./PROJECT.md)** | **Feature & Milestone Ledger**: Complete chronological inventory of completed features (`F1–F98`) and engineering milestones (`M1–M46`) |
+| **[`docs/adr/`](./docs/adr/)** | **Architecture Decision Records**: 46 immutable decision records (`ADR 0001–0046`) with evolutionary amendment tracking |
 
 ---
 

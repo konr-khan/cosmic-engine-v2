@@ -507,10 +507,14 @@ if (projectContent) {
 if (fs.existsSync(agentsPath)) {
   let agentsContent = fs.readFileSync(agentsPath, 'utf8');
 
-  // A. Summary line in Tech Stack
+  // A. Summary line in Tech Stack & Pre-Completion suite count
   agentsContent = agentsContent.replace(
     /(- \*\*Testing\*\*: `vitest` \(`npm test` — comprehensive domain test suite across )\d+ modules, \d+ tests\)/g,
     `$1${totalFiles} modules, ${totalTests} tests)`
+  );
+  agentsContent = agentsContent.replace(
+    /full \d+-suite `npm run verify`/g,
+    `full ${totalFiles}-suite \`npm run verify\``
   );
 
   // B. Feature & Milestone ledger ranges
@@ -619,6 +623,12 @@ if (fs.existsSync(readmePath)) {
 // ==========================================
 if (fs.existsSync(architecturePath)) {
   let archContent = fs.readFileSync(architecturePath, 'utf8');
+
+  // Test suite count in Code Layout note
+  archContent = archContent.replace(
+    /auto-synchronized \d+-suite `\.test\.ts\(x\)` registry/g,
+    `auto-synchronized ${totalFiles}-suite \`.test.ts(x)\` registry`
+  );
 
   // Feature & Milestone references
   archContent = archContent.replace(

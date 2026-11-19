@@ -16,9 +16,9 @@ This file is the always-loaded operational kernel for AI agents working in **Cos
 | **Topology, Contracts & File Tree** | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Modifying module boundaries, scene-graph dataflow, worker RPC contracts, or adding/moving files |
 | **Astronomical Math & Ephemerides** | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | Touching `src/utils/cosmicMath/**`, coordinate frames, Meeus equations, or syzygy shadow geometry |
 | **Visual Tokens & Stroke Grammar** | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Touching `src/components/**`, SVG stroke encodings, semantic colors, or glassmorphic HUDs |
-| **Historical Anti-Patterns** | [`DEAD_ENDS.md`](DEAD_ENDS.md) | Before refactoring core math, 3D projections, worker throttling, or camera staging (`DE-01–DE-51`) |
-| **Feature & Milestone Ledger** | [`PROJECT.md`](PROJECT.md) | Recording completed user-facing features (`F1–F94`) or milestones (`M1–M45`) |
-| **Architectural Decision Records** | [`docs/adr/`](docs/adr/) | Reviewing historical invariants (`0001–0045`) or adding evolutionary amendment banners |
+| **Historical Anti-Patterns** | [`DEAD_ENDS.md`](DEAD_ENDS.md) | Before refactoring core math, 3D projections, worker throttling, or camera staging (`DE-01–DE-52`) |
+| **Feature & Milestone Ledger** | [`PROJECT.md`](PROJECT.md) | Recording completed user-facing features (`F1–F98`) or milestones (`M1–M46`) |
+| **Architectural Decision Records** | [`docs/adr/`](docs/adr/) | Reviewing historical invariants (`0001–0046`) or adding evolutionary amendment banners |
 
 ### Essential Commands & Automated Gatekeepers
 
@@ -63,11 +63,11 @@ When modifying files matching a glob below, enforce its invariant and run ONLY i
 | `src/utils/cosmicMath/armillary/**` | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | `npx vitest run armillary.test.ts armillaryBenchmark.test.ts m3_adversarial.test.ts armillaryMorph.test.ts armillaryStereographic.test.ts` | **$< 0.8\text{ ms/frame}$ hot-loop budget** across 1,000 frames; reuse cached 3x3 Euler matrices; zero per-frame heap churn |
 | `src/utils/cosmicMath/today/**` | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | `npx vitest run todaySky.test.ts` | Polar clamping & iterative rise/set / meridian swath continuity |
 | `src/store/**` | [`ARCHITECTURE.md`](ARCHITECTURE.md) | `npx vitest run cosmicStore.test.ts hoverStore.test.ts` | Route 60 FPS ticking through `cosmicStore` and ribbon scrubbing through `hoverStore` (`useSyncExternalStore`) |
-| `src/workers/**`, `src/hooks/**` | [`ARCHITECTURE.md`](ARCHITECTURE.md) | `npx vitest run useCosmicEngine.test.ts useCosmicScene.test.ts useEphemerisWorker.test.ts workerSanitizers.test.ts workerFallback.test.ts` | Maintain 100ms trailing-edge flag-merging throttling, monotonic `requestId` stamps, and `workerFallback.ts` parity |
+| `src/workers/**`, `src/hooks/**` | [`ARCHITECTURE.md`](ARCHITECTURE.md) | `npx vitest run useCosmicEngine.test.ts useCosmicScene.test.ts useEphemerisWorker.test.ts workerLifecycle.dom.test.tsx workerSanitizers.test.ts workerFallback.test.ts` | Maintain 100ms trailing-edge flag-merging throttling, persistent 60 FPS subscriptions, monotonic `requestId` stamps, and `workerFallback.ts` parity |
 | `src/components/widgets/today/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run TodayWidget.test.tsx SkyDomeBase.test.tsx SkyDomeHooksAndPrimitives.test.tsx meridianConfigHelpers.test.ts` | Shared `SkyDomeBase` (`260x138`) and `MeridianDomeBase` view-model contracts |
 | `src/components/widgets/armillary/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run ArmillaryWidget.test.tsx useStagedCamera.test.ts m2_adversarial.test.ts useArmillaryInteractions.test.ts ArmillaryBeadsLayer.test.tsx ArmillaryControls.test.tsx` | 2-phase camera staging ($\lambda = 0.45$ pole lock) & depth stroke unification ($\lambda \in [0.85, 1.0]$) |
 | `src/components/widgets/{solar,lunar,eclipse,terminator,macro,tides}/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run {SolarWidget,LunarWidget,EclipseWidget,TerminatorMap,MacroOrbitWidget,TidesWidget}.test.tsx` | Use `<MiniGlobe />` and `<MiniMoon />` primitives; wrap widgets in `WindowErrorBoundary` |
-| `src/components/{common,controls,layout}/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run MiniGlobe.test.tsx MiniMoon.test.tsx controls.test.tsx DashboardWindow.test.tsx layout.test.tsx App.test.tsx` | Scope all SVG `<defs>` IDs via `useSafeSvgId()` / `useId()` to prevent DOM collisions across multi-instance widgets |
+| `src/components/{common,controls,layout}/**` | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | `npx vitest run MiniGlobe.test.tsx MiniMoon.test.tsx controls.test.tsx DashboardWindow.test.tsx layout.test.tsx App.test.tsx App.dom.test.tsx` | Scope all SVG `<defs>` IDs via `useSafeSvgId()` / `useId()`; opt real-DOM `<StrictMode>` tests into `// @vitest-environment jsdom` |
 
 ---
 
@@ -89,4 +89,4 @@ The following rules are **programmatically enforced by `npm run lint:units` and 
 Before declaring any task complete:
 1. Run the targeted Vitest suite(s) from Section 3 (`npx vitest run <suite>`), `npm run typecheck`, and `npm run lint:units`, confirming **0 errors**.
 2. Ensure `AGENTS.md` remains strictly within `5.0 KB – 18.0 KB` (`unitSafety.test.ts`).
-3. Run `npm run sync:docs` only when test counts, UI file counts, ledger spans, or spec section line ranges changed; do **not** run the full 59-suite `npm run verify` inside the agent loop unless explicitly requested by the user.
+3. Run `npm run sync:docs` only when test counts, UI file counts, ledger spans, or spec section line ranges changed; do **not** run the full 61-suite `npm run verify` inside the agent loop unless explicitly requested by the user.
