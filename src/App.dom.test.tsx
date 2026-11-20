@@ -65,7 +65,7 @@ describe('Real-DOM <StrictMode> App, Store Subscriptions & Interaction Tests', (
     // Open Presets dropdown and choose Renaissance Horology Suite (hides eclipse/map/macro/tides)
     const presetsBtn = firstRender.getByRole('button', { name: /Presets/i });
     fireEvent.click(presetsBtn);
-    const horologyOption = firstRender.getByRole('button', { name: /Renaissance Horology Suite/i });
+    const horologyOption = firstRender.getByRole('menuitem', { name: /Renaissance Horology Suite/i });
     fireEvent.click(horologyOption);
 
     expect(firstRender.queryByText('Eclipse Mechanics & Shadow Geometry')).toBeNull();
@@ -74,7 +74,7 @@ describe('Real-DOM <StrictMode> App, Store Subscriptions & Interaction Tests', (
     // Open Simulation Layers menu and toggle Solar Almanac off, then close the dropdown menu
     const layersBtn = firstRender.getByRole('button', { name: /Simulation Layers/i });
     fireEvent.click(layersBtn);
-    const solarLayerToggle = firstRender.getByRole('button', { name: /Solar Almanac & 24h Polar Clock/i });
+    const solarLayerToggle = firstRender.getByRole('menuitemcheckbox', { name: /Solar Almanac & 24h Polar Clock/i });
     fireEvent.click(solarLayerToggle);
     fireEvent.click(layersBtn);
 

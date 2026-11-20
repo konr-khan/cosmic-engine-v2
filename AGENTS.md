@@ -22,7 +22,7 @@ This file is the always-loaded operational kernel for AI agents working in **Cos
 
 ### Essential Commands & Automated Gatekeepers
 
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 61 modules, 916 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 63 modules, 929 tests)
 
 | Command | Execution Scope & When to Run |
 | :--- | :--- |
@@ -89,4 +89,4 @@ The following rules are **programmatically enforced by `npm run lint:units` and 
 Before declaring any task complete:
 1. Run the targeted Vitest suite(s) from Section 3 (`npx vitest run <suite>`), `npm run typecheck`, and `npm run lint:units`, confirming **0 errors**.
 2. Ensure `AGENTS.md` remains strictly within `5.0 KB – 18.0 KB` (`unitSafety.test.ts`).
-3. Run `npm run sync:docs` only when test counts, UI file counts, ledger spans, or spec section line ranges changed; do **not** run the full 61-suite `npm run verify` inside the agent loop unless explicitly requested by the user.
+3. Run `npm run sync:docs` only when test counts, UI file counts, ledger spans, or spec section line ranges changed; do **not** run the full 63-suite `npm run verify` inside the agent loop unless explicitly requested by the user.

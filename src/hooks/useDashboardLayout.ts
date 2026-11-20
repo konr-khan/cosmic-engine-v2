@@ -107,12 +107,18 @@ export interface UseDashboardLayoutReturn {
 }
 
 export function useDashboardLayout(): UseDashboardLayoutReturn {
-  const [activePresetKey, setActivePresetKey] = useState<string>(() => readSavedLayoutState().activePresetKey);
-  const [widgets, setWidgets] = useState<Record<string, boolean>>(() => readSavedLayoutState().widgets);
+  const [persistedLayout, setPersistedLayout] = useState<PersistedDashboardLayout>(() => readSavedLayoutState());
   const [lockedWindows, setLockedWindows] = useState<Record<string, boolean>>({});
   const [isAllLocked, setIsAllLocked] = useState<boolean>(false);
 
-  const [windows, setWindows] = useState<WindowLayoutConfig[]>(() => readSavedLayoutState().windows);
+  const { activePresetKey, widgets, windows } = persistedLayout;
+
+  const setWidgets: React.Dispatch<React.SetStateAction<Record<string, boolean>>> = useCallback((action) => {
+    setPersistedLayout(prev => ({
+      ...prev,
+      widgets: typeof action === 'function' ? action(prev.widgets) : action,
+    }));
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -136,26 +142,31 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   const handleSelectPreset = useCallback((key: string) => {
     const preset = PRESET_LAYOUTS[key];
     if (!preset) return;
-    setActivePresetKey(key);
-    setWidgets(preset.widgets);
-    setWindows(preset.windows);
+    setPersistedLayout({
+      activePresetKey: key,
+      widgets: preset.widgets,
+      windows: preset.windows,
+    });
   }, []);
 
   const toggleWidget = useCallback((key: string) => {
-    const willBeActive = !widgets[key];
-    setWidgets(prev => ({ ...prev, [key]: !prev[key] }));
-    if (willBeActive) {
-      setWindows(currentWindows => {
-        if (!currentWindows.some(w => w.id === key)) {
-          const canonical = DEFAULT_WINDOWS.find(w => w.id === key);
-          if (canonical) {
-            return [...currentWindows, canonical];
-          }
+    setPersistedLayout(prev => {
+      const willBeActive = !prev.widgets[key];
+      const nextWidgets = { ...prev.widgets, [key]: willBeActive };
+      let nextWindows = prev.windows;
+      if (willBeActive && !prev.windows.some(w => w.id === key)) {
+        const canonical = DEFAULT_WINDOWS.find(w => w.id === key);
+        if (canonical) {
+          nextWindows = [...prev.windows, canonical];
         }
-        return currentWindows;
-      });
-    }
-  }, [widgets]);
+      }
+      return {
+        ...prev,
+        widgets: nextWidgets,
+        windows: nextWindows,
+      };
+    });
+  }, []);
 
   const handleDragStart = useCallback((e: React.DragEvent<HTMLElement>, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -173,26 +184,29 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     if (!sourceId || sourceId === targetId) return;
     if (isAllLocked || lockedWindows[sourceId] || lockedWindows[targetId]) return;
 
-    setWindows(prev => {
-      const sourceIdx = prev.findIndex(w => w.id === sourceId);
-      const targetIdx = prev.findIndex(w => w.id === targetId);
+    setPersistedLayout(prev => {
+      const sourceIdx = prev.windows.findIndex(w => w.id === sourceId);
+      const targetIdx = prev.windows.findIndex(w => w.id === targetId);
       if (sourceIdx < 0 || targetIdx < 0) return prev;
 
-      const newOrder = [...prev];
+      const newOrder = [...prev.windows];
       const [removed] = newOrder.splice(sourceIdx, 1);
       newOrder.splice(targetIdx, 0, removed);
-      return newOrder;
+      return { ...prev, windows: newOrder };
     });
   }, [isAllLocked, lockedWindows]);
 
   const handleResize = useCallback((id: string, _newWidth: number, newHeight: number | string) => {
     if (isAllLocked || lockedWindows[id]) return;
-    setWindows(prev => prev.map(w => {
-      if (w.id === id) {
-        const heightVal = typeof newHeight === 'string' ? (newHeight.endsWith('px') ? newHeight : `${newHeight}px`) : `${newHeight}px`;
-        return { ...w, height: heightVal };
-      }
-      return w;
+    setPersistedLayout(prev => ({
+      ...prev,
+      windows: prev.windows.map(w => {
+        if (w.id === id) {
+          const heightVal = typeof newHeight === 'string' ? (newHeight.endsWith('px') ? newHeight : `${newHeight}px`) : `${newHeight}px`;
+          return { ...w, height: heightVal };
+        }
+        return w;
+      })
     }));
   }, [isAllLocked, lockedWindows]);
 
@@ -202,20 +216,25 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
 
   const handleToggleColSpan = useCallback((id: string) => {
     if (isAllLocked || lockedWindows[id]) return;
-    setWindows(prev => prev.map(w => {
-      if (w.id === id) {
-        // Toggle between 12 (panoramic 2-col) and 6 (standard 1-col)
-        const nextColSpan = w.colSpan === 12 ? 6 : 12;
-        return { ...w, colSpan: nextColSpan };
-      }
-      return w;
+    setPersistedLayout(prev => ({
+      ...prev,
+      windows: prev.windows.map(w => {
+        if (w.id === id) {
+          // Toggle between 12 (panoramic 2-col) and 6 (standard 1-col)
+          const nextColSpan = w.colSpan === 12 ? 6 : 12;
+          return { ...w, colSpan: nextColSpan };
+        }
+        return w;
+      })
     }));
   }, [isAllLocked, lockedWindows]);
 
   const handleResetLayout = useCallback(() => {
-    setActivePresetKey('master');
-    setWindows(PRESET_LAYOUTS.master.windows);
-    setWidgets(PRESET_LAYOUTS.master.widgets);
+    setPersistedLayout({
+      activePresetKey: 'master',
+      windows: PRESET_LAYOUTS.master.windows,
+      widgets: PRESET_LAYOUTS.master.widgets,
+    });
     setLockedWindows({});
     setIsAllLocked(false);
     try {

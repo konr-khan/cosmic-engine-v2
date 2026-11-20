@@ -89,7 +89,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 ## 4. Canonical Code Layout
 
 > [!NOTE]
-> Every non-test production module under `src/` is inventoried 1:1 below and verified bijectively by `runDocIntegrityCheck()` in [`scripts/lintUnitSafety.mjs`](scripts/lintUnitSafety.mjs). For the auto-synchronized 61-suite `.test.ts(x)` registry, consult [`README.md`](README.md#-verification--test-harness) and [`AGENTS.md`](AGENTS.md#3-file-glob-action--test-router).
+> Every non-test production module under `src/` is inventoried 1:1 below and verified bijectively by `runDocIntegrityCheck()` in [`scripts/lintUnitSafety.mjs`](scripts/lintUnitSafety.mjs). For the auto-synchronized 63-suite `.test.ts(x)` registry, consult [`README.md`](README.md#-verification--test-harness) and [`AGENTS.md`](AGENTS.md#3-file-glob-action--test-router).
 
 - `src/`
   - `main.tsx` — React 19 root renderer
@@ -116,7 +116,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
       - `terminatorTracks.ts` — Diurnal celestial ground tracks & antimeridian seam interpolation
       - `index.ts` — Pure mathematical barrel exports
       - `today/` — Topocentric Horizon & Meridian submodules (`draconic.ts`, `elevation.ts`, `index.ts`, `meridian.ts`)
-      - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`cameras.ts`, `generator.ts`, `index.ts`, `transforms.ts`, `types.ts`)
+      - `scene/` — Unified 3D Astronomical Scene Graph & Camera Rigs (`cameras.ts`, `eulerCamera.ts`, `generator.ts`, `index.ts`, `transforms.ts`, `types.ts`)
       - `armillary/` — Decomposed Gyro-Morph Armillary & Astrolabe math engine (`alidade.ts`, `astrolabe.ts`, `constants.ts`, `coordinates.ts`, `focalBeacon.ts`, `generator.ts`, `generatorBeads.ts`, `generatorGeometry.ts`, `generatorObserverCone.ts`, `generatorRings.ts`, `index.ts`, `paths.ts`, `projections.ts`, `types.ts`)
   - `store/` — External `useSyncExternalStore` state engines (`cosmicStore.ts`, `hoverStore.ts`)
   - `workers/` — Web Worker ephemeris thread, decomposed multiplexer subsystems, sanitizers & fallback (`ephemerisAnnualCache.ts`, `ephemerisSubscription.ts`, `ephemerisThrottle.ts`, `ephemerisTypes.ts`, `ephemerisWorker.ts`, `ephemerisWorkerManager.ts`, `workerFallback.ts`, `workerSanitizers.ts`, `workerTransport.ts`)
@@ -130,10 +130,10 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
     - `widgets/` — Lazy-loaded observatory visualizers (`React.lazy()`)
       - `common/` — Shared widget scrubbing & shortcut rails (`AlmanacShortcutsRail.tsx`, `useRibbonScrubber.ts`)
       - `today/` — Today's Sky Horizon & Meridian subsystem (`MeridianDomeBase.tsx`, `MoonElevationDome.tsx`, `MoonMeridianDome.tsx`, `SkyDomeBase.tsx`, `SunElevationDome.tsx`, `SunMeridianDome.tsx`, `TodayHorizonView.tsx`, `index.ts`, `todayTokens.ts`)
-        - `hooks/` — Elevation/meridian math hooks & view-model builders (`index.ts`, `meridianConfigHelpers.ts`, `useLunarDomeSharedMath.ts`, `useMoonElevationMath.ts`, `useMoonMeridianMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`)
+        - `hooks/` — Elevation/meridian math hooks & view-model builders (`index.ts`, `meridianConfigHelpers.ts`, `moonMeridianConfig.ts`, `sunMeridianConfig.ts`, `useLunarDomeSharedMath.ts`, `useMoonElevationMath.ts`, `useMoonMeridianMath.ts`, `useSunElevationMath.ts`, `useSunMeridianMath.ts`)
         - `common/` — Shared horizon footers, draconic rail & phase disc (`DraconicTimelineRail.tsx`, `LunarPhaseDisc.tsx`, `MeridianDomeFooter.tsx`, `SkyDomeFooter.tsx`, `index.ts`)
       - `armillary/` — Gyro-Morph Armillary & Astrolabe container, HUDs & camera hooks (`ArmillaryEarthPip.tsx`, `ArmillaryHeaderControls.tsx`, `ArmillaryHoverHud.tsx`, `ArmillarySvgCanvas.tsx`, `ArmillaryTelemetryHud.tsx`, `GyroArmillaryView.tsx`, `armillaryTokens.ts`, `index.ts`, `types.ts`, `useArmillaryInteractions.ts`, `useStagedCamera.ts`)
-        - `canvas/` — Modular SVG layers & instance-scoped `<defs>` (`ArmillaryAlidadeLayer.tsx`, `ArmillaryBeadsLayer.tsx`, `ArmillaryBezelLayer.tsx`, `ArmillaryDefs.tsx`, `ArmillaryLaserLayer.tsx`, `ArmillaryObserverConeLayer.tsx`, `ArmillaryRingsLayer.tsx`, `ArmillaryStarsLayer.tsx`, `ArmillaryTympanLayer.tsx`, `index.ts`)
+        - `canvas/` — Modular SVG layers & instance-scoped `<defs>` (`ArmillaryAlidadeLayer.tsx`, `ArmillaryBeadsLayer.tsx`, `ArmillaryBezelLayer.tsx`, `ArmillaryDefs.tsx`, `ArmillaryLaserLayer.tsx`, `ArmillaryNodesSublayer.tsx`, `ArmillaryObserverConeLayer.tsx`, `ArmillaryRingsLayer.tsx`, `ArmillaryStarsLayer.tsx`, `ArmillaryTympanLayer.tsx`, `index.ts`)
         - `controls/` — Mode pills, morph slider rail & layer toggles (`ArmillaryLayerToggles.tsx`, `ArmillaryModePills.tsx`, `ArmillaryMorphRail.tsx`, `index.ts`)
       - `solar/` — Solar Almanac & 24h Polar Dial (`PolarSunlightDial.tsx`, `SolarAlmanacCard.tsx`, `SolarRibbonChart.tsx`, `SolarShortcutsRail.tsx`, `index.ts`, `polarDialGeometry.ts`, `solarHelpers.ts`)
         - `ribbon/` — Memoized 365-day solar ribbon layers (`SolarRibbonAxes.tsx`, `SolarRibbonBands.tsx`, `SolarRibbonOverlay.tsx`, `index.ts`)

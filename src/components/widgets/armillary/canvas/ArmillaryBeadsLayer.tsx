@@ -9,8 +9,9 @@ import {
 import { MiniGlobe } from '../../../common/MiniGlobe';
 import { MiniMoon } from '../../../common/MiniMoon';
 import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
+import { ArmillaryNodesSublayer } from './ArmillaryNodesSublayer';
 import { DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../../../../utils/cosmicMath';
-import { COSMIC_PALETTE, MILESTONE_COLORS } from '../../../common/designTokens';
+import { COSMIC_PALETTE } from '../../../common/designTokens';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -128,187 +129,20 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
         />
       )}
 
-      {/* 2. Seasonal Milestone Nodes (Heliocentric / Geocentric) */}
-      {milestonesOpacity > 0.05 && milestones.map((m) => {
-        const isHovered = !isDragging && hoveredMilestone?.id === m.id;
-        const mColor = m.color || (
-          m.id === 'perihelion' ? MILESTONE_COLORS.perihelion :
-          m.id === 'mar_equinox' || m.id === 'sep_equinox' ? MILESTONE_COLORS.equinox :
-          m.id === 'jun_solstice' || m.id === 'dec_solstice' ? MILESTONE_COLORS.solstice :
-          MILESTONE_COLORS.aphelion
-        );
-        return (
-          <g
-            key={m.id}
-            className={isDragging ? 'pointer-events-none' : 'cursor-pointer'}
-            style={{ touchAction: 'none' }}
-            opacity={milestonesOpacity * (m.isFront ? 1.0 : 0.4)}
-            onPointerEnter={() => {
-              if (!isDragging) onHoverMilestone(m);
-            }}
-            onPointerLeave={() => onHoverMilestone(null)}
-          >
-            {/* Invisible Touch Hitbox */}
-            <circle
-              cx={m.screenPos.x}
-              cy={m.screenPos.y}
-              r={isHovered ? 9 : 7}
-              fill="transparent"
-            />
-            {/* Persistent Translucent Glowing Halo Node (Expands on Hover) */}
-            <circle
-              cx={m.screenPos.x}
-              cy={m.screenPos.y}
-              r={isHovered ? 7.0 : 4.5}
-              fill={mColor}
-              opacity={isHovered ? 0.45 : 0.20}
-              className={`pointer-events-none transition-[r,opacity] duration-200 ${isHovered ? 'animate-pulse' : ''}`}
-            />
-            {/* Milestone Core */}
-            <circle
-              cx={m.screenPos.x}
-              cy={m.screenPos.y}
-              r={isHovered ? 2.8 : 2.0}
-              fill={mColor}
-              stroke="#ffffff"
-              strokeWidth={isHovered ? 1.2 : 0.75}
-              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
-            />
-            {/* Milestone Label */}
-            <text
-              x={m.screenPos.x}
-              y={m.screenPos.y - (isHovered ? 6.5 : 5.0)}
-              fontSize="3.0"
-              fill={mColor}
-              fontFamily="monospace"
-              fontWeight="bold"
-              textAnchor="middle"
-              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
-            >
-              {m.label}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* 2b. Interactive Draconic Lunar Node Pins (☊ Ascending & ☋ Descending) */}
-      {showLunarNodes && lunarNodes && lunarOrbitOpacity > 0.05 && (
-        <>
-          {/* Ascending Node (☊ Caput Draconis) */}
-          <g
-            key="lunar-node-asc"
-            data-testid="lunar-node-asc"
-            className={isDragging ? 'pointer-events-none' : 'cursor-pointer'}
-            style={{ touchAction: 'none' }}
-            opacity={lunarOrbitOpacity * (lunarNodes.ascendingNode.isFront ? 1.0 : 0.4)}
-            onClick={(e) => {
-              e.stopPropagation();
-              onTargetClick('Ascending Node (☊ Caput)', lunarNodes.ascendingNode.screenPos);
-            }}
-            onPointerEnter={() => {
-              if (!isDragging) onHoverNode('asc');
-            }}
-            onPointerLeave={() => onHoverNode(null)}
-          >
-            {/* Touch hitbox */}
-            <circle
-              cx={lunarNodes.ascendingNode.screenPos.x}
-              cy={lunarNodes.ascendingNode.screenPos.y}
-              r={hoveredNode === 'asc' ? 10 : 8}
-              fill="transparent"
-            />
-            {/* Halo circle */}
-            <circle
-              cx={lunarNodes.ascendingNode.screenPos.x}
-              cy={lunarNodes.ascendingNode.screenPos.y}
-              r={hoveredNode === 'asc' ? 6.0 : 4.0}
-              fill="#38bdf8"
-              opacity={hoveredNode === 'asc' ? 0.45 : 0.20}
-              className={`pointer-events-none transition-[r,opacity] duration-200 ${hoveredNode === 'asc' ? 'animate-pulse' : ''}`}
-            />
-            {/* Core circle */}
-            <circle
-              cx={lunarNodes.ascendingNode.screenPos.x}
-              cy={lunarNodes.ascendingNode.screenPos.y}
-              r={hoveredNode === 'asc' ? 2.5 : 1.8}
-              fill="#38bdf8"
-              stroke="#ffffff"
-              strokeWidth={hoveredNode === 'asc' ? 1.0 : 0.6}
-              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
-            />
-            {/* Text badge */}
-            <text
-              x={lunarNodes.ascendingNode.screenPos.x}
-              y={lunarNodes.ascendingNode.screenPos.y - (hoveredNode === 'asc' ? 5.5 : 4.0)}
-              fontSize="3.2"
-              fill="#38bdf8"
-              fontFamily="monospace"
-              fontWeight="bold"
-              textAnchor="middle"
-              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
-            >
-              ☊
-            </text>
-          </g>
-
-          {/* Descending Node (☋ Cauda Draconis) */}
-          <g
-            key="lunar-node-desc"
-            data-testid="lunar-node-desc"
-            className={isDragging ? 'pointer-events-none' : 'cursor-pointer'}
-            style={{ touchAction: 'none' }}
-            opacity={lunarOrbitOpacity * (lunarNodes.descendingNode.isFront ? 1.0 : 0.4)}
-            onClick={(e) => {
-              e.stopPropagation();
-              onTargetClick('Descending Node (☋ Cauda)', lunarNodes.descendingNode.screenPos);
-            }}
-            onPointerEnter={() => {
-              if (!isDragging) onHoverNode('desc');
-            }}
-            onPointerLeave={() => onHoverNode(null)}
-          >
-            {/* Touch hitbox */}
-            <circle
-              cx={lunarNodes.descendingNode.screenPos.x}
-              cy={lunarNodes.descendingNode.screenPos.y}
-              r={hoveredNode === 'desc' ? 10 : 8}
-              fill="transparent"
-            />
-            {/* Halo circle */}
-            <circle
-              cx={lunarNodes.descendingNode.screenPos.x}
-              cy={lunarNodes.descendingNode.screenPos.y}
-              r={hoveredNode === 'desc' ? 6.0 : 4.0}
-              fill="#f43f5e"
-              opacity={hoveredNode === 'desc' ? 0.45 : 0.20}
-              className={`pointer-events-none transition-[r,opacity] duration-200 ${hoveredNode === 'desc' ? 'animate-pulse' : ''}`}
-            />
-            {/* Core circle */}
-            <circle
-              cx={lunarNodes.descendingNode.screenPos.x}
-              cy={lunarNodes.descendingNode.screenPos.y}
-              r={hoveredNode === 'desc' ? 2.5 : 1.8}
-              fill="#f43f5e"
-              stroke="#ffffff"
-              strokeWidth={hoveredNode === 'desc' ? 1.0 : 0.6}
-              className="pointer-events-none transition-[r,stroke-width] duration-150 drop-shadow-md"
-            />
-            {/* Text badge */}
-            <text
-              x={lunarNodes.descendingNode.screenPos.x}
-              y={lunarNodes.descendingNode.screenPos.y - (hoveredNode === 'desc' ? 5.5 : 4.0)}
-              fontSize="3.2"
-              fill="#f43f5e"
-              fontFamily="monospace"
-              fontWeight="bold"
-              textAnchor="middle"
-              className="pointer-events-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.85)]"
-            >
-              ☋
-            </text>
-          </g>
-        </>
-      )}
+      {/* 2. Seasonal Milestone Nodes & Draconic Lunar Node Pins */}
+      <ArmillaryNodesSublayer
+        milestones={milestones}
+        hoveredMilestone={hoveredMilestone}
+        milestonesOpacity={milestonesOpacity}
+        lunarNodes={lunarNodes}
+        showLunarNodes={showLunarNodes}
+        lunarOrbitOpacity={lunarOrbitOpacity}
+        hoveredNode={hoveredNode}
+        isDragging={isDragging}
+        onHoverMilestone={onHoverMilestone}
+        onHoverNode={onHoverNode}
+        onTargetClick={onTargetClick}
+      />
 
       {/* 3. Depth-Sorted Celestial Bodies (Earth, Sun, Moon) */}
       {(() => {

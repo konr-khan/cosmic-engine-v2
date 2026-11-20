@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useCosmicEngine } from './hooks/useCosmicEngine';
 import { useChronometerStore, cosmicActions } from './store/cosmicStore';
 import { useDashboardLayout, ICON_MAP, PRESET_LAYOUTS } from './hooks/useDashboardLayout';
@@ -50,9 +50,10 @@ const LunarAlmanacWidgetContent = React.memo(function LunarAlmanacWidgetContent(
   );
 
   const dayOfYear = getDayOfYear(date);
-  const handleDateSlider = (val: number) => {
-    cosmicActions.setDate(new Date(Date.UTC(date.getUTCFullYear(), 0, val)));
-  };
+  const year = date.getUTCFullYear();
+  const handleDateSlider = useCallback((val: number) => {
+    cosmicActions.setDate(new Date(Date.UTC(year, 0, val)));
+  }, [year]);
 
   return (
     <LunarAlmanacCard 
@@ -78,9 +79,10 @@ const SolarAlmanacWidgetContent = React.memo(function SolarAlmanacWidgetContent(
   );
 
   const dayOfYear = getDayOfYear(date);
-  const handleDateSlider = (val: number) => {
-    cosmicActions.setDate(new Date(Date.UTC(date.getUTCFullYear(), 0, val)));
-  };
+  const year = date.getUTCFullYear();
+  const handleDateSlider = useCallback((val: number) => {
+    cosmicActions.setDate(new Date(Date.UTC(year, 0, val)));
+  }, [year]);
 
   return (
     <SolarAlmanac 
@@ -294,6 +296,19 @@ export default function App() {
     handleResetLayout
   } = useDashboardLayout();
 
+  const handleToggleAllLocked = useCallback(() => {
+    setIsAllLocked((prev) => !prev);
+  }, [setIsAllLocked]);
+
+  const handleToggleDockCollapse = useCallback(() => {
+    setIsDockCollapsed((prev) => !prev);
+  }, []);
+
+  const handleResetWindowSize = useCallback((id: string) => {
+    const defaultHeight = PRESET_LAYOUTS.master.windows.find(d => d.id === id)?.height || '420px';
+    handleResize(id, 0, defaultHeight);
+  }, [handleResize]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
       {/* Top Observatory Brand & Control Navbar */}
@@ -303,7 +318,7 @@ export default function App() {
         widgets={widgets}
         onToggleWidget={toggleWidget}
         isAllLocked={isAllLocked}
-        onToggleAllLocked={() => setIsAllLocked(!isAllLocked)}
+        onToggleAllLocked={handleToggleAllLocked}
         onResetLayout={handleResetLayout}
       />
 
@@ -313,8 +328,6 @@ export default function App() {
             {/* Render Windows Across Full 12-Column Panoramic Grid */}
             {windows.map((win) => {
               if (widgets[win.id] === false) return null;
-
-              const defaultHeight = PRESET_LAYOUTS.master.windows.find(d => d.id === win.id)?.height || '420px';
 
               return (
                 <DashboardWindow
@@ -331,7 +344,7 @@ export default function App() {
                   onResize={handleResize}
                   onToggleLock={handleToggleLock}
                   onToggleColSpan={handleToggleColSpan}
-                  onResetSize={() => handleResize(win.id, 0, defaultHeight)}
+                  onResetSize={handleResetWindowSize}
                 >
                   <MemoizedWidgetContent id={win.id} />
                 </DashboardWindow>
@@ -344,7 +357,7 @@ export default function App() {
         <div className="fixed bottom-0 left-0 right-0 z-50">
           <MemoizedChronometerDock 
             isDockCollapsed={isDockCollapsed}
-            onToggleCollapse={() => setIsDockCollapsed(!isDockCollapsed)}
+            onToggleCollapse={handleToggleDockCollapse}
           />
         </div>
       </div>

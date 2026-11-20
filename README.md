@@ -17,7 +17,7 @@ Rather than relying on informal conventions that drift across sessions, Cosmic E
    - Angular metrics (`Degrees`, `Radians`) and epochs (`JulianDate`, `JulianCenturies`) use unique Symbol brands with forbidden brand intersections (`NotRadians`, `NotDegrees`).
    - Passing degrees into a trigonometric solver expecting radians (`Math.sin`, Meeus ephemeris series) or double-converting branded values fails at compile time (`npm run typecheck`).
 3. **Programmatic Babel AST Guardrails ([`scripts/lintUnitSafety.mjs`](./scripts/lintUnitSafety.mjs))**:
-   - **UI Unit Boundary**: Bans `asDegrees()` and `asRadians()` across all 122 UI files in `src/components/**`, forcing presentation components through verified conversion gatekeepers (`latToRadians`, `lonToRadians`, `toRadians`).
+   - **UI Unit Boundary**: Bans `asDegrees()` and `asRadians()` across all 126 UI files in `src/components/**`, forcing presentation components through verified conversion gatekeepers (`latToRadians`, `lonToRadians`, `toRadians`).
    - **Collision-Safe SVG `<defs>` Scoping**: Scans JSX `<defs>` blocks across `src/components/**` to ban static string-literal `id="..."` attributes, enforcing instance-scoped `useSafeSvgId()` / `useId()` references across co-mounted observatory widgets.
    - **Mathematical Domain Purity**: Scans `src/utils/cosmicMath/**` to guarantee 0 React imports, 0 UI component imports, 0 Tailwind presentation tokens, and 0 unparameterized `new Date()` calls.
    - **Prop Identity Stability & SSoT Parity**: Bans `= new Date()` default parameter fallbacks across `src/components/**` and `src/hooks/**` (enforcing immutable `J2000_DATE` fallbacks) and verifies 100% Markdown link/anchor resolution, `F#`/`M#`/`DE-xx`/`ADR-xxxx` ledger parity, and 1:1 `ARCHITECTURE.md` production file inventory sync.
@@ -76,7 +76,7 @@ To prevent documentation drift across AI pair-programming sessions, every archit
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
 - **State Management**: React 19 `useSyncExternalStore` subscription model (`src/store/cosmicStore.ts`, `src/store/hoverStore.ts`)
 - **Concurrency**: Web Worker dedicated thread & singleton multiplexer (`src/workers/ephemerisWorkerManager.ts`)
-- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 61 modules, 916 tests)
+- **Testing**: `vitest` (`npm test` — comprehensive domain test suite across 63 modules, 929 tests)
 
 ```bash
 # Install dependencies
@@ -104,18 +104,18 @@ npm run sync:dossier       # Compiles docs/COSMIC_ENGINE_DOCUMENTATION_DOSSIER.m
 
 ## 🧪 Verification & Test Harness
 
-The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 61 specialized domain suites (**916 tests**):
+The verification harness uses **Vitest** to validate mathematical precision, physical conservation laws, AST unit boundaries, error boundary recovery, adversarial camera transitions, depth stroke unification, 3D scene graphs, and asynchronous worker operations across 63 specialized domain suites (**929 tests**):
 
 <details>
-<summary><strong>📊 Expand Full 61-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
+<summary><strong>📊 Expand Full 63-Suite Domain Test Registry (Auto-Synchronized via <code>npm run sync:docs</code>)</strong></summary>
 
 | Domain Module | File | Focus Areas |
 | :--- | :--- | :--- |
-| **Core Astronomy & Time** | `src/utils/cosmicMath/core.test.ts` (30 tests) | Julian date engines, UTC date invariance & `createUTCDate`, time parsing & formatting, spherical linear interpolation (`slerp3D`), physical constants (`astroConstants`), and floating-point degeneracy protection |
-| **Solar Ephemeris & Twilight** | `src/utils/cosmicMath/solar.test.ts` (15 tests) | Solar declination, equation of time, daily solar events (rise/set), civil/nautical/astronomical twilight bands, polar boundaries (midnight sun, polar night), and annual solar matrix |
+| **Core Astronomy & Time** | `src/utils/cosmicMath/core.test.ts` (32 tests) | Julian date engines, UTC date invariance & `createUTCDate`, time parsing & formatting, spherical linear interpolation (`slerp3D`), physical constants (`astroConstants`), and floating-point degeneracy protection |
+| **Solar Ephemeris & Twilight** | `src/utils/cosmicMath/solar.test.ts` (16 tests) | Solar declination, equation of time, daily solar events (rise/set), civil/nautical/astronomical twilight bands, polar boundaries (midnight sun, polar night), and annual solar matrix |
 | **Lunar Ephemeris & Illumination** | `src/utils/cosmicMath/lunar.test.ts` (16 tests) | Meeus lunar series, true geocentric phase angle ($i$), disc illumination ($k$), 2-step iterative rise/set solver, parallactic angle, nodal precession, and annual lunar matrix |
 | **Today Sky & Diurnal Kinematics** | `src/utils/cosmicMath/todaySky.test.ts` (71 tests) | Sky dome coordinate projection ($X, Y$), diurnal path generation, celestial meridian coordinate projection and swaths (`calculateMeridianPoint`, `generateMeridianSwathD`), radial tick pins, monthly lunar declination bounds, Draconic nodal crossings (±15 days), and twilight status classification |
-| **Eclipse Geometry & Presets** | `src/utils/cosmicMath/eclipse.test.ts` (26 tests) | Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`) |
+| **Eclipse Geometry & Presets** | `src/utils/cosmicMath/eclipse.test.ts` (27 tests) | Syzygy shadow geometry, analytical Umbra/Penumbra cones, all 5 historical and future eclipse presets, and recurrence scanner (`findUpcomingEclipses`) |
 | **3D Obliquity & Earth Projections** | `src/utils/cosmicMath/projection.test.ts` (11 tests) | Earth axial obliquity ($23.439^\circ$), side & axial 3D geometry, observer pin projection, 4-quadrant orbital loops, and world continent landmass projections with analytical limb clipping |
 | **Armillary Continuum & Projections** | `src/utils/cosmicMath/armillary/armillary.test.ts` (37 tests) | Universal 5-model Gyro-Morph continuum, GMST/LST solvers, Stereographic Conformal, Rojas Orthographic, Topocentric Horizon, Almucantars, unequal planetary hours, astrolabe stars, Free Rete solver, and closed-form stereographic conformal ring invariants ($R_0\sec\epsilon$) |
 | **Armillary Benchmark** | `src/utils/cosmicMath/armillary/armillaryBenchmark.test.ts` (5 tests) | 1,000-frame continuous latency budget (< 0.8 ms/frame), deterministic mathematical repeatability, non-NaN/non-Infinity geometric invariants across all 5 continuum modes, and milestone preservation |
@@ -125,10 +125,10 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **Scene Cameras Stress** | `src/utils/cosmicMath/scene/cameras.stress.test.ts` (23 tests) | Stress testing canonical camera projections (TopDown, Transverse, Axial, Euler) under boundary epochs, extreme orbital distances, and rapid coordinate shifts |
 | **Scene Coordinate Adversarial** | `src/utils/cosmicMath/scene/m1_adversarial.test.ts` (18 tests) | Coordinate frame invariants, axial tilt matrix preservation ($23.439^\circ$) in inertial space, and singular polar viewing angles |
 | **Unit-Safety AST Guardrails** | `src/types/unitSafety.test.ts` (12 tests) | Babel AST & SSoT lint enforcement banning `asDegrees()`/`asRadians()` and static `<defs>` IDs in `src/components/**`, strict $\le 18\text{ KB}$ `AGENTS.md` budget, and 100% Markdown link/anchor/inventory parity |
-| **Cosmic State Store** | `src/store/cosmicStore.test.ts` (13 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
+| **Cosmic State Store** | `src/store/cosmicStore.test.ts` (14 tests) | Shallow equality memoization, subscriber notifications, time roll-over, background tab delta clamping, UTC multi-day wrapping |
 | **Cosmic Engine Hook** | `src/hooks/useCosmicEngine.test.ts` (23 tests) | Selective widget calculation flags, state overrides, degenerate pole longitudes ($90^\circ\text{N}, -90^\circ\text{S}$) |
 | **Cosmic Scene Hook** | `src/hooks/useCosmicScene.test.ts` (5 tests) | Reactive 3D scene graph subscription, memoization stability, projection selector consistency (`useCosmicScene` and `useHeliocentricScene`), and `shallowEqual` protection |
-| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (33 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
+| **Ephemeris Worker Hook** | `src/hooks/useEphemerisWorker.test.ts` (34 tests) | Worker multiplexing, annual solar/lunar matrix dispatch, request coalescing, caching, window lifecycle cleanup (`beforeunload`/`pagehide`), automatic synchronous fallback |
 | **Worker Parameter Sanitization & Clamping** | `src/workers/workerSanitizers.test.ts` (16 tests) | Boundary validation and clamping gatekeepers: Meeus year validity range ([-2000, 3000]), geographic latitude/longitude bounds, astronomical Julian Date clamping, decimal hour wrapping, and NaN/Infinity resilience |
 | **Dashboard Layout Hook** | `src/hooks/useDashboardLayout.test.ts` (10 tests) | Preset switching, widget toggles, window reordering, resizing, locking, localStorage persistence & reset |
 | **MiniGlobe SVG Component** | `src/components/common/MiniGlobe.test.tsx` (15 tests) | 9-layer SVG rendering across 5 canonical view modes (`topdown`, `transverse`, `axial`, `euler3d`, `flat`), physical axial tilt rotation, subsolar terminator clipping, civil/nautical twilight bands, and DOM collision-safe `useId()` clipping |
@@ -136,6 +136,8 @@ The verification harness uses **Vitest** to validate mathematical precision, phy
 | **Interactive Controls** | `src/components/controls/controls.test.tsx` (21 tests) | Interactive astrolabe controls: `ControlRing` 360° dial and wrapping, `LatitudeSlider` projection & presets, `PolarLongitudeSelector` needle & city jump, `BufferedInput` commit semantics, and `ArmillaryRail` arc sweep flags |
 | **Dashboard Window Layout** | `src/components/layout/DashboardWindow.test.tsx` (17 tests) | Layout container architecture: `WindowErrorBoundary` containment, responsive grid column spanning (`col-span-12` vs `2xl:col-span-6`), 1-Col/2-Col action toggles, lock state protections, and HTML5 drag-and-drop contracts |
 | **Layout & Chronometer Dock** | `src/components/layout/layout.test.tsx` (10 tests) | Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing |
+| **Layout & Astrolabe DOM Interactions** | `src/components/layout/layoutInteractions.dom.test.tsx` (5 tests) | Real-DOM jsdom StrictMode interaction suite covering AstrolabeDial pointer drag, zero-width guards, midnight rollover, keyboard slider controls, DashboardWindow resize/minimize/maximize/ARIA, and ObsNavbar Escape/outside-click menus |
+| **Observatory Widget DOM Interactions** | `src/components/widgets/widgetsInteractions.dom.test.tsx` (2 tests) | Real-DOM jsdom StrictMode interaction suite covering EclipseDemonstrator lazy scanner tab deferral, tablist ARIA semantics, preset scrubbing, and GyroArmillaryView keyboard 3D camera controls |
 | **Ribbon Scrubber Hook** | `src/components/widgets/common/useRibbonScrubber.test.ts` (10 tests) | Bidirectional 2D coordinate scaling (dayToX, xToDay, timeToY, yToTime), synodic sub-window scaling, dragging state, and pointer capture lifecycle |
 | **SkyDomeBase Primitive** | `src/components/widgets/today/SkyDomeBase.test.tsx` (19 tests) | Shared 260x138 SVG elevation arc geometry (`elR = 92`, `elCx = 130`, `elCy = 104`), zenith markers (+90°), cardinal compass labels (E, S, W), unreachable zenith cap, reference chords, and body elevation vectors |
 | **Sky Dome Hooks & Primitives** | `src/components/widgets/today/SkyDomeHooksAndPrimitives.test.tsx` (13 tests) | Container/presenter hooks (`useMoonElevationMath`, `useSunElevationMath`), unified 4-column `SkyDomeFooter`, interactive `DraconicTimelineRail`, and reusable `LunarPhaseDisc` miniature crescent SVG renderer |

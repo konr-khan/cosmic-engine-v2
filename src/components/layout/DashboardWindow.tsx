@@ -20,7 +20,7 @@ export interface DashboardWindowProps {
   onToggleColSpan?: (id: string) => void;
 }
 
-export const DashboardWindow: React.FC<DashboardWindowProps> = ({ 
+export const DashboardWindow: React.FC<DashboardWindowProps> = React.memo(({ 
   id, 
   title, 
   icon: Icon, 
@@ -278,6 +278,6 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default DashboardWindow;
