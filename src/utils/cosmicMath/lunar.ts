@@ -9,7 +9,8 @@ import {
   calculateEarthObliquity,
   LUNAR_PERIGEE_THRESHOLD_KM, 
   LUNAR_APOGEE_THRESHOLD_KM,
-  DRACONIC_PERIOD_DAYS
+  DRACONIC_PERIOD_DAYS,
+  TOPDOWN_EARTH_BASE_RADIUS
 } from './astroConstants';
 import { calculateSolarPosition } from './solar';
 import { JulianDate, Latitude, Longitude, Degrees, asDegrees, asJulianDate, HoursDecimal, julianDateToCenturies } from '../../types/units';
@@ -20,7 +21,8 @@ import {
   SolarPosition,
   SolarPositionFull,
   LunarEventMetrics, 
-  AnnualLunarMatrixItem 
+  AnnualLunarMatrixItem,
+  TideType
 } from '../../types/astronomy';
 
 export type { LunarPositionFull, LunarEventMetrics, AnnualLunarMatrixItem };
@@ -513,4 +515,43 @@ export const calculateAnnualLunarMatrix = (
     });
   }
   return list;
+};
+
+export interface OrbitalTideMetrics {
+  rx: number;
+  ry: number;
+  type: TideType;
+  alignment: number;
+  localTideStatus: 'High Tide' | 'Low Tide';
+}
+
+/**
+ * Computes global solar-lunar tidal alignment, ocean bulge ellipse dimensions,
+ * and observer-local high/low tide status from instantaneous orbital longitudes.
+ */
+export const calculateOrbitalTideMetrics = (params: {
+  solarLambdaDeg: Degrees | number;
+  lunarLambdaDeg: Degrees | number;
+  lunarPhase: number;
+  lunarElongationDeg?: Degrees | number;
+  timeOfDay: HoursDecimal;
+  longitude: Longitude;
+}): OrbitalTideMetrics => {
+  const { solarLambdaDeg, lunarLambdaDeg, lunarPhase, lunarElongationDeg, timeOfDay, longitude } = params;
+  const elongationDeg = lunarElongationDeg ?? (((Number(lunarLambdaDeg) - Number(solarLambdaDeg)) % 360 + 360) % 360);
+  const elongationRad = toRadians(elongationDeg);
+  const alignment = Math.cos(2 * elongationRad);
+
+  const ry = TOPDOWN_EARTH_BASE_RADIUS + 4;
+  const rx = ry + 6 + (3 * alignment);
+  const type: TideType = alignment > 0.8 ? 'Spring Tide' : (alignment < -0.8 ? 'Neap Tide' : 'Transitional');
+
+  const observerMeridianDeg = (((((timeOfDay - 12) * 15) + longitude) % 360) + 360) % 360;
+  const moonPhaseAngleDeg = lunarPhase * 360;
+  const diff = (((observerMeridianDeg - moonPhaseAngleDeg) % 360) + 360) % 360;
+
+  const localTideStatus: 'High Tide' | 'Low Tide' =
+    (diff <= 45 || diff >= 315 || (diff >= 135 && diff <= 225)) ? 'High Tide' : 'Low Tide';
+
+  return { rx, ry, type, alignment, localTideStatus };
 };

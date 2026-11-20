@@ -5,7 +5,8 @@ import {
   ephemerisWorkerManager,
   PendingRequestEntry,
 } from '../workers/ephemerisWorkerManager';
-import { MockWorker, installMockWorker } from '../workers/mockWorkerFixture';
+import { MockWorker, installMockWorker } from '../../tests/fixtures/mockWorkerFixture';
+import { executeSyncFallbackForEntry } from '../workers/workerFallback';
 import { Latitude, Longitude, JulianDate } from '../types/units';
 import { EclipseData, LunarEvents } from '../types/astronomy';
 
@@ -1044,34 +1045,42 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
 
   describe('Annual Matrix LRU Cache Policy', () => {
     it('evicts the oldest entry when cache size exceeds MAX_ANNUAL_CACHE_SIZE (16)', () => {
-      const manager = new EphemerisWorkerManager();
-      manager._isAvailable = false;
+      vi.stubGlobal('Worker', undefined);
+      try {
+        const manager = new EphemerisWorkerManager();
 
-      for (let i = 0; i < 17; i++) {
-        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as Latitude }, () => {});
+        for (let i = 0; i < 17; i++) {
+          manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as Latitude }, () => {});
+        }
+
+        expect(manager.annualSolarCache.size).toBe(16);
+        expect(manager.annualSolarCache.has('SOLAR_2026_10')).toBe(false);
+        expect(manager.annualSolarCache.has('SOLAR_2026_26')).toBe(true);
+      } finally {
+        vi.unstubAllGlobals();
       }
-
-      expect(manager.annualSolarCache.size).toBe(16);
-      expect(manager.annualSolarCache.has('SOLAR_2026_10')).toBe(false);
-      expect(manager.annualSolarCache.has('SOLAR_2026_26')).toBe(true);
     });
 
     it('promotes accessed cache entry to most recently used on cache hit', () => {
-      const manager = new EphemerisWorkerManager();
-      manager._isAvailable = false;
+      vi.stubGlobal('Worker', undefined);
+      try {
+        const manager = new EphemerisWorkerManager();
 
-      for (let i = 0; i < 16; i++) {
-        manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as Latitude }, () => {});
+        for (let i = 0; i < 16; i++) {
+          manager.requestAnnualSolarCalculation({ year: 2026, latitude: (10 + i) as Latitude }, () => {});
+        }
+
+        // Access key 10 to refresh recency
+        manager.requestAnnualSolarCalculation({ year: 2026, latitude: 10 as Latitude }, () => {});
+
+        // Add a 17th entry (lat 26)
+        manager.requestAnnualSolarCalculation({ year: 2026, latitude: 26 as Latitude }, () => {});
+
+        expect(manager.annualSolarCache.has('SOLAR_2026_10')).toBe(true);
+        expect(manager.annualSolarCache.has('SOLAR_2026_11')).toBe(false);
+      } finally {
+        vi.unstubAllGlobals();
       }
-
-      // Access key 10 to refresh recency
-      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 10 as Latitude }, () => {});
-
-      // Add a 17th entry (lat 26)
-      manager.requestAnnualSolarCalculation({ year: 2026, latitude: 26 as Latitude }, () => {});
-
-      expect(manager.annualSolarCache.has('SOLAR_2026_10')).toBe(true);
-      expect(manager.annualSolarCache.has('SOLAR_2026_11')).toBe(false);
     });
 
     it('invokes synchronous fallback when worker request times out', () => {
@@ -1181,25 +1190,32 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
     });
 
     it('guarantees callback delivery in EphemerisWorkerManager fallback even under simulated calculation error', () => {
-      const manager = new EphemerisWorkerManager();
-      manager._isAvailable = false;
+      vi.stubGlobal('Worker', undefined);
+      try {
+        const manager = new EphemerisWorkerManager();
 
-      const solarCb = vi.fn();
-      manager.requestAnnualSolarCalculation({ year: NaN, latitude: NaN as Latitude }, solarCb);
-      expect(solarCb).toHaveBeenCalledTimes(1);
-      expect(solarCb.mock.calls[0][0].annualSolar).toBeDefined();
+        const solarCb = vi.fn();
+        manager.requestAnnualSolarCalculation({ year: NaN, latitude: NaN as Latitude }, solarCb);
+        expect(solarCb).toHaveBeenCalledTimes(1);
+        expect(solarCb.mock.calls[0][0].annualSolar).toBeDefined();
 
-      const lunarCb = vi.fn();
-      manager.requestAnnualLunarCalculation(
-        { year: NaN, latitude: NaN as Latitude, longitude: NaN as Longitude },
-        lunarCb
-      );
-      expect(lunarCb).toHaveBeenCalledTimes(1);
-      expect(lunarCb.mock.calls[0][0].annualLunar).toBeDefined();
+        const lunarCb = vi.fn();
+        manager.requestAnnualLunarCalculation(
+          { year: NaN, latitude: NaN as Latitude, longitude: NaN as Longitude },
+          lunarCb
+        );
+        expect(lunarCb).toHaveBeenCalledTimes(1);
+        expect(lunarCb.mock.calls[0][0].annualLunar).toBeDefined();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
 
-    it('guarantees callback dispatch with safe empty payloads in _executeSyncFallbackForEntry when error occurs', () => {
+    it('guarantees callback dispatch with safe empty payloads in executeSyncFallbackForEntry when error occurs', () => {
       const manager = new EphemerisWorkerManager();
+      const setInCache = <T,>(cache: { set: (k: string, v: T) => unknown }, key: string, value: T) => {
+        cache.set(key, value);
+      };
       const solarCb = vi.fn();
 
       const brokenSolarEntry = {
@@ -1215,7 +1231,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       } satisfies PendingRequestEntry;
 
       expect(() => {
-        manager._executeSyncFallbackForEntry(brokenSolarEntry);
+        executeSyncFallbackForEntry(brokenSolarEntry, manager.annualSolarCache, manager.annualLunarCache, setInCache);
       }).not.toThrow();
 
       expect(solarCb).toHaveBeenCalledWith({ annualSolar: [] });
@@ -1235,7 +1251,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       } satisfies PendingRequestEntry;
 
       expect(() => {
-        manager._executeSyncFallbackForEntry(brokenLunarEntry);
+        executeSyncFallbackForEntry(brokenLunarEntry, manager.annualSolarCache, manager.annualLunarCache, setInCache);
       }).not.toThrow();
 
       expect(lunarCb).toHaveBeenCalledWith({ annualLunar: [] });
@@ -1258,7 +1274,7 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
       } satisfies PendingRequestEntry;
 
       expect(() => {
-        manager._executeSyncFallbackForEntry(brokenEphemerisEntry);
+        executeSyncFallbackForEntry(brokenEphemerisEntry, manager.annualSolarCache, manager.annualLunarCache, setInCache);
       }).not.toThrow();
 
       expect(ephemerisCb).toHaveBeenCalledWith(
@@ -1267,6 +1283,57 @@ describe('EphemerisWorkerManager Singleton Suite', () => {
           eclipse: null,
         })
       );
+    });
+
+    it('tracks sequence monotonicity per capability lane so fast eclipse responses do not drop slower lunar responses', () => {
+      installMockWorker();
+      const manager = new EphemerisWorkerManager();
+      const lunarCb = vi.fn();
+      const eclipseCb = vi.fn();
+
+      manager.requestCalculation(
+        {
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          julianDate: 2451545.0 as JulianDate,
+          timeOfDay: 12,
+          calculateLunar: true,
+          calculateEclipse: false,
+        },
+        lunarCb
+      );
+      manager.requestCalculation(
+        {
+          latitude: 47.06 as Latitude,
+          longitude: -122.81 as Longitude,
+          julianDate: 2451545.5 as JulianDate,
+          timeOfDay: 0,
+          calculateLunar: false,
+          calculateEclipse: true,
+        },
+        eclipseCb
+      );
+
+      const worker = manager.worker as unknown as MockWorker;
+      const lunarReqId = (worker.postMessage.mock.calls[0][0] as { id: number }).id;
+      const eclipseReqId = (worker.postMessage.mock.calls[1][0] as { id: number }).id;
+
+      // Fast eclipse-only response (higher id) finishes first
+      worker.emitMessage({
+        type: 'EPHEMERIS_SUCCESS',
+        id: eclipseReqId,
+        payload: { lunarEvents: null, eclipse: { type: 'NONE' }, timestamp: 200 },
+      });
+      // Slower lunar-only response (lower id, different lane) finishes second and MUST still be delivered
+      worker.emitMessage({
+        type: 'EPHEMERIS_SUCCESS',
+        id: lunarReqId,
+        payload: { lunarEvents: { distanceKm: 384400 }, eclipse: null, timestamp: 100 },
+      });
+
+      expect(eclipseCb).toHaveBeenCalledTimes(1);
+      expect(lunarCb).toHaveBeenCalledTimes(1);
+      manager.terminate();
     });
   });
 });

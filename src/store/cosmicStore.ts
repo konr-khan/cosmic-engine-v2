@@ -204,13 +204,17 @@ export class CosmicStore {
 
 export const cosmicStore = new CosmicStore();
 
+const noopSubscribe = (): (() => void) => () => {};
+
 /**
  * Custom hook to subscribe to cosmicStore state slices using React's useSyncExternalStore.
  * Memoizes getSnapshot results via shallow equality to prevent infinite re-render loops.
+ * Pass `enabled = false` when all values are externally supplied to skip store subscription overhead.
  */
 export function useChronometerStore<T = CosmicStoreState>(
   selector: StateSelector<CosmicStoreState, T> = (state) => state as unknown as T,
-  isEquivalent: (a: T, b: T) => boolean = (a, b) => shallowEqual(a, b)
+  isEquivalent: (a: T, b: T) => boolean = (a, b) => shallowEqual(a, b),
+  enabled: boolean = true
 ): T {
   const lastStateRef = useRef<CosmicStoreState | null>(null);
   const lastSelectorRef = useRef<StateSelector<CosmicStoreState, T> | null>(null);
@@ -243,7 +247,7 @@ export function useChronometerStore<T = CosmicStoreState>(
     return nextSelected;
   }, [selector, isEquivalent]);
 
-  return useSyncExternalStore(cosmicStore.subscribe, getSnapshot, getSnapshot);
+  return useSyncExternalStore(enabled ? cosmicStore.subscribe : noopSubscribe, getSnapshot, getSnapshot);
 }
 
 export const cosmicActions = {

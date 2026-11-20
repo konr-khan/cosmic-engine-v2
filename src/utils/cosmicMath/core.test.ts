@@ -481,5 +481,14 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
       expect(roundTrip.getUTCMonth()).toBe(2);
       expect(roundTrip.getUTCDate()).toBe(15);
     });
+
+    it('retains both noon-anchored and live-time EphemerisFrames without thrashing in bounded 4-entry LRU cache', () => {
+      _clearEphemerisFrameCache();
+      const noonFrame = calculateEphemerisFrame(J2000_JD, 47.06, -122.81);
+      const liveFrame = calculateEphemerisFrame(J2000_JD + 0.25, 47.06, -122.81);
+      // Alternating back to noonFrame must return the exact cached instance
+      expect(calculateEphemerisFrame(J2000_JD, 47.06, -122.81)).toBe(noonFrame);
+      expect(calculateEphemerisFrame(J2000_JD + 0.25, 47.06, -122.81)).toBe(liveFrame);
+    });
   });
 });

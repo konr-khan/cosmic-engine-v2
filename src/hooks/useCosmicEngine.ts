@@ -1,17 +1,17 @@
 import { useMemo, useCallback } from 'react';
 import { 
   SOLAR_TWILIGHT_THRESHOLDS,
-  TOPDOWN_EARTH_BASE_RADIUS,
   getJulianDate, 
   calculateEphemerisFrame,
   calculateDaylightDurationPrecise,
+  calculateOrbitalTideMetrics,
   getPhaseName,
   toRadians
 } from '../utils/cosmicMath';
 import { useChronometerStore } from '../store/cosmicStore';
 import { CosmicStoreState } from '../types/store';
 import { useEphemerisWorker } from './useEphemerisWorker';
-import { ActiveWidgetsFilter, CosmicEngineData, SolarAlmanacData, OrbitalData, TideType } from '../types/astronomy';
+import { ActiveWidgetsFilter, CosmicEngineData, SolarAlmanacData, OrbitalData } from '../types/astronomy';
 import { Latitude, Longitude, HoursDecimal } from '../types/units';
 
 const ORBITAL_WIDGET_KEYS = ['macroOrbit', 'microTides', 'lunarAlmanac', 'armillary', 'eclipse', 'today', 'map'] as const;
@@ -43,13 +43,14 @@ export const useCosmicEngine = (
   const isTimeProvided = paramTimeOfDay != null;
   const isLatProvided = paramLatitude != null;
   const isLonProvided = paramLongitude != null;
+  const needsStoreSubscription = !(isDateProvided && isTimeProvided && isLatProvided && isLonProvided);
   const selector = useCallback((state: CosmicStoreState) => ({
     date: isDateProvided ? null : state.date,
     timeOfDay: isTimeProvided ? null : state.timeOfDay,
     latitude: isLatProvided ? null : state.latitude,
     longitude: isLonProvided ? null : state.longitude,
   }), [isDateProvided, isTimeProvided, isLatProvided, isLonProvided]);
-  const storeState = useChronometerStore(selector);
+  const storeState = useChronometerStore(selector, undefined, needsStoreSubscription);
   const date = (paramDate ?? storeState.date) as Date;
   const timeOfDay = (paramTimeOfDay ?? storeState.timeOfDay) as HoursDecimal;
   const latitude = (paramLatitude ?? storeState.latitude) as Latitude;
@@ -114,22 +115,14 @@ export const useCosmicEngine = (
       const angleToMoon = toRadians(moonDegrees);
 
       const phase0to1 = lunarPos.phase;
-      const elongationRad = toRadians(lunarPos.elongation ?? (((moonDegrees - sunDegrees) % 360 + 360) % 360));
-      const alignmentFactor = Math.cos(2 * elongationRad);
-
-      const baseOceanSize = TOPDOWN_EARTH_BASE_RADIUS + 4;
-      const tideRx = baseOceanSize + 6 + (3 * alignmentFactor);
-      const tideType: TideType = alignmentFactor > 0.8 ? "Spring Tide" : (alignmentFactor < -0.8 ? "Neap Tide" : "Transitional");
-
-      const observerMeridianDeg = (((((timeOfDay - 12) * 15) + longitude) % 360) + 360) % 360;
-      const moonPhaseAngleDeg = phase0to1 * 360;
-      
-      const diff = (((observerMeridianDeg - moonPhaseAngleDeg) % 360) + 360) % 360; 
-      
-      let localTideStatus: 'High Tide' | 'Low Tide' = "Low Tide";
-      if (diff <= 45 || diff >= 315 || (diff >= 135 && diff <= 225)) {
-        localTideStatus = "High Tide";
-      }
+      const tideMetrics = calculateOrbitalTideMetrics({
+        solarLambdaDeg: sunDegrees,
+        lunarLambdaDeg: moonDegrees,
+        lunarPhase: phase0to1,
+        lunarElongationDeg: lunarPos.elongation,
+        timeOfDay,
+        longitude
+      });
 
       orbitalData = {
         angles: { 
@@ -144,8 +137,13 @@ export const useCosmicEngine = (
         descendingNodeLongitude: lunarPos.descendingNodeLongitude,
         lunarPos,
         phase: { value: phase0to1, name: getPhaseName(phase0to1) },
-        tides: { rx: tideRx, ry: baseOceanSize, type: tideType, alignment: alignmentFactor },
-        localTideStatus,
+        tides: {
+          rx: tideMetrics.rx,
+          ry: tideMetrics.ry,
+          type: tideMetrics.type,
+          alignment: tideMetrics.alignment
+        },
+        localTideStatus: tideMetrics.localTideStatus,
         lunarEvents,
         eclipse
       };

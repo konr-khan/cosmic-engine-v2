@@ -59,7 +59,13 @@ export class EphemerisWorkerManager {
     this._annualCache = new AnnualMatrixCacheService(EphemerisWorkerManager.MAX_ANNUAL_CACHE_SIZE);
     this._throttle = new EphemerisThrottleQueue();
     this._transport = new WorkerTransport({
-      onSyncFallback: (entry) => this._executeSyncFallbackForEntry(entry),
+      onSyncFallback: (entry) =>
+        executeSyncFallbackForEntry(
+          entry,
+          this._annualCache.solarCache,
+          this._annualCache.lunarCache,
+          (c, k, v) => this._annualCache.setInCache(c, k, v)
+        ),
       onAnnualSolarSuccess: (sig, data) => this._annualCache.setInCache(this._annualCache.solarCache, sig, data),
       onAnnualLunarSuccess: (sig, data) => this._annualCache.setInCache(this._annualCache.lunarCache, sig, data),
       drainThrottledForFailure: () => this._throttle.drainForFailure(),
@@ -67,7 +73,7 @@ export class EphemerisWorkerManager {
     });
 
     this._throttleHost = {
-      getWorker: () => this._getWorker(),
+      getWorker: () => this._transport.getWorker(),
       registerAndPost: (w, entry, reqType) => this._transport.registerAndPost(w, entry, reqType),
       clearDispatchedEntry: (entry) => this._transport.clearDispatchedBySignature(entry.signature),
       dispatchImmediate: (sig, params, calcLunar, calcEclipse, onResult) =>
@@ -76,9 +82,9 @@ export class EphemerisWorkerManager {
 
     this._annualBridge = {
       isAvailable: () => this.isAvailable(),
-      getWorker: () => this._getWorker(),
-      getExistingRequestId: (sig) => this.signatureToRequestId.get(sig),
-      getPendingRequest: (id) => this.pendingRequests.get(id),
+      getWorker: () => this._transport.getWorker(),
+      getExistingRequestId: (sig) => this._transport.signatureToRequestId.get(sig),
+      getPendingRequest: (id) => this._transport.pendingRequests.get(id),
       createUnsubscribe: (id, sig, cbs, cb) => this._transport.createUnsubscribe(id, sig, cbs, cb),
       registerAndPost: (w, entry, reqType) => this._transport.registerAndPost(w, entry, reqType)
     };
@@ -88,28 +94,8 @@ export class EphemerisWorkerManager {
     return this._transport.worker;
   }
 
-  public set worker(value: Worker | null) {
-    this._transport.worker = value;
-  }
-
-  public get nextRequestId(): number {
-    return this._transport.nextRequestId;
-  }
-
-  public set nextRequestId(value: number) {
-    this._transport.nextRequestId = value;
-  }
-
   public get pendingRequests(): Map<number, PendingRequestEntry> {
     return this._transport.pendingRequests;
-  }
-
-  public get signatureToRequestId(): Map<string, number> {
-    return this._transport.signatureToRequestId;
-  }
-
-  public get requestTimeouts(): Map<number, ReturnType<typeof setTimeout>> {
-    return this._transport.requestTimeouts;
   }
 
   public get annualSolarCache(): LruCache<string, AnnualSolarMatrixItem[]> {
@@ -120,54 +106,12 @@ export class EphemerisWorkerManager {
     return this._annualCache.lunarCache;
   }
 
-  public get _isAvailable(): boolean {
-    return this._transport.isAvailableFlag;
-  }
-
-  public set _isAvailable(value: boolean) {
-    this._transport.isAvailableFlag = value;
-  }
-
   public get latestProcessedEphemerisId(): number {
     return this._transport.latestProcessedEphemerisId;
   }
 
-  public set latestProcessedEphemerisId(value: number) {
-    this._transport.latestProcessedEphemerisId = value;
-  }
-
-  public get lastEphemerisDispatchTime(): number {
-    return this._throttle.lastDispatchTime;
-  }
-
-  public set lastEphemerisDispatchTime(value: number) {
-    this._throttle.lastDispatchTime = value;
-  }
-
-  public get ephemerisThrottleTimer(): ReturnType<typeof setTimeout> | null {
-    return this._throttle.timer;
-  }
-
-  public set ephemerisThrottleTimer(value: ReturnType<typeof setTimeout> | null) {
-    this._throttle.timer = value;
-  }
-
   public get pendingThrottledEntries(): Map<string, PendingThrottledEphemerisEntry> {
     return this._throttle.pendingEntries;
-  }
-
-  /**
-   * Sets an entry into an annual matrix cache using bounded LRU eviction.
-   */
-  public _setInAnnualCache<T>(cache: LruCache<string, T> | Map<string, T>, key: string, value: T): void {
-    this._annualCache.setInCache(cache, key, value);
-  }
-
-  /**
-   * Retrieves an entry from an annual matrix cache and promotes it to most recently used.
-   */
-  public _getFromAnnualCache<T>(cache: LruCache<string, T> | Map<string, T>, key: string): T | undefined {
-    return this._annualCache.getFromCache(cache, key);
   }
 
   /**
@@ -177,42 +121,14 @@ export class EphemerisWorkerManager {
     return this._transport.isAvailable();
   }
 
-  /**
-   * Computes synchronous fallback ephemeris calculations and dispatches to registered callbacks.
-   */
-  public _executeSyncFallbackForEntry(entry: PendingRequestEntry): void {
-    executeSyncFallbackForEntry(
-      entry,
-      this._annualCache.solarCache,
-      this._annualCache.lunarCache,
-      (c, k, v) => this._setInAnnualCache(c, k, v)
-    );
-  }
-
-  public _setRequestTimeout(requestId: number, entry: PendingRequestEntry, ms: number = 5000): void {
-    this._transport.setRequestTimeout(requestId, entry, ms);
-  }
-
-  public _clearRequestTimeout(requestId: number): void {
-    this._transport.clearRequestTimeout(requestId);
-  }
-
-  public _handleWorkerFailure(error?: unknown): void {
-    this._transport.handleWorkerFailure(error);
-  }
-
-  public _getWorker(): Worker | null {
-    return this._transport.getWorker();
-  }
-
-  public _dispatchEphemerisRequest(
+  private _dispatchEphemerisRequest(
     signature: string,
     params: EphemerisCalculationParams & { calculateLunar?: boolean; calculateEclipse?: boolean },
     calculateLunar: boolean,
     calculateEclipse: boolean,
     onResult: (payload: EphemerisWorkerPayload) => void
   ): () => void {
-    const worker = this._getWorker();
+    const worker = this._transport.getWorker();
     if (!worker) {
       return () => {};
     }
@@ -235,14 +151,6 @@ export class EphemerisWorkerManager {
     return this._transport.createUnsubscribe(requestId, signature, requestEntry.callbacks, onResult);
   }
 
-  public _dispatchPendingThrottledEntries(): void {
-    this._throttle.flushPendingEntries(this._throttleHost);
-  }
-
-  public _dispatchPendingThrottledEntry(): void {
-    this._dispatchPendingThrottledEntries();
-  }
-
   private _requestCalculationInternal(
     params: EphemerisRequestParams,
     onResult: (payload: EphemerisWorkerPayload) => void,
@@ -256,9 +164,9 @@ export class EphemerisWorkerManager {
     const calculateEclipse = params.calculateEclipse !== false && params.isEclipseActive !== false;
     const signature = buildEphemerisSignature(params, calculateLunar, calculateEclipse);
 
-    if (this.signatureToRequestId.has(signature)) {
-      const existingId = this.signatureToRequestId.get(signature)!;
-      const existingEntry = this.pendingRequests.get(existingId);
+    if (this._transport.signatureToRequestId.has(signature)) {
+      const existingId = this._transport.signatureToRequestId.get(signature)!;
+      const existingEntry = this._transport.pendingRequests.get(existingId);
       if (existingEntry && existingEntry.type === 'EPHEMERIS') {
         existingEntry.callbacks.add(onResult);
         return {

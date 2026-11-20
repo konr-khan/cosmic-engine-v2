@@ -2,7 +2,7 @@
 import React, { StrictMode } from 'react';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { MockWorker, installMockWorker } from '../workers/mockWorkerFixture';
+import { MockWorker, installMockWorker } from '../../tests/fixtures/mockWorkerFixture';
 import { useDashboardLayout, STORAGE_KEY } from './useDashboardLayout';
 import { Latitude, Longitude, HoursDecimal, JulianDate } from '../types/units';
 import { EclipseData, LunarEvents } from '../types/astronomy';
@@ -192,28 +192,60 @@ describe('Real-DOM <StrictMode> Hook Lifecycle & Persistence Integration', () =>
 
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const AnnualHarness: React.FC = () => {
+    const AnnualHarness: React.FC<{ lat?: number }> = ({ lat = 47.06 }) => {
       const items = useAnnualSolarWorker({
         year: 2026,
-        latitude: 47.06 as Latitude,
+        latitude: lat as Latitude,
       });
-      return <span data-testid="annual-len">{items.length}</span>;
+      return (
+        <div>
+          <span data-testid="annual-len">{items.length}</span>
+          <span data-testid="annual-day1">{items[0]?.dayLength?.toFixed(2) ?? 'none'}</span>
+        </div>
+      );
     };
 
     try {
-      const { getByTestId, unmount } = render(
+      const { getByTestId, rerender, unmount } = render(
         <StrictMode>
-          <AnnualHarness />
+          <AnnualHarness lat={47.06} />
         </StrictMode>
       );
 
-      // Synchronous warm seed gives immediate 365-day array
+      // Synchronous warm seed gives immediate 365-day array on cold start
       expect(getByTestId('annual-len').textContent).toBe('365');
       expect(ephemerisWorkerManager).toBeInstanceOf(ReloadedManager);
+      const initialDay1 = getByTestId('annual-day1').textContent;
+
+      // Subsequent latitude change defers to Web Worker (stale-while-revalidate) instead of blocking main thread
+      rerender(
+        <StrictMode>
+          <AnnualHarness lat={10} />
+        </StrictMode>
+      );
+      // Previous matrix stays visible while worker request is in-flight
+      expect(getByTestId('annual-day1').textContent).toBe(initialDay1);
+      const worker = ephemerisWorkerManager.worker as unknown as MockWorker;
+      expect(worker).toBeDefined();
+      const annualReq = worker.postMessage.mock.calls.find(
+        (c) => (c[0] as { type?: string }).type === 'CALCULATE_ANNUAL_SOLAR'
+      )?.[0] as { id: number } | undefined;
+      expect(annualReq).toBeDefined();
+
+      // Worker delivers updated matrix -> UI swaps cleanly
+      act(() => {
+        worker.emitMessage({
+          type: 'ANNUAL_SOLAR_SUCCESS',
+          id: annualReq!.id,
+          payload: {
+            annualSolar: [{ day: 1, dayLength: 11.55 }] as unknown as import('../types/astronomy').AnnualSolarMatrixItem[],
+          },
+        });
+      });
+      expect(getByTestId('annual-day1').textContent).toBe('11.55');
 
       unmount();
       // Emit synthetic message post-unmount -> no React warnings or uncaught errors
-      const worker = ephemerisWorkerManager.worker as unknown as MockWorker;
       act(() => {
         worker?.emitMessage({
           type: 'ANNUAL_SOLAR_SUCCESS',

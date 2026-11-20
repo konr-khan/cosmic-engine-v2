@@ -25,7 +25,19 @@ export class WorkerTransport {
   public readonly signatureToRequestId: Map<string, number> = new Map();
   public readonly requestTimeouts: Map<number, ReturnType<typeof setTimeout>> = new Map();
   public isAvailableFlag: boolean = typeof Worker !== 'undefined';
-  public latestProcessedEphemerisId: number = 0;
+  public readonly latestProcessedEphemerisIdByLane: Map<string, number> = new Map();
+
+  private static getEphemerisLaneKey(params: PendingEphemerisEntry['params']): string {
+    return `${params.calculateLunar ? 'L' : '-'}${params.calculateEclipse ? 'E' : '-'}`;
+  }
+
+  public get latestProcessedEphemerisId(): number {
+    let maxId = 0;
+    for (const id of this.latestProcessedEphemerisIdByLane.values()) {
+      if (id > maxId) maxId = id;
+    }
+    return maxId;
+  }
 
   private readonly _callbacks: WorkerTransportCallbacks;
   private readonly _boundOnUnload: () => void;
@@ -198,10 +210,12 @@ export class WorkerTransport {
       this.pendingRequests.delete(id);
       this.signatureToRequestId.delete(requestEntry.signature);
 
-      if (id < this.latestProcessedEphemerisId) {
+      const laneKey = WorkerTransport.getEphemerisLaneKey(requestEntry.params);
+      const latestForLane = this.latestProcessedEphemerisIdByLane.get(laneKey) ?? 0;
+      if (id < latestForLane) {
         return;
       }
-      this.latestProcessedEphemerisId = id;
+      this.latestProcessedEphemerisIdByLane.set(laneKey, id);
       this.notifyCallbacks(requestEntry.callbacks, response.payload, 'Ephemeris');
     } else if (type === 'ANNUAL_SOLAR_SUCCESS' && requestEntry.type === 'ANNUAL_SOLAR') {
       this.pendingRequests.delete(id);
@@ -224,7 +238,13 @@ export class WorkerTransport {
     ) {
       this.pendingRequests.delete(id);
       this.signatureToRequestId.delete(requestEntry.signature);
-      if (type !== 'EPHEMERIS_ERROR' || id >= this.latestProcessedEphemerisId) {
+      if (type === 'EPHEMERIS_ERROR' && requestEntry.type === 'EPHEMERIS') {
+        const laneKey = WorkerTransport.getEphemerisLaneKey(requestEntry.params);
+        const latestForLane = this.latestProcessedEphemerisIdByLane.get(laneKey) ?? 0;
+        if (id >= latestForLane) {
+          this._callbacks.onSyncFallback(requestEntry);
+        }
+      } else {
         this._callbacks.onSyncFallback(requestEntry);
       }
     }
@@ -271,7 +291,7 @@ export class WorkerTransport {
       clearTimeout(timer);
     }
     this.requestTimeouts.clear();
-    this.latestProcessedEphemerisId = 0;
+    this.latestProcessedEphemerisIdByLane.clear();
 
     if (this.worker) {
       try {

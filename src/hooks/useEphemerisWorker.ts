@@ -187,7 +187,11 @@ function useAnnualMatrixWorker<TItem>({
 
     const unsubscribe = requestAsync((items) => {
       if (!cancelled && items) {
-        setWorkerEntry({ key: currentKey, items });
+        setWorkerEntry((prev) =>
+          prev && prev.key === currentKey && prev.items === items
+            ? prev
+            : { key: currentKey, items }
+        );
       }
     });
 
@@ -199,8 +203,12 @@ function useAnnualMatrixWorker<TItem>({
 
   const matchingWorkerItems = workerEntry?.key === currentKey ? workerEntry.items : null;
 
+  // Stale-while-revalidate: once an initial matrix is available and the Web Worker is active,
+  // defer subsequent latitude/year recomputations to the worker instead of blocking the main thread.
+  const canDeferToWorker = isWorkerActive && (matchingWorkerItems !== null || workerEntry !== null);
+
   const syncMatrix = useMemo(() => {
-    if (isWorkerActive && matchingWorkerItems !== null) return null;
+    if (canDeferToWorker) return null;
     const cached = getCached();
     if (cached) return cached;
     try {
@@ -209,9 +217,9 @@ function useAnnualMatrixWorker<TItem>({
       console.error(`[${hookLabel}] Synchronous fallback calculation failed:`, err);
       return [];
     }
-  }, [currentKey, isWorkerActive, matchingWorkerItems, getCached, computeAndSeedSync, hookLabel]);
+  }, [currentKey, canDeferToWorker, getCached, computeAndSeedSync, hookLabel]);
 
-  return matchingWorkerItems ?? syncMatrix ?? [];
+  return matchingWorkerItems ?? (isWorkerActive && workerEntry ? workerEntry.items : syncMatrix) ?? [];
 }
 
 /**

@@ -11,28 +11,24 @@ import { calculateSolarPosition, calculateDaylightDurationPrecise } from './sola
 import { calculateLunarPosition } from './lunar';
 import { calculateGMST, calculateLST } from './core';
 import { calculateSubPointLon } from './terminatorTracks';
+import { LruCache } from '../lruCache';
 
-let lastJd: JulianDate | number | null = null;
-let lastLat: Latitude | number | null = null;
-let lastLon: Longitude | number | null = null;
-let cachedFrame: EphemerisFrame | null = null;
+const EPHEMERIS_FRAME_CACHE_SIZE = 4;
+const frameCache = new LruCache<string, EphemerisFrame>(EPHEMERIS_FRAME_CACHE_SIZE);
 
 /**
- * Resets the 1-entry memoization cache for test isolation.
+ * Resets the bounded LRU memoization cache for test isolation.
  */
 export const _clearEphemerisFrameCache = (): void => {
-  lastJd = null;
-  lastLat = null;
-  lastLon = null;
-  cachedFrame = null;
+  frameCache.clear();
 };
 
 /**
  * Calculates a complete, immutable EphemerisFrame snapshot containing instantaneous
  * solar, lunar, and coordinate ephemeris.
  *
- * Employs a 1-entry reference memoization cache to eliminate redundant calculations
- * across multiple widget subscribers during high-frequency chronometer animation ticks.
+ * Employs a bounded 4-entry LRU cache to eliminate redundant calculations across
+ * both noon-anchored almanac widgets and live-time 60 FPS subscribers without cache thrashing.
  *
  * @param julianDate - Astronomical Julian Date epoch
  * @param latitude - Observer latitude [-90..90]
@@ -45,14 +41,11 @@ export const calculateEphemerisFrame = (
   longitude: Longitude | number
 ): EphemerisFrame => {
   const jd = typeof julianDate === 'number' ? asJulianDate(julianDate) : julianDate;
+  const cacheKey = `${jd}_${latitude}_${longitude}`;
 
-  if (
-    cachedFrame !== null &&
-    lastJd === jd &&
-    lastLat === latitude &&
-    lastLon === longitude
-  ) {
-    return cachedFrame;
+  const cached = frameCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const solarPos = calculateSolarPosition(jd);
@@ -87,10 +80,7 @@ export const calculateEphemerisFrame = (
     isMidnightSun: dayLength >= 24
   };
 
-  lastJd = jd;
-  lastLat = latitude;
-  lastLon = longitude;
-  cachedFrame = frame;
+  frameCache.set(cacheKey, frame);
 
   return frame;
 };
