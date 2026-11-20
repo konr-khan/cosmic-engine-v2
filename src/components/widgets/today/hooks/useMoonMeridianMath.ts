@@ -16,7 +16,6 @@ import {
   calculateMeridianDiurnalChord,
   calculatePolarMeridianCounterpart,
   calculateLunarDeclinationVelocity,
-  CulminationInfo,
   MeridianDiurnalPoint,
   MeridianDiurnalChord,
   PolarMeridianCounterpart,

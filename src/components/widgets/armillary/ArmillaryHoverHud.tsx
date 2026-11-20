@@ -29,7 +29,7 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
   sightingInfo,
   sun,
   moon,
-  earth,
+  earth: _earth,
   physics,
   observerCone,
   latitude = DEFAULT_OBSERVER_LATITUDE,

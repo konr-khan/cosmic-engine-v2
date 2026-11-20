@@ -8,7 +8,7 @@ import {
   calculateEarthObliquity
 } from './astroConstants';
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear } from './core';
-import { JulianDate, Latitude, Longitude, Degrees, asDegrees } from '../../types/units';
+import { JulianDate, Latitude, Degrees, asDegrees } from '../../types/units';
 import { SolarPosition, SolarPositionFull, AnnualSolarMatrixItem } from '../../types/astronomy';
 
 export type { SolarPositionFull, AnnualSolarMatrixItem };

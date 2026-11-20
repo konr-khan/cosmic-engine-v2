@@ -2,7 +2,7 @@ import { Degrees, Latitude } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
 import { toRadians, toDegrees, clamp } from '../core';
 import { DEFAULT_OBSERVER_LATITUDE } from '../astroConstants';
-import { cartesian3DToEquatorial, equatorialToHorizontal, equatorialToHorizontalFast } from './coordinates';
+import { cartesian3DToEquatorial, equatorialToHorizontal } from './coordinates';
 import { ArmillaryProjectionMode } from './types';
 
 const nz = (v: number): number => (v === 0 ? 0 : v);

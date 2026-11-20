@@ -1,6 +1,5 @@
 import { toRadians, toDegrees, clamp, getJulianDate, getDaysInYear, calculateLST } from './core';
 import { 
-  J2000_JD,
   ASTRONOMICAL_UNIT_KM,
   EARTH_RADIUS_WGS84_KM,
   EARTH_RADIUS_MEAN_KM,

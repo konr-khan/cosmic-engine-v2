@@ -17,11 +17,6 @@ import {
   ArmillaryRingVertex,
   ArmillaryRingPath
 } from './types';
-import {
-  equatorialToCartesian3D,
-  horizontalToCartesian3D,
-  rotateEuler3D
-} from './coordinates';
 import { generateParametricRing3D } from './paths';
 
 export interface GenerateArmillaryRingsParams {

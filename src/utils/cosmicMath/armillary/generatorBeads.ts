@@ -4,13 +4,13 @@
  * lunar nodes, and the topocentric observer field-of-view cone for the Armillary model.
  */
 
-import { Degrees, Latitude, Longitude, asDegrees } from '../../../types/units';
-import { Vector2D, Vector3D } from '../../../types/coordinates';
-import { toRadians, toDegrees, clamp, slerp3D } from '../core';
+import { Degrees, Latitude, asDegrees } from '../../../types/units';
+import { Vector3D } from '../../../types/coordinates';
+import { toRadians, clamp, slerp3D } from '../core';
 import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../astroConstants';
 import { EARTH_MILESTONES } from '../milestones';
 import { ASTROLABE_STARS } from './constants';
-import { equatorialToCartesian3D, equatorialToHorizontal, equatorialToHorizontalFast, rotateEuler3D } from './coordinates';
+import { equatorialToHorizontalFast } from './coordinates';
 import { 
   ArmillaryRingVertex, 
   ArmillaryMilestoneNode, 

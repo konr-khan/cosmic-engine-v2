@@ -25,7 +25,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   timeOfDay = 12,
   currentDate = J2000_DATE,
   hoverTime,
-  onHoverTime
+  onHoverTime: _onHoverTime
 }) => {
   const {
     camera,

@@ -49,7 +49,7 @@ export function computeArmillaryObserverCone(params: ComputeArmillaryObserverCon
     timeOfDay,
     gmstDeg,
     blendedEarth3D,
-    blendedSun3D,
+    blendedSun3D: _blendedSun3D,
     transformVertex,
     morphLambda = 0.0,
     projectionMode = 'stereographic',

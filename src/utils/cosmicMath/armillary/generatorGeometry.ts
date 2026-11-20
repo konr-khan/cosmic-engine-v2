@@ -11,7 +11,7 @@ import {
   EARTH_ECCENTRICITY_EXAGGERATED, 
   MOON_ORBIT_INCLINATION_DEG 
 } from '../astroConstants';
-import { equatorialToCartesian3D, rotateEuler3D } from './coordinates';
+import { equatorialToCartesian3D } from './coordinates';
 import { ArmillaryModelMode } from './types';
 
 export interface RawModeGeometry {

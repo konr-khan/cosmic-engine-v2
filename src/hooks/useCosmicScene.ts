@@ -18,7 +18,7 @@ import {
   HoursDecimal, 
   toDegrees
 } from '../types/units';
-import { Vector2D, Vector3D } from '../types/coordinates';
+import { Vector3D } from '../types/coordinates';
 import { EphemerisFrame, EclipseData, SolarPositionFull } from '../types/astronomy';
 import { 
   getJulianDate, 

@@ -59,7 +59,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   showObserverCone = true,
   camera,
   onCameraChange,
-  r0 = 100,
+  r0: _r0 = 100,
   latitude = DEFAULT_OBSERVER_LATITUDE,
   longitude = 15.44,
   timeOfDay = 12.0,

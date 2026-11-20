@@ -7,7 +7,7 @@
 
 import { Degrees, Latitude, Longitude, HoursDecimal, JulianDate, asDegrees } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
-import { clamp, slerp3D, calculateGMST, calculateLST } from '../core';
+import { clamp, slerp3D, calculateGMST } from '../core';
 import { calculateEarthOrbitalPhysics } from '../solar';
 import { calculateMeanLunarNodeLongitude } from '../lunar';
 import {
@@ -26,8 +26,7 @@ import { createEulerCameraRotator } from './coordinates';
 import { createContinuousProjectionResolver } from './projections';
 import { 
   generateContinuousAlmucantars,
-  calculatePlanetaryHour, 
-  calculateReteAngleToLST 
+  calculatePlanetaryHour
 } from './astrolabe';
 import { generateProjectionFocalBeacon } from './focalBeacon';
 import { computeRawModeGeometry } from './generatorGeometry';

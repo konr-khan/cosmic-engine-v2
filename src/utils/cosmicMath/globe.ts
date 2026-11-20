@@ -45,7 +45,7 @@ export function projectContinentLandmasses(
   sunLambdaVal: number,
   camera?: MiniGlobeCamera,
   sunAngleDeg?: number,
-  subsolarCameraVector?: Vector3D
+  _subsolarCameraVector?: Vector3D
 ): string[] {
   if (radius <= 0 || viewMode === 'flat') return [];
 
