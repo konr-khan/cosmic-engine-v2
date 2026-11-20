@@ -13,7 +13,8 @@ import {
   calculatePolarState,
   POLAR_STATES,
   SOLAR_TWILIGHT_THRESHOLDS,
-  calculateAnnualSolarMatrix
+  calculateAnnualSolarMatrix,
+  classifySolarTwilightPhase
 } from './index';
 
 describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
@@ -272,6 +273,19 @@ describe('Cosmic Math: Solar Ephemeris & Twilight Solvers', () => {
         expect(summerSolstice.dayLength).toBeGreaterThan(winterSolstice.dayLength);
         expect(summerSolstice.declination).toBeGreaterThan(23.0);
         expect(winterSolstice.declination).toBeLessThan(-23.0);
+      });
+    });
+
+    describe('Unified Solar Twilight Classification', () => {
+      it('classifies standard elevation tiers and polar regimes deterministically', () => {
+        expect(classifySolarTwilightPhase(15)).toBe('daylight');
+        expect(classifySolarTwilightPhase(-3)).toBe('civil_twilight');
+        expect(classifySolarTwilightPhase(-9)).toBe('nautical_twilight');
+        expect(classifySolarTwilightPhase(-15)).toBe('astronomical_twilight');
+        expect(classifySolarTwilightPhase(-25)).toBe('night');
+        expect(classifySolarTwilightPhase(-25, { dayLength: 0 })).toBe('polar_night');
+        expect(classifySolarTwilightPhase(5, { dayLength: 24 })).toBe('midnight_sun');
+        expect(classifySolarTwilightPhase(-0.5, { horizonThresholdDeg: 0 })).toBe('civil_twilight');
       });
     });
 });

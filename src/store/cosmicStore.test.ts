@@ -281,6 +281,33 @@ describe('Cosmic Store & State Isolation Suite', () => {
     const result3 = useChronometerStore(selectorB);
     expect(result3).toBe(result2);
   });
+
+  it('rejects non-finite/invalid mutations and clamps geographic and time bounds', () => {
+    const prev = cosmicStore.getState();
+
+    cosmicActions.setDate(new Date('invalid-date'));
+    cosmicActions.setTimeOfDay(Number.NaN);
+    cosmicActions.setLatitude(Number.POSITIVE_INFINITY);
+    cosmicActions.setLongitude(Number.NaN);
+    cosmicActions.setSpeed(Number.NaN);
+    cosmicActions.tickTime(Number.NaN);
+
+    expect(cosmicStore.getState()).toEqual(prev);
+
+    cosmicActions.setLatitude(120);
+    cosmicActions.setLongitude(-220);
+    cosmicActions.setTimeOfDay(30);
+    expect(cosmicStore.getState().latitude).toBe(90);
+    expect(cosmicStore.getState().longitude).toBe(-180);
+    expect(cosmicStore.getState().timeOfDay).toBe(24);
+
+    cosmicActions.setLatitude(-95);
+    cosmicActions.setLongitude(250);
+    cosmicActions.setTimeOfDay(-4);
+    expect(cosmicStore.getState().latitude).toBe(-90);
+    expect(cosmicStore.getState().longitude).toBe(180);
+    expect(cosmicStore.getState().timeOfDay).toBe(0);
+  });
 });
 
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
-import { getDayOfYear, projectSkyDomePoint, SOLAR_TWILIGHT_THRESHOLDS } from '../../utils/cosmicMath';
+import { getDayOfYear, projectSkyDomePoint, classifySolarTwilightPhase, SolarTwilightPhase } from '../../utils/cosmicMath';
 import { SolarAlmanacData } from '../../types';
 import {
   AstrolabeDial,
@@ -22,6 +22,16 @@ export interface OrbitalChronometerProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
+
+const CHRONOMETER_TWILIGHT_LABELS: Record<SolarTwilightPhase, string> = {
+  midnight_sun: 'Midnight Sun',
+  daylight: 'Full Daylight',
+  civil_twilight: 'Civil Twilight',
+  nautical_twilight: 'Nautical Twilight',
+  astronomical_twilight: 'Astronomical Twilight',
+  polar_night: 'Polar Night',
+  night: 'Night',
+};
 
 const THEME = {
   date: "#10b981",
@@ -53,22 +63,9 @@ export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
     const { dayLength, solarNoon } = solarData;
     const hourAngleDeg = (timeOfDay - solarNoon) * 15;
     const solarElevationDeg = projectSkyDomePoint(hourAngleDeg, declination, latitude).elevation;
-
-    if (dayLength >= 24) {
-      currentTwilightPhase = "Midnight Sun";
-    } else if (dayLength <= 0 && solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.OFFICIAL) {
-      currentTwilightPhase = "Polar Night";
-    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.OFFICIAL) {
-      currentTwilightPhase = "Full Daylight";
-    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.CIVIL) {
-      currentTwilightPhase = "Civil Twilight";
-    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.NAUTICAL) {
-      currentTwilightPhase = "Nautical Twilight";
-    } else if (solarElevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.ASTRONOMICAL) {
-      currentTwilightPhase = "Astronomical Twilight";
-    } else {
-      currentTwilightPhase = dayLength <= 0 ? "Polar Night" : "Night";
-    }
+    currentTwilightPhase = CHRONOMETER_TWILIGHT_LABELS[
+      classifySolarTwilightPhase(solarElevationDeg, { dayLength })
+    ];
   }
 
   const formatDate = (d: number): string => {

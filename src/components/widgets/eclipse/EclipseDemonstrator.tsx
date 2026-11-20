@@ -35,10 +35,11 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
     return calculateEclipseData(getJulianDate(currentDate, timeOfDay));
   }, [orbitalData?.eclipse, currentDate, timeOfDay]);
 
-  // Discover upcoming eclipses from current date
+  // Discover upcoming eclipses lazily only when the Scanner tab is active
   const upcomingEclipses = useMemo(() => {
-    return findUpcomingEclipses(currentDate || new Date(), 4);
-  }, [currentDate]);
+    if (activeTab !== 'scanner') return [];
+    return findUpcomingEclipses(currentDate, 4);
+  }, [activeTab, currentDate]);
 
   const handleSelectPreset = (preset: { date: Date; timeOfDay?: number } | Date) => {
     if (!onDateChange) return;

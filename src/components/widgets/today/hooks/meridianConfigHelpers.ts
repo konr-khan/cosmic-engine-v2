@@ -11,6 +11,8 @@ import {
   RadialTickLine,
   SkyDomeLunarNode,
   calculateSkyDomeLunarNodes,
+  classifySolarTwilightPhase,
+  SolarTwilightPhase,
 } from '../../../../utils/cosmicMath';
 import {
   MeridianSwathConfig,
@@ -19,15 +21,23 @@ import {
   MeridianPeakTargetConfig,
 } from '../MeridianDomeBase';
 
+const MERIDIAN_TWILIGHT_TIER_LABELS: Record<SolarTwilightPhase, string> = {
+  midnight_sun: 'Daylight',
+  daylight: 'Daylight',
+  civil_twilight: 'Civil Twilight',
+  nautical_twilight: 'Nautical Twilight',
+  astronomical_twilight: 'Astro Twilight',
+  polar_night: 'Polar Night',
+  night: 'Polar Night',
+};
+
 /**
  * Classifies a solar elevation angle (in degrees) into its twilight/daylight tier label.
  */
 export function getSolarTwilightTier(alt: number): string {
-  if (alt >= 0) return 'Daylight';
-  if (alt >= -6) return 'Civil Twilight';
-  if (alt >= -12) return 'Nautical Twilight';
-  if (alt >= -18) return 'Astro Twilight';
-  return 'Polar Night';
+  return MERIDIAN_TWILIGHT_TIER_LABELS[
+    classifySolarTwilightPhase(alt, { horizonThresholdDeg: 0 })
+  ];
 }
 
 /**

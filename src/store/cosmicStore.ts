@@ -98,13 +98,50 @@ export class CosmicStore {
     }
   };
 
-  setDate = (date: Date): void => this.setState({ date });
-  setTimeOfDay = (timeOfDay: number): void => this.setState({ timeOfDay });
-  setDateTime = (date: Date, timeOfDay: number): void => this.setState({ date, timeOfDay });
-  setLatitude = (latitude: number): void => this.setState({ latitude });
-  setLongitude = (longitude: number): void => this.setState({ longitude });
-  setObserverLocation = (latitude: number, longitude: number): void => this.setState({ latitude, longitude });
-  setSpeed = (speed: number): void => this.setState({ speed });
+  setDate = (date: Date): void => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return;
+    this.setState({ date });
+  };
+
+  setTimeOfDay = (timeOfDay: number): void => {
+    if (!Number.isFinite(timeOfDay)) return;
+    this.setState({ timeOfDay: Math.max(0, Math.min(24, timeOfDay)) });
+  };
+
+  setDateTime = (date: Date, timeOfDay: number): void => {
+    const validDate = date instanceof Date && !Number.isNaN(date.getTime());
+    const validTime = Number.isFinite(timeOfDay);
+    if (!validDate && !validTime) return;
+    const partial: Partial<CosmicStoreState> = {};
+    if (validDate) partial.date = date;
+    if (validTime) partial.timeOfDay = Math.max(0, Math.min(24, timeOfDay));
+    this.setState(partial);
+  };
+
+  setLatitude = (latitude: number): void => {
+    if (!Number.isFinite(latitude)) return;
+    this.setState({ latitude: Math.max(-90, Math.min(90, latitude)) });
+  };
+
+  setLongitude = (longitude: number): void => {
+    if (!Number.isFinite(longitude)) return;
+    this.setState({ longitude: Math.max(-180, Math.min(180, longitude)) });
+  };
+
+  setObserverLocation = (latitude: number, longitude: number): void => {
+    const validLat = Number.isFinite(latitude);
+    const validLon = Number.isFinite(longitude);
+    if (!validLat && !validLon) return;
+    const partial: Partial<CosmicStoreState> = {};
+    if (validLat) partial.latitude = Math.max(-90, Math.min(90, latitude));
+    if (validLon) partial.longitude = Math.max(-180, Math.min(180, longitude));
+    this.setState(partial);
+  };
+
+  setSpeed = (speed: number): void => {
+    if (!Number.isFinite(speed)) return;
+    this.setState({ speed });
+  };
 
   setIsPlaying = (isPlaying: boolean): void => {
     this.setState({ isPlaying });
@@ -120,6 +157,7 @@ export class CosmicStore {
   };
 
   tickTime = (deltaSeconds: number): void => {
+    if (!Number.isFinite(deltaSeconds)) return;
     const { timeOfDay, speed, date } = this.state;
     let newTime = timeOfDay + (deltaSeconds * speed) / 3600;
     let newDate = date;

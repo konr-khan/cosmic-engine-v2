@@ -361,7 +361,7 @@ export const findUpcomingEclipses = (
           const peakOffset = peakJD - startJD;
           const isDuplicate = list.some(item => Math.abs(item.dayOffset - peakOffset) < 10);
           if (!isDuplicate && peakOffset >= 0) {
-            const eventDate = new Date(startDate.getTime() + peakOffset * 86400000);
+            const eventDate = julianDateToDate(peakJD);
             const peakHour = (((peakJD + 0.5) % 1) * 24 + 24) % 24;
             list.push({
               date: eventDate,

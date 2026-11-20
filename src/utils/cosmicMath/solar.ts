@@ -318,3 +318,53 @@ export const calculateAnnualSolarMatrix = (year: number, latitude: Latitude): An
   }
   return days;
 };
+
+export type SolarTwilightPhase =
+  | 'midnight_sun'
+  | 'daylight'
+  | 'civil_twilight'
+  | 'nautical_twilight'
+  | 'astronomical_twilight'
+  | 'polar_night'
+  | 'night';
+
+export interface ClassifySolarTwilightOptions {
+  /** Daily daylight duration in hours (0..24) when known, used to distinguish polar regimes. */
+  dayLength?: number;
+  /** Elevation threshold (deg) separating daylight from civil twilight. Defaults to OFFICIAL (-0.833°). */
+  horizonThresholdDeg?: number;
+}
+
+/**
+ * Classifies solar elevation (and optional daily daylight duration) into a canonical twilight/polar phase.
+ * Uses centralized IAU/USNO twilight depression thresholds from `SOLAR_TWILIGHT_THRESHOLDS`.
+ */
+export const classifySolarTwilightPhase = (
+  elevationDeg: number,
+  options: ClassifySolarTwilightOptions = {}
+): SolarTwilightPhase => {
+  const {
+    dayLength,
+    horizonThresholdDeg = SOLAR_TWILIGHT_THRESHOLDS.OFFICIAL
+  } = options;
+
+  if (dayLength !== undefined && dayLength >= 24) {
+    return 'midnight_sun';
+  }
+  if (dayLength !== undefined && dayLength <= 0 && elevationDeg >= horizonThresholdDeg) {
+    return 'polar_night';
+  }
+  if (elevationDeg >= horizonThresholdDeg) {
+    return 'daylight';
+  }
+  if (elevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.CIVIL) {
+    return 'civil_twilight';
+  }
+  if (elevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.NAUTICAL) {
+    return 'nautical_twilight';
+  }
+  if (elevationDeg >= SOLAR_TWILIGHT_THRESHOLDS.ASTRONOMICAL) {
+    return 'astronomical_twilight';
+  }
+  return dayLength !== undefined && dayLength <= 0 ? 'polar_night' : 'night';
+};

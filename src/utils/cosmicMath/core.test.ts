@@ -467,4 +467,19 @@ describe('Cosmic Math: Core Utilities & Julian Dates', () => {
       expect(lstWest).toBeLessThan(360);
     });
   });
+
+  describe('Historical UTC Dates (Years 0-99 AD)', () => {
+    it('preserves historical years 0..99 in createUTCDate and julianDateToDate without 1900 shift', () => {
+      const year44 = createUTCDate(44, 3, 15);
+      expect(year44.getUTCFullYear()).toBe(44);
+      expect(year44.getUTCMonth()).toBe(2);
+      expect(year44.getUTCDate()).toBe(15);
+
+      const jd44 = getJulianDate(year44, 12);
+      const roundTrip = julianDateToDate(jd44);
+      expect(roundTrip.getUTCFullYear()).toBe(44);
+      expect(roundTrip.getUTCMonth()).toBe(2);
+      expect(roundTrip.getUTCDate()).toBe(15);
+    });
+  });
 });

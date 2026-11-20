@@ -85,6 +85,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
     if (!svgRef.current) return;
     
     const rect = svgRef.current.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     const cx = rect.width / 2;
     const cy = rect.height / 2;
     const dx = e.clientX - (rect.left + cx);
@@ -94,18 +95,24 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
     // Dynamic radial threshold scaling based on current render size (viewBox radius = 135)
     const scale = rect.width / 270;
     const scaledR = r / scale;
+    const scaledDx = dx / scale;
 
     if (scaledR > 115 && scaledR <= 135) setActiveRing('date');
     else if (scaledR > 90 && scaledR <= 115) setActiveRing('time');
     else if (scaledR > 65 && scaledR <= 90) setActiveRing('lon');
-    else if (scaledR > 45 && scaledR <= 65 && dx < 10) setActiveRing('lat'); // Left half for Armillary Rail
+    else if (scaledR > 45 && scaledR <= 65 && scaledDx < 10) setActiveRing('lat'); // Left half for Armillary Rail
 
-    (e.target as Element).setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore synthetic events or detached targets without active pointer capture
+    }
   };
 
   const handlePointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     const cx = rect.width / 2;
     const cy = rect.height / 2;
     const dx = e.clientX - (rect.left + cx);
@@ -113,13 +120,14 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
     const r = Math.sqrt(dx * dx + dy * dy);
     const scale = rect.width / 270;
     const scaledR = r / scale;
+    const scaledDx = dx / scale;
 
     // Update hovered ring when not dragging
     if (!activeRing) {
       if (scaledR > 115 && scaledR <= 135) setHoveredRing('date');
       else if (scaledR > 90 && scaledR <= 115) setHoveredRing('time');
       else if (scaledR > 65 && scaledR <= 90) setHoveredRing('lon');
-      else if (scaledR > 45 && scaledR <= 65 && dx < 10) setHoveredRing('lat');
+      else if (scaledR > 45 && scaledR <= 65 && scaledDx < 10) setHoveredRing('lat');
       else setHoveredRing(null);
     }
 
@@ -197,7 +205,9 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
   const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
     setActiveRing(null);
     try {
-      (e.target as Element).releasePointerCapture(e.pointerId);
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
     } catch {
       // Ignore if pointer capture was already released
     }
@@ -262,6 +272,7 @@ export const AstrolabeDial: React.FC<AstrolabeDialProps> = ({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onPointerLeave={handlePointerLeave}
       >
         <defs>

@@ -25,15 +25,33 @@ export const clamp = (val: number, min: number, max: number): number => {
 };
 
 /**
+ * Constructs a UTC Date without JS's legacy 0..99 -> 1900..1999 year mapping.
+ */
+const buildUTCDate = (
+  year: number,
+  monthIndex: number,
+  day: number,
+  hours: number = 0,
+  mins: number = 0,
+  secs: number = 0
+): Date => {
+  const d = new Date(Date.UTC(year, monthIndex, day, hours, mins, secs));
+  if (year >= 0 && year <= 99) {
+    d.setUTCFullYear(year);
+  }
+  return d;
+};
+
+/**
  * Creates a UTC Date representing the specified year, month (1..12), and day (1..31).
  * Avoids local timezone offsets when instantiating astronomical calendar dates.
- * @param year - 4-digit year (e.g., 2026)
+ * @param year - Calendar year (e.g., 2026 or historical years 0..99)
  * @param month - 1-indexed month (1 = January, 12 = December)
  * @param day - 1-indexed day of month (1..31)
  * @returns Date instance anchored to UTC midnight
  */
 export const createUTCDate = (year: number, month: number, day: number): Date => {
-  return new Date(Date.UTC(year, month - 1, day));
+  return buildUTCDate(year, month - 1, day);
 };
 
 /**
@@ -95,7 +113,7 @@ export const julianDateToDate = (jd: JulianDate | number): Date => {
   const hours = Math.floor(totalSecs / 3600);
   const mins = Math.floor((totalSecs % 3600) / 60);
   const secs = totalSecs % 60;
-  return new Date(Date.UTC(year, month - 1, dayInt, hours, mins, secs));
+  return buildUTCDate(year, month - 1, dayInt, hours, mins, secs);
 };
 
 /**

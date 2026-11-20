@@ -392,6 +392,27 @@ describe('Cosmic Math: Eclipse Presets & Syzygy Geometry', () => {
       expect(Number(resWrap.nodeAngleDeg)).toBeCloseTo(270, 5);
       expect(resWrap.nodeAngleRad).toBeCloseTo((3 * Math.PI) / 2, 5);
     });
+
+    it('derives invariant UTC calendar dates in findUpcomingEclipses regardless of startDate time-of-day', () => {
+      const midnightStart = new Date(Date.UTC(2026, 0, 1, 0, 0, 0));
+      const noonStart = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
+      const lateNightStart = new Date(Date.UTC(2026, 0, 1, 23, 45, 0));
+
+      const fromMidnight = findUpcomingEclipses(midnightStart, 4);
+      const fromNoon = findUpcomingEclipses(noonStart, 4);
+      const fromLateNight = findUpcomingEclipses(lateNightStart, 4);
+
+      expect(fromMidnight.length).toBeGreaterThan(0);
+      expect(fromMidnight.length).toBe(fromNoon.length);
+      expect(fromMidnight.length).toBe(fromLateNight.length);
+
+      for (let i = 0; i < fromMidnight.length; i++) {
+        expect(fromMidnight[i].date.getTime()).toBe(fromNoon[i].date.getTime());
+        expect(fromLateNight[i].date.getTime()).toBe(fromNoon[i].date.getTime());
+        expect(fromMidnight[i].title).toBe(fromNoon[i].title);
+        expect(fromLateNight[i].title).toBe(fromNoon[i].title);
+      }
+    });
   });
 });
 
