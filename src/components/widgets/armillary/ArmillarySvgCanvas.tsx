@@ -6,7 +6,7 @@ import {
   ArmillaryCameraState, 
   AlidadeSightingInfo
 } from './types';
-import { calculateAlidadeSighting } from '../../../utils/cosmicMath';
+import { calculateAlidadeSighting, DEFAULT_OBSERVER_LATITUDE } from '../../../utils/cosmicMath';
 import { ArmillaryHoverHud } from './ArmillaryHoverHud';
 import {
   ArmillaryDefs,
@@ -60,7 +60,7 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
   camera,
   onCameraChange,
   r0 = 100,
-  latitude = 47.06,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
   longitude = 15.44,
   timeOfDay = 12.0,
   isFreeReteMode = false,

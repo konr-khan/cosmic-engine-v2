@@ -1,6 +1,6 @@
 import React from 'react';
 import { EclipseData } from '../../../types';
-import { J2000_DATE } from '../../../utils/cosmicMath';
+import { DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE, J2000_DATE } from '../../../utils/cosmicMath';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { MiniMoon } from '../../common/MiniMoon';
 import { useSafeSvgId } from '../../common/useSafeSvgId';
@@ -17,8 +17,8 @@ export interface NodalPlaneVisualizerProps {
 export const NodalPlaneVisualizer: React.FC<NodalPlaneVisualizerProps> = ({ 
   eclipse,
   currentDate = J2000_DATE,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12
 }) => {
   const uid = useSafeSvgId();

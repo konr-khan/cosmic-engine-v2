@@ -122,7 +122,7 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
   - `workers/` — Web Worker ephemeris thread, decomposed multiplexer subsystems, sanitizers & fallback (`ephemerisAnnualCache.ts`, `ephemerisSubscription.ts`, `ephemerisThrottle.ts`, `ephemerisTypes.ts`, `ephemerisWorker.ts`, `ephemerisWorkerManager.ts`, `workerFallback.ts`, `workerSanitizers.ts`, `workerTransport.ts`)
   - `hooks/` — Reactive engine, 3D scene, worker RPC & dashboard layout hooks (`useCosmicEngine.ts`, `useCosmicScene.ts`, `useDashboardLayout.ts`, `useEphemerisWorker.ts`)
   - `components/`
-    - `common/` — Shared SVG & fault-isolation primitives (`MiniGlobe.tsx`, `MiniMoon.tsx`, `PhaseVisual.tsx`, `WidgetSkeleton.tsx`, `WindowErrorBoundary.tsx`, `useSafeSvgId.ts`)
+    - `common/` — Shared SVG, semantic design tokens & fault-isolation primitives (`MiniGlobe.tsx`, `MiniMoon.tsx`, `PhaseVisual.tsx`, `WidgetSkeleton.tsx`, `WindowErrorBoundary.tsx`, `designTokens.ts`, `useSafeSvgId.ts`)
       - `miniglobe/` — Decomposed `<MiniGlobe />` renderers & pure view-mode builders (`MiniGlobeFlat.tsx`, `MiniGlobeSphere.tsx`, `globeGeometry.ts`, `types.ts`)
     - `controls/` — Accessible astrolabe & coordinate controls (`ArmillaryRail.tsx`, `BufferedInput.tsx`, `ControlRing.tsx`, `LatitudeSlider.tsx`, `PolarLongitudeSelector.tsx`)
     - `layout/` — Workspace window grid, navbar & bottom dock (`DashboardWindow.tsx`, `ObsNavbar.tsx`, `OrbitalChronometer.tsx`)

@@ -4,6 +4,7 @@ import { ControlRing } from '../../controls/ControlRing';
 import { ArmillaryRail } from '../../controls/ArmillaryRail';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { useSafeSvgId } from '../../common/useSafeSvgId';
+import { CHRONOMETER_THEME } from '../../common/designTokens';
 
 export interface AstrolabeDialProps {
   date: Date;
@@ -17,12 +18,7 @@ export interface AstrolabeDialProps {
   onLonChange?: (lon: number) => void;
 }
 
-const THEME = {
-  date: "#10b981", // Outer: Emerald (Date)
-  time: "#38bdf8", // 3rd: Sky Blue (Time)
-  lon: "#f59e0b",  // 2nd: Amber (Longitude)
-  lat: "#f43f5e"   // Innermost: Rose (Latitude Armillary Rail)
-};
+const THEME = CHRONOMETER_THEME;
 
 const getAngle = (clientX: number, clientY: number, rect: DOMRect): number => {
   const cx = rect.left + rect.width / 2;

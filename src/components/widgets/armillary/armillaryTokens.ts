@@ -3,15 +3,17 @@
  * Decouples SVG ring, zodiac glyph, and projection laser colors from pure 3D geometry.
  */
 
+import { COSMIC_PALETTE } from '../../common/designTokens';
+
 export const ARMILLARY_RING_COLORS: Record<string, string> = {
-  orbit_path: '#38bdf8',
-  lunar_orbit: '#cbd5e1',
-  equator: '#10b981',
-  ecliptic: '#f59e0b',
-  tropic_cancer: '#d97706',
-  tropic_capricorn: '#94a3b8',
-  horizon: '#06b6d4',
-  colure: '#64748b',
+  orbit_path: COSMIC_PALETTE.sky,
+  lunar_orbit: COSMIC_PALETTE.lunarSilver,
+  equator: COSMIC_PALETTE.emerald,
+  ecliptic: COSMIC_PALETTE.civilAmber,
+  tropic_cancer: COSMIC_PALETTE.amberDeep,
+  tropic_capricorn: COSMIC_PALETTE.slateMuted,
+  horizon: COSMIC_PALETTE.cyan,
+  colure: COSMIC_PALETTE.nauticalSlate,
 };
 
 export const ZODIAC_SIGN_COLORS: Record<string, string> = {
@@ -30,6 +32,6 @@ export const ZODIAC_SIGN_COLORS: Record<string, string> = {
 };
 
 export const LASER_RAY_COLORS = {
-  cardinal: '#38bdf8',
-  intercardinal: '#fbbf24',
+  cardinal: COSMIC_PALETTE.sky,
+  intercardinal: COSMIC_PALETTE.amber,
 } as const;

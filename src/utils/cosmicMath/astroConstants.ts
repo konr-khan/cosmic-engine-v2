@@ -4,7 +4,13 @@
  * Standardized to IAU / WGS-84 / Meeus definitions.
  */
 
-import { Degrees, JulianDate, asDegrees, asJulianDate } from '../../types/units';
+import { Degrees, JulianDate, Latitude, Longitude, asDegrees, asJulianDate } from '../../types/units';
+
+/**
+ * Default observer coordinates (Olympia, WA — Pacific Northwest observatory baseline).
+ */
+export const DEFAULT_OBSERVER_LATITUDE: Latitude = 47.06;
+export const DEFAULT_OBSERVER_LONGITUDE: Longitude = -122.81;
 
 /**
  * Standard J2000.0 astronomical epoch in Julian Date (2000 January 1.5 TT).

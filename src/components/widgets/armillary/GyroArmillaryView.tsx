@@ -4,6 +4,8 @@ import {
   getJulianDate, 
   calculateEphemerisFrame,
   calculateMeanLunarNodeLongitude,
+  DEFAULT_OBSERVER_LATITUDE,
+  DEFAULT_OBSERVER_LONGITUDE,
   J2000_DATE
 } from '../../../utils/cosmicMath';
 import { GyroArmillaryViewProps, ArmillaryCameraState, ArmillaryProjectionMode } from './types';
@@ -18,8 +20,8 @@ export { computeStagedCamera };
 export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
   solarData,
   orbitalData,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12,
   currentDate = J2000_DATE,
   hoverTime,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { EclipseData } from '../../../types';
-import { getPhaseName, calculateLunarIllumination, calculateEarthOrbitalPhysics, getJulianDate, J2000_DATE } from '../../../utils/cosmicMath';
+import { getPhaseName, calculateLunarIllumination, calculateEarthOrbitalPhysics, getJulianDate, DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE, J2000_DATE } from '../../../utils/cosmicMath';
 import { useSafeSvgId } from '../../common/useSafeSvgId';
 import { ShadowRayHoverHud } from './ShadowRayHoverHud';
 import { LiveSyzygyView, SyzygyDefsIds } from './LiveSyzygyView';
@@ -16,8 +16,8 @@ export interface ShadowRayDiagramProps {
 export const ShadowRayDiagram: React.FC<ShadowRayDiagramProps> = ({
   eclipse,
   currentDate = J2000_DATE,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12
 }) => {
   const [hoveredEntity, setHoveredEntity] = useState<'sun' | 'earth' | 'moon' | 'umbra' | 'penumbra' | null>(null);

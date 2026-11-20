@@ -14,7 +14,7 @@ import React, { useMemo } from 'react';
 import { Degrees, Latitude, Longitude, HoursDecimal, toRadians } from '../../types/units';
 import { Vector3D } from '../../types/coordinates';
 import { WORLD_LANDMASSES } from '../../utils/cosmicMath/geoData';
-import { EARTH_AXIAL_OBLIQUITY_J2000_DEG } from '../../utils/cosmicMath';
+import { EARTH_AXIAL_OBLIQUITY_J2000_DEG, DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../../utils/cosmicMath';
 import { 
   MiniGlobeViewMode, 
   MiniGlobeCamera, 
@@ -111,8 +111,8 @@ export const MiniGlobe: React.FC<MiniGlobeProps> = ({
   subsolarCameraVector,
   declination = 0,
   camera,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12.0,
   obliquityDeg = Number(EARTH_AXIAL_OBLIQUITY_J2000_DEG),
   showTerminator = true,

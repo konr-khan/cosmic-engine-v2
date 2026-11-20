@@ -1,6 +1,7 @@
 import { Degrees, Latitude } from '../../../types/units';
 import { Vector2D, Vector3D } from '../../../types/coordinates';
 import { toRadians, toDegrees, clamp } from '../core';
+import { DEFAULT_OBSERVER_LATITUDE } from '../astroConstants';
 import { cartesian3DToEquatorial, equatorialToHorizontal, equatorialToHorizontalFast } from './coordinates';
 import { ArmillaryProjectionMode } from './types';
 
@@ -174,7 +175,7 @@ export function createContinuousProjectionResolver(
   targetMode: ArmillaryProjectionMode,
   transT: number = 1.0,
   r0: number = 100,
-  latitude: Latitude = 47.06,
+  latitude: Latitude = DEFAULT_OBSERVER_LATITUDE,
   lstDeg: Degrees | number = 0
 ): (p3d: Vector3D) => Vector2D {
   const t = clamp(transT, 0, 1);
@@ -300,7 +301,7 @@ export function computeContinuousProjection2D(
   targetMode: ArmillaryProjectionMode,
   transT: number = 1.0,
   r0: number = 100,
-  latitude: Latitude = 47.06,
+  latitude: Latitude = DEFAULT_OBSERVER_LATITUDE,
   lstDeg: Degrees | number = 0
 ): Vector2D {
   return createContinuousProjectionResolver(fromMode, targetMode, transT, r0, latitude, lstDeg)(p3d);

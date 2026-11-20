@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Layers, Eye, Calendar } from 'lucide-react';
-import { findUpcomingEclipses, calculateEclipseData, getJulianDate, J2000_DATE } from '../../../utils/cosmicMath';
+import { findUpcomingEclipses, calculateEclipseData, getJulianDate, DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE, J2000_DATE } from '../../../utils/cosmicMath';
 import { EclipseStatusBadge } from './EclipseStatusBadge';
 import { ShadowRayDiagram } from './ShadowRayDiagram';
 import { NodalPlaneVisualizer } from './NodalPlaneVisualizer';
@@ -23,8 +23,8 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
   onDateChange, 
   onTimeChange, 
   orbitalData,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12
 }) => {
   const [activeTab, setActiveTab] = useState<'geometry' | 'sky' | 'scanner'>('geometry');

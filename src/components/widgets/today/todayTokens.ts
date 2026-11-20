@@ -1,4 +1,5 @@
 import { TwilightPhase, LunarElevationPhase } from '../../../utils/cosmicMath/today/elevation';
+import { NODAL_COLORS } from '../../common/designTokens';
 
 export const SOLAR_TWILIGHT_BADGE_CLASSES: Record<TwilightPhase, string> = {
   daylight: 'text-amber-400',
@@ -14,7 +15,4 @@ export const LUNAR_ELEVATION_BADGE_CLASSES: Record<LunarElevationPhase, string> 
   below_horizon: 'text-slate-500'
 };
 
-export const NODAL_HEMISPHERE_COLORS = {
-  ascending: '#38bdf8',
-  descending: '#f43f5e'
-} as const;
+export const NODAL_HEMISPHERE_COLORS = NODAL_COLORS;

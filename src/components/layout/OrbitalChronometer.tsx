@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
 import { getDayOfYear, projectSkyDomePoint, classifySolarTwilightPhase, SolarTwilightPhase } from '../../utils/cosmicMath';
+import { CHRONOMETER_THEME } from '../common/designTokens';
 import { SolarAlmanacData } from '../../types';
 import {
   AstrolabeDial,
@@ -31,13 +32,6 @@ const CHRONOMETER_TWILIGHT_LABELS: Record<SolarTwilightPhase, string> = {
   astronomical_twilight: 'Astronomical Twilight',
   polar_night: 'Polar Night',
   night: 'Night',
-};
-
-const THEME = {
-  date: "#10b981",
-  time: "#38bdf8",
-  lon: "#f59e0b",
-  lat: "#f43f5e"
 };
 
 export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
@@ -104,10 +98,10 @@ export const OrbitalChronometer: React.FC<OrbitalChronometerProps> = ({
           </div>
 
           <div className="flex items-center gap-6 text-xs font-mono">
-            <span>LAT: <strong style={{ color: THEME.lat }}>{formatLat(latitude)}</strong></span>
-            <span>LON: <strong style={{ color: THEME.lon }}>{formatLon(longitude)}</strong></span>
-            <span>TIME: <strong style={{ color: THEME.time }}>{formatTimeStr(timeOfDay)}</strong></span>
-            <span>DATE: <strong style={{ color: THEME.date }}>{formatDate(dayOfYear)}</strong></span>
+            <span>LAT: <strong style={{ color: CHRONOMETER_THEME.lat }}>{formatLat(latitude)}</strong></span>
+            <span>LON: <strong style={{ color: CHRONOMETER_THEME.lon }}>{formatLon(longitude)}</strong></span>
+            <span>TIME: <strong style={{ color: CHRONOMETER_THEME.time }}>{formatTimeStr(timeOfDay)}</strong></span>
+            <span>DATE: <strong style={{ color: CHRONOMETER_THEME.date }}>{formatDate(dayOfYear)}</strong></span>
           </div>
         </div>
       ) : (

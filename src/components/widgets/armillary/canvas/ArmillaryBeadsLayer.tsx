@@ -9,6 +9,8 @@ import {
 import { MiniGlobe } from '../../../common/MiniGlobe';
 import { MiniMoon } from '../../../common/MiniMoon';
 import { ArmillaryDefsIds, DEFAULT_ARMILLARY_DEFS_IDS } from './ArmillaryDefs';
+import { DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../../../../utils/cosmicMath';
+import { COSMIC_PALETTE, MILESTONE_COLORS } from '../../../common/designTokens';
 
 export interface ArmillaryBeadsLayerProps {
   earth: ArmillaryModelOutput['earth'];
@@ -84,8 +86,8 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
   const cameraYaw = camera?.yaw ?? 0;
   const cameraRoll = camera?.roll ?? 0;
 
-  const lat = latitude ?? 47.06;
-  const lon = longitude ?? -122.81;
+  const lat = latitude ?? DEFAULT_OBSERVER_LATITUDE;
+  const lon = longitude ?? DEFAULT_OBSERVER_LONGITUDE;
   const sunLambda = sunLambdaDeg ?? (sun ? Number(sun.lambdaDeg ?? sun.raDeg ?? 0) : 0);
 
   const is3DView = miniGlobeViewMode === 'euler3d';
@@ -118,7 +120,7 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
           y1={earth.screenPos.y}
           x2={sun.screenPos.x}
           y2={sun.screenPos.y}
-          stroke="#fbbf24"
+          stroke={COSMIC_PALETTE.amber}
           strokeWidth="0.75"
           strokeDasharray="3 3"
           opacity={lunarOrbitOpacity * 0.6}
@@ -130,10 +132,10 @@ export const ArmillaryBeadsLayer: React.FC<ArmillaryBeadsLayerProps> = ({
       {milestonesOpacity > 0.05 && milestones.map((m) => {
         const isHovered = !isDragging && hoveredMilestone?.id === m.id;
         const mColor = m.color || (
-          m.id === 'perihelion' ? '#ef4444' :
-          m.id === 'mar_equinox' || m.id === 'sep_equinox' ? '#c084fc' :
-          m.id === 'jun_solstice' || m.id === 'dec_solstice' ? '#f59e0b' :
-          m.id === 'aphelion' ? '#38bdf8' : '#38bdf8'
+          m.id === 'perihelion' ? MILESTONE_COLORS.perihelion :
+          m.id === 'mar_equinox' || m.id === 'sep_equinox' ? MILESTONE_COLORS.equinox :
+          m.id === 'jun_solstice' || m.id === 'dec_solstice' ? MILESTONE_COLORS.solstice :
+          MILESTONE_COLORS.aphelion
         );
         return (
           <g

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TidalVectors } from "../../../types";
 import { OrbitalAngles } from "../../../types/coordinates";
-import { TOPDOWN_EARTH_BASE_RADIUS } from "../../../utils/cosmicMath";
+import { TOPDOWN_EARTH_BASE_RADIUS, DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from "../../../utils/cosmicMath";
 import { TidalWaveOscillator } from "../lunar/TidalWaveOscillator";
 import { MiniGlobe } from "../../common/MiniGlobe";
 import { MiniMoon } from "../../common/MiniMoon";
@@ -28,8 +28,8 @@ export const MicroTideView: React.FC<MicroTideViewProps> = ({
   angles = { sunDegrees: 0, moonDegrees: 0 },
   localTideStatus = "Low Tide",
   phaseValue,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12.0,
   sunLambdaDeg = 0,
   nodeLongitude,

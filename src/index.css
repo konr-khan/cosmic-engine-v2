@@ -43,3 +43,41 @@
     color: #ffffff;
   }
 }
+
+@keyframes ce-enter {
+  from {
+    opacity: var(--ce-enter-opacity, 1);
+    transform: scale(var(--ce-enter-scale, 1));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@layer utilities {
+  .animate-in {
+    animation-name: ce-enter;
+    animation-duration: var(--tw-duration, 150ms);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }
+
+  .fade-in {
+    --ce-enter-opacity: 0;
+  }
+
+  .zoom-in-90 {
+    --ce-enter-scale: 0.9;
+  }
+
+  .zoom-in-95 {
+    --ce-enter-scale: 0.95;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-in {
+    animation: none;
+  }
+}

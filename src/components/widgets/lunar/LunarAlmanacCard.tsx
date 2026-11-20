@@ -3,6 +3,8 @@ import { Compass, Calendar } from 'lucide-react';
 import { 
   getDaysInYear, 
   getDayOfYear,
+  DEFAULT_OBSERVER_LATITUDE,
+  DEFAULT_OBSERVER_LONGITUDE,
   J2000_DATE
 } from '../../../utils/cosmicMath';
 import { formatTime } from '../../../utils/formatters';
@@ -29,8 +31,8 @@ export interface LunarAlmanacCardProps {
 export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({ 
   orbitalData, 
   onSetTime, 
-  latitude = 47.06, 
-  longitude = -122.81, 
+  latitude = DEFAULT_OBSERVER_LATITUDE, 
+  longitude = DEFAULT_OBSERVER_LONGITUDE, 
   currentDay: propCurrentDay = 1, 
   onDayChange, 
   currentDate = J2000_DATE, 

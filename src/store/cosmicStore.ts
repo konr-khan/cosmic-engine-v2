@@ -1,5 +1,6 @@
 import { useSyncExternalStore, useRef, useCallback } from 'react';
 import { CosmicStoreState, StateSelector, StateUpdater } from '../types/store';
+import { DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../utils/cosmicMath/astroConstants';
 
 export type { CosmicStoreState };
 
@@ -53,8 +54,8 @@ export class CosmicStore {
       timeOfDay: initialTimeOfDay,
       speed: 1,
       isPlaying: false,
-      latitude: 47.06,
-      longitude: -122.81,
+      latitude: DEFAULT_OBSERVER_LATITUDE,
+      longitude: DEFAULT_OBSERVER_LONGITUDE,
     };
 
     this.listeners = new Set();

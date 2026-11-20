@@ -5,7 +5,7 @@ import { TerminatorLandmasses } from './TerminatorLandmasses';
 import { TerminatorGroundTracks } from './TerminatorGroundTracks';
 import { useTerminatorMapMath } from './hooks/useTerminatorMapMath';
 import { useSafeSvgId } from '../../common/useSafeSvgId';
-import { J2000_DATE } from '../../../utils/cosmicMath';
+import { DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE, J2000_DATE } from '../../../utils/cosmicMath';
 
 export interface TerminatorMapProps {
   solarData?: SolarAlmanacData | null;
@@ -22,8 +22,8 @@ export interface TerminatorMapProps {
 export const TerminatorMap: React.FC<TerminatorMapProps> = ({ 
   solarData, 
   orbitalData,
-  latitude = 47.06, 
-  longitude = -122.81, 
+  latitude = DEFAULT_OBSERVER_LATITUDE, 
+  longitude = DEFAULT_OBSERVER_LONGITUDE, 
   timeOfDay = 12, 
   hoverTime,
   currentDate = J2000_DATE,

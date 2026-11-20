@@ -4,6 +4,8 @@
  * tokens from pure celestial mechanics and physical ephemeris data.
  */
 
+import { MILESTONE_COLORS } from '../../common/designTokens';
+
 export interface MilestoneVisualToken {
   color: string;
   textColor: string;
@@ -20,7 +22,7 @@ export const MILESTONE_VISUAL_TOKENS: Record<string, MilestoneVisualToken> = {
   perihelion: {
     rawX: -44.79,
     rawY: -194.92,
-    color: '#ef4444',
+    color: MILESTONE_COLORS.perihelion,
     textColor: 'text-rose-400',
     fillColor: 'fill-rose-400',
     textAnchor: 'end',
@@ -31,7 +33,7 @@ export const MILESTONE_VISUAL_TOKENS: Record<string, MilestoneVisualToken> = {
   mar_equinox: {
     rawX: -200,
     rawY: 0,
-    color: '#c084fc',
+    color: MILESTONE_COLORS.equinox,
     textColor: 'text-purple-300',
     fillColor: 'fill-purple-300',
     textAnchor: 'end',
@@ -42,7 +44,7 @@ export const MILESTONE_VISUAL_TOKENS: Record<string, MilestoneVisualToken> = {
   jun_solstice: {
     rawX: 0,
     rawY: 200,
-    color: '#f59e0b',
+    color: MILESTONE_COLORS.solstice,
     textColor: 'text-amber-400',
     fillColor: 'fill-amber-400',
     textAnchor: 'middle',
@@ -53,7 +55,7 @@ export const MILESTONE_VISUAL_TOKENS: Record<string, MilestoneVisualToken> = {
   aphelion: {
     rawX: 44.79,
     rawY: 194.92,
-    color: '#38bdf8',
+    color: MILESTONE_COLORS.aphelion,
     textColor: 'text-sky-400',
     fillColor: 'fill-sky-400',
     textAnchor: 'start',
@@ -64,7 +66,7 @@ export const MILESTONE_VISUAL_TOKENS: Record<string, MilestoneVisualToken> = {
   sep_equinox: {
     rawX: 200,
     rawY: 0,
-    color: '#c084fc',
+    color: MILESTONE_COLORS.equinox,
     textColor: 'text-purple-300',
     fillColor: 'fill-purple-300',
     textAnchor: 'start',
@@ -75,7 +77,7 @@ export const MILESTONE_VISUAL_TOKENS: Record<string, MilestoneVisualToken> = {
   dec_solstice: {
     rawX: 0,
     rawY: -200,
-    color: '#f59e0b',
+    color: MILESTONE_COLORS.solstice,
     textColor: 'text-amber-400',
     fillColor: 'fill-amber-400',
     textAnchor: 'middle',

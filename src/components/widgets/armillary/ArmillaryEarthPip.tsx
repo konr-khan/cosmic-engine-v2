@@ -2,6 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { ArmillaryProjectionMode, ArmillaryCameraState } from './types';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { Vector3D } from '../../../types/coordinates';
+import { DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../../../utils/cosmicMath';
 
 export interface ArmillaryEarthPipProps {
   camera: ArmillaryCameraState;
@@ -21,8 +22,8 @@ export type PipSize = 'compact' | 'standard' | 'large';
 
 export const ArmillaryEarthPip: React.FC<ArmillaryEarthPipProps> = ({
   camera,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12.0,
   sunLambdaDeg = 0,
   declination,

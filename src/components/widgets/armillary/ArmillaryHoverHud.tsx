@@ -1,5 +1,6 @@
 import React from 'react';
 import { HoveredStarInfo, AlidadeSightingInfo, ArmillaryModelOutput, ArmillaryMilestoneNode, ArmillaryLunarNodes } from './types';
+import { DEFAULT_OBSERVER_LATITUDE } from '../../../utils/cosmicMath';
 
 export interface ArmillaryHoverHudProps {
   hoveredStar: HoveredStarInfo | null;
@@ -31,7 +32,7 @@ export const ArmillaryHoverHud: React.FC<ArmillaryHoverHudProps> = ({
   earth,
   physics,
   observerCone,
-  latitude = 47.06,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
   longitude = 15.44
 }) => {
   return (

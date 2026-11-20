@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, Clock } from 'lucide-react';
-import { getDaysInYear } from '../../../utils/cosmicMath';
+import { getDaysInYear, DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../../../utils/cosmicMath';
 import { useAnnualSolarWorker } from '../../../hooks/useEphemerisWorker';
 import { AnnualSolarMatrixItem, SolarAlmanacData } from '../../../types';
 import { SolarShortcutsRail, SolarShortcut } from './SolarShortcutsRail';
@@ -24,8 +24,8 @@ export interface SolarAlmanacProps {
 }
 
 export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({ 
-  latitude = 47.06, 
-  longitude = -122.81, 
+  latitude = DEFAULT_OBSERVER_LATITUDE, 
+  longitude = DEFAULT_OBSERVER_LONGITUDE, 
   currentDay = 1, 
   onDayChange, 
   year = 2026, 

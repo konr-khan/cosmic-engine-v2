@@ -4,6 +4,7 @@ import { EARTH_MILESTONES } from './milestones';
 import { OrbitSvgCanvasProps, OrbitMilestoneInput } from './types';
 import { MiniGlobe } from '../../common/MiniGlobe';
 import { MiniMoon } from '../../common/MiniMoon';
+import { DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../../../utils/cosmicMath';
 
 export interface ExtendedOrbitSvgCanvasProps extends OrbitSvgCanvasProps {
   sunLambdaDeg?: number;
@@ -32,8 +33,8 @@ export const OrbitSvgCanvas: React.FC<ExtendedOrbitSvgCanvasProps> = ({
   onHover,
   milestones = EARTH_MILESTONES,
   sunLambdaDeg = 0,
-  latitude = 47.06,
-  longitude = -122.81,
+  latitude = DEFAULT_OBSERVER_LATITUDE,
+  longitude = DEFAULT_OBSERVER_LONGITUDE,
   timeOfDay = 12.0,
   lunarOrbitRadius,
   lunarOrbitPath,
