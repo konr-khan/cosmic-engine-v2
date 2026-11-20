@@ -1,7 +1,7 @@
 # Project: Cosmic Engine V2.0 — Feature Inventory & Milestone Matrix
 
 > [!NOTE]
-> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F98`)** and **Milestone & Phase Matrix (`M1–M46`)**.
+> **Architectural SSoT Split (M42)**: Live system topology, 3D scene-graph dataflow diagrams, runtime subsystem contracts, TypeScript domain model references, canonical code layout, and the Subsystem Task Routing Matrix now reside in **[`ARCHITECTURE.md`](ARCHITECTURE.md)**. This document serves exclusively as the historical **Feature Inventory (`F1–F102`)** and **Milestone & Phase Matrix (`M1–M47`)**.
 
 ---
 
@@ -106,6 +106,10 @@
 | F96 | Persistent 60 FPS Ephemeris Subscriptions & Fail-Closed AST/Doc Gates (Phase 2) | Introduced persistent `createEphemerisSubscription()` channels preventing 16.6 ms in-flight cancellations (`DE-52`), hardened `useAnnualMatrixWorker` error guards, extracted `armillaryTokens.ts` & `todayTokens.ts`, and eliminated silent swallows in `lintUnitSafety.mjs` & `syncDocMetrics.mjs` | M46 | ADR-0046 |
 | F97 | Shared Widget Helpers & Real-DOM React 19 `<StrictMode>` `jsdom` Harness (Phase 3.1–3.4) | Extracted `useLunarDomeSharedMath.ts` and `findMirrorSolarDay` helper, scoped quad-mode fallback `<defs>` IDs, eliminated `as any` casts in `OrbitSvgCanvas.tsx`, and added opt-in `jsdom` `<StrictMode>` DOM suites (`workerLifecycle.dom.test.tsx`, `App.dom.test.tsx`) | M46 | ADR-0046 |
 | F98 | Modular Web Worker Multiplexer Decomposition (Phase 3.5) | Decomposed 840-line `ephemerisWorkerManager.ts` into acyclic focused modules (`ephemerisTypes.ts`, `workerTransport.ts`, `ephemerisThrottle.ts`, `ephemerisSubscription.ts`, `ephemerisAnnualCache.ts`) while preserving full facade/test API compatibility and 1:1 `ARCHITECTURE.md` inventory | M46 | ADR-0046 |
+| F99 | Runtime Correctness, Lazy Eclipse Scanner & Store Input Hardening | Fixed `findUpcomingEclipses` calendar-day drift via `julianDateToDate(peakJD)` (`DE-54`), gated eclipse scanning on active Scanner tab, hardened `AstrolabeDial` zero-width/pointer capture, unified `classifySolarTwilightPhase`, preserved historical years `0–99` via `setUTCFullYear`, clamped `CosmicStore` mutations, and declared `@babel/parser` explicitly | M47 | ADR-0047 |
+| F100 | Stale-While-Revalidate Annual Worker, Per-Lane Monotonicity & 4-Entry Frame LRU | Enabled off-thread annual matrix recomputation in `useAnnualMatrixWorker` (`DE-53`), scoped `WorkerTransport` sequence filtering per capability lane, extracted pure `calculateOrbitalTideMetrics`, upgraded `frame.ts` to a 4-entry LRU cache, bypassed no-op `cosmicStore` subscriptions, slimmed `EphemerisWorkerManager`, and relocated `mockWorkerFixture.ts` to `tests/fixtures/` | M47 | ADR-0047 |
+| F101 | Interactive `jsdom` `<StrictMode>` Suites, ARIA/Keyboard Controls & Semantic Tokens | Added `layoutInteractions.dom.test.tsx` and `widgetsInteractions.dom.test.tsx`, ARIA roles and keyboard 3D camera/zoom navigation across `DashboardWindow`, `ObsNavbar`, `EclipseDemonstrator`, and `ArmillarySvgCanvas`, centralized `DEFAULT_OBSERVER_LATITUDE`/`LONGITUDE` and `designTokens.ts`, and implemented lightweight CSS enter keyframes in `src/index.css` | M47 | ADR-0047 |
+| F102 | Oversized Module Splits, Layout Hook Micro-Perf, CI & Correctness ESLint | Split `meridianConfigHelpers.ts`, `cameras.ts`, and `ArmillaryBeadsLayer.tsx` into focused submodules, consolidated `useDashboardLayout` single-pass `localStorage` reads + `React.memo(DashboardWindow)`, deduplicated `npm run verify`, and added `.github/workflows/ci.yml` + correctness-only `eslint.config.js` | M47 | ADR-0047 |
 
 ## 2. Milestones
 
@@ -117,7 +121,7 @@
 | **M11–M15** | Ground Truth Kinematics & Nodal Crossing | Prograde orbits, physics invariants, depth sorting, code-splitting, true node solver, ADR-0009–0015 |
 | **M16–M20** | Horizon Dome, Meridian Matrix & Zoom | Culmination solver, quad-view meridian, atomic hover store, polar chords, living marble, ADR-0016–0020 |
 
-### Recent Milestones (M21–M46)
+### Recent Milestones (M21–M47)
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M21 | Meridian Profile Solstice Bifurcation & Sub-Horizon Twilight | `SunMeridianDome.tsx`, `MeridianDomeBase.tsx`, `meridian.ts`, ADR-0021 | M1–M20 | DONE |
@@ -146,9 +150,10 @@
 | M44 | Living Specification Consolidation & Automated Documentation Integrity Gatekeeper | `MATH_SPEC.md`, `DESIGN_SYSTEM.md`, `AGENTS.md`, `ARCHITECTURE.md`, `PROJECT.md`, `DEAD_ENDS.md`, `docs/adr/`, `scripts/lintUnitSafety.mjs`, `scripts/syncDocMetrics.mjs`, `unitSafety.test.ts`, ADR-0044 | M1–M43 | DONE |
 | M45 | Codebase Health Refactoring, SVG `<defs>` Isolation & Self-Verifying Documentation Parity | `src/workers/`, `src/hooks/`, `src/components/`, `AGENTS.md`, `ARCHITECTURE.md`, `README.md`, `DEAD_ENDS.md`, `PROJECT.md`, `docs/`, `scripts/lintUnitSafety.mjs`, `scripts/syncDocMetrics.mjs`, `unitSafety.test.ts`, ADR-0045 | M1–M44 | DONE |
 | M46 | Phases 1–3 Remediation, `<StrictMode>` DOM Test Harness & Worker Subsystem Decomposition | `src/utils/cosmicMath/`, `src/components/`, `src/hooks/`, `src/workers/`, `src/App.dom.test.tsx`, `src/hooks/workerLifecycle.dom.test.tsx`, `scripts/lintUnitSafety.mjs`, `scripts/syncDocMetrics.mjs`, `AGENTS.md`, `ARCHITECTURE.md`, `DEAD_ENDS.md`, `PROJECT.md`, ADR-0046 | M1–M45 | DONE |
+| M47 | Phases 1–5 Codebase Review Remediation: Worker Offloading, A11y/DOM Suites, Tokens, Splits & CI | `src/utils/cosmicMath/`, `src/store/`, `src/workers/`, `src/hooks/`, `src/components/`, `src/index.css`, `tests/fixtures/`, `eslint.config.js`, `.github/workflows/ci.yml`, `ARCHITECTURE.md`, `DEAD_ENDS.md`, `PROJECT.md`, ADR-0047 | M1–M46 | DONE |
 
 ---
 
 > [!TIP]
 > - **Architecture & Code Layout**: See [`ARCHITECTURE.md`](ARCHITECTURE.md) for interface contracts, canonical code layout, and the Subsystem Task Routing Matrix.
-> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0046`).
+> - **Architecture Decision Records**: Full milestone rationale is archived in [`docs/adr/`](docs/adr/) (`0001` through `0047`).

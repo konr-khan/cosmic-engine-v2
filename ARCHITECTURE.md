@@ -4,7 +4,7 @@ Welcome to the authoritative structural blueprint for **Cosmic Engine V2.0**. Th
 
 > [!NOTE]
 > - For agent operating protocols, coding standards, and cognitive guardrails, consult [`AGENTS.md`](AGENTS.md).
-> - For the historical Feature Inventory (`F1–F98`) and Milestone Matrix (`M1–M46`), consult [`PROJECT.md`](PROJECT.md).
+> - For the historical Feature Inventory (`F1–F102`) and Milestone Matrix (`M1–M47`), consult [`PROJECT.md`](PROJECT.md).
 > - For astronomical equations and coordinate transformations, consult [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
 > - For semantic color tokens and SVG vector stroke encodings, consult [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
 
@@ -34,8 +34,8 @@ Cosmic Engine V2.0 executes a decoupled dual-pipeline architecture: a **60 FPS R
         ┌──────────────────────────────────────────────┐         ┌──────────────────────────────────────────────┐
         │ Hook Facade: `useCosmicEngine(params)`       │         │ Camera Rigs (`src/utils/cosmicMath/scene/`)   │
         │ • Parameterized selective store selectors    │         │ • projectHeliocentricTopDown (Ecliptic)      │
-        │ • 1-entry frame memoization cache            │         │ • projectGeocentricTransverse (Syzygy)       │
-        │ • Synchronous warm cache bootstrap           │         │ • projectGeocentricAxial (Anti-Solar)        │
+        │ • 4-entry LRU frame memoization cache        │         │ • projectGeocentricTransverse (Syzygy)       │
+        │ • Stale-while-revalidate annual worker hook  │         │ • projectGeocentricAxial (Anti-Solar)        │
         └──────────────────────┬───────────────────────┘         └──────────────────────┬───────────────────────┘
                                │                                                        │
                                │                                 ┌──────────────────────┴───────────────────────┐
@@ -61,7 +61,7 @@ Cosmic Engine V2.0 executes a decoupled dual-pipeline architecture: a **60 FPS R
 - **Pure Mathematical Engine (`src/utils/cosmicMath/`)**: Deterministic, pure domain functions free of React state, UI side-effects, or unparameterized `new Date()` calls. All algorithms, coordinate systems (Alt-Az, Equatorial, Ecliptic), and polar singularity clamping criteria conform strictly to [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md).
 - **External Chronometer Store (`src/store/cosmicStore.ts`)**: Decouples 60 FPS animation ticking from React render trees using `useSyncExternalStore` with granular selector memoization (`lastSelectorRef`, e.g. `useChronometerStore(s => s.timeOfDay)`) and full IEEE-754 double-precision time accumulation.
 - **Atomic Hover Store (`src/store/hoverStore.ts`)**: Isolates high-frequency ribbon scrubber state (`hoverTime`, `hoverDate`, `setHoverState`, `setHoverTime`, `setHoverDate`), eliminating 60 FPS re-render cascades across unhovered widgets.
-- **Web Worker Ephemeris Processing (`src/workers/`)**: Multiplexes calculation requests through the [`ephemerisWorkerManager.ts`](src/workers/ephemerisWorkerManager.ts) facade delegating across cohesive submodules (`workerTransport.ts`, `ephemerisThrottle.ts`, `ephemerisSubscription.ts`, `ephemerisAnnualCache.ts`, `ephemerisTypes.ts`) with 100ms trailing-edge flag-merging throttling, monotonic integer sequence stamping (`requestId`), synchronous mount-time LRU cache seeding, and deterministic main-thread fallback (`workerFallback.ts`).
+- **Web Worker Ephemeris Processing (`src/workers/`)**: Multiplexes calculation requests through the [`ephemerisWorkerManager.ts`](src/workers/ephemerisWorkerManager.ts) facade delegating across cohesive submodules (`workerTransport.ts`, `ephemerisThrottle.ts`, `ephemerisSubscription.ts`, `ephemerisAnnualCache.ts`, `ephemerisTypes.ts`) with 100ms trailing-edge flag-merging throttling, per-lane monotonic sequence stamping (`latestProcessedEphemerisIdByLane`), stale-while-revalidate annual matrix offloading, and deterministic main-thread fallback (`workerFallback.ts`).
 - **Fault-Tolerant Window Grid (`DashboardWindow.tsx`)**: Every lazy-loaded visualizer is wrapped in a React Error Boundary (`WindowErrorBoundary.tsx`) with dynamic chunk retry mechanisms, isolating rendering exceptions to individual observatory windows.
 - **Dual-Perspective Eclipse Geometry**: Synchronized transverse syzygy profile (`ShadowRayDiagram.tsx` mounting live sub-layer `LiveSyzygyView.tsx`) and axial sightline down-the-barrel view (`NodalPlaneVisualizer.tsx`). Canonical transverse displacement equations, prograde right-to-left kinematics, and shadow cone geometry conform strictly to [`docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry`](docs/MATH_SPEC.md#6-syzygy-eclipse-shadow-geometry) and [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings).
 - **Orbital Milestones & Scaling**: Keplerian milestone halo nodes and apparent diameter scaling conform to [`docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings`](docs/DESIGN_SYSTEM.md#2-2d--3d-vector-stroke--path-encodings) and [`docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling`](docs/MATH_SPEC.md#9-dynamic-ephemeris-distance--apparent-diameter-scaling).
@@ -153,12 +153,12 @@ All canonical mathematical models, branded nominal units, 3D scene-graph structu
 - `.gitattributes` — Standard line-ending normalization (`eol=lf`) and binary asset flags
 - `AGENTS.md` — Always-loaded operational prompt kernel & enforced guardrails (`5–18 KB`)
 - `ARCHITECTURE.md` — System topology, runtime contracts, 100% canonical code layout & task routing matrix
-- `PROJECT.md` — Historical Feature Inventory (`F1–F98`) and Milestone Matrix (`M1–M46`)
-- `DEAD_ENDS.md` — Critical log of failed historical approaches & resolved solutions (`DE-01–DE-52`)
+- `PROJECT.md` — Historical Feature Inventory (`F1–F102`) and Milestone Matrix (`M1–M47`)
+- `DEAD_ENDS.md` — Critical log of failed historical approaches & resolved solutions (`DE-01–DE-54`)
 - `docs/`
   - `MATH_SPEC.md` — Canonical astronomical math & coordinate specification
   - `DESIGN_SYSTEM.md` — Canonical visual tokens, color semantics & stroke encodings
-  - `adr/` — Architecture Decision Records (`0001` through `0046` + `README.md` subsystem index)
+  - `adr/` — Architecture Decision Records (`0001` through `0047` + `README.md` subsystem index)
 
 ---
 

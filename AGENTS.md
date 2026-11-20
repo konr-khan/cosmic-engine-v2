@@ -16,9 +16,9 @@ This file is the always-loaded operational kernel for AI agents working in **Cos
 | **Topology, Contracts & File Tree** | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Modifying module boundaries, scene-graph dataflow, worker RPC contracts, or adding/moving files |
 | **Astronomical Math & Ephemerides** | [`docs/MATH_SPEC.md`](docs/MATH_SPEC.md) | Touching `src/utils/cosmicMath/**`, coordinate frames, Meeus equations, or syzygy shadow geometry |
 | **Visual Tokens & Stroke Grammar** | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Touching `src/components/**`, SVG stroke encodings, semantic colors, or glassmorphic HUDs |
-| **Historical Anti-Patterns** | [`DEAD_ENDS.md`](DEAD_ENDS.md) | Before refactoring core math, 3D projections, worker throttling, or camera staging (`DE-01–DE-52`) |
-| **Feature & Milestone Ledger** | [`PROJECT.md`](PROJECT.md) | Recording completed user-facing features (`F1–F98`) or milestones (`M1–M46`) |
-| **Architectural Decision Records** | [`docs/adr/`](docs/adr/) | Reviewing historical invariants (`0001–0046`) or adding evolutionary amendment banners |
+| **Historical Anti-Patterns** | [`DEAD_ENDS.md`](DEAD_ENDS.md) | Before refactoring core math, 3D projections, worker throttling, or camera staging (`DE-01–DE-54`) |
+| **Feature & Milestone Ledger** | [`PROJECT.md`](PROJECT.md) | Recording completed user-facing features (`F1–F102`) or milestones (`M1–M47`) |
+| **Architectural Decision Records** | [`docs/adr/`](docs/adr/) | Reviewing historical invariants (`0001–0047`) or adding evolutionary amendment banners |
 
 ### Essential Commands & Automated Gatekeepers
 
