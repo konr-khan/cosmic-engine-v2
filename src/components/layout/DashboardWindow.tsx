@@ -176,6 +176,7 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
           {/* Toggle 1-Col / 2-Col Width */}
           {onToggleColSpan && !isLocked && !isMaximized && (
             <button 
+              type="button"
               onClick={() => onToggleColSpan(id)}
               className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors cursor-pointer border ${
                 colSpan === 12 
@@ -183,6 +184,7 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
                   : 'text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
               }`}
               title={colSpan === 12 ? "Switch to 1-Column width" : "Expand to 2-Column Panoramic width"}
+              aria-label={colSpan === 12 ? `Switch ${title} to 1-Column width` : `Expand ${title} to 2-Column width`}
             >
               {colSpan === 12 ? '2-Col' : '1-Col'}
             </button>
@@ -191,9 +193,11 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
           {/* Reset Dimensions */}
           {onResetSize && !isLocked && (
             <button 
+              type="button"
               onClick={() => onResetSize(id)}
               className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
               title="Reset window size"
+              aria-label={`Reset ${title} window size`}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -202,11 +206,14 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
           {/* Toggle Lock */}
           {onToggleLock && (
             <button 
+              type="button"
               onClick={() => onToggleLock(id)}
+              aria-pressed={isLocked}
               className={`p-1 rounded-md transition-colors cursor-pointer ${
                 isLocked ? 'text-amber-400 hover:text-amber-300 bg-amber-950/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
               title={isLocked ? "Unlock window arrangement" : "Lock window layout"}
+              aria-label={isLocked ? `Unlock ${title} window layout` : `Lock ${title} window layout`}
             >
               {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
             </button>
@@ -214,18 +221,24 @@ export const DashboardWindow: React.FC<DashboardWindowProps> = ({
 
           {/* Minimize / Expand Body */}
           <button 
+            type="button"
             onClick={() => setIsMinimized(!isMinimized)}
+            aria-expanded={!isMinimized}
             className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
             title={isMinimized ? "Expand window" : "Collapse window"}
+            aria-label={isMinimized ? `Expand ${title} window` : `Collapse ${title} window`}
           >
             <span className="text-xs font-bold leading-none select-none px-0.5">{isMinimized ? '+' : '−'}</span>
           </button>
 
           {/* Fullscreen Maximize */}
           <button 
+            type="button"
             onClick={() => setIsMaximized(!isMaximized)}
+            aria-pressed={isMaximized}
             className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
             title={isMaximized ? "Restore view" : "Maximize view"}
+            aria-label={isMaximized ? `Restore ${title} view` : `Maximize ${title} view`}
           >
             {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>

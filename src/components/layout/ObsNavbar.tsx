@@ -130,7 +130,7 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
             </button>
 
             {showPresetsMenu && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-slate-950/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-800 p-2 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-150">
+              <div role="menu" aria-label="Workspace Presets" className="absolute right-0 top-full mt-2 w-72 bg-slate-950/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-800 p-2 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-150">
                 <div className="text-[10px] font-bold text-slate-400 px-2.5 py-1.5 uppercase tracking-wider font-mono border-b border-slate-800/80 mb-1">
                   Curated Workspace Suites
                 </div>
@@ -139,6 +139,8 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
                   const isActive = activePresetKey === preset.id;
                   return (
                     <button
+                      type="button"
+                      role="menuitem"
                       key={preset.id}
                       onClick={() => handleSelectPresetClick(preset.id)}
                       className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
@@ -184,12 +186,15 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
             </button>
 
             {showOptions && (
-              <div className="absolute right-0 top-full mt-2 w-68 bg-slate-950/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-800 p-2 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-150">
+              <div role="menu" aria-label="Simulation Layers" className="absolute right-0 top-full mt-2 w-68 bg-slate-950/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-800 p-2 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-150">
                 <div className="text-[10px] font-bold text-slate-400 px-2 py-1.5 uppercase tracking-wider font-mono border-b border-slate-800/80 mb-1">
                   Active Dashboard Windows
                 </div>
                 {SIMULATION_LAYERS.map((opt) => (
                   <button
+                    type="button"
+                    role="menuitemcheckbox"
+                    aria-checked={widgets[opt.key] !== false}
                     key={opt.key}
                     onClick={() => onToggleWidget(opt.key)}
                     className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer my-0.5 ${
@@ -208,6 +213,8 @@ export const ObsNavbar: React.FC<ObsNavbarProps> = ({
 
           {/* Lock Layout Button */}
           <button
+            type="button"
+            aria-pressed={isAllLocked}
             onClick={onToggleAllLocked}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
               isAllLocked ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm' : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700'

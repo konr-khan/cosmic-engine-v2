@@ -229,6 +229,16 @@ const CANONICAL_SUITES = [
     focus: 'Integration tests for ObsNavbar workspace presets and simulation layers, OrbitalChronometer dock expansion/collapse with 7-branch twilight classification, and ChronometerReadoutCards coordinate clamping and military/AM-PM time parsing'
   },
   {
+    domain: 'Layout & Astrolabe DOM Interactions',
+    file: 'src/components/layout/layoutInteractions.dom.test.tsx',
+    focus: 'Real-DOM jsdom StrictMode interaction suite covering AstrolabeDial pointer drag, zero-width guards, midnight rollover, keyboard slider controls, DashboardWindow resize/minimize/maximize/ARIA, and ObsNavbar Escape/outside-click menus'
+  },
+  {
+    domain: 'Observatory Widget DOM Interactions',
+    file: 'src/components/widgets/widgetsInteractions.dom.test.tsx',
+    focus: 'Real-DOM jsdom StrictMode interaction suite covering EclipseDemonstrator lazy scanner tab deferral, tablist ARIA semantics, preset scrubbing, and GyroArmillaryView keyboard 3D camera controls'
+  },
+  {
     domain: 'Ribbon Scrubber Hook',
     file: 'src/components/widgets/common/useRibbonScrubber.test.ts',
     focus: 'Bidirectional 2D coordinate scaling (dayToX, xToDay, timeToY, yToTime), synodic sub-window scaling, dragging state, and pointer capture lifecycle'

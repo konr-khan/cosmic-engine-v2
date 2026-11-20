@@ -168,13 +168,52 @@ export const ArmillarySvgCanvas: React.FC<ArmillarySvgCanvasProps> = ({
       {/* SVG Canvas Container */}
       <svg
         ref={svgRef}
+        role="img"
+        tabIndex={0}
+        aria-label="Interactive 3D Armillary Sphere and Astrolabe Canvas"
         viewBox={viewBoxStr}
         style={{ touchAction: 'none' }}
         onDragStart={(e) => {
           e.preventDefault();
           e.stopPropagation();
         }}
-        className={`w-full h-full max-h-[560px] drop-shadow-2xl transition-cursor ${
+        onKeyDown={(e) => {
+          if (is3D) {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              onCameraChange({ ...camera, yaw: camera.yaw - 10 });
+              return;
+            }
+            if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              onCameraChange({ ...camera, yaw: camera.yaw + 10 });
+              return;
+            }
+            if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              onCameraChange({ ...camera, pitch: Math.max(-85, Math.min(85, camera.pitch + 10)) });
+              return;
+            }
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              onCameraChange({ ...camera, pitch: Math.max(-85, Math.min(85, camera.pitch - 10)) });
+              return;
+            }
+          }
+          if (isZoomable) {
+            if (e.key === '+' || e.key === '=') {
+              e.preventDefault();
+              zoomIn();
+            } else if (e.key === '-') {
+              e.preventDefault();
+              zoomOut();
+            } else if (e.key === '0') {
+              e.preventDefault();
+              resetZoom();
+            }
+          }
+        }}
+        className={`w-full h-full max-h-[560px] drop-shadow-2xl transition-cursor focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none rounded-xl ${
           isDraggingRule 
             ? 'cursor-grab active:cursor-grabbing' 
             : isFreeReteMode 

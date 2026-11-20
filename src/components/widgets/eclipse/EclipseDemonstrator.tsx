@@ -67,8 +67,11 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
           <EclipseStatusBadge eclipse={eclipse} />
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-bold font-mono">
+          <div role="tablist" aria-label="Eclipse Demonstrator Views" className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 text-xs font-bold font-mono">
             <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'geometry'}
               onClick={() => setActiveTab('geometry')}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'geometry' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
@@ -78,6 +81,9 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
               <Layers className="w-3.5 h-3.5" /> Dual View (Rays &amp; Nodes)
             </button>
             <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'sky'}
               onClick={() => setActiveTab('sky')}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'sky' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
@@ -86,6 +92,9 @@ export const EclipseDemonstrator: React.FC<EclipseDemonstratorProps> = ({
               <Eye className="w-3.5 h-3.5 text-slate-300" /> Sky View
             </button>
             <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'scanner'}
               onClick={() => setActiveTab('scanner')}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'scanner' ? 'bg-indigo-600 text-white font-semibold shadow-sm border border-indigo-500' : 'text-slate-400 hover:text-slate-200'
