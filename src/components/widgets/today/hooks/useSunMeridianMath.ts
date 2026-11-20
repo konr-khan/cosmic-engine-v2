@@ -338,17 +338,18 @@ export const useSunMeridianMath = ({
   }), [isTwilightModeActive, todayChord, peakAlt, todayCulmination.shortTag]);
 
   // --- Gate Anchor Configuration Model ---
+  const { x: gateAnchorX, y: gateAnchorY } = todayChord.anchorPoint;
   const gateAnchor = useMemo<MeridianGateAnchorConfig | undefined>(() => (
     isTwilightModeActive
       ? createMeridianGateAnchorConfig(
           'sun-twilight-gate-anchor',
-          todayChord.anchorPoint,
+          { x: gateAnchorX, y: gateAnchorY },
           '#64748b',
           'Astronomical Twilight Gate (−18°): Deep Night Station',
           3.5
         )
       : undefined
-  ), [isTwilightModeActive, todayChord.anchorPoint.x, todayChord.anchorPoint.y]);
+  ), [isTwilightModeActive, gateAnchorX, gateAnchorY]);
 
   // --- Peak Target Configuration Model ---
   const peakTarget = useMemo<MeridianPeakTargetConfig>(() => (

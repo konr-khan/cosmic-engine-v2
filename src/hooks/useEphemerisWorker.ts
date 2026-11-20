@@ -217,7 +217,7 @@ function useAnnualMatrixWorker<TItem>({
       console.error(`[${hookLabel}] Synchronous fallback calculation failed:`, err);
       return [];
     }
-  }, [currentKey, canDeferToWorker, getCached, computeAndSeedSync, hookLabel]);
+  }, [canDeferToWorker, getCached, computeAndSeedSync, hookLabel]);
 
   return matchingWorkerItems ?? (isWorkerActive && workerEntry ? workerEntry.items : syncMatrix) ?? [];
 }

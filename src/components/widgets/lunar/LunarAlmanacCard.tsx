@@ -63,7 +63,7 @@ export const LunarAlmanacCard: React.FC<LunarAlmanacCardProps> = ({
   const previewDay = effectiveHoverDate ? Math.min(totalDays, getDayOfYear(effectiveHoverDate)) : currentDay;
 
   // 1. 365-Day Annual Lunar Ephemeris Computation (offloaded to Web Worker)
-  const annualLunarData: AnnualLunarMatrixItem[] = useAnnualLunarWorker({ year, latitude, longitude }) || [];
+  const annualLunarData: AnnualLunarMatrixItem[] = useAnnualLunarWorker({ year, latitude, longitude });
 
   // Key Lunar Solstice / Phase Fast-Jump Shortcuts
   const shortcuts: LunarShortcutItem[] = useMemo(() => {

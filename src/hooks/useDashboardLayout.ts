@@ -268,6 +268,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     windows,
     lockedWindows,
     isAllLocked,
+    setWidgets,
     toggleWidget,
     handleSelectPreset,
     handleDragStart,

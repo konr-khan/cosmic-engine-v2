@@ -306,7 +306,7 @@ export const GyroArmillaryView: React.FC<GyroArmillaryViewProps> = ({
     saved3DCameraRef.current = { pitch: 25, yaw: 35, roll: 0 };
     const targetCam = getCanonicalCameraForMode(projectionMode, morphLambda);
     setCamera(targetCam);
-  }, [getCanonicalCameraForMode, morphLambda, projectionMode, setCamera]);
+  }, [getCanonicalCameraForMode, morphLambda, projectionMode, saved3DCameraRef, setCamera]);
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">

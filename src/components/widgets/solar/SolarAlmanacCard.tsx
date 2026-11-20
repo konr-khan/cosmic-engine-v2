@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { getDaysInYear, DEFAULT_OBSERVER_LATITUDE, DEFAULT_OBSERVER_LONGITUDE } from '../../../utils/cosmicMath';
 import { useAnnualSolarWorker } from '../../../hooks/useEphemerisWorker';
@@ -52,7 +52,7 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
   const activeDay = Math.min(totalDays, currentDay);
 
   // Compute totalDays of solar twilight thresholds for the current latitude (offloaded to Web Worker)
-  const almanacData: AnnualSolarMatrixItem[] = useAnnualSolarWorker({ year, latitude }) || [];
+  const almanacData: AnnualSolarMatrixItem[] = useAnnualSolarWorker({ year, latitude });
 
   const keyStats = useMemo(() => {
     let earliestSunrise = almanacData[0] || { day: 1, sunrise: 6, sunset: 18, dayLength: 12 };
@@ -70,10 +70,10 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
     return { earliestSunrise, latestSunset, longestDay, shortestDay };
   }, [almanacData]);
 
-  const getDayLabel = (dayNum: number): string => {
+  const getDayLabel = useCallback((dayNum: number): string => {
     const d = new Date(Date.UTC(year, 0, dayNum, 12, 0, 0));
     return d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
-  };
+  }, [year]);
 
   const activeData = almanacData[activeDay - 1] || almanacData[0] || { sunrise: 6, sunset: 18, dayLength: 12, solarNoon: 12 };
 
@@ -91,7 +91,7 @@ export const SolarAlmanacCard: React.FC<SolarAlmanacProps> = ({
     { label: "❄️ Dec Sol", day: 355, title: "Winter Solstice (Dec 21)" },
     { label: "🌅 Earliest Sunrise", day: keyStats.earliestSunrise.day, title: `Earliest Sunrise (${getDayLabel(keyStats.earliestSunrise.day)})` },
     { label: "🌇 Latest Sunset", day: keyStats.latestSunset.day, title: `Latest Sunset (${getDayLabel(keyStats.latestSunset.day)})` }
-  ], [keyStats, year]);
+  ], [keyStats, getDayLabel]);
 
   return (
     <div className="flex flex-col h-full w-full justify-between select-none">

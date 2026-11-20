@@ -343,15 +343,16 @@ export const useMoonMeridianMath = ({
   }), [todayChord, nodalThemeColor, moonTrackDash, peakAlt, todayCulmination.shortTag]);
 
   // --- Gate Anchor Configuration Model ---
+  const { x: gateAnchorX, y: gateAnchorY } = todayChord.anchorPoint;
   const gateAnchor = useMemo<MeridianGateAnchorConfig>(() => (
     createMeridianGateAnchorConfig(
       'moon-horizon-gate-anchor',
-      todayChord.anchorPoint,
+      { x: gateAnchorX, y: gateAnchorY },
       '#64748b',
       'Lunar Horizon Gate (0°): Setting & Rising Station',
       3.5
     )
-  ), [todayChord.anchorPoint.x, todayChord.anchorPoint.y]);
+  ), [gateAnchorX, gateAnchorY]);
 
   // --- Peak Target Configuration Model ---
   const peakTarget = useMemo<MeridianPeakTargetConfig>(() => (
